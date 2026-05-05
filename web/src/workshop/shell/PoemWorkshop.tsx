@@ -34,10 +34,15 @@ import { checkShareHash } from "@/workshop/sharing/sharing";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
 import {
+  TOOL_BUCKET_LABEL,
+  TOOL_BUCKET_ORDER,
+  defaultTabForBucket,
   formatRelativeSnapshotWhen,
   formatSnapshotWhen,
+  tabsForBucket,
+  toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
@@ -96,11 +101,11 @@ export function PoemWorkshop() {
   });
 
   const m = usePoemWorkshopModel(rhymeBreadth);
-  const allToolTabIds = useMemo(() => TOOL_TABS.map((t) => t.id), []);
+  const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
     m.setToolTab,
-    allToolTabIds,
+    bucketTabs,
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
@@ -129,6 +134,13 @@ export function PoemWorkshop() {
   const setMobileToolsExpanded = (v: boolean) => setMobileTab(v ? "tools" : "write");
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
+  const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY_TABS_EXPANDED); } catch { return false; }
+  });
+  const expandAllTabs = () => {
+    try { localStorage.setItem(STORAGE_KEY_TABS_EXPANDED, "1"); } catch { /* ignore */ }
+    setAllTabsExpanded(true);
+  };
 
   const DEFAULT_TOOLS_W = 380;
   const DEFAULT_RAIL_W  = 64;
@@ -514,8 +526,15 @@ export function PoemWorkshop() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  useEffect(() => { applyToolsW(toolsPanelWidth); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { applyRailW(railWidth); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Clamp both stored widths so that rail + editor(min) + tools never exceeds the viewport.
+    const vw = window.innerWidth;
+    const gap = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize || "16")) * 2;
+    const safeRail  = Math.max(0, Math.min(railWidth,        vw - MIN_EDITOR_W - DEFAULT_TOOLS_W - gap));
+    const safeTools = Math.max(0, Math.min(toolsPanelWidth,  vw - safeRail - MIN_EDITOR_W - gap));
+    applyRailW(safeRail);
+    applyToolsW(safeTools);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!topbarOverflowOpen) return;
@@ -954,52 +973,44 @@ export function PoemWorkshop() {
             className="topbar-cluster topbar-cluster-context"
             role="status"
             aria-live="polite"
-            aria-label="Draft length"
+            aria-label="Draft stats"
           >
-            {isFocusMode ? (
-              <div className="topbar-context-stats topbar-focus-stats">
-                <span className="topbar-focus-stat">
-                  {m.quickDocStats.totalWords} words
-                </span>
-                <span className="topbar-focus-sep" aria-hidden>
-                  ·
-                </span>
-                <span
-                  className="topbar-focus-stat"
-                  {...hint(
-                    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
-                      ? `${m.quickDocStats.totalLines} lines in editor including blank lines`
-                      : "",
-                  )}
-                >
-                  {m.quickDocStats.nonEmptyLines} lines
-                </span>
-              </div>
-            ) : (
-              <div className="topbar-context-stats">
-                <span
-                  className="topbar-context-stat"
-                  {...hint("Word count in poem body")}
-                >
-                  {m.quickDocStats.totalWords} words
-                </span>
-                <span className="topbar-context-sep" aria-hidden>
-                  ·
-                </span>
-                <span
-                  className="topbar-context-stat"
-                  {...hint(topbarLinesHint)}
-                >
-                  {m.quickDocStats.nonEmptyLines} lines
-                </span>
-                {m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
-                  <span className="topbar-context-hint">
-                    {" "}
-                    ({m.quickDocStats.totalLines} incl. blanks)
+            <div className={`topbar-context-stats${isFocusMode ? " topbar-focus-stats" : ""}`}>
+              <span
+                className={isFocusMode ? "topbar-focus-stat" : "topbar-context-stat"}
+                {...hint("Word count in poem body")}
+              >
+                {m.quickDocStats.totalWords} words
+              </span>
+              <span className={isFocusMode ? "topbar-focus-sep" : "topbar-context-sep"} aria-hidden>·</span>
+              <span
+                className={isFocusMode ? "topbar-focus-stat" : "topbar-context-stat"}
+                {...hint(topbarLinesHint)}
+              >
+                {m.quickDocStats.nonEmptyLines} lines
+              </span>
+              {!isFocusMode && m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
+                <span className="topbar-context-hint"> ({m.quickDocStats.totalLines} incl. blanks)</span>
+              ) : null}
+              {m.lastAiScore != null && (
+                <>
+                  <span className={isFocusMode ? "topbar-focus-sep" : "topbar-context-sep"} aria-hidden>·</span>
+                  <span
+                    className="topbar-ai-score"
+                    {...hint(`Last AI analysis score: ${m.lastAiScore}/10`)}
+                  >
+                    ✦ {m.lastAiScore}
                   </span>
-                ) : null}
-              </div>
-            )}
+                </>
+              )}
+              {showRhymeScheme && m.rhymeScheme.some((l) => l) && (
+                <span
+                  className="topbar-rhyme-dot"
+                  aria-label="Rhyme scheme active"
+                  {...hint("Rhyme scheme visible in editor")}
+                />
+              )}
+            </div>
           </div>
 
           <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save">
@@ -1113,6 +1124,11 @@ export function PoemWorkshop() {
                       <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsCmdkOpen(true); setTopbarOverflowOpen(false); }}>⌘ Commands</button>
                       <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShortcutsOpen(true); setTopbarOverflowOpen(false); }}>Keyboard shortcuts</button>
                       <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { resetLayout(); setTopbarOverflowOpen(false); }}>Reset panel layout</button>
+                      <hr className="topbar-overflow-divider" />
+                      {/* ── Data ── */}
+                      <span className="topbar-overflow-group-label">Data</span>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { void m.exportWorkshopBackup(); setTopbarOverflowOpen(false); }}>Export backup (JSON)</button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { void m.triggerImportBackup(); setTopbarOverflowOpen(false); }}>Import backup (JSON)</button>
                     </div>
                   )}
                 </div>
@@ -1652,50 +1668,6 @@ export function PoemWorkshop() {
               </div>
             </details>
 
-            <details className="drawer-accordion">
-              <summary className="drawer-accordion-summary">Fonts</summary>
-              <div className="drawer-accordion-body">
-                <AppearanceFormFields
-                  appearance={appearance}
-                  onChange={setAppearance}
-                />
-              </div>
-            </details>
-            <details className="drawer-accordion">
-              <summary className="drawer-accordion-summary">Page background</summary>
-              <div className="drawer-accordion-body">
-                <BackgroundPicker
-                  appearance={appearance}
-                  background={appearance.background}
-                  onChange={setAppearance}
-                />
-                <BackdropFormFields appearance={appearance} onChange={setAppearance} />
-              </div>
-            </details>
-
-            <details className="drawer-accordion">
-              <summary className="drawer-accordion-summary">Backup</summary>
-              <div className="drawer-accordion-body">
-                <div className="drawer-actions">
-                  <button
-                    type="button"
-                    className="small-btn"
-                    onClick={() => void m.exportWorkshopBackup()}
-                    {...hint("Download all drafts and their snapshots as JSON")}
-                  >
-                    Export backup (JSON)
-                  </button>
-                  <button
-                    type="button"
-                    className="small-btn"
-                    onClick={() => void m.triggerImportBackup()}
-                    {...hint("Import drafts from an Easy-poems backup JSON file")}
-                  >
-                    Import backup (JSON)
-                  </button>
-                </div>
-              </div>
-            </details>
             </div>
           </section>
         </div>
@@ -2467,34 +2439,81 @@ export function PoemWorkshop() {
                 ✦ Analyse
               </button>
             </div>
+            <div
+              className="tool-bucket-row"
+              role="tablist"
+              aria-label="Tool groups"
+              data-tour-id="tool-buckets"
+            >
+              {TOOL_BUCKET_ORDER.map((b) => {
+                const active = toolTabBucket(m.toolTab) === b;
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    tabIndex={active ? 0 : -1}
+                    className={`tool-bucket-tab ${active ? "active" : ""}`}
+                    onClick={() => m.setToolTab(defaultTabForBucket(b))}
+                  >
+                    {TOOL_BUCKET_LABEL[b]}
+                  </button>
+                );
+              })}
+            </div>
             <nav
               className="tool-tabs"
               role="tablist"
-              aria-label="Tools"
+              aria-label="Tools in this group"
               onKeyDown={onToolTabKeyDown}
             >
-              {TOOL_TABS.map(({ id, label, desc, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  id={`tool-tab-${id}`}
-                  aria-selected={m.toolTab === id}
-                  aria-controls={`tool-panel-${id}`}
-                  tabIndex={m.toolTab === id ? 0 : -1}
-                  className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
-                  onClick={() => m.setToolTab(id)}
-                  title={desc}
-                >
-                  <Icon />
-                  <span className="tool-tab-label">{label}</span>
-                  {id === "issues" && issuesQueueCount > 0 && (
-                    <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
-                      {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
-                    </span>
-                  )}
-                </button>
-              ))}
+              {(() => {
+                const CORE_OVERVIEW: string[] = ["issues", "totals", "lines"];
+                const visibleTabs = TOOL_TABS.filter((t) => bucketTabs.includes(t.id));
+                const isOverview = toolTabBucket(m.toolTab) === "overview";
+                const collapsed = isOverview && !allTabsExpanded;
+                const shown = collapsed
+                  ? visibleTabs.filter((t) => CORE_OVERVIEW.includes(t.id) || m.toolTab === t.id)
+                  : visibleTabs;
+                return (
+                  <>
+                    {shown.map(({ id, label, desc, Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        id={`tool-tab-${id}`}
+                        aria-selected={m.toolTab === id}
+                        aria-controls={`tool-panel-${id}`}
+                        tabIndex={m.toolTab === id ? 0 : -1}
+                        className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
+                        onClick={() => m.setToolTab(id)}
+                        title={desc}
+                      >
+                        <Icon />
+                        <span className="tool-tab-label">{label}</span>
+                        {id === "issues" && issuesQueueCount > 0 && (
+                          <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
+                            {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                    {collapsed && (
+                      <button
+                        type="button"
+                        className="tool-tab tool-tab-more"
+                        onClick={expandAllTabs}
+                        title="Show all tools"
+                      >
+                        <span className="tool-tab-more-dots">•••</span>
+                        <span className="tool-tab-label">More</span>
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </nav>
           </div>
 

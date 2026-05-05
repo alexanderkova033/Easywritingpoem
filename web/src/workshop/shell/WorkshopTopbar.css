@@ -140,6 +140,23 @@
   font-weight: 500;
 }
 
+.topbar-ai-score {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+  font-weight: 650;
+  cursor: default;
+}
+
+.topbar-rhyme-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  margin-left: 0.1rem;
+  vertical-align: middle;
+  cursor: default;
+}
+
 .topbar-look-cluster-ghost {
   gap: 0.25rem;
 }

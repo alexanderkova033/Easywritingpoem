@@ -276,7 +276,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       issueHighlightField,
       persistentIssueDecosField,
       ...lineFocusExtension,
-      placeholder("Write your poem here — one line per line break…"),
+      placeholder("Start writing…"),
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,
       formatMarksExtension,

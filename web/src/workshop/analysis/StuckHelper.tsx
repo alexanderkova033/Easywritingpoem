@@ -68,31 +68,36 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     ? (lines[targetLineNum - 1] ?? "")
     : "";
 
+  const isFirstRender = useRef(true);
+
+  // Stable refs so effects can call the latest version without stale closures
+  const titleRef   = useRef(title);
+  const linesRef   = useRef(lines);
+  const contextRef2 = useRef(context);
+  titleRef.current    = title;
+  linesRef.current    = lines;
+  contextRef2.current = context;
+
   // When switching to "line" mode, auto-select last non-empty line if none picked
   useEffect(() => {
     if (activeType === "line" && targetLineNum == null && nonEmptyLines.length > 0) {
       setTargetLineNum(nonEmptyLines[nonEmptyLines.length - 1]!.num);
     }
   }, [activeType]); // eslint-disable-line
-  // No auto-generate on mount — user must click Generate explicitly.
 
-  const handleSelectMode = useCallback((type: SuggestType) => {
-    setActiveType(type);
-    setResult(null);
-    setError(null);
-  }, []);
-
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (typeOverride?: SuggestType, targetOverride?: string) => {
+    const suggestType  = typeOverride  ?? activeType;
+    const targetLine   = targetOverride ?? (suggestType === "line" ? targetLineText : undefined);
     setLoading(true);
     setResult(null);
     setError(null);
     try {
       const data = await fetchSuggestions(
-        title,
-        lines,
-        activeType,
-        context,
-        activeType === "line" ? targetLineText : undefined,
+        titleRef.current,
+        linesRef.current,
+        suggestType,
+        contextRef2.current,
+        targetLine,
       );
       setResult(data);
     } catch (err) {
@@ -100,7 +105,21 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     } finally {
       setLoading(false);
     }
-  }, [activeType, title, lines, context, targetLineText]);
+  }, [activeType, targetLineText]); // eslint-disable-line
+
+  // Auto-generate when the user switches mode (skip first render and "line" mode
+  // which needs the user to pick a specific line first)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (activeType === "line") return;
+    void handleGenerate(activeType);
+  }, [activeType]); // eslint-disable-line
+
+  const handleSelectMode = useCallback((type: SuggestType) => {
+    setActiveType(type);
+    setResult(null);
+    setError(null);
+  }, []);
 
   const resultLabel = () => {
     if (!activeType) return "";
@@ -186,7 +205,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
             />
           )}
 
-          {/* Generate button */}
+          {/* Generate / Regenerate button */}
           <button
             type="button"
             className="sh-generate-btn"
@@ -195,10 +214,12 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
           >
             {loading ? (
               <><span className="sh-btn-spinner" aria-hidden /> Generating…</>
+            ) : activeType === "line" ? (
+              "↺ Rewrite this line"
+            ) : result ? (
+              "↺ Try again"
             ) : (
-              <>
-                {activeType === "line" ? "↺ Rewrite this line" : "✦ Generate suggestions"}
-              </>
+              "✦ Generate"
             )}
           </button>
         </div>
