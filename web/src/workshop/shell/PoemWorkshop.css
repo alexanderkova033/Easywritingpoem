@@ -1191,6 +1191,155 @@
   color: var(--muted);
 }
 
+/* ── Meter visual stress bars ─────────────────────────────────────────────── */
+
+.meter-bar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.meter-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.45rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.13s ease;
+}
+
+.meter-bar-row:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.meter-bar-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.meter-bar-line-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 1.6rem;
+  flex-shrink: 0;
+  font-family: var(--font-metric);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-bar-beats {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 1.15rem;
+  overflow: hidden;
+}
+
+.meter-beat {
+  flex-shrink: 0;
+  width: 5px;
+  border-radius: 2px;
+}
+
+.meter-beat-s {
+  height: 1rem;
+  background: var(--accent);
+  opacity: 0.8;
+}
+
+.meter-beat-u {
+  height: 0.42rem;
+  background: var(--muted);
+  opacity: 0.38;
+}
+
+.meter-beat-gap {
+  flex-shrink: 0;
+  width: 3px;
+}
+
+.meter-bar-empty {
+  font-size: 0.78rem;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.meter-bar-fit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-metric);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.4rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.meter-fit-high { color: var(--ai-score-high, #5fba7d); }
+.meter-fit-mid  { color: var(--muted); }
+.meter-fit-low  { color: var(--ai-score-low, #d95f5f); }
+.meter-fit-none { color: var(--muted); opacity: 0.4; }
+
+.meter-bar-src {
+  font-size: 0.7rem;
+  color: var(--muted);
+  opacity: 0.55;
+  min-width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  font-family: var(--font-metric);
+}
+
+/* ── Tools panel shortcuts footer ─────────────────────────────────────────── */
+
+.tools-shortcuts-hint {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .tools-shortcuts-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.9rem 0.7rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    margin-top: auto;
+  }
+}
+
+.tools-shortcuts-hint-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  opacity: 0.7;
+  transition: opacity 0.14s ease, color 0.14s ease;
+}
+
+.tools-shortcuts-hint-btn:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.tools-shortcuts-sep {
+  color: var(--muted);
+  opacity: 0.4;
+  font-size: 0.74rem;
+}
+
 .tool-filter-field {
   display: flex;
   flex-direction: column;

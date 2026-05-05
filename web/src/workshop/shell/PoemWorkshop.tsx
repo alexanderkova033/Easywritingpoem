@@ -2625,6 +2625,25 @@ export function PoemWorkshop() {
           />
           </Suspense>
 
+          {/* Shortcuts nudge — desktop only, always visible at bottom of panel */}
+          <div className="tools-shortcuts-hint" aria-hidden>
+            <button
+              type="button"
+              className="tools-shortcuts-hint-btn"
+              onClick={() => { setIsShortcutsOpen(true); }}
+            >
+              <kbd className="kbd-hint">?</kbd> shortcuts
+            </button>
+            <span className="tools-shortcuts-sep" aria-hidden>·</span>
+            <button
+              type="button"
+              className="tools-shortcuts-hint-btn"
+              onClick={() => { setIsCmdkOpen(true); }}
+            >
+              <kbd className="kbd-hint">⌘K</kbd> commands
+            </button>
+          </div>
+
           {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
           {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (
             <div className="tools-empty-hint">

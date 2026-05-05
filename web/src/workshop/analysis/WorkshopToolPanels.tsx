@@ -1036,151 +1036,82 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-meter"
         >
-          <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
+          <LiveSectionTitle>Stress &amp; meter</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
-          {heavyToolsStale ? (
-            <p
-              className="tools-stale-hint muted small"
-              role="status"
-              aria-live="polite"
-            >
-              Tools updating… (meter matches your text in a moment)
-            </p>
-          ) : null}
-          <details className="tool-hint-details">
-            <summary className="tool-hint-summary">How to read this</summary>
-            <p className="muted small tool-hint-body">
-              <strong>/</strong> = stressed syllable, <strong>x</strong> = unstressed.
-              These are estimates &mdash; trust your ear over the numbers.{" "}
-              <abbr title="CMU Pronouncing Dictionary: a large English pronunciation database. Words it knows get accurate stress. Words it does not know (names, invented words) fall back to heuristic guessing.">CMU dictionary</abbr>{" "}
-              words are marked &#10003;; others are guesses (&#126; or &mdash;).
-              &ldquo;Iambic-ish %&rdquo; measures fit to a{" "}
-              <abbr title="Iambic meter: alternating unstressed and stressed syllables (x /). da-DUM da-DUM. A sonnet uses 5 pairs per line (iambic pentameter).">weak-strong alternating pattern</abbr>{" "}
-              &mdash; a cue, not a verdict.
-            </p>
-          </details>
           {stressLexiconErr ? (
-            <p className="error compact" role="alert">
-              {stressLexiconErr} Meter falls back to heuristics.
-            </p>
+            <p className="error compact" role="alert">{stressLexiconErr}</p>
           ) : !stressLexiconReady ? (
-            <p className="muted small meter-lexicon-status" aria-busy="true">
-              Loading stress dictionary…
-            </p>
+            <p className="muted small meter-lexicon-status" aria-busy="true">Loading stress dictionary…</p>
+          ) : null}
+          {heavyToolsStale ? (
+            <p className="tools-stale-hint muted small" role="status" aria-live="polite">Updating…</p>
           ) : null}
 
           <div className="meter-controls" role="group" aria-label="Meter filters">
             <label className="meter-toggle">
-              <input
-                type="checkbox"
-                checked={meterHideBlank}
-                onChange={(e) => setMeterHideBlank(e.target.checked)}
-              />{" "}
+              <input type="checkbox" checked={meterHideBlank} onChange={(e) => setMeterHideBlank(e.target.checked)} />
               Hide blanks
             </label>
             <label className="meter-toggle">
-              <input
-                type="checkbox"
-                checked={meterOnlyLowFit}
-                onChange={(e) => setMeterOnlyLowFit(e.target.checked)}
-              />{" "}
-              Show low fit
+              <input type="checkbox" checked={meterOnlyLowFit} onChange={(e) => setMeterOnlyLowFit(e.target.checked)} />
+              Low fit only
             </label>
             <label className="meter-toggle">
-              <input
-                type="checkbox"
-                checked={meterOnlyHeuristic}
-                onChange={(e) => setMeterOnlyHeuristic(e.target.checked)}
-              />{" "}
-              Heuristic lines only
+              <input type="checkbox" checked={meterOnlyHeuristic} onChange={(e) => setMeterOnlyHeuristic(e.target.checked)} />
+              Guessed only
             </label>
             {meterOnlyLowFit ? (
               <label className="meter-threshold">
-                Below{" "}
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={meterLowFitThreshold}
-                  onChange={(e) =>
-                    setMeterLowFitThreshold(
-                      Number.isFinite(e.target.valueAsNumber)
-                        ? e.target.valueAsNumber
-                        : 60,
-                    )
-                  }
-                />{" "}
-                %
+                Below <input type="number" min={0} max={100} step={5} value={meterLowFitThreshold}
+                  onChange={(e) => setMeterLowFitThreshold(Number.isFinite(e.target.valueAsNumber) ? e.target.valueAsNumber : 60)} /> %
               </label>
             ) : null}
           </div>
-          <div className="table-wrap table-wrap-draft">
-            <table
-              className="line-table line-table-draft line-table-meter"
-              title="Per-line stress pattern; click a row to jump in the editor."
-            >
-              <caption className="sr-only">
-                Line number, syllable count, stress marks, dictionary vs heuristic,
-                iambic fit, jump to line.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">
-                    <abbr title="Line number">Line</abbr>
-                  </th>
-                  <th scope="col">
-                    <abbr title="Estimated syllables">Syll.</abbr>
-                  </th>
-                  <th scope="col">Stress (est.)</th>
-                  <th scope="col">
-                    <abbr title="✓ CMU for whole line; ~ mixed; — heuristic">
-                      Dict
-                    </abbr>
-                  </th>
-                  <th scope="col">
-                    <abbr title="Loose match to alternating weak-strong">Iambic-ish</abbr>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedMeterHints.map((row) => (
-                  <tr
-                    key={row.lineNumber}
-                    className="line-table-data-row line-table-row-jump"
-                    tabIndex={0}
-                    aria-label={`Line ${row.lineNumber}: stress pattern. Open in editor.`}
-                    onClick={() => goToLine(row.lineNumber)}
-                    onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        goToLine(row.lineNumber);
-                      }
-                    }}
-                  >
-                    <td className="line-table-metric">{row.lineNumber}</td>
-                    <td className="line-table-metric">{row.syllables}</td>
-                    <td className="line-table-stress mono">
-                      {row.stressPattern || "—"}
-                    </td>
-                    <td
-                      className="line-table-metric meter-dict-col"
-                      title={meterStressSourceHint(row.stressSource)}
-                    >
-                      {meterStressSourceMark(row.stressSource)}
-                    </td>
-                    <td className="line-table-metric">
-                      {row.iambicFitPercent != null ? `${row.iambicFitPercent}%` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+          {/* Visual stress bars — one row per line */}
+          <ul className="meter-bar-list" aria-label="Stress patterns by line">
+            {displayedMeterHints.map((row) => {
+              const fit = row.iambicFitPercent;
+              const fitClass = fit == null ? "" : fit >= 70 ? "meter-fit-high" : fit >= 40 ? "meter-fit-mid" : "meter-fit-low";
+              return (
+                <li
+                  key={row.lineNumber}
+                  className="meter-bar-row"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Line ${row.lineNumber}: ${row.stressPattern || "no pattern"}. Click to jump.`}
+                  onClick={() => goToLine(row.lineNumber)}
+                  onKeyDown={(e: KeyboardEvent<HTMLLIElement>) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToLine(row.lineNumber); }
+                  }}
+                  title={meterStressSourceHint(row.stressSource)}
+                >
+                  <span className="meter-bar-line-num">{row.lineNumber}</span>
+                  <span className="meter-bar-beats" aria-hidden>
+                    {row.stressPattern
+                      ? row.stressPattern.split("").map((ch, i) =>
+                          ch === "/" ? <span key={i} className="meter-beat meter-beat-s" /> :
+                          ch === "x" ? <span key={i} className="meter-beat meter-beat-u" /> :
+                          <span key={i} className="meter-beat-gap" />
+                        )
+                      : <span className="meter-bar-empty">—</span>
+                    }
+                  </span>
+                  {fit != null ? (
+                    <span className={`meter-bar-fit ${fitClass}`}>{fit}%</span>
+                  ) : (
+                    <span className="meter-bar-fit meter-fit-none">—</span>
+                  )}
+                  <span className="meter-bar-src" title={meterStressSourceHint(row.stressSource)}>
+                    {meterStressSourceMark(row.stressSource)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+
           {meterHints.length > METER_TABLE_MAX ? (
-            <p className="muted small">
-              Showing first {METER_TABLE_MAX} of {meterHints.length} lines.
-            </p>
+            <p className="muted small">Showing first {METER_TABLE_MAX} of {meterHints.length} lines.</p>
           ) : null}
         </div>
       ) : null}
@@ -1520,11 +1451,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                         </button>
                         <span className="mono">{h.word}</span>
                       </div>
-                      {h.suggestions.length > 0 ? (
-                        <p className="suggestions">
-                          Try: {h.suggestions.join(", ")}
-                        </p>
-                      ) : null}
                       {h.suggestions.length > 0 ? (
                         <div className="spell-suggestion-actions">
                           {h.suggestions.slice(0, 3).map((sug) => (
