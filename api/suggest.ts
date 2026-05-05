@@ -108,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return Object.values(s as Record<string, unknown>)
           .map((v) => String(v ?? ""))
           .filter(Boolean)
-          .join(" — ");
+          .join("\n");
       }
       return String(s ?? "");
     });

@@ -5,7 +5,6 @@ import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
-import { POETRY_READING_WPM } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
 import type { RhymeCluster } from "@/workshop/analysis/rhyme-hints";
 import type { RepeatedWord } from "@/workshop/analysis/repeated-words";
@@ -14,7 +13,6 @@ import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type {
   LineMeterHint,
   LineStressSource,
-  MeterCoverageSummary,
 } from "@/workshop/analysis/meter-hints";
 import { downloadTextFile } from "@/workshop/library/export-poem";
 import {
@@ -226,7 +224,6 @@ export interface WorkshopToolPanelsProps {
   stressLexiconReady: boolean;
   stressLexiconErr: string | null;
   heavyToolsStale: boolean;
-  meterCoverageSummary: MeterCoverageSummary;
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
@@ -285,7 +282,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     stressLexiconReady,
     stressLexiconErr,
     heavyToolsStale,
-    meterCoverageSummary,
     poemTitle,
     poemLines,
     onInsertSuggestion,
@@ -393,10 +389,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-issues"
         >
           <LiveSectionTitle>Revision queue</LiveSectionTitle>
-          <p className="muted small">
-            Checklist gaps, goal warnings, and spelling flags together. Jump
-            buttons open the right tool or line.
-          </p>
           {issuesAllClear ? (
             <EmptyState title="All clear — keep writing.">
               <p className="muted small">
@@ -657,10 +649,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </li>
             ) : null}
           </ul>
-          <p className="muted small totals-reading-hint">
-            Read-aloud time assumes ~{POETRY_READING_WPM} words/min (performance
-            poetry varies).
-          </p>
           {vocabStats && (
             <div className="vocab-richness-block">
               <h4 className="tool-subheading">Vocabulary richness</h4>
@@ -687,9 +675,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           {docStats.stanzaStats.length > 0 ? (
             <>
               <h4 className="tool-subheading">Stanza breakdown</h4>
-              <p className="muted small">
-                Stanzas are blocks of lines separated by a blank line.
-              </p>
               <div className="table-wrap table-wrap-draft">
                 <table className="line-table line-table-draft stanza-table">
                   <caption className="sr-only">
@@ -745,14 +730,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ) : null}
             </>
           ) : null}
-          <p className="muted small totals-hint">
-            Open <button type="button" className="linkish" onClick={() => onOpenToolTab("lines")}>Lines</button>{" "}
-            for the full table, or{" "}
-            <button type="button" className="linkish" onClick={() => onOpenToolTab("meter")}>
-              Meter
-            </button>{" "}
-            for stress patterns.
-          </p>
         </div>
       ) : null}
 
@@ -768,7 +745,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <span className="tool-heading-you-text">Goals</span>
             <span className="you-badge">Your targets</span>
           </h3>
-          <p className="muted small">Blank fields are ignored. Live counts update as you write.</p>
           <div className="goal-grid">
             <GoalField
               label="Min lines"
@@ -861,9 +837,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-checklist"
         >
           <LiveSectionTitle>Publication checklist</LiveSectionTitle>
-          <p className="muted small">
-            Draft-only reminders from counts and goals—not legal review.
-          </p>
           <div
             className="revision-pass-row"
             role="group"
@@ -988,10 +961,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               Go
             </button>
           </form>
-          <p className="tools-table-note">
-            Syllable counts match <strong>Totals</strong> (same estimate). Line
-            numbers in the table are clickable—pick a row to jump in the draft.
-          </p>
           <div className="lines-table-toolbar">
             <label className="lines-hide-empty-label">
               <input
@@ -1094,31 +1063,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <p className="error compact" role="alert">
               {stressLexiconErr} Meter falls back to heuristics.
             </p>
-          ) : stressLexiconReady ? (
-            <p className="muted small meter-lexicon-status" role="status">
-              Dictionary stress ready (filtered CMU pronunciations for the local word
-              list).
-            </p>
-          ) : (
+          ) : !stressLexiconReady ? (
             <p className="muted small meter-lexicon-status" aria-busy="true">
               Loading stress dictionary…
             </p>
-          )}
-          {meterCoverageSummary.nonEmptyLines > 0 ? (
-            <p className="muted small meter-coverage-summary" role="status">
-              Non-empty lines: {meterCoverageSummary.nonEmptyLines} — CMU-backed:{" "}
-              {meterCoverageSummary.lexiconLines}, mixed:{" "}
-              {meterCoverageSummary.mixedLines}, heuristic only:{" "}
-              {meterCoverageSummary.heuristicLines}
-            </p>
           ) : null}
-          <p className="muted small meter-source-legend">
-            <strong>Source column:</strong> {meterStressSourceMark("lexicon")}{" "}
-            full CMU coverage for counted words on that line;{" "}
-            {meterStressSourceMark("mixed")} mix of CMU and guess;{" "}
-            {meterStressSourceMark("heuristic")} heuristic only (names, coinages,
-            or missing from list).
-          </p>
 
           <div className="meter-controls" role="group" aria-label="Meter filters">
             <label className="meter-toggle">
@@ -1406,10 +1355,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               Tools updating… (repeats match your text in a moment)
             </p>
           ) : null}
-          <p className="muted small">
-            Non‑stopwords, 4+ letters, appearing twice or more (top 40). Tap a line
-            number to jump.
-          </p>
           <label className="tool-filter-field">
             <span className="tool-filter-label">Filter words</span>
             <input
@@ -1456,15 +1401,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               role="status"
               aria-live="polite"
             >
-              Catching up to your latest typing. This list and the editor
-              underlines use the same scan after the same short pause; jumps
-              select the whole line until that catches up.
+              Updating…
             </p>
-          ) : (
-            <p className="muted small spell-sync-note" role="status">
-              List matches editor underlines (same dictionary pass on your draft).
-            </p>
-          )}
+          ) : null}
           <div
             className="spell-strategy-toggle"
             role="group"
@@ -1505,9 +1444,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             </div>
           ) : (
             <>
-              <p className="muted small">
-                Local list + your additions—many "unknowns" are on purpose.
-              </p>
               <details className="tool-hint-details personal-dict-details">
                 <summary className="tool-hint-summary">
                   Personal dictionary ({personalWords.length})

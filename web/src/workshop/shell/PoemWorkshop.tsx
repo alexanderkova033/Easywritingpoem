@@ -16,7 +16,6 @@ import { RhymeTooltip } from "./RhymeTooltip";
 import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "@/workshop/editor/PoemBodyEditor";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
-import { ToolsOverviewStrip } from "@/workshop/analysis/ToolsOverviewStrip";
 import { useToolTabListKeyboard } from "@/workshop/analysis/useToolTabListKeyboard";
 import { useWorkshopToolHotkeys } from "@/workshop/analysis/useWorkshopToolHotkeys";
 // Lazy-load the full tools panel — it pulls in all tool components (rhyme, syllables,
@@ -35,15 +34,10 @@ import { checkShareHash } from "@/workshop/sharing/sharing";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
 import {
-  TOOL_BUCKET_LABEL,
-  TOOL_BUCKET_ORDER,
-  defaultTabForBucket,
   formatRelativeSnapshotWhen,
   formatSnapshotWhen,
-  tabsForBucket,
-  toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
@@ -56,6 +50,7 @@ import {
   useHoverHintsSettings,
 } from "@/workshop/hints/HoverHintsContext";
 import "./PoemWorkshop.css";
+import "@/workshop/vocabulary/WordLookupPopup.css";
 
 function RailIcon({ children }: { children: ReactNode }) {
   return (
@@ -101,11 +96,11 @@ export function PoemWorkshop() {
   });
 
   const m = usePoemWorkshopModel(rhymeBreadth);
-  const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
+  const allToolTabIds = useMemo(() => TOOL_TABS.map((t) => t.id), []);
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
     m.setToolTab,
-    bucketTabs,
+    allToolTabIds,
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
@@ -134,13 +129,6 @@ export function PoemWorkshop() {
   const setMobileToolsExpanded = (v: boolean) => setMobileTab(v ? "tools" : "write");
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
-  const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
-    try { return !!localStorage.getItem(STORAGE_KEY_TABS_EXPANDED); } catch { return false; }
-  });
-  const expandAllTabs = () => {
-    try { localStorage.setItem(STORAGE_KEY_TABS_EXPANDED, "1"); } catch { /* ignore */ }
-    setAllTabsExpanded(true);
-  };
 
   const DEFAULT_TOOLS_W = 380;
   const DEFAULT_RAIL_W  = 64;
@@ -193,7 +181,7 @@ export function PoemWorkshop() {
     saveRailW(DEFAULT_RAIL_W);
   }, [applyToolsW, applyRailW, saveToolsW, saveRailW]);
 
-  const MIN_EDITOR_W = 160; // minimum editor column width (px)
+  const MIN_EDITOR_W = 240; // minimum editor column width (px)
   const GAP_PX = Math.round(1.55 * parseFloat(getComputedStyle(document.documentElement).fontSize || "16"));
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
@@ -1282,9 +1270,7 @@ export function PoemWorkshop() {
             </div>
 
             <div className="drawer-scroll">
-            <details className="drawer-accordion" open>
-              <summary className="drawer-accordion-summary">Drafts</summary>
-              <div className="drawer-accordion-body">
+            <div className="drawer-block library-drafts-section">
                 <div className="drawer-actions">
                   <button
                     type="button"
@@ -1338,9 +1324,6 @@ export function PoemWorkshop() {
                     </button>
                   )}
                 </div>
-                <p className="drawer-note">
-                  Drafts and snapshots stay in this browser unless you export them.
-                </p>
                 <div className="library-filters" role="search">
                   <label className="library-filter-field">
                     <span className="library-filter-label">Search</span>
@@ -1380,10 +1363,6 @@ export function PoemWorkshop() {
                     Show archived
                   </label>
                 </div>
-                <p className="muted small drawer-filter-hint">
-                  Search matches title, display label, and tags.
-                  Pinned drafts always appear first.
-                </p>
                 {libraryListRows.length === 0 ? (
                   <p className="drawer-note library-empty-msg" role="status">
                     No drafts match this filter.
@@ -1539,11 +1518,7 @@ export function PoemWorkshop() {
                   </div>
                 </div>
                 )}
-                <p className="drawer-note">
-                  Pinned drafts stay at the top; drafts also sort by last opened.
-                </p>
-              </div>
-            </details>
+            </div>
 
             <details className="drawer-accordion drawer-accordion-snapshots" open>
               <summary className="drawer-accordion-summary">
@@ -1573,11 +1548,7 @@ export function PoemWorkshop() {
                     Save now
                   </button>
                 </div>
-                {m.revisions.length === 0 ? (
-                  <p className="drawer-note snapshot-empty-note">
-                    No snapshots yet. Save one before a big edit — you can restore it any time.
-                  </p>
-                ) : (
+                {m.revisions.length > 0 && (
                   <div className="snapshot-history-list">
                     {m.revisions.map((snap) => (
                       <div key={snap.id} className="snapshot-history-item">
@@ -1684,11 +1655,6 @@ export function PoemWorkshop() {
             <details className="drawer-accordion">
               <summary className="drawer-accordion-summary">Fonts</summary>
               <div className="drawer-accordion-body">
-                <p className="drawer-note">
-                  Poem and UI fonts apply in this browser only. The top bar has
-                  dedicated <strong>Fonts</strong> and <strong>Background</strong>{" "}
-                  buttons.
-                </p>
                 <AppearanceFormFields
                   appearance={appearance}
                   onChange={setAppearance}
@@ -1698,18 +1664,11 @@ export function PoemWorkshop() {
             <details className="drawer-accordion">
               <summary className="drawer-accordion-summary">Page background</summary>
               <div className="drawer-accordion-body">
-                <p className="drawer-note">
-                  Each scene layers symbols and texture behind the editor—purely
-                  visual.
-                </p>
                 <BackgroundPicker
                   appearance={appearance}
                   background={appearance.background}
                   onChange={setAppearance}
                 />
-                <div className="drawer-note">
-                  <strong>Background settings</strong> (strength + motion + low‑power)
-                </div>
                 <BackdropFormFields appearance={appearance} onChange={setAppearance} />
               </div>
             </details>
@@ -2508,98 +2467,34 @@ export function PoemWorkshop() {
                 ✦ Analyse
               </button>
             </div>
-            <div
-              className="tool-bucket-row"
-              role="tablist"
-              aria-label="Tool groups"
-              data-tour-id="tool-buckets"
-            >
-              {TOOL_BUCKET_ORDER.map((b) => {
-                const active = toolTabBucket(m.toolTab) === b;
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    tabIndex={active ? 0 : -1}
-                    className={`tool-bucket-tab ${active ? "active" : ""}`}
-                    onClick={() => m.setToolTab(defaultTabForBucket(b))}
-                  >
-                    {TOOL_BUCKET_LABEL[b]}
-                  </button>
-                );
-              })}
-            </div>
-            {toolTabBucket(m.toolTab) === "overview" ? (
-              <ToolsOverviewStrip
-                issuesQueueCount={issuesQueueCount}
-                quickDocStats={m.quickDocStats}
-                spellHitCount={m.spellHits.length}
-                wordlistReady={Boolean(m.wordlist)}
-                rhymeClusterCount={m.rhymeClusters.length}
-                goalEvaluation={m.goalEvaluation}
-                repeatCount={m.repeated.length}
-                checklistOpenCount={checklistOpenCount}
-                meterCoverage={m.meterCoverageSummary}
-                stressLexiconReady={m.stressLexiconReady}
-                heavyToolsStale={m.heavyToolsStale}
-                activeTab={m.toolTab}
-                onOpenTab={m.setToolTab}
-              />
-            ) : null}
             <nav
               className="tool-tabs"
               role="tablist"
-              aria-label="Tools in this group"
+              aria-label="Tools"
               onKeyDown={onToolTabKeyDown}
             >
-              {(() => {
-                const CORE_OVERVIEW: string[] = ["issues", "totals", "lines"];
-                const visibleTabs = TOOL_TABS.filter((t) => bucketTabs.includes(t.id));
-                const isOverview = toolTabBucket(m.toolTab) === "overview";
-                const collapsed = isOverview && !allTabsExpanded;
-                const shown = collapsed
-                  ? visibleTabs.filter((t) => CORE_OVERVIEW.includes(t.id) || m.toolTab === t.id)
-                  : visibleTabs;
-                return (
-                  <>
-                    {shown.map(({ id, label, desc, Icon }) => (
-                      <button
-                        key={id}
-                        type="button"
-                        role="tab"
-                        id={`tool-tab-${id}`}
-                        aria-selected={m.toolTab === id}
-                        aria-controls={`tool-panel-${id}`}
-                        tabIndex={m.toolTab === id ? 0 : -1}
-                        className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
-                        onClick={() => m.setToolTab(id)}
-                        title={desc}
-                      >
-                        <Icon />
-                        <span className="tool-tab-label">{label}</span>
-                        {id === "issues" && issuesQueueCount > 0 && (
-                          <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
-                            {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                    {collapsed && (
-                      <button
-                        type="button"
-                        className="tool-tab tool-tab-more"
-                        onClick={expandAllTabs}
-                        title="Show all tools"
-                      >
-                        <span className="tool-tab-more-dots">•••</span>
-                        <span className="tool-tab-label">More</span>
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
+              {TOOL_TABS.map(({ id, label, desc, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  id={`tool-tab-${id}`}
+                  aria-selected={m.toolTab === id}
+                  aria-controls={`tool-panel-${id}`}
+                  tabIndex={m.toolTab === id ? 0 : -1}
+                  className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
+                  onClick={() => m.setToolTab(id)}
+                  title={desc}
+                >
+                  <Icon />
+                  <span className="tool-tab-label">{label}</span>
+                  {id === "issues" && issuesQueueCount > 0 && (
+                    <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
+                      {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
+                    </span>
+                  )}
+                </button>
+              ))}
             </nav>
           </div>
 
@@ -2652,7 +2547,6 @@ export function PoemWorkshop() {
             stressLexiconReady={m.stressLexiconReady}
             stressLexiconErr={m.stressLexiconErr}
             heavyToolsStale={m.heavyToolsStale}
-            meterCoverageSummary={m.meterCoverageSummary}
             clicheHits={m.clicheHits}
             poemTitle={m.title}
             poemLines={m.lines}

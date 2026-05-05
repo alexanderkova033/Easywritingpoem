@@ -9,27 +9,27 @@
 @media (min-width: 900px) {
   .workshop-grid {
     /* 3 columns by default; 4 columns when rhyme scheme panel is active */
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) var(--tools-col, 380px);
+    grid-template-columns: var(--rail-col, 64px) minmax(240px, 1.35fr) var(--tools-col, 380px);
     gap: 1rem;
   }
 
   /* 4-column when the rhyme scheme panel is rendered */
   .workshop-grid.has-rhyme-panel {
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) auto var(--tools-col, 380px);
+    grid-template-columns: var(--rail-col, 64px) minmax(240px, 1.35fr) auto var(--tools-col, 380px);
   }
 
   /* Collapsed variants */
   .workshop-grid.tools-collapsed {
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) 0px;
+    grid-template-columns: var(--rail-col, 64px) minmax(240px, 1.35fr) 0px;
   }
   .workshop-grid.has-rhyme-panel.tools-collapsed {
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) auto 0px;
+    grid-template-columns: var(--rail-col, 64px) minmax(240px, 1.35fr) auto 0px;
   }
   .workshop-grid.rail-collapsed {
-    grid-template-columns: 0px minmax(0, 1.35fr) var(--tools-col, 380px);
+    grid-template-columns: 0px minmax(240px, 1.35fr) var(--tools-col, 380px);
   }
   .workshop-grid.tools-collapsed.rail-collapsed {
-    grid-template-columns: 0px minmax(0, 1fr) 0px;
+    grid-template-columns: 0px minmax(240px, 1fr) 0px;
   }
 
   /* ── Edge-to-edge: rail and tools touch the viewport walls ── */

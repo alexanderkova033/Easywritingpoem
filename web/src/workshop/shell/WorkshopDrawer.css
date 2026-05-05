@@ -228,6 +228,11 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 
+.library-drafts-section {
+  padding: 0.75rem 1.1rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
 .drawer-block:last-child {
   border-bottom: none;
 }
