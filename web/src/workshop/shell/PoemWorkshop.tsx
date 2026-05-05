@@ -91,6 +91,44 @@ function SessionTimer({ startTs }: { startTs: number }) {
   return <>{Math.floor(mins / 60)}h {mins % 60}m</>;
 }
 
+const WRITING_PROMPTS = [
+  "Try opening with a single concrete image.",
+  "What does it sound like, smell like, feel like?",
+  "Start with the last thing you noticed today.",
+  "Who is speaking, and to whom?",
+  "What are you circling around without saying directly?",
+  "Begin in the middle of an action.",
+  "What would the room say if it could speak?",
+  "Name the thing you're afraid to name.",
+  "What colour is the feeling?",
+  "Write the line you've been putting off.",
+];
+
+function WritingPrompt({ visible }: { visible: boolean }) {
+  const [idx, setIdx] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    const interval = setInterval(() => {
+      setFading(true);
+      const timer = setTimeout(() => {
+        setIdx((i) => (i + 1) % WRITING_PROMPTS.length);
+        setFading(false);
+      }, 380);
+      return () => clearTimeout(timer);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [visible]);
+
+  if (!visible) return null;
+  return (
+    <p className={`writing-prompt${fading ? " is-fading" : ""}`} aria-hidden>
+      {WRITING_PROMPTS[idx]}
+    </p>
+  );
+}
+
 export function PoemWorkshop() {
   const [rhymeBreadth, setRhymeBreadth] = useState<RhymeBreadth>(() => {
     try {
@@ -1395,8 +1433,9 @@ export function PoemWorkshop() {
                   >
                     {libraryVirtualizer.getVirtualItems().map((vItem) => {
                       const row = libraryListRows[vItem.index]!;
-                      const { id, label, meta } = row;
+                      const { id, label, poem, meta } = row;
                       const tags = (meta.tags ?? []).join(", ");
+                      const firstLine = poem.body.split("\n").find((l) => l.trim().length > 0)?.trim() ?? "";
                       const isActive = id === m.activePoemId;
                       const isArchived = Boolean(meta.archived);
                       return (
@@ -1429,19 +1468,26 @@ export function PoemWorkshop() {
                               >
                                 {meta.pinned ? "★" : "☆"}
                               </button>
-                              <button
-                                type="button"
-                                className="draft-open-btn"
-                                onClick={() => {
-                                  m.selectPoem(id);
-                                  setIsLibraryOpen(false);
-                                }}
-                                aria-current={isActive ? "true" : undefined}
-                                {...hint("Open this draft in the editor")}
-                              >
-                                {label}
-                                {isArchived ? " (archived)" : ""}
-                              </button>
+                              <div className="draft-open-wrap">
+                                <button
+                                  type="button"
+                                  className="draft-open-btn"
+                                  onClick={() => {
+                                    m.selectPoem(id);
+                                    setIsLibraryOpen(false);
+                                  }}
+                                  aria-current={isActive ? "true" : undefined}
+                                  {...hint("Open this draft in the editor")}
+                                >
+                                  {label}
+                                  {isArchived ? " (archived)" : ""}
+                                </button>
+                                {firstLine && (
+                                  <span className="draft-first-line" aria-hidden>
+                                    {firstLine}
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 className="small-btn draft-row-dup"
@@ -2257,6 +2303,7 @@ export function PoemWorkshop() {
                 </div>
                 <div className="poem-editor-with-scheme">
                   <div className="poem-editor-shell" style={{ display: "flex", flexDirection: "column" }}>
+                    <div className="poem-editor-body-wrap">
                     <PoemBodyEditor
                       id="poem-body"
                       aria-describedby="poem-body-hint"
@@ -2278,6 +2325,8 @@ export function PoemWorkshop() {
                         setSelectionRect(rect);
                       }}
                     />
+                    <WritingPrompt visible={m.body.trim() === ""} />
+                    </div>
                     <InlineRhymeHint editorViewRef={m.editorViewRef} />
                     {selectionText && selectionRect && (
                       <SelectionSuggestPopover

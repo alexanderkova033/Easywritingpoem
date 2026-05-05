@@ -1926,6 +1926,37 @@
   text-underline-offset: 2px;
 }
 
+/* ── Writing prompt overlay ── */
+.poem-editor-body-wrap {
+  position: relative;
+}
+
+.writing-prompt {
+  position: absolute;
+  /* Second line position: content padding-top + one line height */
+  top: calc(0.6rem + var(--poem-font-size, 1rem) * var(--poem-line-height, 1.65));
+  /* Left: content padding + gutter estimate so it aligns with poem text */
+  left: 3.4rem;
+  right: 0.7rem;
+  margin: 0;
+  font-family: var(--font-poem), Georgia, serif;
+  font-size: var(--poem-font-size, 1rem);
+  line-height: var(--poem-line-height, 1.65);
+  font-style: italic;
+  color: var(--muted);
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.38s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.writing-prompt.is-fading {
+  opacity: 0;
+}
+
 .field-hint {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
