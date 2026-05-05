@@ -60,6 +60,8 @@
 
 .poem-workshop > .topbar {
   animation: workshop-enter 0.58s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  position: relative;
+  z-index: 65; /* above overlay (z-index: 60) so active tab buttons stay visible when modals open */
 }
 
 .poem-workshop > .workshop-grid {

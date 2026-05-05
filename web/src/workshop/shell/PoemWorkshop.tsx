@@ -241,7 +241,12 @@ export function PoemWorkshop() {
     const onMove = (ev: MouseEvent) => {
       const raw = startW - (ev.clientX - startX); // drag left → wider
       const currentRail = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
-      const maxW = window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2;
+      // Cap against both current rail width AND against 0 so collapsing the rail later
+      // never pushes the editor below MIN_EDITOR_W.
+      const maxW = Math.min(
+        window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2,
+        window.innerWidth - MIN_EDITOR_W - GAP_PX * 2,
+      );
       const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
       applyToolsW(next);
     };

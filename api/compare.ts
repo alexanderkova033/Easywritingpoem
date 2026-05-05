@@ -143,6 +143,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     lines?: unknown;
     previousLines?: unknown;
     previousScores?: unknown;
+    scoreHistory?: unknown;
     model?: unknown;
     localAnalysis?: unknown;
     goals?: unknown;
@@ -164,12 +165,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
+  const scoreHistory = Array.isArray(body.scoreHistory)
+    ? (body.scoreHistory as unknown[]).filter((v): v is number => typeof v === "number").slice(-10)
+    : undefined;
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const prevScoreText = prevScores ? `\nPrevious scores: ${JSON.stringify(prevScores)}\n` : "";
+  const historyText = scoreHistory && scoreHistory.length > 1
+    ? `\nScore history (oldest → newest): ${scoreHistory.join(" → ")}\n`
+    : "";
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
+  const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}${historyText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
 
   const result = await callOpenAI(
     apiKey,

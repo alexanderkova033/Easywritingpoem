@@ -1055,6 +1055,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
             title, lines, previousLines: savedLines,
             previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions },
             localAnalysis, goals: goalsPlain, writingFocus: writingFocus.trim() || undefined,
+            scoreHistory: scoreHistory.slice(-10),
           },
           model, ctrl.signal,
         );
