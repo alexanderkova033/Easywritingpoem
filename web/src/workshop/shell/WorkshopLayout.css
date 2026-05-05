@@ -351,7 +351,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
+  gap: 0; /* gap managed by label margin-top so icon is truly centered when label hidden */
+  overflow: hidden;
   transition:
     transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.15s ease,
@@ -422,6 +423,13 @@
   color: var(--muted);
   display: grid;
   place-items: center;
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.rail-btn:hover .workshop-rail-icon,
+.rail-btn:focus-visible .workshop-rail-icon,
+.rail-btn[aria-expanded="true"] .workshop-rail-icon {
+  transform: translateY(-3px);
 }
 
 .workshop-rail-icon svg {
@@ -437,14 +445,23 @@
   text-transform: uppercase;
   color: var(--muted);
   line-height: 1.1;
+  /* Collapsed: no height, no gap — icon sits perfectly centered */
+  max-height: 0;
+  overflow: hidden;
   opacity: 0;
-  transition: opacity 0.18s ease;
+  margin-top: 0;
+  transition:
+    max-height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease,
+    margin-top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .rail-btn:hover .rail-label,
 .rail-btn:focus-visible .rail-label,
 .rail-btn[aria-expanded="true"] .rail-label {
+  max-height: 1.5rem;
   opacity: 1;
+  margin-top: 0.32rem;
 }
 
 /* Tablet tools toggle — hidden by default, shown only at 900-1199px */

@@ -17,6 +17,10 @@
   -webkit-backdrop-filter: saturate(1.02) blur(10px);
   /* Don't shrink on mobile — let the workshop-grid take all remaining space */
   flex-shrink: 0;
+  /* Must sit above the tools panel's stacking context on all viewport sizes.
+     Tablet tools-panel uses z-index: 60, so we need strictly higher here. */
+  position: relative;
+  z-index: 80;
 }
 
 @media (max-width: 899px) {
@@ -987,7 +991,7 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 50;
+  z-index: 200;
   min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border);

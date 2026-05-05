@@ -1439,26 +1439,92 @@
   border-bottom: none;
 }
 
-.rhyme-breadth-row {
+/* ── Rhyme panel controls ─────────────────────────────────────────────────── */
+
+.rhyme-controls-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.75rem;
 }
 
-.rhyme-breadth-label {
-  font-size: 0.78rem;
-  color: var(--muted);
-  margin-right: 0.1rem;
+.rhyme-filter-input {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.38rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  transition: border-color 0.14s;
 }
 
-.rhyme-breadth-btn.active {
+.rhyme-filter-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  color: var(--accent);
-  font-weight: 700;
 }
+
+.rhyme-filter-input::placeholder { color: var(--muted); opacity: 0.7; }
+
+.rhyme-breadth-group {
+  display: flex;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.rhyme-breadth-chip {
+  appearance: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.13s, background 0.13s, color 0.13s;
+}
+
+.rhyme-breadth-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--text);
+}
+
+.rhyme-breadth-chip.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+}
+
+/* ── Rhyme sections ───────────────────────────────────────────────────────── */
+
+.rhyme-section {
+  margin-bottom: 0.6rem;
+}
+
+.rhyme-section-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.rhyme-section-empty {
+  margin: 0.1rem 0 0;
+}
+
+/* ── Legacy breadth row (kept for safety, hidden) ─────────────────────────── */
+.rhyme-breadth-row { display: none; }
 
 @media (prefers-color-scheme: light) {
   .tools-panel {

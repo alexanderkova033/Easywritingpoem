@@ -1192,145 +1192,83 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-rhyme"
         >
-          <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
+          <LiveSectionTitle>Sound &amp; rhyme</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           <RhymeFinder />
-          <div className="rhyme-breadth-row" role="group" aria-label="Rhyme match strictness">
-            <span className="rhyme-breadth-label">Match strictness:</span>
-            {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
-              <button
-                key={b}
-                type="button"
-                className={`small-btn rhyme-breadth-btn${rhymeBreadth === b ? " active" : ""}`}
-                aria-pressed={rhymeBreadth === b}
-                onClick={() => onRhymeBreadthChange(b)}
-                title={
-                  b === "strict" ? "Strict — last 4 letters must match" :
-                  b === "near"   ? "Near — vowel tail match (default)" :
-                                   "Broad — last 2 letters"
-                }
-              >
-                {b === "strict" ? "Strict =" : b === "near" ? "Near ≈" : "Broad ~"}
-              </button>
-            ))}
-          </div>
-          {heavyToolsStale ? (
-            <p
-              className="tools-stale-hint muted small"
-              role="status"
-              aria-live="polite"
-            >
-              Tools updating… (rhyme matches your text in a moment)
-            </p>
-          ) : null}
-          <details className="tool-hint-details">
-            <summary className="tool-hint-summary">How this works</summary>
-            <p className="muted small tool-hint-body">
-              These are <abbr title="Based on spelling patterns at the end of words, not phonetic pronunciation. 'love' and 'dove' would match; 'love' and 'above' might not, even though they rhyme in speech.">letter-pattern</abbr> detectors &mdash; a useful first pass, but your ear is the real judge. Tap a line number to jump to it.
-            </p>
-          </details>
-          <label className="tool-filter-field">
-            <span className="tool-filter-label">Filter endings</span>
+
+          {/* Controls: filter + strictness chips in one row */}
+          <div className="rhyme-controls-row">
             <input
               type="search"
+              className="rhyme-filter-input"
               value={rhymeEndingFilter}
               onChange={(e) => setRhymeEndingFilter(e.target.value)}
-              placeholder="Substring, e.g. ing"
-              aria-label="Filter rhyme clusters by ending letters"
+              placeholder="Filter endings…"
+              aria-label="Filter rhyme clusters by ending"
             />
-          </label>
-          <h4 className="tool-subheading">Shared final letter pattern</h4>
-          {rhymeClusters.length === 0 ? (
-            <EmptyState title="No shared endings yet">
-              <p className="muted small">
-                Keep drafting—this fills in once multiple lines end the same way.
-              </p>
-            </EmptyState>
-          ) : rhymeFilteredRhyme.length === 0 ? (
-            <p className="muted small">No endings match this filter.</p>
-          ) : (
-            <ul className="hint-list hint-list-draft">
-              {rhymeFilteredRhyme.slice(0, rhymeVisibleCap).map((c) => (
-                <li key={c.ending}>
-                  <span className="mono">…{c.ending}</span> — lines{" "}
-                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
-                </li>
+            <div className="rhyme-breadth-group" role="group" aria-label="Match strictness">
+              {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  className={`rhyme-breadth-chip${rhymeBreadth === b ? " is-active" : ""}`}
+                  aria-pressed={rhymeBreadth === b}
+                  onClick={() => onRhymeBreadthChange(b)}
+                  title={
+                    b === "strict" ? "Last 4 letters must match" :
+                    b === "near"   ? "Vowel-tail match (default)" :
+                                     "Last 2 letters"
+                  }
+                >
+                  {b === "strict" ? "=" : b === "near" ? "≈" : "~"}
+                </button>
               ))}
-            </ul>
+            </div>
+          </div>
+
+          {heavyToolsStale ? (
+            <p className="tools-stale-hint muted small" role="status" aria-live="polite">Updating…</p>
+          ) : null}
+
+          {/* Four sound sections — only shown when the source has data */}
+          {(
+            [
+              { label: "End rhyme",  clusters: rhymeFilteredRhyme, source: rhymeClusters,      prefix: "…" },
+              { label: "Eye rhyme",  clusters: rhymeFilteredVowel, source: vowelTailClusters,  prefix: "…" },
+              { label: "Assonance",  clusters: rhymeFilteredAsson, source: assonanceClusters,  prefix: ""  },
+              { label: "Consonance", clusters: rhymeFilteredCons,  source: consonanceClusters, prefix: "…" },
+            ] as { label: string; clusters: typeof rhymeFilteredRhyme; source: typeof rhymeClusters; prefix: string }[]
+          ).map(({ label, clusters, source, prefix }) =>
+            source.length === 0 ? null : (
+              <div key={label} className="rhyme-section">
+                <span className="rhyme-section-label">{label}</span>
+                {clusters.length === 0 ? (
+                  <p className="muted small rhyme-section-empty">No matches.</p>
+                ) : (
+                  <ul className="hint-list hint-list-draft">
+                    {clusters.slice(0, rhymeVisibleCap).map((c) => (
+                      <li key={c.ending}>
+                        <span className="mono">{prefix}{c.ending}</span>
+                        {" · "}
+                        <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )
           )}
-          <h4 className="tool-subheading">
-            <abbr title="Eye rhyme: words that look like they rhyme because of shared spelling (e.g. 'love' and 'move'), even if they sound different.">Eye rhymes</abbr> (same spelling from last vowel)
-          </h4>
-          {vowelTailClusters.length === 0 ? (
-            <EmptyState title="No eye rhymes yet">
-              <p className="muted small">
-                Groups lines whose endings look alike on the page — useful for visual or slant rhyme.
-              </p>
-            </EmptyState>
-          ) : rhymeFilteredVowel.length === 0 ? (
-            <p className="muted small">No endings match this filter.</p>
-          ) : (
-            <ul className="hint-list hint-list-draft">
-              {rhymeFilteredVowel.slice(0, rhymeVisibleCap).map((c) => (
-                <li key={c.ending}>
-                  <span className="mono">…{c.ending}</span> — lines{" "}
-                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
-                </li>
-              ))}
-            </ul>
-          )}
-          <h4 className="tool-subheading">
-            <abbr title="Assonance: repetition of vowel sounds, e.g. 'fleet' and 'dream'. Detected by vowel letter patterns in each line's last word — spelling only, not sound.">Shared vowel letters</abbr> (last word)
-          </h4>
-          {assonanceClusters.length === 0 ? (
-            <EmptyState title="No assonance clusters yet">
-              <p className="muted small">
-                Needs two lines whose final words share the same vowel-letter
-                pattern.
-              </p>
-            </EmptyState>
-          ) : rhymeFilteredAsson.length === 0 ? (
-            <p className="muted small">No endings match this filter.</p>
-          ) : (
-            <ul className="hint-list hint-list-draft">
-              {rhymeFilteredAsson.slice(0, rhymeVisibleCap).map((c) => (
-                <li key={c.ending}>
-                  <span className="mono">{c.ending}</span> — lines{" "}
-                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
-                </li>
-              ))}
-            </ul>
-          )}
-          <h4 className="tool-subheading">
-            <abbr title="Consonance: repetition of consonant sounds at word endings, e.g. 'luck' and 'block'. Detected by the consonant letters after the last vowel in each line's final word — spelling only.">Shared ending consonants</abbr> (last word)
-          </h4>
-          {consonanceClusters.length === 0 ? (
-            <EmptyState title="No consonance clusters yet">
-              <p className="muted small">
-                Appears when final words share a similar written consonant
-                coda.
-              </p>
-            </EmptyState>
-          ) : rhymeFilteredCons.length === 0 ? (
-            <p className="muted small">No endings match this filter.</p>
-          ) : (
-            <ul className="hint-list hint-list-draft">
-              {rhymeFilteredCons.slice(0, rhymeVisibleCap).map((c) => (
-                <li key={c.ending}>
-                  <span className="mono">…{c.ending}</span> — lines{" "}
-                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
-                </li>
-              ))}
-            </ul>
-          )}
+
+          {rhymeClusters.length === 0 && vowelTailClusters.length === 0 &&
+           assonanceClusters.length === 0 && consonanceClusters.length === 0 &&
+           docStats.nonEmptyLines > 0 ? (
+            <p className="muted small">Patterns appear once line endings repeat.</p>
+          ) : null}
+
           {rhymeAnyOverCap ? (
             <p className="rhyme-show-more-wrap">
-              <button
-                type="button"
-                className="small-btn"
-                onClick={() => setRhymeVisibleCap((c) => c + 10)}
-              >
-                Show 10 more clusters
+              <button type="button" className="small-btn" onClick={() => setRhymeVisibleCap((c) => c + 10)}>
+                Show 10 more
               </button>
             </p>
           ) : null}
