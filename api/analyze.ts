@@ -79,7 +79,7 @@ interface GoalsContext {
   maxSyllablesPerLine?: number;
 }
 
-function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
+function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const hints: string[] = [];
 
   if (local?.form && local.form !== "free") {
@@ -122,13 +122,17 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
     if (goalParts.length > 0) hints.push(`Author's constraints: ${goalParts.join(", ")}`);
   }
 
+  if (writingFocus && writingFocus.trim()) {
+    hints.push(`Author's writing focus for this revision: ${writingFocus.trim()}`);
+  }
+
   return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
 }
 
-function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
+function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals)}`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -152,6 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     localAnalysis?: unknown;
     goals?: unknown;
     harshness?: unknown;
+    writingFocus?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -164,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
+  const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -176,7 +182,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: buildSystemPrompt(harshness) },
-        { role: "user", content: buildPrompt(title, lines, local, goals) },
+        { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
       max_tokens: 2200,
       temperature: 0.4,

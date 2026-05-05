@@ -156,6 +156,7 @@ export async function comparePoem(
     previousScores,
     localAnalysis,
     goals,
+    writingFocus,
   }: {
     title: string;
     lines: string[];
@@ -163,6 +164,7 @@ export async function comparePoem(
     previousScores: { overall_score: number; dimensions: AnalysisDimensions };
     localAnalysis?: LocalAnalysisContext;
     goals?: Record<string, number>;
+    writingFocus?: string;
   },
   model = "gpt-4o-mini",
   signal?: AbortSignal,
@@ -171,7 +173,7 @@ export async function comparePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, previousLines, previousScores, model, localAnalysis, goals }),
+    body: JSON.stringify({ title, lines, previousLines, previousScores, model, localAnalysis, goals, writingFocus }),
   });
 
   if (!response.ok) {
@@ -196,12 +198,14 @@ export async function analyzePoem(
     localAnalysis,
     goals,
     harshness,
+    writingFocus,
   }: {
     title: string;
     lines: string[];
     localAnalysis?: LocalAnalysisContext;
     goals?: Record<string, number>;
     harshness?: HarshnessLevel;
+    writingFocus?: string;
   },
   model = "gpt-4o-mini",
   signal?: AbortSignal,
@@ -210,7 +214,7 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness }),
+    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus }),
   });
 
   if (!response.ok) {

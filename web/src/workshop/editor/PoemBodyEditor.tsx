@@ -1,5 +1,5 @@
-import { EditorView, ViewPlugin, WidgetType, placeholder } from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
+import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker } from "@codemirror/view";
+import { StateEffect, StateField, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
 import { highlightSelectionMatches, search } from "@codemirror/search";
@@ -128,6 +128,97 @@ const persistentIssueDecosField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Issue gutter markers ---- //
+class SeverityDot extends GutterMarker {
+  constructor(readonly sev: string) { super(); }
+  eq(other: SeverityDot) { return other.sev === this.sev; }
+  toDOM() {
+    const el = document.createElement("span");
+    el.className = `cm-issue-dot cm-issue-dot-${this.sev}`;
+    el.setAttribute("aria-hidden", "true");
+    return el;
+  }
+}
+
+const setIssueGutter = StateEffect.define<Array<[number, string]>>();
+const clearIssueGutter = StateEffect.define<void>();
+
+const issueGutterField = StateField.define<Map<number, string>>({
+  create() { return new Map(); },
+  update(value, tr) {
+    let next = value;
+    for (const e of tr.effects) {
+      if (e.is(setIssueGutter)) { next = new Map(e.value); }
+      if (e.is(clearIssueGutter)) { next = new Map(); }
+    }
+    return next;
+  },
+});
+
+const issueGutterExtension = gutter({
+  class: "cm-issue-gutter",
+  markers(view) {
+    const dotMap = view.state.field(issueGutterField);
+    const builder = new RangeSetBuilder<GutterMarker>();
+    if (dotMap.size === 0) return builder.finish();
+    const sorted = [...dotMap.entries()].sort((a, b) => a[0] - b[0]);
+    for (const [lineNo, sev] of sorted) {
+      try {
+        const line = view.state.doc.line(lineNo);
+        builder.add(line.from, line.from, new SeverityDot(sev));
+      } catch { /* line out of range */ }
+    }
+    return builder.finish();
+  },
+  initialSpacer: () => new SeverityDot("low"),
+});
+
+// ---- Word-level problem highlights ---- //
+const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>();
+const clearWordHighlights = StateEffect.define<void>();
+
+const wordHighlightField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearWordHighlights)) { next = Decoration.none; }
+      if (e.is(setWordHighlights)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const { words, lineStart, lineEnd, severity } of e.value) {
+          if (!words.length) continue;
+          const cls = severity === "high"
+            ? "cm-word-issue cm-word-issue-high"
+            : severity === "medium"
+              ? "cm-word-issue cm-word-issue-medium"
+              : "cm-word-issue cm-word-issue-low";
+          const startLine = Math.max(1, lineStart);
+          const endLine = Math.min(doc.lines, lineEnd);
+          for (let n = startLine; n <= endLine; n++) {
+            const line = doc.line(n);
+            const text = line.text.toLowerCase();
+            for (const word of words) {
+              const needle = word.toLowerCase();
+              let pos = 0;
+              while (pos < text.length) {
+                const idx = text.indexOf(needle, pos);
+                if (idx === -1) break;
+                decos.push(Decoration.mark({ class: cls }).range(line.from + idx, line.from + idx + needle.length));
+                pos = idx + needle.length;
+              }
+            }
+          }
+        }
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 export interface PoemBodyEditorProps {
   value: string;
   /** Increment when `value` was set by the workshop (not from the debounced editor pipeline). */
@@ -148,6 +239,10 @@ export interface PoemBodyEditorProps {
   lineFocusMode?: boolean;
   /** Called when user selects text; null means selection cleared. */
   onSelectionText?: (text: string | null, rect: DOMRect | null) => void;
+  /** Severity dot markers in the gutter for lines with AI issues. */
+  issueGutterMarkers?: Array<[number, number, string?]>;
+  /** Word-level problem highlights from AI issues. */
+  wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   id?: string;
   "aria-describedby"?: string;
 }
@@ -229,6 +324,44 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     } catch { /* line out of range */ }
   }, [props.editorViewRef, props.persistentIssueHighlights]);
 
+  // Gutter severity dots
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const markers = props.issueGutterMarkers;
+    if (!markers || markers.length === 0) {
+      try { view.dispatch({ effects: clearIssueGutter.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    // Expand line ranges to individual lines with their worst severity
+    const dotMap = new Map<number, string>();
+    const sevOrder = (s?: string) => s === "high" ? 2 : s === "medium" ? 1 : 0;
+    try {
+      const lineCount = view.state.doc.lines;
+      for (const [start, end, sev] of markers) {
+        for (let n = start; n <= Math.min(end, lineCount); n++) {
+          const existing = dotMap.get(n);
+          if (!existing || sevOrder(sev) > sevOrder(existing)) dotMap.set(n, sev ?? "low");
+        }
+      }
+    } catch { /* ignore */ }
+    try {
+      view.dispatch({ effects: setIssueGutter.of([...dotMap.entries()]) });
+    } catch { /* ignore */ }
+  }, [props.editorViewRef, props.issueGutterMarkers]);
+
+  // Word-level highlights
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const wh = props.wordHighlights;
+    if (!wh || wh.length === 0) {
+      try { view.dispatch({ effects: clearWordHighlights.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setWordHighlights.of(wh) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.wordHighlights]);
+
   // Issue highlight: strong background on hovered/active AI issue lines + scroll into view
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -275,6 +408,9 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       lineFlashField,
       issueHighlightField,
       persistentIssueDecosField,
+      issueGutterField,
+      issueGutterExtension,
+      wordHighlightField,
       ...lineFocusExtension,
       placeholder("Start writing…"),
       ...(showSyllables ? [syllableCountPlugin] : []),

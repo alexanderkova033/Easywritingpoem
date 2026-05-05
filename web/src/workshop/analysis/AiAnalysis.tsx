@@ -17,6 +17,7 @@ import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
+const LS_KEY_WRITING_FOCUS = "easy-poems:writing-focus";
 
 // ---- last analysis per poem ---- //
 const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
@@ -58,6 +59,18 @@ function appendScoreHistory(score: number): number[] {
 function loadStoredModel(): string {
   try { return localStorage.getItem(LS_KEY_MODEL) ?? DEFAULT_MODEL; }
   catch { return DEFAULT_MODEL; }
+}
+
+function loadWritingFocus(): string {
+  try { return localStorage.getItem(LS_KEY_WRITING_FOCUS) ?? ""; }
+  catch { return ""; }
+}
+
+function saveWritingFocus(v: string) {
+  try {
+    if (v.trim()) localStorage.setItem(LS_KEY_WRITING_FOCUS, v);
+    else localStorage.removeItem(LS_KEY_WRITING_FOCUS);
+  } catch { /* ignore */ }
 }
 
 // ---- utils ---- //
@@ -200,9 +213,118 @@ function DimensionBar({
   );
 }
 
+// ---- per-issue mini chat ---- //
+interface IssueChatMessage { role: "user" | "assistant"; text: string; }
+
+function IssueThread({
+  issue, poemTitle, poemLines, model,
+}: {
+  issue: AnalysisIssue;
+  poemTitle: string;
+  poemLines: string[];
+  model: string;
+}) {
+  const [messages, setMessages] = useState<IssueChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const rangeLabel = issue.line_start === issue.line_end
+    ? `line ${issue.line_start}` : `lines ${issue.line_start}–${issue.line_end}`;
+  const issueContext = [
+    `Feedback about ${rangeLabel}: ${issue.rationale}`,
+    issue.excerpt ? `Excerpt: "${issue.excerpt}"` : "",
+    issue.problem_words?.length ? `Weak words: ${issue.problem_words.join(", ")}` : "",
+  ].filter(Boolean).join("\n");
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: poemTitle,
+          lines: poemLines,
+          message: text,
+          analysisContext: issueContext,
+          model,
+        }),
+      });
+      if (!res.ok) {
+        const d = (await res.json()) as { error?: string };
+        throw new Error(d.error ?? `HTTP ${res.status}`);
+      }
+      const d = (await res.json()) as { reply?: string };
+      setMessages((prev) => [...prev, { role: "assistant", text: d.reply ?? "No response." }]);
+      setTimeout(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+      }, 50);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [input, loading, poemTitle, poemLines, issueContext, model]);
+
+  return (
+    <div className="ai-issue-thread">
+      {messages.length > 0 && (
+        <div className="ai-issue-thread-msgs" ref={listRef}>
+          {messages.map((msg, i) => (
+            <div key={i} className={`ai-chat-msg ai-chat-msg-${msg.role}`}>
+              <span className="ai-chat-msg-role">{msg.role === "user" ? "You" : "AI"}</span>
+              <span className="ai-chat-msg-text">{msg.text}</span>
+            </div>
+          ))}
+          {loading && (
+            <div className="ai-chat-msg ai-chat-msg-assistant ai-chat-msg-loading">
+              <span className="ai-chat-msg-role">AI</span>
+              <span className="ai-chat-dot" /><span className="ai-chat-dot" /><span className="ai-chat-dot" />
+            </div>
+          )}
+        </div>
+      )}
+      {error && <p className="ai-chat-error">{error}</p>}
+      <div className="ai-chat-input-row">
+        <textarea
+          ref={inputRef}
+          className="ai-chat-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={`Ask about this issue…`}
+          rows={2}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSend(); }
+          }}
+        />
+        <button
+          type="button"
+          className="small-btn small-btn-primary ai-chat-send"
+          onClick={() => void handleSend()}
+          disabled={!input.trim() || loading}
+        >
+          {loading ? "…" : "Send"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function IssueCard({
   issue, index, isOpen, onOpenChange, isResolved, onResolve, onIgnore,
-  onJump, onHighlight, onClearHighlight, onApplyLine,
+  onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
 }: {
   issue: AnalysisIssue;
   index: number;
@@ -215,6 +337,9 @@ function IssueCard({
   onHighlight?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
+  poemLines?: string[];
+  poemTitle?: string;
+  model?: string;
 }) {
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}`
@@ -222,6 +347,12 @@ function IssueCard({
   const cat = deriveCategory(issue);
   const sevColor = severityColor(issue.severity);
   const { copiedIdx, copy } = useCopyFlash();
+  const [showThread, setShowThread] = useState(false);
+  const [previewRewrite, setPreviewRewrite] = useState(false);
+
+  const originalLineText = poemLines
+    ? poemLines.slice(issue.line_start - 1, issue.line_end).join("\n")
+    : null;
 
   const triggerHighlight = () => {
     if (!isResolved) onHighlight?.(issue.line_start, issue.line_end, issue.severity);
@@ -333,32 +464,87 @@ function IssueCard({
           {issue.rewrite && (
             <div className="ai-issue-rewrite">
               <span className="ai-rewrite-label">Suggested rewrite</span>
-              <blockquote className="ai-rewrite-text">{issue.rewrite}</blockquote>
-              <div className="ai-rewrite-actions">
-                <button
-                  type="button"
-                  className={`ai-copy-btn${copiedIdx === 99 ? " is-copied" : ""}`}
-                  title="Copy rewrite"
-                  onClick={() => copy(issue.rewrite!, 99)}
-                  aria-label="Copy rewrite to clipboard"
-                >
-                  {copiedIdx === 99 ? "✓" : "⎘"}
-                </button>
-                {onApplyLine && (
-                  <button
-                    type="button"
-                    className="small-btn ai-apply-rewrite-btn"
-                    title="Replace the line with this rewrite"
-                    onClick={() => {
-                      onApplyLine(issue.line_start, issue.line_end, issue.rewrite!);
-                      onResolve(true);
-                    }}
-                  >
-                    Apply
-                  </button>
-                )}
-              </div>
+              {previewRewrite && originalLineText !== null ? (
+                <div className="ai-rewrite-preview">
+                  <div className="ai-rewrite-preview-side">
+                    <span className="ai-rewrite-preview-label">Before</span>
+                    <pre className="ai-rewrite-preview-text ai-rewrite-preview-old">{originalLineText}</pre>
+                  </div>
+                  <div className="ai-rewrite-preview-side">
+                    <span className="ai-rewrite-preview-label">After</span>
+                    <pre className="ai-rewrite-preview-text ai-rewrite-preview-new">{issue.rewrite}</pre>
+                  </div>
+                  <div className="ai-rewrite-preview-actions">
+                    <button
+                      type="button"
+                      className="small-btn small-btn-primary ai-apply-rewrite-btn"
+                      onClick={() => {
+                        onApplyLine?.(issue.line_start, issue.line_end, issue.rewrite!);
+                        onResolve(true);
+                        setPreviewRewrite(false);
+                      }}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      type="button"
+                      className="small-btn ai-apply-rewrite-btn"
+                      onClick={() => setPreviewRewrite(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <blockquote className="ai-rewrite-text">{issue.rewrite}</blockquote>
+                  <div className="ai-rewrite-actions">
+                    <button
+                      type="button"
+                      className={`ai-copy-btn${copiedIdx === 99 ? " is-copied" : ""}`}
+                      title="Copy rewrite"
+                      onClick={() => copy(issue.rewrite!, 99)}
+                      aria-label="Copy rewrite to clipboard"
+                    >
+                      {copiedIdx === 99 ? "✓" : "⎘"}
+                    </button>
+                    {onApplyLine && (
+                      <button
+                        type="button"
+                        className="small-btn ai-apply-rewrite-btn"
+                        title="Preview the rewrite before applying"
+                        onClick={() => setPreviewRewrite(true)}
+                      >
+                        Preview & apply
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
+          )}
+
+          {/* Per-issue thread toggle */}
+          {poemLines && poemTitle !== undefined && model && (
+            <div className="ai-issue-thread-toggle-row">
+              <button
+                type="button"
+                className="ai-issue-thread-toggle-btn"
+                onClick={() => setShowThread((v) => !v)}
+              >
+                {showThread ? "Close chat" : "Ask about this"}
+                <span className="ai-issue-chevron" aria-hidden style={{ transform: showThread ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+              </button>
+            </div>
+          )}
+
+          {showThread && poemLines && poemTitle !== undefined && model && (
+            <IssueThread
+              issue={issue}
+              poemTitle={poemTitle}
+              poemLines={poemLines}
+              model={model}
+            />
           )}
         </div>
       )}
@@ -395,7 +581,7 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
-  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine,
+  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine, poemLines, poemTitle, model,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -404,6 +590,9 @@ function AnalysisResults({
   onClearHighlight?: () => void;
   scoreHistory?: number[];
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
+  poemLines?: string[];
+  poemTitle?: string;
+  model?: string;
 }) {
   const isCompare = "comparison" in result;
   const deltas = previous
@@ -697,6 +886,9 @@ function AnalysisResults({
                   onHighlight={onHighlight}
                   onClearHighlight={onClearHighlight}
                   onApplyLine={onApplyLine}
+                  poemLines={poemLines}
+                  poemTitle={poemTitle}
+                  model={model}
                 />
               ))}
             </div>
@@ -795,6 +987,8 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
+  const [writingFocus, setWritingFocus] = useState(loadWritingFocus);
+  const [focusOpen, setFocusOpen] = useState(() => loadWritingFocus().length > 0);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -860,7 +1054,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
           {
             title, lines, previousLines: savedLines,
             previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions },
-            localAnalysis, goals: goalsPlain,
+            localAnalysis, goals: goalsPlain, writingFocus: writingFocus.trim() || undefined,
           },
           model, ctrl.signal,
         );
@@ -871,7 +1065,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness }, model, ctrl.signal);
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus: writingFocus.trim() || undefined }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
@@ -891,7 +1085,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mode, model, savedLines, savedResult, title]);
+  }, [canCompare, hasPoem, harshness, lines, mode, model, savedLines, savedResult, title, writingFocus]);
 
   useEffect(() => {
     onAnalyzeRef?.(() => { if (hasPoem) void handleAnalyze(); });
@@ -969,6 +1163,35 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
                   ? "Compare versions"
                   : "Analyze poem"}
             </button>
+          </div>
+
+          {/* Writing focus */}
+          <div className="ai-focus-section">
+            <button
+              type="button"
+              className="ai-focus-toggle"
+              onClick={() => setFocusOpen((v) => !v)}
+            >
+              <span className="ai-focus-toggle-label">
+                {writingFocus.trim() ? `Focus: ${writingFocus.trim().slice(0, 48)}${writingFocus.trim().length > 48 ? "…" : ""}` : "Set a writing focus"}
+              </span>
+              <span className="ai-issue-chevron" aria-hidden style={{ transform: focusOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+            </button>
+            {focusOpen && (
+              <div className="ai-focus-body">
+                <textarea
+                  className="ai-focus-input"
+                  value={writingFocus}
+                  onChange={(e) => {
+                    setWritingFocus(e.target.value);
+                    saveWritingFocus(e.target.value);
+                  }}
+                  placeholder="e.g. strengthen the imagery in the second stanza, make the ending more surprising…"
+                  rows={2}
+                />
+                <p className="ai-focus-hint muted small">The AI will weight its feedback toward this goal.</p>
+              </div>
+            )}
           </div>
 
           {/* Word count + form hint */}
@@ -1060,6 +1283,9 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
                 onClearHighlight={onClearHighlight}
                 scoreHistory={scoreHistory}
                 onApplyLine={onApplyLine}
+                poemLines={lines}
+                poemTitle={title}
+                model={model}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"

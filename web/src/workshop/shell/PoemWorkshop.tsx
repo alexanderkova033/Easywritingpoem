@@ -301,6 +301,7 @@ export function PoemWorkshop() {
 
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
+  const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>([]);
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -2318,6 +2319,8 @@ export function PoemWorkshop() {
                       jumpBump={m.jumpBump}
                       issueHighlight={issueHighlight}
                       persistentIssueHighlights={persistentIssueHighlights}
+                      issueGutterMarkers={persistentIssueHighlights}
+                      wordHighlights={wordHighlights}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
                       onSelectionText={(text, rect) => {
@@ -2675,6 +2678,11 @@ export function PoemWorkshop() {
         onAnalysisDone={(issues, score) => {
           setPersistentIssueHighlights(
             issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
+          );
+          setWordHighlights(
+            issues
+              .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
+              .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity }))
           );
           m.setLastAiScore(score);
           // On desktop: scroll tools panel to AI results

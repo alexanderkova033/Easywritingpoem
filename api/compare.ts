@@ -76,7 +76,7 @@ function numbered(lines: string[]): string {
   return lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
 }
 
-function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
+function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const hints: string[] = [];
 
   if (local?.form && local.form !== "free") hints.push(`Detected form: ${local.form}`);
@@ -117,6 +117,10 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
     if (goalParts.length > 0) hints.push(`Author's constraints: ${goalParts.join(", ")}`);
   }
 
+  if (writingFocus && writingFocus.trim()) {
+    hints.push(`Author's writing focus for this revision: ${writingFocus.trim()}`);
+  }
+
   return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
 }
 
@@ -142,6 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     model?: unknown;
     localAnalysis?: unknown;
     goals?: unknown;
+    writingFocus?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -158,10 +163,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
+  const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const prevScoreText = prevScores ? `\nPrevious scores: ${JSON.stringify(prevScores)}\n` : "";
-  const contextBlock = buildContextHints(lines, local, goals);
+  const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
   const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
 
