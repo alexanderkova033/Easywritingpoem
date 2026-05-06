@@ -609,17 +609,6 @@
   }
 }
 
-@media (min-width: 1200px) {
-  .tools-panel {
-    max-height: min(92vh, 66rem);
-  }
-}
-
-@media (min-width: 1600px) {
-  .tools-panel {
-    max-height: min(94vh, 76rem);
-  }
-}
 
 .tools-panel::-webkit-scrollbar {
   width: 10px;

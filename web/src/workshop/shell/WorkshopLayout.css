@@ -106,7 +106,7 @@
   .workshop-grid {
     grid-template-columns:
       var(--rail-col, 80px)
-      minmax(240px, min(1.35fr, 860px))
+      minmax(240px, 1.35fr)
       var(--tools-col, clamp(380px, 22vw, 480px));
   }
 }
@@ -115,7 +115,7 @@
   .workshop-grid {
     grid-template-columns:
       var(--rail-col, 88px)
-      minmax(240px, min(1.35fr, 960px))
+      minmax(240px, 1.35fr)
       var(--tools-col, clamp(440px, 22vw, 560px));
   }
 }
