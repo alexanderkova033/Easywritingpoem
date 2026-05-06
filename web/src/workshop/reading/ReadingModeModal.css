@@ -17,28 +17,81 @@
 /* ── Paper modal ─────────────────────────────────────────────── */
 .reading-mode-modal {
   color-scheme: light;
-  --rp-bg:      #f9f5ee;
-  --rp-ink:     #1a120a;
-  --rp-muted:   rgba(26, 18, 10, 0.48);
-  --rp-rule:    rgba(90, 60, 20, 0.18);
-  --rp-accent:  rgba(100, 65, 20, 0.55);
+  --rp-bg:      #f4ede0;
+  --rp-bg2:     #ede3d0;
+  --rp-ink:     #1c1108;
+  --rp-muted:   rgba(28, 17, 8, 0.46);
+  --rp-rule:    rgba(90, 55, 15, 0.2);
+  --rp-accent:  rgba(110, 60, 15, 0.6);
+  --rp-stain:   rgba(140, 90, 30, 0.07);
 
   max-width: 40rem;
   width: 100%;
   margin: 0 auto;
   background:
-    /* Very subtle paper grain */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E"),
-    var(--rp-bg);
-  border-radius: 3px;
+    /* Paper grain — slightly denser than before */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.09'/%3E%3C/svg%3E"),
+    /* Subtle cross-page tonal shift — lighter centre, darker edges */
+    radial-gradient(ellipse 80% 90% at 50% 42%, var(--rp-bg) 35%, var(--rp-bg2) 100%);
+  /* Uneven per-corner border-radius for a hand-cut paper feel */
+  border-radius: 2px 5px 3px 4px / 4px 2px 5px 3px;
   box-shadow:
-    0 2px 0 rgba(255, 235, 180, 0.25) inset,
-    0 -1px 0 rgba(0, 0, 0, 0.12) inset,
-    0 30px 80px rgba(0, 0, 0, 0.42),
-    0 8px 24px rgba(0, 0, 0, 0.28),
-    0 2px 8px rgba(0, 0, 0, 0.18);
+    /* Warm highlight along top — simulates light catching the paper edge */
+    0 2px 0 rgba(255, 240, 200, 0.35) inset,
+    /* Bottom-edge darkening */
+    0 -2px 0 rgba(0, 0, 0, 0.1) inset,
+    /* Left-edge aging shadow */
+    2px 0 8px rgba(0, 0, 0, 0.06) inset,
+    /* Main drop shadows — deep and layered for thick-paper feel */
+    0 40px 100px rgba(0, 0, 0, 0.48),
+    0 12px 32px rgba(0, 0, 0, 0.32),
+    0 3px 10px rgba(0, 0, 0, 0.22),
+    /* Very subtle warm ambient */
+    4px 6px 0 rgba(100, 60, 10, 0.04);
   padding: 0;
   position: relative;
+  /* Roughen all edges with SVG displacement filter */
+  filter: url(#rp-rough);
+}
+
+/* Fold corner — bottom-right dog-ear */
+.reading-mode-modal::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  background: linear-gradient(
+    225deg,
+    var(--rp-bg2) 48%,
+    rgba(0, 0, 0, 0.12) 50%,
+    transparent 52%
+  );
+  pointer-events: none;
+}
+
+/* Edge vignette — darkens borders like old paper */
+.reading-mode-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 85% 90% at 50% 40%,
+    transparent 55%,
+    rgba(60, 30, 5, 0.09) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content sits above the pseudo-element vignette */
+.reading-mode-controls,
+.reading-mode-poem,
+.reading-mode-close {
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Controls bar ────────────────────────────────────────────── */

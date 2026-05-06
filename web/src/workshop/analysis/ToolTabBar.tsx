@@ -16,19 +16,6 @@ function IconTabIssues() {
   );
 }
 
-function IconTabTotals() {
-  return (
-    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinecap="round"
-        d="M5 5.5h5.5M5 12h14M5 18.5h9M16.5 8v6.5m-3.25-3.25h6.5"
-      />
-    </svg>
-  );
-}
 
 function IconTabGoals() {
   return (
@@ -157,7 +144,7 @@ function IconTabSuggest() {
   );
 }
 
-/** Order tuned for flow: triage → counts → spelling → line work → polish → versions → external help */
+/** Order tuned for flow: triage → spelling → line work → polish → versions → external help */
 export const TOOL_TABS: {
   id: ToolTab;
   label: string;
@@ -165,7 +152,6 @@ export const TOOL_TABS: {
   Icon: () => JSX.Element;
 }[] = [
   { id: "issues",    label: "Queue",     desc: "Spelling flags, checklist gaps & goal warnings in one list",   Icon: IconTabIssues },
-  { id: "totals",    label: "Stats",     desc: "Word, line, syllable & stanza counts",                         Icon: IconTabTotals },
   { id: "spell",     label: "Spell",     desc: "Find and fix misspelled words",                                Icon: IconTabSpell },
   { id: "lines",     label: "Lines",     desc: "Per-line syllable, word & character counts",                   Icon: IconTabLines },
   { id: "meter",     label: "Meter",     desc: "Stress patterns and iambic-fit per line",                      Icon: IconTabMeter },

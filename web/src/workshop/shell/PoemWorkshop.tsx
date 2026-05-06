@@ -150,9 +150,10 @@ export function PoemWorkshop() {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
-  // Aliases for code that previously used these
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const statsPopoverRef = useRef<HTMLDivElement | null>(null);
+  // Alias for code that previously used this name
   const setIsAppearanceOpen = (v: boolean) => setIsStyleOpen(v);
-  const isAppearanceOpen = isStyleOpen;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
@@ -590,6 +591,17 @@ export function PoemWorkshop() {
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [topbarOverflowOpen]);
+
+  useEffect(() => {
+    if (!isStatsOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (statsPopoverRef.current && !statsPopoverRef.current.contains(e.target as Node)) {
+        setIsStatsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [isStatsOpen]);
 
   const focusPoemTitle = () => {
     document.getElementById("poem-title")?.focus();
@@ -1057,7 +1069,7 @@ export function PoemWorkshop() {
             </div>
           </div>
 
-          <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save">
+          <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save" data-tour-id="topbar-actions">
             <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
               <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
               <span className="topbar-saved-label">
@@ -1067,21 +1079,60 @@ export function PoemWorkshop() {
 
             {!isFocusMode ? (
               <>
-                {/* Fonts */}
-                <button
-                  type="button"
-                  className={`topbar-ghost-btn ${isAppearanceOpen ? "is-selected" : ""}`}
-                  onClick={() => setIsAppearanceOpen(true)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isAppearanceOpen}
-                  aria-label="Fonts and typography"
-                  {...hint("Fonts: poem and interface typefaces")}
-                >
-                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
-                    <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M4 19l5-13 5 13M6 14h6" />
-                    <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
-                  </svg>
-                </button>
+                {/* Stats popover */}
+                <div className="topbar-stats-wrap" ref={statsPopoverRef}>
+                  <button
+                    type="button"
+                    className={`topbar-ghost-btn topbar-stats-btn${isStatsOpen ? " is-selected" : ""}`}
+                    onClick={() => setIsStatsOpen((v) => !v)}
+                    aria-haspopup="true"
+                    aria-expanded={isStatsOpen}
+                    aria-label="Poem statistics"
+                    {...hint("Stats: full word, line, syllable & stanza counts")}
+                  >
+                    <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                      <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
+                    </svg>
+                  </button>
+                  {isStatsOpen && (
+                    <div className="topbar-stats-popover" role="status" aria-label="Poem statistics">
+                      <div className="tsp-grid">
+                        <div className="tsp-row">
+                          <span className="tsp-label">Words</span>
+                          <span className="tsp-val">{m.docStats.totalWords}</span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Lines</span>
+                          <span className="tsp-val">{m.docStats.nonEmptyLines}</span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Characters</span>
+                          <span className="tsp-val">{m.docStats.totalChars}</span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Syllables (est.)</span>
+                          <span className="tsp-val">{m.docStats.totalSyllables}</span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Stanzas</span>
+                          <span className="tsp-val">{m.docStats.stanzaCount}</span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Read-aloud</span>
+                          <span className="tsp-val">
+                            {m.docStats.totalWords === 0 ? "—" : `${m.docStats.estimatedReadingMinutes} min`}
+                          </span>
+                        </div>
+                        <div className="tsp-row">
+                          <span className="tsp-label">Avg words / line</span>
+                          <span className="tsp-val">
+                            {m.docStats.nonEmptyLines > 0 ? m.docStats.avgWordsPerNonEmptyLine : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 {/* Background */}
                 <button
                   type="button"
@@ -2526,7 +2577,7 @@ export function PoemWorkshop() {
               onKeyDown={onToolTabKeyDown}
             >
               {(() => {
-                const CORE_OVERVIEW: string[] = ["issues", "totals", "lines"];
+                const CORE_OVERVIEW: string[] = ["issues", "lines"];
                 const visibleTabs = TOOL_TABS.filter((t) => bucketTabs.includes(t.id));
                 const isOverview = toolTabBucket(m.toolTab) === "overview";
                 const collapsed = isOverview && !allTabsExpanded;

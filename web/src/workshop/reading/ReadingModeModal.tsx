@@ -70,6 +70,15 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
         if (e.target === e.currentTarget) onClose();
       }}
     >
+      {/* SVG filter that gives the paper edges a hand-torn roughness */}
+      <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+        <defs>
+          <filter id="rp-rough" x="-2%" y="-1%" width="104%" height="102%" colorInterpolationFilters="linearRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.032 0.065" numOctaves="3" seed="8" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
       <div className="reading-mode-modal" role="dialog" aria-modal="true" aria-label="Reading view">
         <button
           type="button"

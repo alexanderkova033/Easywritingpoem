@@ -30,13 +30,11 @@ import {
   RevisionCompareSection,
   type CompareSnapshotOption,
 } from "./RevisionCompareSection";
-import { computeVocabStats, ttrLabel } from "@/workshop/analysis/vocab-richness";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 
 const LINES_TABLE_MAX = 400;
 const METER_TABLE_MAX = 400;
-const STANZA_TABLE_MAX = 32;
 
 function meterStressSourceMark(s: LineStressSource): string {
   if (s === "lexicon") return "✓";
@@ -289,8 +287,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     rhymeBreadth,
     onRhymeBreadthChange,
   } = props;
-
-  const vocabStats = useMemo(() => computeVocabStats(poemLines), [poemLines]);
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
   const [rhymeVisibleCap, setRhymeVisibleCap] = useState(10);
@@ -547,189 +543,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ) : null}
             </>
           )}
-        </div>
-      ) : null}
-
-      {toolTab === "totals" ? (
-        <div
-          className="tool-block tool-block-live"
-          id="tool-panel-totals"
-          role="tabpanel"
-          aria-labelledby="tool-tab-totals"
-        >
-          <LiveSectionTitle>Totals</LiveSectionTitle>
-          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
-          {heavyToolsStale ? (
-            <p
-              className="tools-stale-hint muted small"
-              role="status"
-              aria-live="polite"
-            >
-              Detailed counts (syllables, read-aloud, stanza table) catch up after
-              you pause typing—word and line pills above stay live.
-            </p>
-          ) : null}
-          <ul
-            className="stat-chips stat-chips-draft"
-            role="status"
-            aria-live="polite"
-            aria-relevant="text"
-            title="These numbers track your poem as you type."
-          >
-            <li title="Every line break in the editor, including blanks">
-              <span className="chip-label">All lines</span>
-              <span className="chip-val">{docStats.totalLines}</span>
-            </li>
-            <li title="Lines that contain at least one non-space character">
-              <span className="chip-label">With text</span>
-              <span className="chip-val">{docStats.nonEmptyLines}</span>
-            </li>
-            <li>
-              <span className="chip-label">Words</span>
-              <span className="chip-val">{docStats.totalWords}</span>
-            </li>
-            <li>
-              <span className="chip-label">Characters</span>
-              <span className="chip-val">{docStats.totalChars}</span>
-            </li>
-            <li>
-              <span className="chip-label">Syllables (est.)</span>
-              <span className="chip-val">{docStats.totalSyllables}</span>
-            </li>
-            <li>
-              <span className="chip-label">Stanzas</span>
-              <span className="chip-val">{docStats.stanzaCount}</span>
-            </li>
-            <li>
-              <span className="chip-label">Read-aloud (est.)</span>
-              <span className="chip-val">
-                {docStats.totalWords === 0
-                  ? "—"
-                  : `${docStats.estimatedReadingMinutes} min`}
-              </span>
-            </li>
-            <li>
-              <span className="chip-label">Avg words / line</span>
-              <span className="chip-val">
-                {docStats.nonEmptyLines > 0
-                  ? docStats.avgWordsPerNonEmptyLine
-                  : "—"}
-              </span>
-            </li>
-            {docStats.longestLineByWords ? (
-              <li className="stat-chip-jump-wrap">
-                <span className="chip-label">Longest (words)</span>
-                <button
-                  type="button"
-                  className="chip-jump-btn"
-                  onClick={() =>
-                    goToLine(docStats.longestLineByWords!.lineNumber)
-                  }
-                >
-                  Line {docStats.longestLineByWords.lineNumber} (
-                  {docStats.longestLineByWords.words})
-                </button>
-              </li>
-            ) : null}
-            {docStats.longestLineByChars &&
-            docStats.longestLineByChars.lineNumber !==
-              docStats.longestLineByWords?.lineNumber ? (
-              <li className="stat-chip-jump-wrap">
-                <span className="chip-label">Longest (chars)</span>
-                <button
-                  type="button"
-                  className="chip-jump-btn"
-                  onClick={() =>
-                    goToLine(docStats.longestLineByChars!.lineNumber)
-                  }
-                >
-                  Line {docStats.longestLineByChars.lineNumber} (
-                  {docStats.longestLineByChars.chars})
-                </button>
-              </li>
-            ) : null}
-          </ul>
-          {vocabStats && (
-            <div className="vocab-richness-block">
-              <h4 className="tool-subheading">Vocabulary richness</h4>
-              <ul className="stat-chips stat-chips-draft">
-                <li title="Unique words divided by total words — higher means more variety">
-                  <span className="chip-label">Variety (TTR)</span>
-                  <span className="chip-val">{ttrLabel(vocabStats.ttr)}</span>
-                </li>
-                <li title="Unique distinct words used">
-                  <span className="chip-label">Unique words</span>
-                  <span className="chip-val">{vocabStats.uniqueWords}</span>
-                </li>
-                <li title="Fraction of non-stopwords — measures content density">
-                  <span className="chip-label">Lexical density</span>
-                  <span className="chip-val">{Math.round(vocabStats.lexicalDensity * 100)}%</span>
-                </li>
-                <li title="Average word length in characters">
-                  <span className="chip-label">Avg word length</span>
-                  <span className="chip-val">{vocabStats.avgWordLength}</span>
-                </li>
-              </ul>
-            </div>
-          )}
-          {docStats.stanzaStats.length > 0 ? (
-            <>
-              <h4 className="tool-subheading">Stanza breakdown</h4>
-              <div className="table-wrap table-wrap-draft">
-                <table className="line-table line-table-draft stanza-table">
-                  <caption className="sr-only">
-                    Per stanza: line range, lines with text, words, estimated
-                    syllables, average syllables per non-empty line
-                  </caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">#</th>
-                      <th scope="col">Lines</th>
-                      <th scope="col">Non-empty</th>
-                      <th scope="col">Words</th>
-                      <th scope="col">Syll. (est.)</th>
-                      <th scope="col">Avg syll./line</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {docStats.stanzaStats
-                      .slice(0, STANZA_TABLE_MAX)
-                      .map((st) => (
-                        <tr key={st.stanzaIndex}>
-                          <td className="line-table-metric">{st.stanzaIndex}</td>
-                          <td className="line-table-metric">
-                            <button
-                              type="button"
-                              className="linkish stanza-line-range-btn"
-                              onClick={() => goToLine(st.startLine)}
-                              title={`Jump to start of stanza ${st.stanzaIndex}`}
-                            >
-                              {st.startLine}–{st.endLine}
-                            </button>
-                          </td>
-                          <td className="line-table-metric">
-                            {st.nonEmptyLines}
-                          </td>
-                          <td className="line-table-metric">{st.words}</td>
-                          <td className="line-table-metric">{st.syllables}</td>
-                          <td className="line-table-metric">
-                            {st.nonEmptyLines > 0
-                              ? st.avgSyllablesPerNonEmptyLine
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-              {docStats.stanzaStats.length > STANZA_TABLE_MAX ? (
-                <p className="muted small">
-                  Showing first {STANZA_TABLE_MAX} of{" "}
-                  {docStats.stanzaStats.length} stanzas.
-                </p>
-              ) : null}
-            </>
-          ) : null}
         </div>
       ) : null}
 

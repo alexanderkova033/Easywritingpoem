@@ -82,9 +82,9 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "totals" ? "is-current" : ""}`}
-        onClick={() => onOpenTab("totals")}
-        {...hint("Open Totals — word, line, and character counts")}
+        className={`tools-overview-pill ${activeTab === "lines" ? "is-current" : ""}`}
+        onClick={() => onOpenTab("lines")}
+        {...hint("Open Lines — per-line syllable and word counts")}
       >
         <span className="tools-overview-pill-k">{docStats.totalWords}</span>
         <span className="tools-overview-pill-l">words</span>

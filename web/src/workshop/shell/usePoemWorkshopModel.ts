@@ -158,14 +158,14 @@ function readSessionToolTab(): ToolTab {
   const allowed = new Set(TOOL_TABS.map((x) => x.id));
   try {
     const raw = sessionStorage.getItem(LAST_TOOL_TAB_KEY);
-    if (shouldForceSummaryTools()) return "totals";
+    if (shouldForceSummaryTools()) return "issues";
     if (raw && allowed.has(raw as ToolTab)) return raw as ToolTab;
   } catch {
     /* sessionStorage unavailable */
   }
   // First-time visitors land on Suggest so they immediately have something to do
   if (!readFirstVisitHintDismissed()) return "suggest";
-  return "totals";
+  return "issues";
 }
 
 const DRAFT_STORAGE_MSG =

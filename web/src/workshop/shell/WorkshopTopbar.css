@@ -981,6 +981,58 @@
   display: none;
 }
 
+/* ── Stats popover ──────────────────────────────────────────────────────── */
+
+.topbar-stats-wrap {
+  position: relative;
+}
+
+.topbar-stats-popover {
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 200;
+  min-width: 180px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px color-mix(in srgb, #000 20%, transparent);
+  padding: 0.55rem 0.75rem 0.6rem;
+  animation: tsp-appear 0.14s ease both;
+}
+
+@keyframes tsp-appear {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.tsp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.tsp-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.tsp-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tsp-val {
+  font-size: 0.82rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  white-space: nowrap;
+}
+
 /* ── Overflow menu ──────────────────────────────────────────────────────── */
 
 .topbar-overflow-wrap {
