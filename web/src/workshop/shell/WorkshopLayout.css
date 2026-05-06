@@ -101,6 +101,25 @@
   }
 }
 
+/* ── Wide desktop (≥1600px): give tools more room so editor isn't the only thing scaling ── */
+@media (min-width: 1600px) {
+  .workshop-grid {
+    grid-template-columns:
+      var(--rail-col, 80px)
+      minmax(240px, 1.35fr)
+      var(--tools-col, clamp(380px, 22vw, 480px));
+  }
+}
+
+@media (min-width: 1900px) {
+  .workshop-grid {
+    grid-template-columns:
+      var(--rail-col, 88px)
+      minmax(240px, 1.35fr)
+      var(--tools-col, clamp(440px, 22vw, 560px));
+  }
+}
+
 /* ── Rhyme scheme panel — standalone column between editor and tools ── */
 .rhyme-panel {
   display: none;

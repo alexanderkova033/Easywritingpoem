@@ -437,7 +437,7 @@ html[data-writing-focus-v2] body::after {
 }
 
 #root {
-  max-width: 1480px;
+  max-width: 2200px;
   margin: 0 auto;
   padding: 1.1rem 1.05rem 2.5rem;
   position: relative;

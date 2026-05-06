@@ -18,6 +18,7 @@ import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
 const LS_KEY_WRITING_FOCUS = "easy-poems:writing-focus";
+const LS_KEY_MAIN_IDEA = "easy-poems:main-idea";
 
 // ---- last analysis per poem ---- //
 const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
@@ -70,6 +71,18 @@ function saveWritingFocus(v: string) {
   try {
     if (v.trim()) localStorage.setItem(LS_KEY_WRITING_FOCUS, v);
     else localStorage.removeItem(LS_KEY_WRITING_FOCUS);
+  } catch { /* ignore */ }
+}
+
+function loadMainIdea(): string {
+  try { return localStorage.getItem(LS_KEY_MAIN_IDEA) ?? ""; }
+  catch { return ""; }
+}
+
+function saveMainIdea(v: string) {
+  try {
+    if (v.trim()) localStorage.setItem(LS_KEY_MAIN_IDEA, v);
+    else localStorage.removeItem(LS_KEY_MAIN_IDEA);
   } catch { /* ignore */ }
 }
 
@@ -989,6 +1002,8 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [writingFocus, setWritingFocus] = useState(loadWritingFocus);
   const [focusOpen, setFocusOpen] = useState(() => loadWritingFocus().length > 0);
+  const [mainIdea, setMainIdea] = useState(loadMainIdea);
+  const [ideaOpen, setIdeaOpen] = useState(() => loadMainIdea().length > 0);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -1066,7 +1081,11 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus: writingFocus.trim() || undefined }, model, ctrl.signal);
+        const combinedFocus = [
+          mainIdea.trim() ? `Main idea: ${mainIdea.trim()}` : "",
+          writingFocus.trim(),
+        ].filter(Boolean).join("\n") || undefined;
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus: combinedFocus }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
@@ -1086,7 +1105,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mode, model, savedLines, savedResult, title, writingFocus]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, writingFocus]);
 
   useEffect(() => {
     onAnalyzeRef?.(() => { if (hasPoem) void handleAnalyze(); });
@@ -1166,6 +1185,35 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
             </button>
           </div>
 
+          {/* Main idea */}
+          <div className="ai-focus-section">
+            <button
+              type="button"
+              className="ai-focus-toggle"
+              onClick={() => setIdeaOpen((v) => !v)}
+            >
+              <span className="ai-focus-toggle-label">
+                {mainIdea.trim() ? `Idea: ${mainIdea.trim().slice(0, 48)}${mainIdea.trim().length > 48 ? "…" : ""}` : "Set the main idea"}
+              </span>
+              <span className="ai-issue-chevron" aria-hidden style={{ transform: ideaOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+            </button>
+            {ideaOpen && (
+              <div className="ai-focus-body">
+                <textarea
+                  className="ai-focus-input"
+                  value={mainIdea}
+                  onChange={(e) => {
+                    setMainIdea(e.target.value);
+                    saveMainIdea(e.target.value);
+                  }}
+                  placeholder="e.g. the feeling of leaving home for the first time…"
+                  rows={2}
+                />
+                <p className="ai-focus-hint muted small">Gives the AI context about what the poem is about.</p>
+              </div>
+            )}
+          </div>
+
           {/* Writing focus */}
           <div className="ai-focus-section">
             <button
@@ -1195,19 +1243,15 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
             )}
           </div>
 
-          {/* Word count + form hint */}
-          {hasPoem && status !== "loading" && (() => {
-            const form = localAnalysis?.form && localAnalysis.form !== "free" ? localAnalysis.form : null;
-            return (
-              <p className="ai-word-hint muted small">
-                {wordCount} word{wordCount !== 1 ? "s" : ""}
-                {form ? <> · <span className="ai-form-badge">{form}</span></> : null}
-                {" · "}{effectiveMode === "compare" && canCompare
-                  ? "will compare to your saved baseline"
-                  : "analysis with local context"}
-              </p>
-            );
-          })()}
+          {/* Word count hint */}
+          {hasPoem && status !== "loading" && (
+            <p className="ai-word-hint muted small">
+              {wordCount} word{wordCount !== 1 ? "s" : ""}
+              {" · "}{effectiveMode === "compare" && canCompare
+                ? "will compare to your saved baseline"
+                : "analysis with local context"}
+            </p>
+          )}
 
           {effectiveMode === "compare" && canCompare && (
             <p className="ai-compare-hint muted small">

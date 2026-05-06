@@ -520,9 +520,8 @@
   .workshop-grid.tools-collapsed .tools-panel {
     display: none;
   }
-  .workshop-grid.rail-collapsed .workshop-rail {
-    display: none;
-  }
+  /* Rail stays in the DOM when collapsed so grid auto-placement is not disturbed.
+     overflow:hidden on .workshop-rail clips all visible content at 0px width. */
 }
 
 /* ── Expand pills — appear at viewport edges when a panel is closed ─────── */
