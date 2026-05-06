@@ -17,7 +17,6 @@ import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
-const LS_KEY_WRITING_FOCUS = "easy-poems:writing-focus";
 
 // ---- last analysis per poem ---- //
 const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
@@ -59,18 +58,6 @@ function appendScoreHistory(score: number): number[] {
 function loadStoredModel(): string {
   try { return localStorage.getItem(LS_KEY_MODEL) ?? DEFAULT_MODEL; }
   catch { return DEFAULT_MODEL; }
-}
-
-function loadWritingFocus(): string {
-  try { return localStorage.getItem(LS_KEY_WRITING_FOCUS) ?? ""; }
-  catch { return ""; }
-}
-
-function saveWritingFocus(v: string) {
-  try {
-    if (v.trim()) localStorage.setItem(LS_KEY_WRITING_FOCUS, v);
-    else localStorage.removeItem(LS_KEY_WRITING_FOCUS);
-  } catch { /* ignore */ }
 }
 
 // ---- utils ---- //
@@ -988,8 +975,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
-  const [writingFocus, setWritingFocus] = useState(loadWritingFocus);
-  const [focusOpen, setFocusOpen] = useState(() => loadWritingFocus().length > 0);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -1055,7 +1040,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           {
             title, lines, previousLines: savedLines,
             previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions },
-            localAnalysis, goals: goalsPlain, writingFocus: writingFocus.trim() || undefined,
+            localAnalysis, goals: goalsPlain, writingFocus: mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined,
             scoreHistory: scoreHistory.slice(-10),
           },
           model, ctrl.signal,
@@ -1067,11 +1052,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
-        const combinedFocus = [
-          mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : "",
-          writingFocus.trim(),
-        ].filter(Boolean).join("\n") || undefined;
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus: combinedFocus }, model, ctrl.signal);
+        const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
@@ -1091,7 +1073,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, writingFocus]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title]);
 
 
   useEffect(() => {
@@ -1170,35 +1152,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                   ? "Compare versions"
                   : "Analyze poem"}
             </button>
-          </div>
-
-          {/* Writing focus */}
-          <div className="ai-focus-section">
-            <button
-              type="button"
-              className="ai-focus-toggle"
-              onClick={() => setFocusOpen((v) => !v)}
-            >
-              <span className="ai-focus-toggle-label">
-                {writingFocus.trim() ? `Focus: ${writingFocus.trim().slice(0, 48)}${writingFocus.trim().length > 48 ? "…" : ""}` : "Set a writing focus"}
-              </span>
-              <span className="ai-issue-chevron" aria-hidden style={{ transform: focusOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
-            </button>
-            {focusOpen && (
-              <div className="ai-focus-body">
-                <textarea
-                  className="ai-focus-input"
-                  value={writingFocus}
-                  onChange={(e) => {
-                    setWritingFocus(e.target.value);
-                    saveWritingFocus(e.target.value);
-                  }}
-                  placeholder="e.g. strengthen the imagery in the second stanza, make the ending more surprising…"
-                  rows={2}
-                />
-                <p className="ai-focus-hint muted small">The AI will weight its feedback toward this goal.</p>
-              </div>
-            )}
           </div>
 
           {/* Word count hint */}

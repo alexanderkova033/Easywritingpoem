@@ -28,7 +28,6 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
-import { summarizeMeterCoverage } from "@/workshop/analysis/meter-hints";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
 import { checkShareHash } from "@/workshop/sharing/sharing";
@@ -48,7 +47,6 @@ import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
-import { ToolsOverviewStrip } from "@/workshop/analysis/ToolsOverviewStrip";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -630,10 +628,6 @@ export function PoemWorkshop() {
     [m.publication.items],
   );
 
-  const meterCoverage = useMemo(
-    () => summarizeMeterCoverage(m.meterHints, m.docStats),
-    [m.meterHints, m.docStats],
-  );
 
   const issuesQueueCount = useMemo(() => {
     const spell = m.wordlist ? m.spellHits.length : 0;
@@ -2355,19 +2349,6 @@ export function PoemWorkshop() {
                   />
                 </div>
                 <div className="row title-row">
-                  <label htmlFor="poem-form">Form (optional)</label>
-                  <input
-                    id="poem-form"
-                    type="text"
-                    value={m.formNote}
-                    onChange={(e) => m.setFormNote(e.target.value)}
-                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
-                    placeholder="e.g. sonnet, free verse"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-                <div className="row title-row">
                   <label htmlFor="poem-main-idea">Main idea (optional)</label>
                   <input
                     id="poem-main-idea"
@@ -2698,23 +2679,6 @@ export function PoemWorkshop() {
               })()}
             </nav>
           </div>
-
-          <ToolsOverviewStrip
-            issuesQueueCount={issuesQueueCount}
-            quickDocStats={m.docStats}
-            spellHitCount={m.spellHits.length}
-            wordlistReady={!!m.wordlist}
-            rhymeClusterCount={m.rhymeClusters.length}
-            goalEvaluation={m.goalEvaluation}
-            repeatCount={m.repeated.length}
-            checklistOpenCount={checklistOpenCount}
-            meterCoverage={meterCoverage}
-            stressLexiconReady={m.stressLexiconReady}
-            heavyToolsStale={m.heavyToolsStale}
-            activeTab={m.toolTab}
-            onOpenTab={m.setToolTab}
-            onOpenExport={() => setIsExportOpen(true)}
-          />
 
           <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
           <WorkshopToolPanels
