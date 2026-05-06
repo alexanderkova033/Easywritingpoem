@@ -59,25 +59,30 @@ export async function callOpenAI(
     messages: OpenAIMessage[];
     max_tokens: number;
     temperature: number;
+    jsonMode?: boolean;
   },
   res: VercelResponse,
 ): Promise<OpenAICallResult | null> {
   let upstream: Response;
 
   try {
+    const body: Record<string, unknown> = {
+      model: opts.model,
+      messages: opts.messages,
+      max_tokens: opts.max_tokens,
+      temperature: opts.temperature,
+    };
+    if (opts.jsonMode !== false) {
+      body.response_format = { type: "json_object" };
+    }
+
     upstream = await fetchWithRetry(OPENAI_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: opts.model,
-        response_format: { type: "json_object" },
-        messages: opts.messages,
-        max_tokens: opts.max_tokens,
-        temperature: opts.temperature,
-      }),
+      body: JSON.stringify(body),
     });
   } catch (err) {
     console.error("OpenAI fetch failed completely:", err);

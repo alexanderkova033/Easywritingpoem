@@ -20,6 +20,7 @@ export interface ToolsOverviewStripProps {
   heavyToolsStale: boolean;
   activeTab: ToolTab;
   onOpenTab: (tab: ToolTab) => void;
+  onOpenExport?: () => void;
 }
 
 export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
@@ -38,6 +39,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
     heavyToolsStale,
     activeTab,
     onOpenTab,
+    onOpenExport,
   } = props;
 
   const goalIssue = goalEvaluation.warnings.length > 0;
@@ -179,12 +181,12 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "checklist" ? "is-current" : ""} ${checklistIssue ? "has-attn" : ""}`}
-        onClick={() => onOpenTab("checklist")}
+        className={`tools-overview-pill ${checklistIssue ? "has-attn" : ""}`}
+        onClick={() => onOpenExport?.()}
         {...hint(
           checklistIssue
-            ? `${checklistOpenCount} checklist item(s) still open — open Ready tab`
-            : "Publication checklist — open Ready tab",
+            ? `${checklistOpenCount} checklist item(s) open — review before export`
+            : "Publication checklist clear — open Export",
         )}
       >
         <span className="tools-overview-pill-k">

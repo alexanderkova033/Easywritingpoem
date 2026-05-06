@@ -26,20 +26,6 @@ function IconTabGoals() {
   );
 }
 
-function IconTabChecklist() {
-  return (
-    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinejoin="round"
-        d="M8 6.5h11M8 12h11M8 17.5h11M5.25 6.5l.9 1 1.35-2M5.25 12l.9 1 1.35-2M5.25 17.5l.9 1 1.35-2"
-      />
-    </svg>
-  );
-}
-
 function IconTabLines() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
@@ -158,7 +144,6 @@ export const TOOL_TABS: {
   { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
   { id: "repeat",    label: "Echoes",    desc: "Words that appear more than once",                             Icon: IconTabRepeat },
   { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
-  { id: "checklist", label: "Ready",     desc: "Publication readiness checklist",                              Icon: IconTabChecklist },
   { id: "snapshots", label: "Versions",  desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
   { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
 ];

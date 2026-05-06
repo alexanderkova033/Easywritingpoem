@@ -28,6 +28,7 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
+import { summarizeMeterCoverage } from "@/workshop/analysis/meter-hints";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
 import { checkShareHash } from "@/workshop/sharing/sharing";
@@ -47,6 +48,7 @@ import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
+import { ToolsOverviewStrip } from "@/workshop/analysis/ToolsOverviewStrip";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -147,6 +149,16 @@ export function PoemWorkshop() {
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
+  const [mainIdea, setMainIdea] = useState(() => {
+    try { return localStorage.getItem("easy-poems:main-idea") ?? ""; } catch { return ""; }
+  });
+  const saveMainIdea = (v: string) => {
+    setMainIdea(v);
+    try {
+      if (v.trim()) localStorage.setItem("easy-poems:main-idea", v);
+      else localStorage.removeItem("easy-poems:main-idea");
+    } catch { /* ignore */ }
+  };
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
@@ -618,6 +630,11 @@ export function PoemWorkshop() {
     [m.publication.items],
   );
 
+  const meterCoverage = useMemo(
+    () => summarizeMeterCoverage(m.meterHints, m.docStats),
+    [m.meterHints, m.docStats],
+  );
+
   const issuesQueueCount = useMemo(() => {
     const spell = m.wordlist ? m.spellHits.length : 0;
     return (
@@ -839,10 +856,10 @@ export function PoemWorkshop() {
       },
       {
         id: "revision-pass",
-        title: "Revision pass (open checklist)",
-        keywords: "revision pass polish review spelling repeats",
+        title: "Revision pass (open export checklist)",
+        keywords: "revision pass polish review spelling repeats checklist",
         hint: "Shortcuts to spelling, rhyme, repeats, lines, meter",
-        run: () => m.setToolTab("checklist"),
+        run: () => setIsExportOpen(true),
       },
       {
         id: "keyboard-shortcuts",
@@ -1847,6 +1864,41 @@ export function PoemWorkshop() {
               Export/copy sends text only where you choose—check the destination’s
               terms.
             </p>
+            <div className="export-checklist-row">
+              <h3 className="export-backup-title">
+                Publication checklist
+                {checklistOpenCount > 0
+                  ? <span className="tool-tab-badge" style={{ marginLeft: 8 }}>{checklistOpenCount}</span>
+                  : <span className="export-checklist-done"> ✓ Ready</span>}
+              </h3>
+              <ul className="checklist checklist-draft">
+                {m.publication.items.map((item) => (
+                  <li
+                    key={item.text}
+                    className={`checklist-item ${item.done ? "done" : "open"}${!item.done ? " checklist-item-needs-attn" : ""}`}
+                  >
+                    <span className="checklist-mark" aria-hidden>{item.done ? "✓" : "○"}</span>
+                    <span className="checklist-text">
+                      {item.text}
+                      {item.detail ? <span className="checklist-detail"> — {item.detail}</span> : null}
+                    </span>
+                    {!item.done && (item.openToolTab || item.focusTitleField) && (
+                      <button
+                        type="button"
+                        className="small-btn checklist-jump-btn"
+                        onClick={() => {
+                          setIsExportOpen(false);
+                          if (item.focusTitleField) focusPoemTitle();
+                          else m.setToolTab(item.openToolTab!);
+                        }}
+                      >
+                        {item.focusTitleField ? "Focus title" : "Go to tool"}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="export-backup-row">
               <h3 className="export-backup-title">Workshop backup</h3>
               <p className="modal-note">
@@ -2315,6 +2367,19 @@ export function PoemWorkshop() {
                     spellCheck={false}
                   />
                 </div>
+                <div className="row title-row">
+                  <label htmlFor="poem-main-idea">Main idea (optional)</label>
+                  <input
+                    id="poem-main-idea"
+                    type="text"
+                    value={mainIdea}
+                    onChange={(e) => saveMainIdea(e.target.value)}
+                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
+                    placeholder="e.g. the feeling of leaving home for the first time"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </div>
               </div>
               <FindReplaceBar
                 editorView={m.editorViewRef.current}
@@ -2605,6 +2670,16 @@ export function PoemWorkshop() {
                             {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
                           </span>
                         )}
+                        {id === "spell" && m.wordlist && m.spellHits.length > 0 && (
+                          <span className="tool-tab-badge" aria-label={`${m.spellHits.length} spelling flags`}>
+                            {m.spellHits.length > 9 ? "9+" : m.spellHits.length}
+                          </span>
+                        )}
+                        {id === "goals" && m.goalEvaluation.warnings.length > 0 && (
+                          <span className="tool-tab-badge" aria-label={`${m.goalEvaluation.warnings.length} goal warnings`}>
+                            {m.goalEvaluation.warnings.length}
+                          </span>
+                        )}
                       </button>
                     ))}
                     {collapsed && (
@@ -2623,6 +2698,23 @@ export function PoemWorkshop() {
               })()}
             </nav>
           </div>
+
+          <ToolsOverviewStrip
+            issuesQueueCount={issuesQueueCount}
+            quickDocStats={m.docStats}
+            spellHitCount={m.spellHits.length}
+            wordlistReady={!!m.wordlist}
+            rhymeClusterCount={m.rhymeClusters.length}
+            goalEvaluation={m.goalEvaluation}
+            repeatCount={m.repeated.length}
+            checklistOpenCount={checklistOpenCount}
+            meterCoverage={meterCoverage}
+            stressLexiconReady={m.stressLexiconReady}
+            heavyToolsStale={m.heavyToolsStale}
+            activeTab={m.toolTab}
+            onOpenTab={m.setToolTab}
+            onOpenExport={() => setIsExportOpen(true)}
+          />
 
           <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
           <WorkshopToolPanels
@@ -2725,6 +2817,7 @@ export function PoemWorkshop() {
         poemId={m.activePoemId}
         title={m.title}
         lines={m.lines}
+        mainIdea={mainIdea}
         localAnalysis={localAnalysis}
         goals={m.goals}
         onJumpToLine={m.goToLine}
@@ -2803,6 +2896,7 @@ export function PoemWorkshop() {
                 poemId={m.activePoemId}
                 title={m.title}
                 lines={m.lines}
+                mainIdea={mainIdea}
                 localAnalysis={localAnalysis}
                 goals={m.goals}
                 onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
