@@ -3,7 +3,6 @@ import type { EditorView } from "@codemirror/view";
 import type { MutableRefObject } from "react";
 import { toggleBold, toggleUnderline } from "@/workshop/editor/format-marks";
 import { POEM_SIZE_OPTIONS, type PoemSizeId } from "@/workshop/appearance/appearance";
-import { ReadAloudButton } from "@/workshop/voice/ReadAloudButton";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
 
 function tidyDoubleSpaces(view: EditorView) {
@@ -69,7 +68,6 @@ export function FormatToolbar({
   editorViewRef,
   poemSize,
   onSizeChange,
-  getBody,
   onReadingMode,
   showLineSyllables,
   onShowLineSyllablesChange,
@@ -81,7 +79,6 @@ export function FormatToolbar({
   editorViewRef: MutableRefObject<EditorView | null>;
   poemSize: PoemSizeId;
   onSizeChange: (size: PoemSizeId) => void;
-  getBody?: () => string;
   onReadingMode?: () => void;
   showLineSyllables: boolean;
   onShowLineSyllablesChange: (next: boolean) => void;
@@ -222,7 +219,6 @@ export function FormatToolbar({
         ¶≡
       </button>
 
-      {getBody && <ReadAloudButton getText={getBody} />}
       {onReadingMode && (
         <button
           type="button"

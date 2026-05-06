@@ -28,6 +28,10 @@
   .workshop-grid.rail-collapsed {
     grid-template-columns: 0px minmax(240px, 1.35fr) var(--tools-col, 380px);
   }
+  /* Collapsed rail: pull the editor left to fill the 1rem gap left by the 0px column */
+  .workshop-grid.rail-collapsed .editor-panel {
+    margin-left: -1rem;
+  }
   .workshop-grid.tools-collapsed.rail-collapsed {
     grid-template-columns: 0px minmax(240px, 1fr) 0px;
   }

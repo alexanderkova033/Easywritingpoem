@@ -24,7 +24,7 @@ const STEPS: TourStep[] = [
   {
     id: "format-toolbar",
     title: "Formatting & reading",
-    body: "Bold, italic, or strikethrough any word. The read-aloud button plays your poem in a natural voice. The reading-mode button opens a distraction-free parchment view. All marks carry through to exported .docx files.",
+    body: "Bold, italic, or strikethrough any word. The reading-mode button opens a distraction-free parchment view. All marks carry through to exported .docx files.",
     placement: "bottom",
     pad: 8,
   },

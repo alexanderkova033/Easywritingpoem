@@ -298,33 +298,47 @@ export function WordLookupPopup({
     close();
   }, [close, onDisable]);
 
+  const isTouchDevice = typeof window !== "undefined" &&
+    window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
   useEffect(() => {
     if (!enabled) return;
+    const tryLookup = () => {
+      const view = editorViewRef.current;
+      if (!view) return;
+      const got = anchorFromEditorSelection(view);
+      if (!got) return;
+      setAnchor(got.anchor);
+      selRangeRef.current = { from: got.selFrom, to: got.selTo };
+      if (lastLookupRef.current === got.word) return;
+      lastLookupRef.current = got.word;
+      setWord(got.word);
+      abortRef.current?.abort();
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      void runLookup(got.word, ctrl.signal);
+    };
+
     const onSelectionChange = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        const view = editorViewRef.current;
-        if (!view) return;
-        const got = anchorFromEditorSelection(view);
-        if (!got) return;
-        setAnchor(got.anchor);
-        selRangeRef.current = { from: got.selFrom, to: got.selTo };
-        if (lastLookupRef.current === got.word) return;
-        lastLookupRef.current = got.word;
-        setWord(got.word);
-        abortRef.current?.abort();
-        const ctrl = new AbortController();
-        abortRef.current = ctrl;
-        void runLookup(got.word, ctrl.signal);
-      }, 280);
+      // Touch devices: CodeMirror needs more time to sync the native selection
+      debounceRef.current = setTimeout(tryLookup, isTouchDevice ? 450 : 280);
+    };
+
+    // On touch, also trigger on touchend to catch double-tap word selection
+    const onTouchEnd = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(tryLookup, 450);
     };
 
     document.addEventListener("selectionchange", onSelectionChange);
+    if (isTouchDevice) document.addEventListener("touchend", onTouchEnd, { passive: true });
     return () => {
       document.removeEventListener("selectionchange", onSelectionChange);
+      if (isTouchDevice) document.removeEventListener("touchend", onTouchEnd);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [editorViewRef, runLookup, enabled]);
+  }, [editorViewRef, runLookup, enabled, isTouchDevice]);
 
   const defGroups = entry ? extractDefs(entry) : [];
   const syns = altSyns;

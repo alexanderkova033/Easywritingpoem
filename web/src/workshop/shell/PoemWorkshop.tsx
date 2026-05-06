@@ -2347,7 +2347,6 @@ export function PoemWorkshop() {
                     onSizeChange={(size) =>
                       setAppearance((prev) => ({ ...prev, poemSize: size }))
                     }
-                    getBody={() => m.body}
                     onReadingMode={() => setIsReadingMode(true)}
                     showLineSyllables={showLineSyllables}
                     onShowLineSyllablesChange={setShowLineSyllables}
