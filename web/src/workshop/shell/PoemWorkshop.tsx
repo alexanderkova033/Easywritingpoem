@@ -578,6 +578,7 @@ export function PoemWorkshop() {
         return;
       }
       if (e.key === "Escape") setTopbarOverflowOpen(false);
+      if (e.key === "Escape") setIsFocusMode(false);
       if (e.key !== "Escape") return;
       setIsLibraryOpen(false);
       setIsStyleOpen(false);
