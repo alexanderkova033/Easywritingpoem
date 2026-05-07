@@ -316,7 +316,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     spellBump,
     refreshSpell,
     onSpellPersistenceError,
-    updateGoal,
     setGoalValue,
     revisions,
     snapshotLabel,
