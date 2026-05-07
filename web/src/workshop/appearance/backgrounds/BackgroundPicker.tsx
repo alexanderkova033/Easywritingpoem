@@ -39,25 +39,19 @@ const EDITABLE_COLORS: { key: keyof CustomBackgroundTheme; label: string }[] = [
   { key: "border",  label: "Border" },
 ];
 
-function ThemePreviewCard({
-  theme,
-  label,
-}: {
-  theme: CustomBackgroundTheme;
-  label?: string;
-}) {
+function ThemePreviewCard({ theme }: { theme: CustomBackgroundTheme }) {
   return (
-    <div
-      className="theme-preview-card"
-      style={{ background: theme.bg, borderColor: theme.border }}
-    >
-      <div className="theme-preview-lines">
-        <div className="theme-preview-line theme-preview-line--title" style={{ background: theme.text }} />
+    <div className="theme-preview-card" style={{ background: theme.bg, borderColor: theme.border }}>
+      <div className="theme-preview-header" style={{ background: theme.surface, borderBottomColor: theme.border }}>
+        <div className="theme-preview-title" style={{ background: theme.text }} />
+      </div>
+      <div className="theme-preview-body">
         <div className="theme-preview-line" style={{ background: theme.muted }} />
         <div className="theme-preview-line theme-preview-line--short" style={{ background: theme.muted }} />
+        <div className="theme-preview-line" style={{ background: theme.muted }} />
+        <div className="theme-preview-line theme-preview-line--medium" style={{ background: theme.muted }} />
       </div>
-      <div className="theme-preview-accent" style={{ background: theme.accent }} />
-      {label && <div className="theme-preview-name" style={{ color: theme.muted }}>{label}</div>}
+      <div className="theme-preview-pip" style={{ background: theme.accent }} />
     </div>
   );
 }
@@ -73,7 +67,6 @@ function ColorEditor({
 
   return (
     <div className="bg-color-editor">
-      <p className="bg-color-editor-hint">Click a swatch to adjust individual colours:</p>
       <div className="bg-color-swatches">
         {EDITABLE_COLORS.map(({ key, label }) => {
           const value = theme[key] as string;
@@ -119,7 +112,6 @@ export function BackgroundPicker(props: {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [draft, setDraft] = useState<CustomBackgroundTheme | null>(null);
-  const [editingActive, setEditingActive] = useState(false);
 
   const handleGenerate = useCallback(async () => {
     const trimmed = prompt.trim();
@@ -150,7 +142,6 @@ export function BackgroundPicker(props: {
 
   const handleRemoveCustom = useCallback(() => {
     onChange({ ...appearance, background: "default", customBackground: null });
-    setEditingActive(false);
   }, [appearance, onChange]);
 
   const handleActiveColorChange = useCallback((next: CustomBackgroundTheme) => {
@@ -200,6 +191,7 @@ export function BackgroundPicker(props: {
           </div>
         </div>
       )}
+
       <div className="bg-picker-grid">
         {PRESET_OPTIONS.map((o) => {
           const selected = o.id === background;
@@ -225,47 +217,13 @@ export function BackgroundPicker(props: {
 
       {/* ── Custom backdrop creator ── */}
       <div className="bg-creator">
-        <div className="bg-creator-header">
-          <p className="bg-creator-heading">Generate a custom backdrop</p>
-          <p className="bg-creator-subtext">
-            Describe a mood, scene, or paste your poem — the AI will build a matching colour palette.
-          </p>
-        </div>
-
-        {isCustomActive && (
-          <div className="bg-creator-active-card">
-            <ThemePreviewCard theme={appearance.customBackground!} />
-            <div className="bg-creator-active-info">
-              <span className="bg-creator-active-label">{appearance.customBackground!.label}</span>
-              <span className="bg-creator-active-hint">Currently active</span>
-            </div>
-            <div className="bg-creator-active-actions">
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                onClick={() => setEditingActive((v) => !v)}
-              >
-                {editingActive ? "Done editing" : "Edit colours"}
-              </button>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
-                Remove
-              </button>
-            </div>
-          </div>
-        )}
-
-        {isCustomActive && editingActive && appearance.customBackground && (
-          <ColorEditor
-            theme={appearance.customBackground}
-            onChange={handleActiveColorChange}
-          />
-        )}
+        <p className="bg-creator-heading">Generate a custom backdrop</p>
 
         <div className="bg-creator-input-row">
           <input
             type="text"
             className="bg-creator-input"
-            placeholder="e.g. misty autumn morning…"
+            placeholder="Describe a mood or scene…"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => {
@@ -306,33 +264,51 @@ export function BackgroundPicker(props: {
 
         {draft && (
           <div className="bg-creator-draft">
-            <ThemePreviewCard theme={draft} label={draft.label} />
-            <div className="bg-creator-draft-info">
-              <span className="bg-creator-draft-name">{draft.label}</span>
-              <div className="bg-creator-draft-swatches">
-                {([draft.bg, draft.surface, draft.accent, draft.text, draft.muted] as const).map((c, i) => (
-                  <span key={i} className="bg-creator-draft-dot" style={{ background: c }} title={c} />
-                ))}
+            <ThemePreviewCard theme={draft} />
+            <div className="bg-creator-draft-row">
+              <div className="bg-creator-draft-meta">
+                <span className="bg-creator-draft-name">{draft.label}</span>
+                <div className="bg-creator-draft-palette">
+                  {([draft.bg, draft.surface, draft.accent, draft.text, draft.muted] as const).map((c, i) => (
+                    <span key={i} className="bg-creator-palette-dot" style={{ background: c }} title={c} />
+                  ))}
+                </div>
+              </div>
+              <div className="bg-creator-draft-actions">
+                <button type="button" className="btn btn--primary btn--sm" onClick={handleUseDraft}>
+                  Use
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  disabled={generating}
+                  onClick={() => void handleGenerate()}
+                  title="Regenerate"
+                >
+                  ↺
+                </button>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={handleDiscardDraft} title="Discard">
+                  ✕
+                </button>
               </div>
             </div>
-            <div className="bg-creator-draft-actions">
-              <button type="button" className="btn btn--primary btn--sm" onClick={handleUseDraft}>
-                Use this
-              </button>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={handleDiscardDraft}>
-                Discard
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost btn--sm"
-                disabled={generating}
-                onClick={() => void handleGenerate()}
-                title="Generate again with the same prompt"
-              >
-                ↺
+            <ColorEditor theme={draft} onChange={handleDraftColorChange} />
+          </div>
+        )}
+
+        {isCustomActive && !draft && (
+          <div className="bg-creator-active">
+            <ThemePreviewCard theme={appearance.customBackground!} />
+            <div className="bg-creator-active-row">
+              <div className="bg-creator-active-meta">
+                <span className="bg-creator-active-name">{appearance.customBackground!.label}</span>
+                <span className="bg-creator-active-badge">Active</span>
+              </div>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
+                Remove
               </button>
             </div>
-            <ColorEditor theme={draft} onChange={handleDraftColorChange} />
+            <ColorEditor theme={appearance.customBackground!} onChange={handleActiveColorChange} />
           </div>
         )}
       </div>

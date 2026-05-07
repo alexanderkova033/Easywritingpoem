@@ -429,7 +429,7 @@
 .bg-creator {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
   padding: 1rem;
   border-radius: 12px;
   border: 1px solid var(--border);
@@ -437,24 +437,11 @@
   margin-top: 0.55rem;
 }
 
-.bg-creator-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
 .bg-creator-heading {
   font-size: 0.88rem;
   font-weight: 750;
   color: var(--text);
   margin: 0;
-}
-
-.bg-creator-subtext {
-  font-size: 0.78rem;
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.45;
 }
 
 /* Input + button row */
@@ -549,95 +536,173 @@
   border: 1px solid color-mix(in srgb, var(--danger, #d95f5f) 28%, transparent);
 }
 
-/* ---- Mini theme preview card ---- */
+/* ---- Theme preview card (wide) ---- */
 .theme-preview-card {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 8px;
+  width: 100%;
+  height: 5.5rem;
+  border-radius: 10px;
   border: 1.5px solid;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 0.4rem 0.45rem 0.35rem;
-  gap: 0.25rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.20);
 }
 
-.theme-preview-lines {
+.theme-preview-header {
+  padding: 0.55rem 0.75rem 0.45rem;
+  border-bottom: 1px solid;
+  display: flex;
+  align-items: center;
+}
+
+.theme-preview-title {
+  height: 5px;
+  width: 38%;
+  border-radius: 3px;
+  opacity: 0.9;
+}
+
+.theme-preview-body {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.22rem;
+  gap: 0.28rem;
+  justify-content: center;
 }
 
 .theme-preview-line {
   height: 3px;
   border-radius: 2px;
   width: 100%;
-  opacity: 0.8;
-}
-
-.theme-preview-line--title {
-  height: 4px;
-  width: 70%;
-  opacity: 0.95;
+  opacity: 0.55;
 }
 
 .theme-preview-line--short {
-  width: 55%;
+  width: 48%;
 }
 
-.theme-preview-accent {
+.theme-preview-line--medium {
+  width: 72%;
+}
+
+.theme-preview-pip {
   position: absolute;
-  bottom: 5px;
-  right: 6px;
-  width: 6px;
-  height: 6px;
+  bottom: 8px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  opacity: 0.9;
 }
 
-.theme-preview-name {
-  display: none;
+/* ---- Draft result ---- */
+.bg-creator-draft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  animation: draft-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ---- Active custom theme card ---- */
-.bg-creator-active-card {
+@keyframes draft-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bg-creator-draft-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  gap: 0.6rem;
 }
 
-.bg-creator-active-actions {
+.bg-creator-draft-meta {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  min-width: 0;
+}
+
+.bg-creator-draft-name {
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bg-creator-draft-palette {
+  display: flex;
+  gap: 0.28rem;
+}
+
+.bg-creator-palette-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+
+.bg-creator-draft-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* ---- Active custom card ---- */
+.bg-creator-active {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-top: 0.2rem;
+  border-top: 1px solid var(--border);
+}
+
+.bg-creator-active-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.bg-creator-active-meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.bg-creator-active-name {
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bg-creator-active-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 /* ---- Colour editor ---- */
 .bg-color-editor {
-  padding: 0.55rem 0.75rem 0.65rem;
-  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-top: 0.5rem;
-}
-
-.bg-color-editor-hint {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 0 0 0.45rem;
+  padding: 0.5rem 0;
 }
 
 .bg-color-swatches {
   display: flex;
-  gap: 0.65rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
@@ -672,99 +737,6 @@
   width: 0;
   height: 0;
   pointer-events: none;
-}
-
-.bg-creator-active-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.bg-creator-active-label {
-  font-size: 0.86rem;
-  font-weight: 650;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bg-creator-active-hint {
-  font-size: 0.73rem;
-  color: var(--accent);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* ---- Draft preview ---- */
-.bg-creator-draft {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  animation: draft-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.bg-creator-draft > .theme-preview-card,
-.bg-creator-draft > .bg-creator-draft-info,
-.bg-creator-draft > .bg-creator-draft-actions {
-  /* Row for the preview + info + actions */
-}
-
-/* Inner row: card + info + actions side by side */
-.bg-creator-draft {
-  position: relative;
-}
-.bg-creator-draft::before {
-  content: none;
-}
-
-@keyframes draft-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.bg-creator-draft-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.bg-creator-draft-name {
-  font-size: 0.86rem;
-  font-weight: 650;
-  color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bg-creator-draft-swatches {
-  display: flex;
-  gap: 0.3rem;
-}
-
-.bg-creator-draft-dot {
-  width: 0.85rem;
-  height: 0.85rem;
-  border-radius: 50%;
-  border: 1px solid rgba(0,0,0,0.14);
-  flex-shrink: 0;
-}
-
-.bg-creator-draft-actions {
-  display: flex;
-  gap: 0.35rem;
-  flex-shrink: 0;
-  align-items: center;
 }
 
 .bg-picker-glyph {
