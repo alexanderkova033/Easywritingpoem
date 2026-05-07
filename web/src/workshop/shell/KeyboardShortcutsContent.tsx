@@ -33,6 +33,17 @@ export function KeyboardShortcutsContent() {
           <kbd className="kbd-hint">H</kbd> — replace in poem.
         </li>
         <li>
+          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+          <kbd className="kbd-hint">G</kbd> — go to line.
+        </li>
+        <li>
+          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+          <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">S</kbd> — save snapshot.
+        </li>
+        <li>
+          <kbd className="kbd-hint">Alt</kbd> + <kbd className="kbd-hint">Z</kbd> — toggle focus mode.
+        </li>
+        <li>
           When spelling flags exist: <kbd className="kbd-hint">F7</kbd> /{" "}
           <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">F7</kbd> — next / previous flag.
         </li>

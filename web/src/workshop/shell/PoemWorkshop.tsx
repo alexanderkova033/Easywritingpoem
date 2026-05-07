@@ -593,6 +593,29 @@ export function PoemWorkshop() {
   }, []);
 
   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "z" && e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        setIsFocusMode((v) => !v);
+        return;
+      }
+      if (e.key.toLowerCase() === "g" && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        m.setToolTab("lines");
+        queueMicrotask(() => document.getElementById("go-line-input")?.focus());
+        return;
+      }
+      if (e.key.toLowerCase() === "s" && (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        m.setToolTab("snapshots");
+        m.saveSnapshot();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [m.saveSnapshot, m.setToolTab]);
+
+  useEffect(() => {
     // Clamp both stored widths so that rail + editor(min) + tools never exceeds the viewport.
     const vw = window.innerWidth;
     const gap = Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize || "16")) * 2;
