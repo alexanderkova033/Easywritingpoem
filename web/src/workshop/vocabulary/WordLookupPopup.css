@@ -371,8 +371,6 @@
   font-weight: 700;
   font-size: 0.68rem;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 26%, var(--bg));
-  color: var(--accent);
 }
 
 .editor-rhyme-spacer {
