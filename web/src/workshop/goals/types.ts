@@ -2,16 +2,16 @@
 export interface WorkshopGoals {
   targetLines?: number;
   targetStanzas?: number;
-  targetLinesPerStanza?: number;
+  targetWords?: number;
   /** Flag lines whose estimated syllables exceed this. */
   maxSyllablesPerLine?: number;
-  /** Per-line syllable targets, e.g. [5, 7, 5] for haiku. */
-  syllablePattern?: number[];
   /** Keys of goals that are soft/aspirational (no issues-panel warnings). Default: all goals are required. */
   softGoals?: string[];
   /** Key of the active form preset, if any. */
   preset?: string;
   // Legacy fields kept for load compatibility only
+  targetLinesPerStanza?: number;
+  syllablePattern?: number[];
   minLines?: number;
   maxLines?: number;
   minWords?: number;
@@ -31,37 +31,25 @@ export const FORM_PRESETS: FormPreset[] = [
   {
     key: "haiku",
     label: "Haiku",
-    description: "3 lines · 5-7-5 syllables per line",
-    goals: { targetLines: 3, targetStanzas: 1, syllablePattern: [5, 7, 5] },
+    description: "3 lines · 1 stanza",
+    goals: { targetLines: 3, targetStanzas: 1 },
   },
   {
     key: "limerick",
     label: "Limerick",
-    description: "5 lines · 1 stanza · AABBA",
+    description: "5 lines · 1 stanza",
     goals: { targetLines: 5, targetStanzas: 1 },
   },
   {
     key: "sonnet",
     label: "Sonnet",
-    description: "14 lines · 4 stanzas · iambic pentameter",
-    goals: { targetLines: 14, targetStanzas: 4, targetLinesPerStanza: 4, maxSyllablesPerLine: 10 },
+    description: "14 lines · 4 stanzas · max 10 syllables per line",
+    goals: { targetLines: 14, targetStanzas: 4, maxSyllablesPerLine: 10 },
   },
   {
     key: "villanelle",
     label: "Villanelle",
-    description: "19 lines · 6 stanzas · two refrains",
-    goals: { targetLines: 19, targetStanzas: 6, targetLinesPerStanza: 3 },
-  },
-  {
-    key: "tercets",
-    label: "Tercets",
-    description: "3 lines per stanza",
-    goals: { targetLinesPerStanza: 3 },
-  },
-  {
-    key: "quatrains",
-    label: "Quatrains",
-    description: "4 lines per stanza",
-    goals: { targetLinesPerStanza: 4 },
+    description: "19 lines · 6 stanzas",
+    goals: { targetLines: 19, targetStanzas: 6 },
   },
 ];

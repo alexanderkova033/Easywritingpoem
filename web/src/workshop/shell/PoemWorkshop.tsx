@@ -2727,9 +2727,7 @@ export function PoemWorkshop() {
                           </span>
                         )}
                         {id === "goals" && m.goalEvaluation.warnings.length > 0 && (
-                          <span className="tool-tab-badge" aria-label={`${m.goalEvaluation.warnings.length} goal warnings`}>
-                            {m.goalEvaluation.warnings.length}
-                          </span>
+                          <span className="goal-tab-dot" aria-label="goals not met" />
                         )}
                       </button>
                     ))}
@@ -2778,7 +2776,6 @@ export function PoemWorkshop() {
             onSpellPersistenceError={m.onSpellPersistenceError}
             updateGoal={m.updateGoal}
             setGoalValue={m.setGoalValue}
-            setSyllablePattern={m.setSyllablePattern}
             toggleGoalSoft={m.toggleGoalSoft}
             applyGoalPreset={m.applyGoalPreset}
             revisions={m.revisions}

@@ -1,19 +1,12 @@
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { WorkshopGoals } from "./types";
 
-export interface SyllablePatternMismatch {
-  lineNumber: number;
-  actual: number;
-  expected: number;
-}
-
 export interface GoalEvaluation {
   /** Warnings for required goals — shown in the issues panel. */
   warnings: string[];
   /** Hints for soft/aspirational goals — shown only in the goals panel. */
   softHints: string[];
   syllableOverLines: number[];
-  syllablePatternMismatches: SyllablePatternMismatch[];
 }
 
 function isSoft(goals: WorkshopGoals, key: string): boolean {
@@ -27,7 +20,6 @@ export function evaluateGoals(
   const warnings: string[] = [];
   const softHints: string[] = [];
   const syllableOverLines: number[] = [];
-  const syllablePatternMismatches: SyllablePatternMismatch[] = [];
 
   const addMessage = (key: string, msg: string) => {
     if (isSoft(goals, key)) softHints.push(msg);
@@ -36,7 +28,7 @@ export function evaluateGoals(
 
   const lines = stats.nonEmptyLines;
   const stanzas = stats.stanzaCount;
-  const avgLPS = stanzas > 0 ? Math.round(lines / stanzas) : 0;
+  const words = stats.totalWords;
 
   if (goals.targetLines != null) {
     if (lines < goals.targetLines)
@@ -52,9 +44,11 @@ export function evaluateGoals(
       addMessage("targetStanzas", `${stanzas} stanzas — ${stanzas - goals.targetStanzas} over target of ${goals.targetStanzas}.`);
   }
 
-  if (goals.targetLinesPerStanza != null && stanzas > 0) {
-    if (avgLPS !== goals.targetLinesPerStanza)
-      addMessage("targetLinesPerStanza", `Averaging ${avgLPS} lines per stanza — target is ${goals.targetLinesPerStanza}.`);
+  if (goals.targetWords != null) {
+    if (words < goals.targetWords)
+      addMessage("targetWords", `${words} of ${goals.targetWords} words written.`);
+    else if (words > goals.targetWords)
+      addMessage("targetWords", `${words} words — ${words - goals.targetWords} over target of ${goals.targetWords}.`);
   }
 
   if (goals.maxSyllablesPerLine != null) {
@@ -70,29 +64,5 @@ export function evaluateGoals(
     }
   }
 
-  if (goals.syllablePattern && goals.syllablePattern.length > 0) {
-    const pattern = goals.syllablePattern;
-    const nonEmptyLines = stats.lines.filter((l) => l.text.trim().length > 0);
-    for (let i = 0; i < pattern.length; i++) {
-      const expected = pattern[i];
-      const row = nonEmptyLines[i];
-      if (!row) continue;
-      if (row.syllables !== expected) {
-        syllablePatternMismatches.push({
-          lineNumber: row.lineNumber,
-          actual: row.syllables,
-          expected,
-        });
-      }
-    }
-    if (syllablePatternMismatches.length > 0) {
-      const summary = pattern.join("–");
-      addMessage(
-        "syllablePattern",
-        `Syllable pattern ${summary}: ${syllablePatternMismatches.length} line(s) off target.`,
-      );
-    }
-  }
-
-  return { warnings, softHints, syllableOverLines, syllablePatternMismatches };
+  return { warnings, softHints, syllableOverLines };
 }
