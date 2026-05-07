@@ -72,6 +72,12 @@ function EmptyState({
   );
 }
 
+const ARC_R = 36;
+const ARC_CX = 50;
+const ARC_CY = 54;
+const ARC_C = 2 * Math.PI * ARC_R;
+const ARC_SPAN = 0.75 * ARC_C; // 270°
+
 function GoalCard({
   label,
   icon,
@@ -80,7 +86,7 @@ function GoalCard({
   onSet,
   hint,
   extra,
-  showBar = true,
+  variant = "arc",
 }: {
   label: string;
   icon: string;
@@ -89,12 +95,11 @@ function GoalCard({
   onSet: (v: number | undefined) => void;
   hint?: string;
   extra?: ReactNode;
-  showBar?: boolean;
+  variant?: "arc" | "cap";
 }) {
   const [inputVal, setInputVal] = useState(target != null ? String(target) : "");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep input in sync when target changes from outside
   useEffect(() => {
     setInputVal(target != null ? String(target) : "");
   }, [target]);
@@ -105,11 +110,20 @@ function GoalCard({
   const met = hasGoal && hasCurrent && current === target;
   const over = hasGoal && hasCurrent && current > target;
   const under = hasGoal && hasCurrent && current < target;
-  const pct = hasGoal && hasCurrent && target > 0
-    ? Math.min(1, current / target)
-    : null;
+  const pct =
+    hasGoal && hasCurrent && target > 0 ? Math.min(1, current / target) : null;
 
-  const statusClass = met ? "goal-card--met" : over ? "goal-card--over" : under ? "goal-card--under" : "";
+  let statusClass =
+    met ? "goal-card--met" : over ? "goal-card--over" : under ? "goal-card--under" : "";
+
+  if (variant === "cap") {
+    statusClass =
+      hasGoal && hasCurrent
+        ? current === 0
+          ? "goal-card--met"
+          : "goal-card--over"
+        : "";
+  }
 
   function commitInput(raw: string) {
     const n = parseInt(raw, 10);
@@ -122,70 +136,143 @@ function GoalCard({
     onSet(next);
   }
 
-  return (
-    <div className={`goal-card ${statusClass}${hasGoal ? "" : " goal-card--unset"}`} title={hint}>
-      <div className="goal-card-header">
-        <span className="goal-card-icon" aria-hidden>{icon}</span>
-        <span className="goal-card-label">{label}</span>
+  const controls = (
+    <div className="goal-card-controls">
+      <button
+        type="button"
+        className="goal-card-step"
+        onClick={() => step(-1)}
+        aria-label={`Decrease ${label} target`}
+      >
+        −
+      </button>
+      <input
+        ref={inputRef}
+        type="number"
+        className="goal-card-input"
+        min={1}
+        inputMode="numeric"
+        value={inputVal}
+        placeholder="—"
+        onChange={(e) => setInputVal(e.target.value)}
+        onBlur={(e) => commitInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            commitInput(inputVal);
+            inputRef.current?.blur();
+          }
+        }}
+        aria-label={`${label} target`}
+      />
+      <button
+        type="button"
+        className="goal-card-step"
+        onClick={() => step(1)}
+        aria-label={`Increase ${label} target`}
+      >
+        +
+      </button>
+    </div>
+  );
+
+  if (variant === "cap") {
+    return (
+      <div
+        className={`goal-card goal-card--cap ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
+        title={hint}
+      >
         {hasGoal && (
           <button
             type="button"
             className="goal-card-clear"
             onClick={() => onSet(undefined)}
             aria-label={`Clear ${label} goal`}
-          >×</button>
+          >
+            ×
+          </button>
         )}
-      </div>
-
-      <div className="goal-card-body">
-        <span className="goal-card-current">
-          {hasCurrent ? current : "—"}
+        <span className="goal-card-icon" aria-hidden>
+          {icon}
         </span>
-        {hasGoal && (
-          <span className="goal-card-target-label">
-            {met ? "✓" : over ? "▲" : "/"} {target}
-          </span>
-        )}
-      </div>
-
-      {pct !== null && showBar && (
-        <div className="goal-card-bar-wrap" aria-hidden>
-          <div
-            className={`goal-card-bar-fill ${met ? "goal-card--met" : over ? "goal-card--over" : ""}`}
-            style={{ width: `${Math.round(pct * 100)}%` }}
-          />
+        <div className="goal-card-cap-info">
+          <span className="goal-card-label">{label}</span>
+          <span className="goal-card-cap-value">{hasGoal ? target : "—"}</span>
         </div>
-      )}
-
-      <div className="goal-card-controls">
-        <button
-          type="button"
-          className="goal-card-step"
-          onClick={() => step(-1)}
-          aria-label={`Decrease ${label} target`}
-        >−</button>
-        <input
-          ref={inputRef}
-          type="number"
-          className="goal-card-input"
-          min={1}
-          inputMode="numeric"
-          value={inputVal}
-          placeholder="Set target"
-          onChange={(e) => setInputVal(e.target.value)}
-          onBlur={(e) => commitInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { commitInput(inputVal); inputRef.current?.blur(); } }}
-          aria-label={`${label} target`}
-        />
-        <button
-          type="button"
-          className="goal-card-step"
-          onClick={() => step(1)}
-          aria-label={`Increase ${label} target`}
-        >+</button>
+        {extra && <div className="goal-card-extra-wrap">{extra}</div>}
+        {controls}
       </div>
+    );
+  }
 
-      {extra}
+  const fillArc = pct != null ? Math.min(1, Math.max(0, pct)) * ARC_SPAN : 0;
+
+  return (
+    <div
+      className={`goal-card ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
+      title={hint}
+    >
+      {hasGoal && (
+        <button
+          type="button"
+          className="goal-card-clear"
+          onClick={() => onSet(undefined)}
+          aria-label={`Clear ${label} goal`}
+        >
+          ×
+        </button>
+      )}
+      <svg viewBox="0 0 100 90" className="goal-arc-svg" aria-hidden>
+        <circle
+          cx={ARC_CX}
+          cy={ARC_CY}
+          r={ARC_R}
+          fill="none"
+          className="goal-arc-track"
+          strokeDasharray={`${ARC_SPAN} ${ARC_C}`}
+          strokeLinecap="round"
+        />
+        {pct != null && (
+          <circle
+            cx={ARC_CX}
+            cy={ARC_CY}
+            r={ARC_R}
+            fill="none"
+            className={`goal-arc-fill${statusClass ? " " + statusClass : ""}`}
+            strokeDasharray={`${fillArc} ${ARC_C}`}
+            strokeLinecap="round"
+          />
+        )}
+        <text
+          x={ARC_CX}
+          y={ARC_CY - 1}
+          textAnchor="middle"
+          dominantBaseline="central"
+          className={`goal-arc-value${!hasCurrent ? " goal-arc-value--empty" : ""}`}
+        >
+          {hasCurrent ? current : "—"}
+        </text>
+        <text
+          x={ARC_CX}
+          y="78"
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="goal-arc-label-text"
+        >
+          {label}
+        </text>
+        {hasGoal && (
+          <text
+            x={ARC_CX}
+            y="88"
+            textAnchor="middle"
+            dominantBaseline="central"
+            className={`goal-arc-target-text${met ? " goal-arc--met" : over ? " goal-arc--over" : ""}`}
+          >
+            {met ? "✓" : over ? "▲" : "/"} {target}
+          </text>
+        )}
+      </svg>
+      {controls}
     </div>
   );
 }
@@ -648,7 +735,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               current={goals.maxSyllablesPerLine != null ? goalEvaluation.syllableOverLines.length : null}
               target={goals.maxSyllablesPerLine}
               onSet={(v) => setGoalValue("maxSyllablesPerLine", v)}
-              showBar={false}
+              variant="cap"
               hint="Flag lines whose estimated syllable count exceeds this"
               extra={
                 goalEvaluation.syllableOverLines.length > 0 ? (
