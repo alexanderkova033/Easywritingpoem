@@ -565,12 +565,11 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
-      if (!e.ctrlKey || !e.altKey) return;
-      if (e.key !== "," && e.key !== ".") return;
+      if (e.key !== "F7") return;
       if (isTypingInField(e.target)) return;
       if (spellHits.length === 0) return;
       e.preventDefault();
-      const delta = e.key === "." ? 1 : -1;
+      const delta = e.shiftKey ? -1 : 1;
       cycleSpellHit(delta);
     };
     window.addEventListener("keydown", onKey, true);

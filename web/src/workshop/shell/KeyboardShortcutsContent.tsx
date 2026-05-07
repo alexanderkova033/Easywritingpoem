@@ -8,9 +8,13 @@ export function KeyboardShortcutsContent() {
       </p>
       <ul className="shortcuts-modal-list">
         <li>
-          <kbd className="kbd-hint">Ctrl</kbd> + <kbd className="kbd-hint">Alt</kbd> +{" "}
-          <kbd className="kbd-hint">[</kbd> / <kbd className="kbd-hint">]</kbd> — cycle
-          tools in the current group (Overview or Sound).
+          <kbd className="kbd-hint">Alt</kbd> + <kbd className="kbd-hint">1</kbd> /{" "}
+          <kbd className="kbd-hint">2</kbd> / <kbd className="kbd-hint">3</kbd> — jump
+          to Overview / Sound / Suggest panel.
+        </li>
+        <li>
+          <kbd className="kbd-hint">Alt</kbd> + <kbd className="kbd-hint">[</kbd> /{" "}
+          <kbd className="kbd-hint">]</kbd> — cycle tabs within the current panel.
         </li>
         <li>
           <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
@@ -29,9 +33,8 @@ export function KeyboardShortcutsContent() {
           <kbd className="kbd-hint">H</kbd> — replace in poem.
         </li>
         <li>
-          When spelling flags exist: <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-          <kbd className="kbd-hint">Alt</kbd> + <kbd className="kbd-hint">,</kbd> /{" "}
-          <kbd className="kbd-hint">.</kbd> — previous / next flag.
+          When spelling flags exist: <kbd className="kbd-hint">F7</kbd> /{" "}
+          <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">F7</kbd> — next / previous flag.
         </li>
       </ul>
       <p className="shortcuts-modal-note muted small">
