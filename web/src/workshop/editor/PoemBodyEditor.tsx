@@ -450,7 +450,6 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
             if (text.length >= 1 && update.selectionSet) {
               if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
               const view = update.view;
-              const from = sel.from;
               const to = sel.to;
               selectionTimerRef.current = setTimeout(() => {
                 const coords = view.coordsAtPos(to);
