@@ -34,7 +34,7 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
       this.schedule(view);
     }
     update(u: ViewUpdate) {
-      if (u.docChanged || u.viewportChanged) {
+      if (u.docChanged) {
         this.schedule(u.view);
       }
     }
