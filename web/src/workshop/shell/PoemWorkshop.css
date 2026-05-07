@@ -3021,8 +3021,11 @@
 
 /* Arc SVG */
 .goal-arc-svg {
-  width: 100%;
+  width: 85%;
+  max-width: 100px;
   display: block;
+  margin: 0 auto;
+  overflow: visible;
 }
 
 .goal-arc-track,
@@ -3033,13 +3036,13 @@
 }
 
 .goal-arc-track {
-  stroke: color-mix(in srgb, var(--border) 130%, transparent);
-  stroke-width: 7;
+  stroke: color-mix(in srgb, var(--border) 150%, var(--surface));
+  stroke-width: 8;
 }
 
 .goal-arc-fill {
   stroke: var(--accent);
-  stroke-width: 7;
+  stroke-width: 8;
   transition: stroke-dasharray 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -3047,7 +3050,7 @@
 .goal-arc-fill.goal-card--over { stroke: var(--danger); }
 
 .goal-arc-value {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   fill: var(--text);
   font-variant-numeric: tabular-nums;
@@ -3059,22 +3062,24 @@
 }
 
 .goal-arc-label-text {
-  font-size: 9px;
+  font-size: 0.65rem;
   font-weight: 700;
-  fill: var(--muted);
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  margin-top: 0.15rem;
 }
 
 .goal-arc-target-text {
-  font-size: 10px;
+  font-size: 0.72rem;
   font-weight: 600;
-  fill: var(--muted);
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
+  margin-bottom: 0.2rem;
 }
 
-.goal-arc-target-text.goal-arc--met  { fill: var(--success, #4a9e6b); }
-.goal-arc-target-text.goal-arc--over { fill: var(--danger); }
+.goal-arc-target-text.goal-arc--met  { color: var(--success, #4a9e6b); }
+.goal-arc-target-text.goal-arc--over { color: var(--danger); }
 
 /* Cap card: spans full width, horizontal layout */
 .goal-card--cap {

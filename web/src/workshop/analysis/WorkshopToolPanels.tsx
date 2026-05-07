@@ -74,7 +74,7 @@ function EmptyState({
 
 const ARC_R = 36;
 const ARC_CX = 50;
-const ARC_CY = 54;
+const ARC_CY = 46;
 const ARC_C = 2 * Math.PI * ARC_R;
 const ARC_SPAN = 0.75 * ARC_C; // 270°
 
@@ -221,7 +221,7 @@ function GoalCard({
           ×
         </button>
       )}
-      <svg viewBox="0 0 100 90" className="goal-arc-svg" aria-hidden>
+      <svg viewBox="0 0 100 76" className="goal-arc-svg" aria-hidden>
         <circle
           cx={ARC_CX}
           cy={ARC_CY}
@@ -244,34 +244,20 @@ function GoalCard({
         )}
         <text
           x={ARC_CX}
-          y={ARC_CY - 1}
+          y={ARC_CY}
           textAnchor="middle"
           dominantBaseline="central"
           className={`goal-arc-value${!hasCurrent ? " goal-arc-value--empty" : ""}`}
         >
           {hasCurrent ? current : "—"}
         </text>
-        <text
-          x={ARC_CX}
-          y="78"
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="goal-arc-label-text"
-        >
-          {label}
-        </text>
-        {hasGoal && (
-          <text
-            x={ARC_CX}
-            y="88"
-            textAnchor="middle"
-            dominantBaseline="central"
-            className={`goal-arc-target-text${met ? " goal-arc--met" : over ? " goal-arc--over" : ""}`}
-          >
-            {met ? "✓" : over ? "▲" : "/"} {target}
-          </text>
-        )}
       </svg>
+      <span className="goal-arc-label-text">{label}</span>
+      {hasGoal && (
+        <span className={`goal-arc-target-text${met ? " goal-arc--met" : over ? " goal-arc--over" : ""}`}>
+          {met ? "✓" : over ? "▲" : "/"}&thinsp;{target}
+        </span>
+      )}
       {controls}
     </div>
   );
