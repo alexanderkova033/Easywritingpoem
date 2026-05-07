@@ -25,11 +25,18 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
   class {
     private rafId = 0;
     private ro: ResizeObserver;
+    private lastW = 0;
     constructor(view: EditorView) {
-      // ResizeObserver handles container-resize rescaling without triggering
-      // the feedback loop that geometryChanged creates (our own font-size
-      // mutations cause geometryChanged, which would re-enter scale() and wobble).
-      this.ro = new ResizeObserver(() => this.schedule(view));
+      // Only rescale on width changes. Height changes are caused by our own
+      // font-size mutations (shorter lines → shorter editor) and must not
+      // re-trigger scale() or the font will oscillate/wobble.
+      this.ro = new ResizeObserver((entries) => {
+        const w = entries[0]?.contentRect.width ?? 0;
+        if (Math.abs(w - this.lastW) > 0.5) {
+          this.lastW = w;
+          this.schedule(view);
+        }
+      });
       this.ro.observe(view.scrollDOM);
       this.schedule(view);
     }
