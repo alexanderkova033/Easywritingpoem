@@ -399,6 +399,8 @@
 @media (min-width: 900px) {
   .editor-meta-collapsed { display: none; }
   .editor-meta-grid-hidden { display: grid; }
+  .editor-meta-bar { display: none; }
+  .editor-meta-peek-btn { display: none; }
   .mobile-toolbar-toggle { display: none; }
   .mobile-toolbar-wrap { display: block !important; animation: none !important; }
 }
