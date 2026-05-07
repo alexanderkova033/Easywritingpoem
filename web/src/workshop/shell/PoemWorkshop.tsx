@@ -2778,6 +2778,8 @@ export function PoemWorkshop() {
             onSpellPersistenceError={m.onSpellPersistenceError}
             updateGoal={m.updateGoal}
             setGoalValue={m.setGoalValue}
+            setSyllablePattern={m.setSyllablePattern}
+            toggleGoalSoft={m.toggleGoalSoft}
             applyGoalPreset={m.applyGoalPreset}
             revisions={m.revisions}
             snapshotLabel={m.snapshotLabel}

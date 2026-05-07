@@ -4,7 +4,7 @@ import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
-import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
+import type { GoalEvaluation, SyllablePatternMismatch } from "@/workshop/analysis/goal-metrics";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
 import type { RhymeCluster } from "@/workshop/analysis/rhyme-hints";
@@ -85,8 +85,11 @@ function GoalCard({
   current,
   target,
   onSet,
+  onClear,
   hint,
   extra,
+  soft,
+  onToggleSoft,
   variant = "arc",
 }: {
   label: string;
@@ -94,8 +97,11 @@ function GoalCard({
   current: number | null;
   target: number | undefined;
   onSet: (v: number | undefined) => void;
+  onClear?: () => void;
   hint?: string;
   extra?: ReactNode;
+  soft?: boolean;
+  onToggleSoft?: () => void;
   variant?: "arc" | "cap";
 }) {
   const [inputVal, setInputVal] = useState(target != null ? String(target) : "");
@@ -136,6 +142,18 @@ function GoalCard({
     const next = Math.max(1, base + delta);
     onSet(next);
   }
+
+  const softToggle = onToggleSoft && (
+    <button
+      type="button"
+      className={`goal-card-soft-btn${soft ? " goal-card-soft-btn--soft" : ""}`}
+      onClick={onToggleSoft}
+      title={soft ? "Aspirational — click to make required" : "Required — click to make aspirational"}
+      aria-label={soft ? `${label}: aspirational goal` : `${label}: required goal`}
+    >
+      {soft ? "◇" : "◆"}
+    </button>
+  );
 
   const controls = (
     <div className="goal-card-controls">
@@ -179,19 +197,22 @@ function GoalCard({
   if (variant === "cap") {
     return (
       <div
-        className={`goal-card goal-card--cap ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
+        className={`goal-card goal-card--cap${soft ? " goal-card--soft" : ""} ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
         title={hint}
       >
-        {hasGoal && (
-          <button
-            type="button"
-            className="goal-card-clear"
-            onClick={() => onSet(undefined)}
-            aria-label={`Clear ${label} goal`}
-          >
-            ×
-          </button>
-        )}
+        <div className="goal-card-cap-actions">
+          {softToggle}
+          {hasGoal && (
+            <button
+              type="button"
+              className="goal-card-clear"
+              onClick={() => (onClear ? onClear() : onSet(undefined))}
+              aria-label={`Clear ${label} goal`}
+            >
+              ×
+            </button>
+          )}
+        </div>
         <span className="goal-card-icon" aria-hidden>
           {icon}
         </span>
@@ -209,19 +230,22 @@ function GoalCard({
 
   return (
     <div
-      className={`goal-card ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
+      className={`goal-card${soft ? " goal-card--soft" : ""} ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
       title={hint}
     >
-      {hasGoal && (
-        <button
-          type="button"
-          className="goal-card-clear"
-          onClick={() => onSet(undefined)}
-          aria-label={`Clear ${label} goal`}
-        >
-          ×
-        </button>
-      )}
+      <div className="goal-card-top-actions">
+        {softToggle}
+        {hasGoal && (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={() => (onClear ? onClear() : onSet(undefined))}
+            aria-label={`Clear ${label} goal`}
+          >
+            ×
+          </button>
+        )}
+      </div>
       <svg viewBox="0 0 100 76" className="goal-arc-svg" aria-hidden>
         <circle
           cx={ARC_CX}
@@ -260,6 +284,124 @@ function GoalCard({
         </span>
       )}
       {controls}
+    </div>
+  );
+}
+
+function SyllablePatternCard({
+  pattern,
+  mismatches,
+  soft,
+  onSet,
+  onToggleSoft,
+  docStats,
+}: {
+  pattern: number[] | undefined;
+  mismatches: SyllablePatternMismatch[];
+  soft?: boolean;
+  onSet: (p: number[] | undefined) => void;
+  onToggleSoft: () => void;
+  docStats: DocumentStats;
+}) {
+  const [inputVal, setInputVal] = useState(pattern ? pattern.join(" ") : "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setInputVal(pattern ? pattern.join(" ") : "");
+  }, [pattern]);
+
+  function parsePattern(raw: string): number[] | undefined {
+    const nums = raw.trim().split(/[\s,]+/).map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n) && n >= 1);
+    return nums.length > 0 ? nums : undefined;
+  }
+
+  function commit(raw: string) {
+    onSet(parsePattern(raw));
+  }
+
+  const hasPattern = pattern && pattern.length > 0;
+  const nonEmptyLines = docStats.lines.filter((l) => l.text.trim().length > 0);
+  const allMet = hasPattern && mismatches.length === 0 && nonEmptyLines.length >= pattern.length;
+
+  return (
+    <div className={`goal-card goal-card--pattern${soft ? " goal-card--soft" : ""}${allMet ? " goal-card--met" : hasPattern && mismatches.length > 0 ? " goal-card--over" : ""}${hasPattern ? "" : " goal-card--unset"}`}>
+      <div className="goal-card-top-actions">
+        <button
+          type="button"
+          className={`goal-card-soft-btn${soft ? " goal-card-soft-btn--soft" : ""}`}
+          onClick={onToggleSoft}
+          title={soft ? "Aspirational — click to make required" : "Required — click to make aspirational"}
+          aria-label={soft ? "Syllable pattern: aspirational goal" : "Syllable pattern: required goal"}
+        >
+          {soft ? "◇" : "◆"}
+        </button>
+        {hasPattern && (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={() => onSet(undefined)}
+            aria-label="Clear syllable pattern"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      <div className="goal-pattern-header">
+        <span className="goal-card-icon" aria-hidden>♩</span>
+        <div className="goal-pattern-title-col">
+          <span className="goal-card-label">Syllable pattern</span>
+          <input
+            ref={inputRef}
+            type="text"
+            className="goal-pattern-input"
+            value={inputVal}
+            placeholder="e.g. 5 7 5"
+            onChange={(e) => setInputVal(e.target.value)}
+            onBlur={(e) => commit(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { commit(inputVal); inputRef.current?.blur(); }
+            }}
+            aria-label="Syllable pattern (space-separated targets per line)"
+          />
+        </div>
+        {allMet && <span className="goal-pattern-all-met">✓ all lines match</span>}
+      </div>
+
+      {hasPattern && (
+        <ol className="goal-pattern-lines" aria-label="Per-line syllable check">
+          {pattern.map((expected, i) => {
+            const row = nonEmptyLines[i];
+            const actual = row?.syllables ?? null;
+            const lineNum = row?.lineNumber ?? null;
+            const ok = actual !== null && actual === expected;
+            const off = actual !== null && actual !== expected;
+            return (
+              <li
+                key={i}
+                className={`goal-pattern-line${ok ? " goal-pattern-line--ok" : off ? " goal-pattern-line--off" : " goal-pattern-line--pending"}`}
+                title={lineNum != null ? `Line ${lineNum}` : undefined}
+              >
+                <span className="goal-pattern-line-num">{i + 1}</span>
+                <span className="goal-pattern-line-bar">
+                  <span
+                    className="goal-pattern-line-fill"
+                    style={{ width: `${Math.min(100, ((actual ?? 0) / Math.max(expected, 1)) * 100)}%` }}
+                  />
+                </span>
+                <span className="goal-pattern-line-counts">
+                  <span className="goal-pattern-line-actual">{actual ?? "—"}</span>
+                  <span className="goal-pattern-line-sep">/</span>
+                  <span className="goal-pattern-line-expected">{expected}</span>
+                </span>
+                <span className="goal-pattern-line-status" aria-hidden>
+                  {ok ? "✓" : off ? (actual! > expected ? "▲" : "▼") : "·"}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }
@@ -333,6 +475,8 @@ export interface WorkshopToolPanelsProps {
     key: keyof WorkshopGoals,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   setGoalValue: (key: keyof WorkshopGoals, value: number | undefined) => void;
+  setSyllablePattern: (pattern: number[] | undefined) => void;
+  toggleGoalSoft: (key: string) => void;
   applyGoalPreset: (presetKey: string | null) => void;
   revisions: RevisionSnapshot[];
   snapshotLabel: string;
@@ -392,6 +536,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     refreshSpell,
     onSpellPersistenceError,
     setGoalValue,
+    setSyllablePattern,
+    toggleGoalSoft,
     applyGoalPreset,
     revisions,
     snapshotLabel,
@@ -719,6 +865,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               current={docStats.nonEmptyLines}
               target={goals.targetLines}
               onSet={(v) => setGoalValue("targetLines", v)}
+              soft={goals.softGoals?.includes("targetLines")}
+              onToggleSoft={() => toggleGoalSoft("targetLines")}
             />
             <GoalCard
               label="Stanzas"
@@ -727,6 +875,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               target={goals.targetStanzas}
               onSet={(v) => setGoalValue("targetStanzas", v)}
               hint="Stanzas are blocks of lines separated by blank lines"
+              soft={goals.softGoals?.includes("targetStanzas")}
+              onToggleSoft={() => toggleGoalSoft("targetStanzas")}
             />
             <GoalCard
               label="Lines / stanza"
@@ -735,6 +885,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               target={goals.targetLinesPerStanza}
               onSet={(v) => setGoalValue("targetLinesPerStanza", v)}
               hint="Average lines per stanza"
+              soft={goals.softGoals?.includes("targetLinesPerStanza")}
+              onToggleSoft={() => toggleGoalSoft("targetLinesPerStanza")}
             />
             <GoalCard
               label="Syllable cap"
@@ -744,6 +896,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               onSet={(v) => setGoalValue("maxSyllablesPerLine", v)}
               variant="cap"
               hint="Flag lines whose estimated syllable count exceeds this"
+              soft={goals.softGoals?.includes("maxSyllablesPerLine")}
+              onToggleSoft={() => toggleGoalSoft("maxSyllablesPerLine")}
               extra={
                 goalEvaluation.syllableOverLines.length > 0 ? (
                   <p className="goal-card-extra">
@@ -758,9 +912,26 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 ) : null
               }
             />
+            <SyllablePatternCard
+              pattern={goals.syllablePattern}
+              mismatches={goalEvaluation.syllablePatternMismatches}
+              soft={goals.softGoals?.includes("syllablePattern")}
+              onSet={setSyllablePattern}
+              onToggleSoft={() => toggleGoalSoft("syllablePattern")}
+              docStats={docStats}
+            />
           </div>
 
+          {goalEvaluation.softHints.length > 0 && (
+            <ul className="goal-soft-hints">
+              {goalEvaluation.softHints.map((h, i) => (
+                <li key={i} className="goal-soft-hint">◇ {h}</li>
+              ))}
+            </ul>
+          )}
+
           {goalEvaluation.warnings.length === 0 &&
+          goalEvaluation.softHints.length === 0 &&
           Object.values(goals).some((v) => v != null) ? (
             <p className="goal-on-target">✓ All goals met</p>
           ) : null}

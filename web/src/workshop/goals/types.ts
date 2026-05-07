@@ -5,6 +5,10 @@ export interface WorkshopGoals {
   targetLinesPerStanza?: number;
   /** Flag lines whose estimated syllables exceed this. */
   maxSyllablesPerLine?: number;
+  /** Per-line syllable targets, e.g. [5, 7, 5] for haiku. */
+  syllablePattern?: number[];
+  /** Keys of goals that are soft/aspirational (no issues-panel warnings). Default: all goals are required. */
+  softGoals?: string[];
   /** Key of the active form preset, if any. */
   preset?: string;
   // Legacy fields kept for load compatibility only
@@ -20,15 +24,15 @@ export interface FormPreset {
   key: string;
   label: string;
   description: string;
-  goals: Omit<WorkshopGoals, "preset">;
+  goals: Omit<WorkshopGoals, "preset" | "softGoals">;
 }
 
 export const FORM_PRESETS: FormPreset[] = [
   {
     key: "haiku",
     label: "Haiku",
-    description: "3 lines · 5-7-5 syllables",
-    goals: { targetLines: 3, targetStanzas: 1, maxSyllablesPerLine: 7 },
+    description: "3 lines · 5-7-5 syllables per line",
+    goals: { targetLines: 3, targetStanzas: 1, syllablePattern: [5, 7, 5] },
   },
   {
     key: "limerick",

@@ -1,12 +1,12 @@
 import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
-import { StateEffect, StateField, RangeSetBuilder, type Range } from "@codemirror/state";
+import { StateEffect, StateField, EditorState, Transaction, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
 import type { MutableRefObject } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import CodeMirror, { ExternalChange } from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
 import {
   bindSpellContext,
@@ -304,16 +304,15 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     mode: props.spellMode,
   }));
 
-  // Derived state: sync localValue during render when poem changes externally.
-  // Calling setState during render triggers an immediate re-render, so by the
-  // time CodeMirror mounts (key={bodySyncNonce}), it already has the right value
-  // and starts with a clean undo history.
-  const [prevNonce, setPrevNonce] = useState(props.bodySyncNonce);
+  const lastBodySyncNonce = useRef(props.bodySyncNonce);
   const [localValue, setLocalValue] = useState(() => props.value);
-  if (props.bodySyncNonce !== prevNonce) {
-    setPrevNonce(props.bodySyncNonce);
-    setLocalValue(props.value);
-  }
+
+  useLayoutEffect(() => {
+    if (props.bodySyncNonce !== lastBodySyncNonce.current) {
+      lastBodySyncNonce.current = props.bodySyncNonce;
+      setLocalValue(props.value);
+    }
+  }, [props.bodySyncNonce, props.value]);
 
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -453,6 +452,12 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const extensions = useMemo(
     () => [
+      // Prevent poem-load/suggestion-apply transactions from polluting undo history.
+      // react-codemirror marks external value changes with ExternalChange; we intercept
+      // them and annotate addToHistory=false so Ctrl+Z can't undo past the loaded state.
+      EditorState.transactionExtender.of((tr) =>
+        tr.annotation(ExternalChange) ? { annotations: Transaction.addToHistory.of(false) } : null
+      ),
       lineFontScalePlugin,
       EditorView.contentAttributes.of({ spellcheck: "true" }),
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
@@ -483,7 +488,6 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   return (
     <div className="poem-cm-wrap" id={props.id}>
       <CodeMirror
-        key={props.bodySyncNonce}
         aria-describedby={props["aria-describedby"]}
         value={localValue}
         height="auto"

@@ -1082,6 +1082,18 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     [],
   );
 
+  const setSyllablePattern = useCallback((pattern: number[] | undefined) => {
+    setGoals((g) => ({ ...g, syllablePattern: pattern, preset: undefined }));
+  }, []);
+
+  const toggleGoalSoft = useCallback((key: string) => {
+    setGoals((g) => {
+      const soft = new Set(g.softGoals ?? []);
+      if (soft.has(key)) soft.delete(key); else soft.add(key);
+      return { ...g, softGoals: soft.size > 0 ? [...soft] : undefined };
+    });
+  }, []);
+
   const applyGoalPreset = useCallback((presetKey: string | null) => {
     if (presetKey === null) {
       setGoals({});
@@ -1259,6 +1271,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     refreshSpell,
     updateGoal,
     setGoalValue,
+    setSyllablePattern,
+    toggleGoalSoft,
     applyGoalPreset,
     onSpellPersistenceError,
     jumpLine,
