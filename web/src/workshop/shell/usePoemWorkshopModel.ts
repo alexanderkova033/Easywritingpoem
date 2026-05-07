@@ -1075,6 +1075,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
       setGoals((g) => ({ ...g, [key]: v }));
     };
 
+  const setGoalValue = useCallback(
+    (key: keyof WorkshopGoals, value: number | undefined) => {
+      setGoals((g) => ({ ...g, [key]: value }));
+    },
+    [],
+  );
+
   const onSpellPersistenceError = useCallback((message: string) => {
     setPersistenceError(message);
   }, []);
@@ -1242,6 +1249,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     applySpellSuggestion,
     refreshSpell,
     updateGoal,
+    setGoalValue,
     onSpellPersistenceError,
     jumpLine,
     jumpBump,

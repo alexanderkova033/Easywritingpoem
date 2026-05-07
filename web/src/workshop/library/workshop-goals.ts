@@ -6,17 +6,20 @@ import { STORAGE_KEY_GOALS } from "@/shared/storage-keys";
 
 const STORAGE_KEY = STORAGE_KEY_GOALS;
 
-/** Optional numeric targets; unset / empty fields = no constraint. */
+/** Optional numeric targets; unset = no constraint. */
 export interface WorkshopGoals {
+  targetLines?: number;
+  targetStanzas?: number;
+  targetLinesPerStanza?: number;
+  /** Flag lines whose estimated syllables exceed this. */
+  maxSyllablesPerLine?: number;
+  // Legacy fields kept for load compatibility only
   minLines?: number;
   maxLines?: number;
   minWords?: number;
   maxWords?: number;
-  /** Stanzas = blocks separated by blank lines (matches Totals). */
   minStanzas?: number;
   maxStanzas?: number;
-  /** Flag lines whose estimated syllables exceed this. */
-  maxSyllablesPerLine?: number;
 }
 
 function readOptionalPositiveInt(v: unknown): number | undefined {
@@ -34,12 +37,9 @@ export function loadWorkshopGoals(): WorkshopGoals {
     if (!v || typeof v !== "object") return {};
     const o = v as Record<string, unknown>;
     return {
-      minLines: readOptionalPositiveInt(o.minLines),
-      maxLines: readOptionalPositiveInt(o.maxLines),
-      minWords: readOptionalPositiveInt(o.minWords),
-      maxWords: readOptionalPositiveInt(o.maxWords),
-      minStanzas: readOptionalPositiveInt(o.minStanzas),
-      maxStanzas: readOptionalPositiveInt(o.maxStanzas),
+      targetLines: readOptionalPositiveInt(o.targetLines),
+      targetStanzas: readOptionalPositiveInt(o.targetStanzas),
+      targetLinesPerStanza: readOptionalPositiveInt(o.targetLinesPerStanza),
       maxSyllablesPerLine: readOptionalPositiveInt(o.maxSyllablesPerLine),
     };
   } catch {
@@ -49,15 +49,10 @@ export function loadWorkshopGoals(): WorkshopGoals {
 
 export function saveWorkshopGoals(goals: WorkshopGoals): boolean {
   const payload: Record<string, number> = {};
-  if (goals.minLines != null) payload.minLines = goals.minLines;
-  if (goals.maxLines != null) payload.maxLines = goals.maxLines;
-  if (goals.minWords != null) payload.minWords = goals.minWords;
-  if (goals.maxWords != null) payload.maxWords = goals.maxWords;
-  if (goals.minStanzas != null) payload.minStanzas = goals.minStanzas;
-  if (goals.maxStanzas != null) payload.maxStanzas = goals.maxStanzas;
-  if (goals.maxSyllablesPerLine != null) {
-    payload.maxSyllablesPerLine = goals.maxSyllablesPerLine;
-  }
+  if (goals.targetLines != null) payload.targetLines = goals.targetLines;
+  if (goals.targetStanzas != null) payload.targetStanzas = goals.targetStanzas;
+  if (goals.targetLinesPerStanza != null) payload.targetLinesPerStanza = goals.targetLinesPerStanza;
+  if (goals.maxSyllablesPerLine != null) payload.maxSyllablesPerLine = goals.maxSyllablesPerLine;
   if (Object.keys(payload).length === 0) {
     return tryLocalStorageRemoveItem(STORAGE_KEY);
   }

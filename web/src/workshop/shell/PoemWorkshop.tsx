@@ -2729,6 +2729,7 @@ export function PoemWorkshop() {
             refreshSpell={m.refreshSpell}
             onSpellPersistenceError={m.onSpellPersistenceError}
             updateGoal={m.updateGoal}
+            setGoalValue={m.setGoalValue}
             revisions={m.revisions}
             snapshotLabel={m.snapshotLabel}
             onSnapshotLabelChange={m.setSnapshotLabel}

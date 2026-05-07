@@ -2,9 +2,7 @@ import type { DocumentStats } from "./line-stats";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 
 export interface GoalEvaluation {
-  /** Human-readable warnings for the draft vs targets. */
   warnings: string[];
-  /** Line numbers (1-based) over syllable cap, if set. */
   syllableOverLines: number[];
 }
 
@@ -15,40 +13,27 @@ export function evaluateGoals(
   const warnings: string[] = [];
   const syllableOverLines: number[] = [];
 
-  const lines = stats.totalLines;
-  const words = stats.totalWords;
+  const lines = stats.nonEmptyLines;
   const stanzas = stats.stanzaCount;
+  const avgLPS = stanzas > 0 ? Math.round(lines / stanzas) : 0;
 
-  if (goals.minLines != null && lines < goals.minLines) {
-    warnings.push(
-      `Line count ${lines} is below your minimum (${goals.minLines}).`,
-    );
-  }
-  if (goals.maxLines != null && lines > goals.maxLines) {
-    warnings.push(
-      `Line count ${lines} is above your maximum (${goals.maxLines}).`,
-    );
-  }
-  if (goals.minWords != null && words < goals.minWords) {
-    warnings.push(
-      `Word count ${words} is below your minimum (${goals.minWords}).`,
-    );
-  }
-  if (goals.maxWords != null && words > goals.maxWords) {
-    warnings.push(
-      `Word count ${words} is above your maximum (${goals.maxWords}).`,
-    );
+  if (goals.targetLines != null) {
+    if (lines < goals.targetLines)
+      warnings.push(`${lines} of ${goals.targetLines} lines written.`);
+    else if (lines > goals.targetLines)
+      warnings.push(`${lines} lines — ${lines - goals.targetLines} over target of ${goals.targetLines}.`);
   }
 
-  if (goals.minStanzas != null && stanzas < goals.minStanzas) {
-    warnings.push(
-      `Stanza count ${stanzas} is below your minimum (${goals.minStanzas}). Blank lines separate stanzas.`,
-    );
+  if (goals.targetStanzas != null) {
+    if (stanzas < goals.targetStanzas)
+      warnings.push(`${stanzas} of ${goals.targetStanzas} stanzas written.`);
+    else if (stanzas > goals.targetStanzas)
+      warnings.push(`${stanzas} stanzas — ${stanzas - goals.targetStanzas} over target of ${goals.targetStanzas}.`);
   }
-  if (goals.maxStanzas != null && stanzas > goals.maxStanzas) {
-    warnings.push(
-      `Stanza count ${stanzas} is above your maximum (${goals.maxStanzas}).`,
-    );
+
+  if (goals.targetLinesPerStanza != null && stanzas > 0) {
+    if (avgLPS !== goals.targetLinesPerStanza)
+      warnings.push(`Averaging ${avgLPS} lines per stanza — target is ${goals.targetLinesPerStanza}.`);
   }
 
   if (goals.maxSyllablesPerLine != null) {
@@ -64,7 +49,7 @@ export function evaluateGoals(
           ? ` (+${syllableOverLines.length - 6} more)`
           : "";
       warnings.push(
-        `Estimated syllables exceed ${cap} on line(s): ${preview}${more}.`,
+        `Syllables exceed ${cap} on line(s): ${preview}${more}.`,
       );
     }
   }

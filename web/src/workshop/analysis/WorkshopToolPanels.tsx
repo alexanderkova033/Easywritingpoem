@@ -1,4 +1,4 @@
-import type { ChangeEvent, KeyboardEvent } from "react";
+import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
@@ -62,7 +62,7 @@ function EmptyState({
   children,
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="tool-empty" role="status" aria-live="polite">
@@ -72,63 +72,121 @@ function EmptyState({
   );
 }
 
-function GoalField({
+function GoalCard({
   label,
-  value,
+  icon,
   current,
-  onChange,
-  direction,
+  target,
+  onSet,
   hint,
-  placeholder,
-  span,
+  extra,
+  showBar = true,
 }: {
   label: string;
-  goalKey: string;
-  value: number | undefined;
+  icon: string;
   current: number | null;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  direction: "min" | "max";
+  target: number | undefined;
+  onSet: (v: number | undefined) => void;
   hint?: string;
-  placeholder?: string;
-  span?: boolean;
+  extra?: ReactNode;
+  showBar?: boolean;
 }) {
-  const hasGoal = value != null;
-  const hasCurrent = current !== null;
-  const met = hasGoal && hasCurrent && (
-    direction === "min" ? current >= value : current <= value
-  );
-  const over = hasGoal && hasCurrent && !met;
-  const pct = hasGoal && hasCurrent && value > 0
-    ? Math.min(1, current / value)
+  const [inputVal, setInputVal] = useState(target != null ? String(target) : "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Keep input in sync when target changes from outside
+  useEffect(() => {
+    setInputVal(target != null ? String(target) : "");
+  }, [target]);
+
+  const hasGoal = target != null;
+  const hasCurrent = current !== null && current >= 0;
+
+  const met = hasGoal && hasCurrent && current === target;
+  const over = hasGoal && hasCurrent && current > target;
+  const under = hasGoal && hasCurrent && current < target;
+  const pct = hasGoal && hasCurrent && target > 0
+    ? Math.min(1, current / target)
     : null;
 
+  const statusClass = met ? "goal-card--met" : over ? "goal-card--over" : under ? "goal-card--under" : "";
+
+  function commitInput(raw: string) {
+    const n = parseInt(raw, 10);
+    onSet(Number.isFinite(n) && n >= 1 ? n : undefined);
+  }
+
+  function step(delta: number) {
+    const base = target ?? (hasCurrent && current! > 0 ? current! : 1);
+    const next = Math.max(1, base + delta);
+    onSet(next);
+  }
+
   return (
-    <label className={`goal-field${span ? " goal-field-span" : ""}`} title={hint}>
-      <span className="goal-field-label-row">
-        <span>{label}</span>
-        {hasGoal && hasCurrent ? (
-          <span className={`goal-field-current ${met ? "goal-met" : over ? "goal-over" : ""}`}>
-            {current} / {value}
+    <div className={`goal-card ${statusClass}${hasGoal ? "" : " goal-card--unset"}`} title={hint}>
+      <div className="goal-card-header">
+        <span className="goal-card-icon" aria-hidden>{icon}</span>
+        <span className="goal-card-label">{label}</span>
+        {hasGoal && (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={() => onSet(undefined)}
+            aria-label={`Clear ${label} goal`}
+          >×</button>
+        )}
+      </div>
+
+      <div className="goal-card-body">
+        <span className="goal-card-current">
+          {hasCurrent ? current : "—"}
+        </span>
+        {hasGoal && (
+          <span className="goal-card-target-label">
+            {met ? "✓" : over ? "▲" : "/"} {target}
           </span>
-        ) : null}
-      </span>
-      <input
-        type="number"
-        min={1}
-        inputMode="numeric"
-        value={value ?? ""}
-        onChange={onChange}
-        placeholder={placeholder}
-      />
-      {pct !== null && hasGoal ? (
-        <div className="goal-progress-bar" aria-hidden>
+        )}
+      </div>
+
+      {pct !== null && showBar && (
+        <div className="goal-card-bar-wrap" aria-hidden>
           <div
-            className={`goal-progress-fill ${met ? "goal-met" : over ? "goal-over" : ""}`}
-            style={{ width: `${Math.min(100, Math.round(pct * 100))}%` }}
+            className={`goal-card-bar-fill ${met ? "goal-card--met" : over ? "goal-card--over" : ""}`}
+            style={{ width: `${Math.round(pct * 100)}%` }}
           />
         </div>
-      ) : null}
-    </label>
+      )}
+
+      <div className="goal-card-controls">
+        <button
+          type="button"
+          className="goal-card-step"
+          onClick={() => step(-1)}
+          aria-label={`Decrease ${label} target`}
+        >−</button>
+        <input
+          ref={inputRef}
+          type="number"
+          className="goal-card-input"
+          min={1}
+          inputMode="numeric"
+          value={inputVal}
+          placeholder="Set target"
+          onChange={(e) => setInputVal(e.target.value)}
+          onBlur={(e) => commitInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { commitInput(inputVal); inputRef.current?.blur(); } }}
+          aria-label={`${label} target`}
+        />
+        <button
+          type="button"
+          className="goal-card-step"
+          onClick={() => step(1)}
+          aria-label={`Increase ${label} target`}
+        >+</button>
+      </div>
+
+      {extra}
+    </div>
   );
 }
 
@@ -200,6 +258,7 @@ export interface WorkshopToolPanelsProps {
   updateGoal: (
     key: keyof WorkshopGoals,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
+  setGoalValue: (key: keyof WorkshopGoals, value: number | undefined) => void;
   revisions: RevisionSnapshot[];
   snapshotLabel: string;
   onSnapshotLabelChange: (v: string) => void;
@@ -258,6 +317,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     refreshSpell,
     onSpellPersistenceError,
     updateGoal,
+    setGoalValue,
     revisions,
     snapshotLabel,
     onSnapshotLabelChange,
@@ -558,86 +618,58 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <span className="tool-heading-you-text">Goals</span>
             <span className="you-badge">Your targets</span>
           </h3>
-          <div className="goal-grid">
-            <GoalField
-              label="Min lines"
-              goalKey="minLines"
-              value={goals.minLines}
+
+          <div className="goal-cards">
+            <GoalCard
+              label="Lines"
+              icon="⌇"
               current={docStats.nonEmptyLines}
-              onChange={updateGoal("minLines")}
-              direction="min"
+              target={goals.targetLines}
+              onSet={(v) => setGoalValue("targetLines", v)}
             />
-            <GoalField
-              label="Max lines"
-              goalKey="maxLines"
-              value={goals.maxLines}
-              current={docStats.nonEmptyLines}
-              onChange={updateGoal("maxLines")}
-              direction="max"
-            />
-            <GoalField
-              label="Min words"
-              goalKey="minWords"
-              value={goals.minWords}
-              current={docStats.totalWords}
-              onChange={updateGoal("minWords")}
-              direction="min"
-            />
-            <GoalField
-              label="Max words"
-              goalKey="maxWords"
-              value={goals.maxWords}
-              current={docStats.totalWords}
-              onChange={updateGoal("maxWords")}
-              direction="max"
-            />
-            <GoalField
-              label="Min stanzas"
-              goalKey="minStanzas"
-              value={goals.minStanzas}
+            <GoalCard
+              label="Stanzas"
+              icon="⋮"
               current={docStats.stanzaCount}
-              onChange={updateGoal("minStanzas")}
-              direction="min"
-              hint="Blank lines between stanzas; see Totals"
+              target={goals.targetStanzas}
+              onSet={(v) => setGoalValue("targetStanzas", v)}
+              hint="Stanzas are blocks of lines separated by blank lines"
             />
-            <GoalField
-              label="Max stanzas"
-              goalKey="maxStanzas"
-              value={goals.maxStanzas}
-              current={docStats.stanzaCount}
-              onChange={updateGoal("maxStanzas")}
-              direction="max"
+            <GoalCard
+              label="Lines / stanza"
+              icon="≡"
+              current={docStats.stanzaCount > 0 ? Math.round(docStats.nonEmptyLines / docStats.stanzaCount) : null}
+              target={goals.targetLinesPerStanza}
+              onSet={(v) => setGoalValue("targetLinesPerStanza", v)}
+              hint="Average lines per stanza"
             />
-            <GoalField
-              label="Max syllables / line (est.)"
-              goalKey="maxSyllablesPerLine"
-              value={goals.maxSyllablesPerLine}
-              current={null}
-              onChange={updateGoal("maxSyllablesPerLine")}
-              direction="max"
-              placeholder="Heavy lines"
-              span
+            <GoalCard
+              label="Syllable cap"
+              icon="◌"
+              current={goals.maxSyllablesPerLine != null ? goalEvaluation.syllableOverLines.length : null}
+              target={goals.maxSyllablesPerLine}
+              onSet={(v) => setGoalValue("maxSyllablesPerLine", v)}
+              showBar={false}
+              hint="Flag lines whose estimated syllable count exceeds this"
+              extra={
+                goalEvaluation.syllableOverLines.length > 0 ? (
+                  <p className="goal-card-extra">
+                    Lines over cap:{" "}
+                    <JumpLineList
+                      lineNumbers={goalEvaluation.syllableOverLines}
+                      goToLine={goToLine}
+                    />
+                  </p>
+                ) : goals.maxSyllablesPerLine != null ? (
+                  <p className="goal-card-extra goal-card-extra--ok">✓ No lines over cap</p>
+                ) : null
+              }
             />
           </div>
-          {goalEvaluation.warnings.length > 0 ? (
-            <ul className="goal-warnings">
-              {goalEvaluation.warnings.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-          ) : null}
-          {goalEvaluation.syllableOverLines.length > 0 ? (
-            <p className="muted small goal-syllable-jumps">
-              Jump to lines over your syllable cap:{" "}
-              <JumpLineList
-                lineNumbers={goalEvaluation.syllableOverLines}
-                goToLine={goToLine}
-              />
-            </p>
-          ) : null}
+
           {goalEvaluation.warnings.length === 0 &&
           Object.values(goals).some((v) => v != null) ? (
-            <p className="muted small goal-on-target">✓ On target.</p>
+            <p className="goal-on-target">✓ All goals met</p>
           ) : null}
         </div>
       ) : null}
