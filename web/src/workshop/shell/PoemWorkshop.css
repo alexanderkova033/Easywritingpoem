@@ -262,9 +262,14 @@
      The sticky head still works correctly inside a block scroll container. */
   .tools-panel {
     display: block !important;
-    overflow-x: hidden !important;
+    overflow: visible !important;
     max-width: 100vw;
     max-height: none !important;
+  }
+
+  .tools-scroll-body {
+    overflow-y: visible !important;
+    flex: none;
   }
 
   /* Prevent wide tables/cells from stretching the panel */
@@ -589,12 +594,19 @@
   border-radius: var(--radius-lg);
   padding: 0;
   max-height: min(90vh, 54rem);
-  overflow: auto;
+  overflow: hidden;
   box-shadow: 0 2px 14px color-mix(in srgb, #000 7%, transparent);
   backdrop-filter: saturate(1.02) blur(8px);
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
-  scroll-padding-block: 0.75rem;
   isolation: isolate;
+}
+
+/* Inner scroll container — the only thing that scrolls */
+.tools-scroll-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent;
   scrollbar-gutter: stable;
@@ -612,22 +624,22 @@
 }
 
 
-.tools-panel::-webkit-scrollbar {
+.tools-scroll-body::-webkit-scrollbar {
   width: 10px;
 }
 
-.tools-panel::-webkit-scrollbar-track {
+.tools-scroll-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.tools-panel::-webkit-scrollbar-thumb {
+.tools-scroll-body::-webkit-scrollbar-thumb {
   border-radius: 999px;
   background: color-mix(in srgb, var(--muted) 26%, transparent);
   border: 3px solid transparent;
   background-clip: padding-box;
 }
 
-.tools-panel:hover::-webkit-scrollbar-thumb {
+.tools-scroll-body:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--muted) 40%, transparent);
   border: 3px solid transparent;
   background-clip: padding-box;
@@ -1313,13 +1325,7 @@
     gap: 0.5rem;
     padding: 0.55rem 0.9rem 0.7rem;
     border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-    margin-top: auto;
-    position: sticky;
-    bottom: 0;
-    z-index: 9;
-    background: color-mix(in srgb, var(--surface) 97%, var(--bg));
-    backdrop-filter: saturate(1.05) blur(12px);
-    -webkit-backdrop-filter: saturate(1.05) blur(12px);
+    flex-shrink: 0;
   }
 }
 
@@ -1549,12 +1555,6 @@
   animation: tab-panel-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-@media (min-width: 900px) {
-  .tool-tab-panel {
-    /* Extra room so content can scroll fully past the sticky shortcuts footer */
-    padding-bottom: 2.8rem;
-  }
-}
 
 .tools-panel .table-wrap {
   scroll-behavior: smooth;

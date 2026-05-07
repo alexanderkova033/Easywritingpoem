@@ -2585,6 +2585,7 @@ export function PoemWorkshop() {
           id="writing-tools"
           data-tour-id="tools-panel"
         >
+          <div className="tools-scroll-body">
           <div className="tools-sticky-head">
             <div className="tools-swipe-handle" aria-hidden />
             <div className="tools-head-row tools-head-row-simple">
@@ -2762,6 +2763,22 @@ export function PoemWorkshop() {
           />
           </Suspense>
 
+          {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
+          {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (
+            <div className="tools-empty-hint">
+              <p className="tools-empty-hint-msg">
+                Write a few lines first — the tools will light up with rhyme suggestions, syllable counts, cliché flags, and more.
+              </p>
+              <ul className="tools-empty-hint-list" aria-hidden>
+                <li>🔤 Rhyme &amp; sound</li>
+                <li>∿ Meter &amp; syllables</li>
+                <li>✦ AI analysis</li>
+                <li>📚 Word lookup</li>
+              </ul>
+            </div>
+          )}
+          </div>{/* /tools-scroll-body */}
+
           {/* Shortcuts nudge — desktop only, always visible at bottom of panel */}
           <div className="tools-shortcuts-hint" aria-hidden>
             <button
@@ -2780,21 +2797,6 @@ export function PoemWorkshop() {
               <kbd className="kbd-hint">⌘K</kbd> commands
             </button>
           </div>
-
-          {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
-          {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (
-            <div className="tools-empty-hint">
-              <p className="tools-empty-hint-msg">
-                Write a few lines first — the tools will light up with rhyme suggestions, syllable counts, cliché flags, and more.
-              </p>
-              <ul className="tools-empty-hint-list" aria-hidden>
-                <li>🔤 Rhyme &amp; sound</li>
-                <li>∿ Meter &amp; syllables</li>
-                <li>✦ AI analysis</li>
-                <li>📚 Word lookup</li>
-              </ul>
-            </div>
-          )}
         </aside>
       </main>
 
