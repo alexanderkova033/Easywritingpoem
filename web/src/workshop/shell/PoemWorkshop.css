@@ -144,15 +144,10 @@
     line-height: 1.72 !important;
   }
 
-  /* Long lines scroll horizontally within the editor — momentum scroll for feel */
   .poem-cm-wrap,
   .cm-scroller {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow-x: hidden !important;
   }
-  .poem-cm-wrap::-webkit-scrollbar,
-  .cm-scroller::-webkit-scrollbar { display: none; }
 
   /* ── Tools panel header: minimal on mobile ── */
 

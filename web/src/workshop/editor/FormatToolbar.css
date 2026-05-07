@@ -307,9 +307,8 @@
   max-width: 100%;
 }
 
-/* Horizontal scroll lives inside CM — never leaks to the page */
 .poem-cm-wrap .cm-scroller {
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: visible;
   background: transparent !important;
 }
