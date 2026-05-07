@@ -2717,9 +2717,7 @@ export function PoemWorkshop() {
                         <Icon />
                         <span className="tool-tab-label">{label}</span>
                         {id === "issues" && issuesQueueCount > 0 && (
-                          <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
-                            {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
-                          </span>
+                          <span className="goal-tab-dot" aria-label="issues in queue" />
                         )}
                         {id === "spell" && m.wordlist && m.spellHits.length > 0 && (
                           <span className="tool-tab-badge" aria-label={`${m.spellHits.length} spelling flags`}>

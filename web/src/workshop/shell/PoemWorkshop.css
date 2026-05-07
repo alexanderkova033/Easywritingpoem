@@ -607,7 +607,7 @@
   overflow-y: auto;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--border) 55%, transparent) var(--surface);
   scrollbar-gutter: stable;
 }
 
@@ -624,23 +624,23 @@
 
 
 .tools-scroll-body::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .tools-scroll-body::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--surface);
 }
 
 .tools-scroll-body::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 26%, transparent);
-  border: 3px solid transparent;
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+  border: 2px solid var(--surface);
   background-clip: padding-box;
 }
 
 .tools-scroll-body:hover::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--muted) 40%, transparent);
-  border: 3px solid transparent;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  border: 2px solid var(--surface);
   background-clip: padding-box;
 }
 
