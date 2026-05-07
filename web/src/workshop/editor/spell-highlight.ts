@@ -110,7 +110,7 @@ export const poemEditorTheme = EditorView.theme({
     fontSize: "var(--poem-font-size, 1rem)",
     minHeight: "13rem",
     backgroundColor: "var(--bg)",
-    color: "var(--text)",
+    color: "color-mix(in srgb, var(--text) 82%, transparent)",
     borderRadius: "8px",
     border: "1px solid var(--border)",
     transition: "border-color 0.2s ease",
