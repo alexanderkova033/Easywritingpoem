@@ -1542,7 +1542,6 @@
 }
 
 .tool-tab-panel {
-  flex: 1;
   min-height: 10rem;
   overflow: visible;
   padding: 0.6rem 0.9rem 0.9rem;
