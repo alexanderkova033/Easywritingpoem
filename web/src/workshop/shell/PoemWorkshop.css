@@ -1312,6 +1312,12 @@
     padding: 0.55rem 0.9rem 0.7rem;
     border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
     margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    z-index: 9;
+    background: color-mix(in srgb, var(--surface) 97%, var(--bg));
+    backdrop-filter: saturate(1.05) blur(12px);
+    -webkit-backdrop-filter: saturate(1.05) blur(12px);
   }
 }
 
@@ -1540,6 +1546,13 @@
   padding: 0.6rem 0.9rem 0.9rem;
   scroll-behavior: smooth;
   animation: tab-panel-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (min-width: 900px) {
+  .tool-tab-panel {
+    /* Extra room so content can scroll fully past the sticky shortcuts footer */
+    padding-bottom: 2.8rem;
+  }
 }
 
 .tools-panel .table-wrap {
