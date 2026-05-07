@@ -24,9 +24,17 @@ import type { SpellMode } from "@/workshop/library/local-draft-storage";
 const lineFontScalePlugin = ViewPlugin.fromClass(
   class {
     private rafId = 0;
-    constructor(view: EditorView) { this.schedule(view); }
+    private ro: ResizeObserver;
+    constructor(view: EditorView) {
+      // ResizeObserver handles container-resize rescaling without triggering
+      // the feedback loop that geometryChanged creates (our own font-size
+      // mutations cause geometryChanged, which would re-enter scale() and wobble).
+      this.ro = new ResizeObserver(() => this.schedule(view));
+      this.ro.observe(view.scrollDOM);
+      this.schedule(view);
+    }
     update(u: ViewUpdate) {
-      if (u.docChanged || u.viewportChanged || u.geometryChanged) {
+      if (u.docChanged || u.viewportChanged) {
         this.schedule(u.view);
       }
     }
@@ -48,15 +56,19 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
       void contentEl.offsetWidth; // force reflow before measuring
       lines.forEach((l) => {
         if (!l.childNodes.length) return;
-        const range = document.createRange();
-        range.selectNodeContents(l);
-        const rects = range.getClientRects();
-        if (!rects.length) return;
+        // Measure text width excluding inline widgets (syllable count etc.)
+        // so the widget's fixed size doesn't skew the scale factor.
         let maxRight = -Infinity, minLeft = Infinity;
-        for (const r of rects) {
-          if (r.width < 1) continue;
-          maxRight = Math.max(maxRight, r.right);
-          minLeft = Math.min(minLeft, r.left);
+        for (const node of l.childNodes) {
+          const el = node as HTMLElement;
+          if (el.nodeType === Node.ELEMENT_NODE && el.classList?.contains("cm-syllable-wrap")) continue;
+          const range = document.createRange();
+          range.selectNode(node);
+          for (const r of range.getClientRects()) {
+            if (r.width < 1) continue;
+            maxRight = Math.max(maxRight, r.right);
+            minLeft = Math.min(minLeft, r.left);
+          }
         }
         if (!isFinite(maxRight) || !isFinite(minLeft)) return;
         const textW = maxRight - minLeft;
@@ -67,7 +79,10 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
         }
       });
     }
-    destroy() { cancelAnimationFrame(this.rafId); }
+    destroy() {
+      cancelAnimationFrame(this.rafId);
+      this.ro.disconnect();
+    }
   }
 );
 
