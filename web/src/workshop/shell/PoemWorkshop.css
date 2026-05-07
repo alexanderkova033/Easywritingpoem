@@ -2992,6 +2992,7 @@
   align-items: center;
   gap: 0.15rem;
   transition: border-color 0.15s;
+  min-width: 0;
 }
 
 .goal-card:focus-within {
@@ -3025,7 +3026,6 @@
   max-width: 100px;
   display: block;
   margin: 0 auto;
-  overflow: visible;
 }
 
 .goal-arc-track,
