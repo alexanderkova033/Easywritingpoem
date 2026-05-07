@@ -26,6 +26,7 @@ const WorkshopToolPanels = lazy(() =>
 import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
+import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
@@ -2528,6 +2529,28 @@ export function PoemWorkshop() {
                   words.
                 </p>
               </div>
+              {(m.goals.targetLines != null || m.goals.targetStanzas != null || m.goals.targetLinesPerStanza != null) && (
+                <div className="editor-goal-strip" aria-label="Goal progress">
+                  {m.goals.preset && (
+                    <span className="editor-goal-strip-form">{FORM_PRESETS.find(p => p.key === m.goals.preset)?.label}</span>
+                  )}
+                  {m.goals.targetLines != null && (
+                    <span className={`editor-goal-strip-item${m.docStats.nonEmptyLines === m.goals.targetLines ? " is-met" : m.docStats.nonEmptyLines > m.goals.targetLines ? " is-over" : ""}`}>
+                      {m.docStats.nonEmptyLines}/{m.goals.targetLines} lines
+                    </span>
+                  )}
+                  {m.goals.targetStanzas != null && (
+                    <span className={`editor-goal-strip-item${m.docStats.stanzaCount === m.goals.targetStanzas ? " is-met" : m.docStats.stanzaCount > m.goals.targetStanzas ? " is-over" : ""}`}>
+                      {m.docStats.stanzaCount}/{m.goals.targetStanzas} stanzas
+                    </span>
+                  )}
+                  {m.goals.targetLinesPerStanza != null && m.docStats.stanzaCount > 0 && (
+                    <span className={`editor-goal-strip-item${Math.round(m.docStats.nonEmptyLines / m.docStats.stanzaCount) === m.goals.targetLinesPerStanza ? " is-met" : ""}`}>
+                      {Math.round(m.docStats.nonEmptyLines / m.docStats.stanzaCount)}/{m.goals.targetLinesPerStanza} L/S
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="toolbar toolbar-saved">
                 <span className="save-hint" aria-hidden />
               </div>
@@ -2731,6 +2754,7 @@ export function PoemWorkshop() {
             onSpellPersistenceError={m.onSpellPersistenceError}
             updateGoal={m.updateGoal}
             setGoalValue={m.setGoalValue}
+            applyGoalPreset={m.applyGoalPreset}
             revisions={m.revisions}
             snapshotLabel={m.snapshotLabel}
             onSnapshotLabelChange={m.setSnapshotLabel}

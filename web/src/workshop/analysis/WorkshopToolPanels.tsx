@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
+import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
@@ -332,6 +333,7 @@ export interface WorkshopToolPanelsProps {
     key: keyof WorkshopGoals,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   setGoalValue: (key: keyof WorkshopGoals, value: number | undefined) => void;
+  applyGoalPreset: (presetKey: string | null) => void;
   revisions: RevisionSnapshot[];
   snapshotLabel: string;
   onSnapshotLabelChange: (v: string) => void;
@@ -390,6 +392,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     refreshSpell,
     onSpellPersistenceError,
     setGoalValue,
+    applyGoalPreset,
     revisions,
     snapshotLabel,
     onSnapshotLabelChange,
@@ -690,6 +693,24 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <span className="tool-heading-you-text">Goals</span>
             <span className="you-badge">Your targets</span>
           </h3>
+
+          <div className="goal-presets" role="group" aria-label="Form presets">
+            {FORM_PRESETS.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                className={`goal-preset-chip${goals.preset === p.key ? " goal-preset-chip--active" : ""}`}
+                title={p.description}
+                onClick={() =>
+                  goals.preset === p.key
+                    ? applyGoalPreset(null)
+                    : applyGoalPreset(p.key)
+                }
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
 
           <div className="goal-cards">
             <GoalCard

@@ -55,6 +55,7 @@ import {
   loadWorkshopGoals,
   saveWorkshopGoals,
   type WorkshopGoals,
+  FORM_PRESETS,
 } from "@/workshop/library/workshop-goals";
 import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
 import { loadEnglishWordlist } from "@/spellcheck/wordlist";
@@ -1077,10 +1078,19 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
 
   const setGoalValue = useCallback(
     (key: keyof WorkshopGoals, value: number | undefined) => {
-      setGoals((g) => ({ ...g, [key]: value }));
+      setGoals((g) => ({ ...g, [key]: value, preset: undefined }));
     },
     [],
   );
+
+  const applyGoalPreset = useCallback((presetKey: string | null) => {
+    if (presetKey === null) {
+      setGoals({});
+      return;
+    }
+    const preset = FORM_PRESETS.find((p) => p.key === presetKey);
+    if (preset) setGoals({ ...preset.goals, preset: presetKey });
+  }, []);
 
   const onSpellPersistenceError = useCallback((message: string) => {
     setPersistenceError(message);
@@ -1250,6 +1260,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     refreshSpell,
     updateGoal,
     setGoalValue,
+    applyGoalPreset,
     onSpellPersistenceError,
     jumpLine,
     jumpBump,

@@ -3217,6 +3217,82 @@
   text-align: center;
 }
 
+/* ── Goal presets ─────────────────────────────────────────────────────────── */
+
+.goal-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.goal-preset-chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.22rem 0.65rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+  white-space: nowrap;
+}
+
+.goal-preset-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.goal-preset-chip--active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* ── Editor goal strip ────────────────────────────────────────────────────── */
+
+.editor-goal-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.65rem;
+  flex-wrap: wrap;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.editor-panel:hover .editor-goal-strip,
+.editor-stack:focus-within .editor-goal-strip {
+  opacity: 0.45;
+}
+
+.editor-goal-strip-form {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+}
+
+.editor-goal-strip-item {
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.editor-goal-strip-item.is-met { color: var(--success, #4a9e6b); }
+.editor-goal-strip-item.is-over { color: var(--danger); }
+
+.editor-goal-strip-item + .editor-goal-strip-item::before {
+  content: "·";
+  margin-right: 0.5rem;
+  opacity: 0.4;
+}
+
 .totals-reading-hint {
   margin: 0.35rem 0 0.55rem;
   line-height: 1.45;
