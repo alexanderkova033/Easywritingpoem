@@ -1,11 +1,11 @@
-import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker } from "@codemirror/view";
+import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
 import { StateEffect, StateField, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
 import type { MutableRefObject } from "react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
 import {
@@ -19,6 +19,57 @@ import {
   formatMarksTheme,
 } from "@/workshop/editor/format-marks";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
+
+// ---- Per-line font scaling: shrink long lines to fit without wrapping ----
+const lineFontScalePlugin = ViewPlugin.fromClass(
+  class {
+    private rafId = 0;
+    constructor(view: EditorView) { this.schedule(view); }
+    update(u: ViewUpdate) {
+      if (u.docChanged || u.viewportChanged || u.geometryChanged) {
+        this.schedule(u.view);
+      }
+    }
+    schedule(view: EditorView) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = requestAnimationFrame(() => this.scale(view));
+    }
+    scale(view: EditorView) {
+      const scroller = view.scrollDOM;
+      const contentEl = view.contentDOM;
+      const gutters = scroller.querySelector<HTMLElement>(".cm-gutters");
+      const gutterW = gutters ? gutters.offsetWidth : 0;
+      const cs = getComputedStyle(contentEl);
+      const paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+      const availW = scroller.clientWidth - gutterW - paddingX;
+      if (availW <= 50) return;
+      const lines = contentEl.querySelectorAll<HTMLElement>(".cm-line");
+      lines.forEach((l) => { l.style.fontSize = ""; });
+      void contentEl.offsetWidth; // force reflow before measuring
+      lines.forEach((l) => {
+        if (!l.childNodes.length) return;
+        const range = document.createRange();
+        range.selectNodeContents(l);
+        const rects = range.getClientRects();
+        if (!rects.length) return;
+        let maxRight = -Infinity, minLeft = Infinity;
+        for (const r of rects) {
+          if (r.width < 1) continue;
+          maxRight = Math.max(maxRight, r.right);
+          minLeft = Math.min(minLeft, r.left);
+        }
+        if (!isFinite(maxRight) || !isFinite(minLeft)) return;
+        const textW = maxRight - minLeft;
+        if (textW > availW + 1) {
+          const base = parseFloat(getComputedStyle(l).fontSize);
+          const scaled = Math.max(base * (availW / textW), 8);
+          l.style.fontSize = `${scaled.toFixed(2)}px`;
+        }
+      });
+    }
+    destroy() { cancelAnimationFrame(this.rafId); }
+  }
+);
 
 // ---- Syllable count + rhythm bar widgets ----
 class SyllableWidget extends WidgetType {
@@ -253,15 +304,16 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     mode: props.spellMode,
   }));
 
-  const lastBodySyncNonce = useRef(props.bodySyncNonce);
+  // Derived state: sync localValue during render when poem changes externally.
+  // Calling setState during render triggers an immediate re-render, so by the
+  // time CodeMirror mounts (key={bodySyncNonce}), it already has the right value
+  // and starts with a clean undo history.
+  const [prevNonce, setPrevNonce] = useState(props.bodySyncNonce);
   const [localValue, setLocalValue] = useState(() => props.value);
-
-  useLayoutEffect(() => {
-    if (props.bodySyncNonce !== lastBodySyncNonce.current) {
-      lastBodySyncNonce.current = props.bodySyncNonce;
-      setLocalValue(props.value);
-    }
-  }, [props.bodySyncNonce, props.value]);
+  if (props.bodySyncNonce !== prevNonce) {
+    setPrevNonce(props.bodySyncNonce);
+    setLocalValue(props.value);
+  }
 
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -401,7 +453,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const extensions = useMemo(
     () => [
-      EditorView.lineWrapping,
+      lineFontScalePlugin,
       EditorView.contentAttributes.of({ spellcheck: "true" }),
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
       search({ top: true }),
@@ -431,6 +483,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   return (
     <div className="poem-cm-wrap" id={props.id}>
       <CodeMirror
+        key={props.bodySyncNonce}
         aria-describedby={props["aria-describedby"]}
         value={localValue}
         height="auto"

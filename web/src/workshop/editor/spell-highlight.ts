@@ -115,7 +115,7 @@ export const poemEditorTheme = EditorView.theme({
     border: "1px solid var(--border)",
     transition: "border-color 0.2s ease",
   },
-  ".cm-scroller": { fontFamily: "inherit" },
+  ".cm-scroller": { fontFamily: "inherit", overflowX: "hidden" },
   ".cm-content": {
     fontFamily: "var(--font-poem), Georgia, serif",
     fontWeight: "var(--poem-font-weight, 400)",
