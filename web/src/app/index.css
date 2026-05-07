@@ -443,6 +443,13 @@ html[data-writing-focus-v2] body::after {
   position: relative;
 }
 
+@media (min-width: 900px) {
+  #root {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 @media (max-width: 899px) {
   #root {
     height: 100%;

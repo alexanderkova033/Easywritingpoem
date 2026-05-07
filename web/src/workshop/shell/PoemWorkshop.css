@@ -471,7 +471,7 @@
   display: none;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1050px) {
   .tools-resize-gutter,
   .rail-resize-gutter {
     display: flex;
@@ -485,10 +485,9 @@
     z-index: 22;
   }
 
-  /* Tools gutter: right edge is 8px inside the tools panel */
-  .tools-resize-gutter { right: calc(var(--tools-col, 380px) - 8px); }
-  /* Rail gutter: left edge is 8px before the rail's right edge */
-  .rail-resize-gutter  { left:  calc(var(--rail-col,   64px) - 8px); }
+  /* Default fallback for 1050-1199px range */
+  .tools-resize-gutter { right: calc(var(--tools-col, min(300px, 28vw)) - 8px); }
+  .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
   /* Thin line — invisible by default, appears on hover */
   .tools-resize-gutter::before,
@@ -526,13 +525,18 @@
      overflow:hidden on .workshop-rail clips all visible content at 0px width. */
 }
 
+@media (min-width: 1200px) {
+  /* Update gutter fallback to match the wider default tools width */
+  .tools-resize-gutter { right: calc(var(--tools-col, 380px) - 8px); }
+}
+
 /* ── Expand pills — appear at viewport edges when a panel is closed ─────── */
 
 .panel-expand-pill {
   display: none;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1050px) {
   .panel-expand-pill {
     display: flex;
     position: fixed;

@@ -101,7 +101,7 @@
 /* Wide tablet (1050–1199px): tools sit inline as a narrower column, no overlay */
 @media (min-width: 1050px) and (max-width: 1199px) {
   .workshop-grid {
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) min(320px, 30vw);
+    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) var(--tools-col, min(300px, 28vw));
     gap: 1rem;
   }
 }
