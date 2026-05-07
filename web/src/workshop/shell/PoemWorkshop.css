@@ -2357,6 +2357,11 @@
     align-items: end;
   }
 
+  /* When main idea is collapsed the title takes the full row */
+  .editor-meta-grid.editor-meta-grid-solo {
+    grid-template-columns: 1fr;
+  }
+
   .editor-meta-grid .row {
     margin-bottom: 0.4rem;
   }
@@ -2373,6 +2378,46 @@
     background: color-mix(in srgb, var(--bg) 75%, var(--surface));
     color: var(--muted);
   }
+}
+
+/* Main idea collapsed: hide only the input, keep the toggle label visible */
+.editor-main-idea-hidden input {
+  display: none;
+}
+
+/* Toggle button that wraps the "Main idea (optional)" label text */
+.editor-main-idea-toggle {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 550;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  line-height: inherit;
+}
+
+.editor-main-idea-toggle:hover {
+  color: var(--text);
+}
+
+.editor-main-idea-chevron {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  display: inline-block;
+  transform: rotate(-90deg);
+  transition: transform 0.18s ease;
+  line-height: 1;
+}
+
+.editor-main-idea-chevron.is-collapsed {
+  transform: rotate(90deg);
 }
 
 .editor-stack .editor-meta-grid + .findbar {

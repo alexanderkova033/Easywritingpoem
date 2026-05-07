@@ -157,6 +157,16 @@ export function PoemWorkshop() {
       else localStorage.removeItem("easy-poems:main-idea");
     } catch { /* ignore */ }
   };
+  const [mainIdeaOpen, setMainIdeaOpen] = useState(() => {
+    try { return localStorage.getItem("easy-poems:main-idea-open") !== "0"; } catch { return true; }
+  });
+  const toggleMainIdea = () => {
+    setMainIdeaOpen((v) => {
+      const next = !v;
+      try { localStorage.setItem("easy-poems:main-idea-open", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
@@ -2334,7 +2344,7 @@ export function PoemWorkshop() {
                   {m.title.trim() || "Untitled"}
                 </button>
               )}
-              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}`} aria-label="Draft metadata">
+              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}${mainIdeaOpen ? "" : " editor-meta-grid-solo"}`} aria-label="Draft metadata">
                 <div className="row title-row">
                   <label htmlFor="poem-title">Title</label>
                   <input
@@ -2348,8 +2358,19 @@ export function PoemWorkshop() {
                     spellCheck={false}
                   />
                 </div>
-                <div className="row title-row">
-                  <label htmlFor="poem-main-idea">Main idea (optional)</label>
+                <div className={`row title-row${mainIdeaOpen ? "" : " editor-main-idea-hidden"}`}>
+                  <label htmlFor="poem-main-idea">
+                    <button
+                      type="button"
+                      className="editor-main-idea-toggle"
+                      onClick={toggleMainIdea}
+                      aria-expanded={mainIdeaOpen}
+                      aria-label={mainIdeaOpen ? "Collapse main idea field" : "Expand main idea field"}
+                    >
+                      Main idea (optional)
+                      <span className={`editor-main-idea-chevron${mainIdeaOpen ? "" : " is-collapsed"}`} aria-hidden>‹</span>
+                    </button>
+                  </label>
                   <input
                     id="poem-main-idea"
                     type="text"
