@@ -1,194 +1,49 @@
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_APPEARANCE } from "@/shared/storage-keys";
 
+export {
+  POEM_FONT_OPTIONS,
+  UI_FONT_OPTIONS,
+  POEM_SIZE_OPTIONS,
+  POEM_WEIGHT_OPTIONS,
+  POEM_DECORATION_OPTIONS,
+  type PoemFontId,
+  type UiFontId,
+  type PoemSizeId,
+  type PoemWeightId,
+  type PoemDecorationId,
+} from "./fonts";
+
+export {
+  BACKGROUND_OPTIONS,
+  type BackgroundId,
+  type CustomBackgroundTheme,
+} from "./backgrounds/presets";
+
+import {
+  POEM_FONT_OPTIONS,
+  UI_FONT_OPTIONS,
+  POEM_SIZE_OPTIONS,
+  POEM_WEIGHT_OPTIONS,
+  POEM_DECORATION_OPTIONS,
+  type PoemFontId,
+  type UiFontId,
+  type PoemSizeId,
+  type PoemWeightId,
+  type PoemDecorationId,
+} from "./fonts";
+
+import {
+  BACKGROUND_OPTIONS,
+  type BackgroundId,
+  type CustomBackgroundTheme,
+  pickRandomFirstVisitBackground,
+} from "./backgrounds/presets";
+
 const STORAGE_KEY = STORAGE_KEY_APPEARANCE;
 
-export const POEM_FONT_OPTIONS = [
-  { id: "literata",         label: "Literata",           fontFamily: '"Literata", Georgia, serif' },
-  { id: "spectral",         label: "Spectral",           fontFamily: '"Spectral", Georgia, serif' },
-  { id: "lora",             label: "Lora",               fontFamily: '"Lora", Georgia, serif' },
-  { id: "crimson-pro",      label: "Crimson Pro",        fontFamily: '"Crimson Pro", Georgia, serif' },
-  { id: "source-serif",     label: "Source Serif 4",     fontFamily: '"Source Serif 4", Georgia, serif' },
-  { id: "eb-garamond",      label: "EB Garamond",        fontFamily: '"EB Garamond", Georgia, serif' },
-  { id: "playfair",         label: "Playfair Display",   fontFamily: '"Playfair Display", Georgia, serif' },
-  { id: "cormorant",        label: "Cormorant Garamond", fontFamily: '"Cormorant Garamond", Georgia, serif' },
-  { id: "merriweather",     label: "Merriweather",       fontFamily: '"Merriweather", Georgia, serif' },
-  { id: "alegreya",         label: "Alegreya",           fontFamily: '"Alegreya", Georgia, serif' },
-  { id: "dm-serif",         label: "DM Serif Display",   fontFamily: '"DM Serif Display", Georgia, serif' },
-  { id: "libre-baskerville",label: "Libre Baskerville",  fontFamily: '"Libre Baskerville", Georgia, serif' },
-] as const;
-
-export const UI_FONT_OPTIONS = [
-  { id: "dm-sans",      label: "DM Sans",      fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif' },
-  { id: "source-sans",  label: "Source Sans 3",fontFamily: '"Source Sans 3", "Segoe UI", system-ui, sans-serif' },
-  { id: "inter",        label: "Inter",        fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif' },
-  { id: "nunito",       label: "Nunito",       fontFamily: '"Nunito", "Segoe UI", system-ui, sans-serif' },
-  { id: "system",       label: "System UI",    fontFamily: 'system-ui, "Segoe UI", sans-serif' },
-] as const;
-
-export const POEM_SIZE_OPTIONS = [
-  { id: "sm", label: "Small" },
-  { id: "md", label: "Medium" },
-  { id: "lg", label: "Large" },
-  { id: "xl", label: "Extra Large" },
-] as const;
-
-export const POEM_WEIGHT_OPTIONS = [
-  { id: "normal", label: "Regular" },
-  { id: "medium", label: "Medium" },
-  { id: "bold", label: "Bold" },
-] as const;
-
-export const POEM_DECORATION_OPTIONS = [
-  { id: "none", label: "None" },
-  { id: "underline", label: "Underline" },
-] as const;
-
-export const BACKGROUND_OPTIONS = [
-  {
-    id: "default",
-    label: "Studio",
-    blurb: "Soft sage mesh and quiet grid.",
-    glyph: "◇",
-  },
-  {
-    id: "paper",
-    label: "Warm paper",
-    blurb: "Notebook rules, ink washes, layered cream warmth.",
-    glyph: "✎",
-  },
-  {
-    id: "night",
-    label: "Night garden",
-    blurb: "Stars, moonward glow, deep borders.",
-    glyph: "☽",
-  },
-  {
-    id: "forest",
-    label: "Deep forest",
-    blurb: "Fronds, pine needles, mossy depth.",
-    glyph: "❧",
-  },
-  {
-    id: "dawn",
-    label: "Dawn blush",
-    blurb: "Rose sunbeams, haze bands, pearlescent highlights.",
-    glyph: "✦",
-  },
-  {
-    id: "slate",
-    label: "Cool slate",
-    blurb: "Hex mesh, cool haze, studio blue.",
-    glyph: "⬡",
-  },
-  {
-    id: "stone",
-    label: "Stone",
-    blurb: "Quiet grey, diamond lattice, minimal.",
-    glyph: "◆",
-  },
-  {
-    id: "crimson",
-    label: "Crimson dusk",
-    blurb: "Slow ember drift, horizon glow, ash ribbons and sparks.",
-    glyph: "♦",
-  },
-  {
-    id: "ocean",
-    label: "Open ocean",
-    blurb: "Depth haze, caustic diamonds, kelp veils, rising bubbles.",
-    glyph: "≋",
-  },
-  {
-    id: "aurora",
-    label: "Aurora",
-    blurb: "Twin light-curtains, violet-mint wash, moving starfield.",
-    glyph: "✧",
-  },
-  {
-    id: "parchment",
-    label: "Old parchment",
-    blurb: "Laid fibers, foxing blooms, candlelit fold-shadows.",
-    glyph: "📜",
-  },
-  {
-    id: "dusk",
-    label: "Amber dusk",
-    blurb: "Sun below the horizon, amber ember wash, long shadows.",
-    glyph: "☀",
-  },
-  {
-    id: "winter",
-    label: "Winter",
-    blurb: "Pale ice, crystalline lattice, cold silver light.",
-    glyph: "❄",
-  },
-  {
-    id: "autumn",
-    label: "Autumn",
-    blurb: "Amber afternoon, warm dark tones, falling leaves.",
-    glyph: "❦",
-  },
-  {
-    id: "spring",
-    label: "Spring",
-    blurb: "Cherry blossoms, fresh green, soft morning light.",
-    glyph: "✿",
-  },
-  {
-    id: "summer",
-    label: "Summer",
-    blurb: "Clear sky, golden sun, bright open air.",
-    glyph: "⊙",
-  },
-  {
-    id: "rain",
-    label: "Rainy day",
-    blurb: "Streaking droplets, wet reflections, grey overcast.",
-    glyph: "⌁",
-  },
-  {
-    id: "park",
-    label: "Park afternoon",
-    blurb: "Dappled light, green canopy, warm afternoon air.",
-    glyph: "⊛",
-  },
-  {
-    id: "custom",
-    label: "Custom",
-    blurb: "Your generated backdrop.",
-    glyph: "✦",
-  },
-] as const;
-
-export type PoemFontId = (typeof POEM_FONT_OPTIONS)[number]["id"];
-export type UiFontId = (typeof UI_FONT_OPTIONS)[number]["id"];
-export type BackgroundId = (typeof BACKGROUND_OPTIONS)[number]["id"];
-export type PoemSizeId = (typeof POEM_SIZE_OPTIONS)[number]["id"];
-export type PoemWeightId = (typeof POEM_WEIGHT_OPTIONS)[number]["id"];
-export type PoemDecorationId = (typeof POEM_DECORATION_OPTIONS)[number]["id"];
 export type BackdropMotionSetting = "system" | "on" | "off";
 export type BackdropPowerSetting = "off" | "low" | "very-low";
-
-/** CSS variable values for a user-generated custom backdrop. */
-export interface CustomBackgroundTheme {
-  colorScheme: "light" | "dark";
-  label: string;
-  bg: string;
-  surface: string;
-  surface2: string;
-  border: string;
-  text: string;
-  muted: string;
-  accent: string;
-  ambientA: string;
-  ambientB: string;
-  ambientC: string;
-  ambientD: string;
-  shineTop: string;
-  shineMid: string;
-  netLine: string;
-}
 
 export interface AppearanceSettings {
   poemFont: PoemFontId;
@@ -268,21 +123,9 @@ function loadCustomBackground(v: unknown): CustomBackgroundTheme | null {
 
 const APPEARANCE_SCHEMA_VERSION = 3;
 
-/** Curated backgrounds shown at random to first-time visitors. */
-const RANDOM_FIRST_VISIT_BACKGROUNDS: BackgroundId[] = [
-  "aurora", "night", "forest", "ocean", "parchment",
-  "dusk", "winter", "autumn", "rain", "dawn",
-];
-
-function pickRandomFirstVisitBackground(): BackgroundId {
-  const idx = Math.floor(Math.random() * RANDOM_FIRST_VISIT_BACKGROUNDS.length);
-  return RANDOM_FIRST_VISIT_BACKGROUNDS[idx]!;
-}
-
 export function loadAppearance(): AppearanceSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    // First visit: no saved preference → pick a random atmospheric background
     if (!raw) return { ...DEFAULTS, background: pickRandomFirstVisitBackground() };
     const v = JSON.parse(raw) as unknown;
     if (!v || typeof v !== "object") return { ...DEFAULTS };
@@ -389,7 +232,6 @@ export function applyAppearance(s: AppearanceSettings): void {
   el.dataset.poemFont = s.poemFont;
   el.dataset.uiFont = s.uiFont;
 
-  // Inject or clear custom CSS variable overrides.
   const isCustomActive = s.background === "custom" && s.customBackground != null;
   if (isCustomActive) {
     applyCustomVars(el, s.customBackground!);
@@ -397,7 +239,6 @@ export function applyAppearance(s: AppearanceSettings): void {
     clearCustomVars(el);
   }
 
-  // Cross-fade backdrop when the background theme changes.
   const nextBg = s.background === "default" ? "" : s.background;
   if (_lastBg !== undefined && _lastBg !== nextBg) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -1,0 +1,88 @@
+.rhyme-tooltip {
+  position: fixed;
+  /* Sits to the left of the rhyme bar — top-right area of the editor */
+  top: 50%;
+  right: calc(3.5rem + 1.5rem); /* clear the rhyme scheme column */
+  transform: translateY(-50%);
+  z-index: 40;
+  max-width: 230px;
+  padding: 0.8rem 1rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--surface) 97%, var(--accent));
+  box-shadow: 0 6px 28px color-mix(in srgb, #000 22%, transparent);
+  animation: rhyme-tt-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Arrow pointing right toward the rhyme column */
+.rhyme-tooltip::after {
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-left: 7px solid color-mix(in srgb, var(--surface) 97%, var(--accent));
+}
+
+@keyframes rhyme-tt-in {
+  from { opacity: 0; transform: translateY(-50%) translateX(8px); }
+  to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rhyme-tooltip { animation: none; transform: translateY(-50%); }
+  .rhyme-tooltip::after { display: none; }
+}
+
+/* On mobile, position at bottom of screen instead */
+@media (max-width: 899px) {
+  .rhyme-tooltip {
+    position: fixed;
+    top: auto;
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+    transform: none;
+    animation: rhyme-tt-in-mobile 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .rhyme-tooltip::after { display: none; }
+
+  @keyframes rhyme-tt-in-mobile {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+.rhyme-tooltip-close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+}
+
+.rhyme-tooltip-close:hover { color: var(--text); }
+
+.rhyme-tooltip-text {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--text);
+  padding-right: 1rem;
+}
+
+.rhyme-tooltip-text strong {
+  color: var(--accent);
+}

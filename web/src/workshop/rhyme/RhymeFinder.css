@@ -1,0 +1,103 @@
+/* ---- Rhyme Finder ---- */
+.rhyme-finder {
+  margin-bottom: 1.1rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.rhyme-finder-heading {
+  margin-bottom: 0.55rem;
+}
+
+.rhyme-finder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rhyme-finder-input-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.rhyme-finder-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.38rem 0.55rem;
+  font: inherit;
+  font-size: 0.88rem;
+  background: var(--bg);
+  color: var(--text);
+  min-width: 0;
+}
+
+.rhyme-finder-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rhyme-strength-row {
+  display: flex;
+  gap: 0.28rem;
+}
+
+.rhyme-strength-btn {
+  appearance: none;
+  flex: 1;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  text-align: center;
+}
+
+.rhyme-strength-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.rhyme-strength-btn.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.rhyme-strength-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rhyme-finder-results-label {
+  margin: 0.45rem 0 0.35rem;
+}
+
+.rhyme-finder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rhyme-chip {
+  display: inline-block;
+  padding: 0.22rem 0.52rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  font-size: 0.82rem;
+  color: var(--text);
+  user-select: text;
+}
+
+.rhyme-finder-error,
+.rhyme-finder-empty {
+  margin-top: 0.45rem;
+}
+
