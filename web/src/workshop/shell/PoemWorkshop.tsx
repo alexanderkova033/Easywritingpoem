@@ -2434,6 +2434,7 @@ export function PoemWorkshop() {
                     <InlineRhymeHint editorViewRef={m.editorViewRef} />
                     {selectionText && selectionRect && (
                       <SelectionSuggestPopover
+                        key={selectionText}
                         anchorRect={selectionRect}
                         selectedText={selectionText}
                         poemTitle={m.title}

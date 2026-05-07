@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -83,11 +84,10 @@ export function SelectionSuggestPopover({
   onApply,
   onClose,
 }: SelectionSuggestPopoverProps) {
-  const isSingleWord = !selectedText.trim().includes(" ") && selectedText.trim().length >= 2;
+  const isSingleWord = !selectedText.trim().includes(" ") && selectedText.trim().length >= 1;
   const trimmedText = selectedText.trim();
-  const autoDefine = isSingleWord && wordLookupEnabled;
 
-  const [mode, setMode] = useState<"menu" | "rewrite" | "define">(autoDefine ? "define" : "menu");
+  const [mode, setMode] = useState<"menu" | "rewrite" | "define">("menu");
   const [rewritePhase, setRewritePhase] = useState<"idle" | "loading" | "results" | "error">("idle");
   const [definePhase, setDefinePhase] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -96,6 +96,7 @@ export function SelectionSuggestPopover({
   const [syllableInput, setSyllableInput] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
   const defineAbortRef = useRef<AbortController | null>(null);
+  const readyToCloseRef = useRef(false);
 
   const handleRewrite = useCallback(async () => {
     setRewritePhase("loading");
@@ -132,13 +133,15 @@ export function SelectionSuggestPopover({
 
   useEffect(() => () => { defineAbortRef.current?.abort(); }, []);
 
-  // Auto-fetch definition on mount when a single word is selected
+  // Guard: don't close on the mousedown/pointerup that triggered opening
   useEffect(() => {
-    if (autoDefine) void handleDefine();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const timer = setTimeout(() => { readyToCloseRef.current = true; }, 250);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
+      if (!readyToCloseRef.current) return;
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         onClose();
       }
@@ -178,7 +181,7 @@ export function SelectionSuggestPopover({
     transform: "translateY(-100%)",
   };
 
-  return (
+  return createPortal(
     <div className="ssp-wrap" style={style} ref={popoverRef} role="dialog" aria-label="Word actions">
       <div className="ssp-header">
         <span className="ssp-title">
@@ -342,6 +345,7 @@ export function SelectionSuggestPopover({
           )}
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

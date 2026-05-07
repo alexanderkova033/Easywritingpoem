@@ -425,6 +425,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const selectionCallbackRef = useRef(props.onSelectionText);
   selectionCallbackRef.current = props.onSelectionText;
+  const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return (
     <div className="poem-cm-wrap" id={props.id}>
@@ -446,14 +447,21 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           const sel = update.state.selection.main;
           if (!sel.empty) {
             const text = update.state.sliceDoc(sel.from, sel.to).trim();
-            if (text.length >= 3 && update.selectionSet) {
-              const coords = update.view.coordsAtPos(sel.head);
-              if (coords) {
-                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                selectionCallbackRef.current(text, rect);
-              }
+            if (text.length >= 1 && update.selectionSet) {
+              if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
+              const view = update.view;
+              const from = sel.from;
+              const to = sel.to;
+              selectionTimerRef.current = setTimeout(() => {
+                const coords = view.coordsAtPos(to);
+                if (coords) {
+                  const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
+                  selectionCallbackRef.current?.(text, rect);
+                }
+              }, 200);
             }
           } else if (update.selectionSet) {
+            if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
             selectionCallbackRef.current(null, null);
           }
         }}
