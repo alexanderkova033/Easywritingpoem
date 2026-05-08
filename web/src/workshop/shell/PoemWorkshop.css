@@ -8,6 +8,12 @@
   gap: 1.15rem;
 }
 
+@media (min-width: 900px) {
+  .poem-workshop {
+    padding: 0.75rem 0.75rem 0.75rem;
+  }
+}
+
 @media (max-width: 899px) {
   .poem-workshop {
     height: 100%;
@@ -482,25 +488,25 @@
     bottom: 0;
     width: calc(1rem + 16px);
     cursor: col-resize;
-    z-index: 22;
+    z-index: 50;
   }
 
   /* Default fallback for 1050-1199px range */
   .tools-resize-gutter { right: calc(var(--tools-col, min(300px, 28vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
-  /* Thin line — invisible by default, appears on hover */
+  /* Drag line — faintly visible at rest, bright on hover */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
     position: absolute;
-    top: 15%;
-    bottom: 15%;
+    top: 20%;
+    bottom: 20%;
     left: 50%;
-    width: 1px;
+    width: 2px;
     transform: translateX(-50%);
-    background: transparent;
-    transition: background 0.2s ease, top 0.2s ease, bottom 0.2s ease;
+    background: color-mix(in srgb, var(--border) 30%, transparent);
+    transition: background 0.18s ease, top 0.18s ease, bottom 0.18s ease, width 0.18s ease;
     border-radius: 2px;
     pointer-events: none;
   }
@@ -509,7 +515,8 @@
   .rail-resize-gutter:hover::before {
     top: 5%;
     bottom: 5%;
-    background: color-mix(in srgb, var(--accent) 55%, var(--border));
+    width: 3px;
+    background: color-mix(in srgb, var(--accent) 65%, var(--border));
   }
 
   /* Collapsed panels: hide gutter, show expand pill instead */
@@ -607,7 +614,7 @@
   overflow-y: auto;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--border) 55%, transparent) var(--surface);
+  scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) var(--surface);
   scrollbar-gutter: stable;
 }
 
@@ -624,7 +631,7 @@
 
 
 .tools-scroll-body::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .tools-scroll-body::-webkit-scrollbar-track {
@@ -633,15 +640,30 @@
 
 .tools-scroll-body::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 55%, transparent);
-  border: 2px solid var(--surface);
+  background: color-mix(in srgb, var(--border) 28%, var(--surface));
+  border: 1px solid var(--surface);
   background-clip: padding-box;
 }
 
 .tools-scroll-body:hover::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--border) 80%, transparent);
-  border: 2px solid var(--surface);
+  background: color-mix(in srgb, var(--border) 55%, var(--surface));
+  border: 1px solid var(--surface);
   background-clip: padding-box;
+}
+
+/* CodeMirror editor scrollbar — match background */
+.cm-scroller::-webkit-scrollbar {
+  width: 6px;
+}
+.cm-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cm-scroller::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 28%, transparent);
+}
+.cm-scroller:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border) 55%, transparent);
 }
 
 .tools-panel.is-collapsed {

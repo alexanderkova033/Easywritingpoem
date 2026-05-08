@@ -41,19 +41,6 @@
     padding: 0.55rem 0.35rem;
   }
 
-  /* ── Edge-to-edge: rail and tools touch the viewport walls ── */
-  .workshop-rail {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: none;
-  }
-
-  .tools-panel {
-    border-top-right-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-    border-right: none !important;
-  }
-
   /* ── Rail visual grouping: subtle divider between button groups ── */
   .rail-group-divider {
     display: block;

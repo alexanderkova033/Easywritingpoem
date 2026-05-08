@@ -150,21 +150,21 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  scrollbar-color: color-mix(in srgb, var(--border) 70%, transparent) var(--bg);
+  scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--bg)) var(--bg);
   scrollbar-width: thin;
 }
 
-body::-webkit-scrollbar { width: 8px; }
+body::-webkit-scrollbar { width: 6px; }
 body::-webkit-scrollbar-track { background: var(--bg); }
 body::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 65%, transparent);
-  border: 2px solid var(--bg);
+  background: color-mix(in srgb, var(--border) 28%, var(--bg));
+  border: 1px solid var(--bg);
   background-clip: padding-box;
 }
 body::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--border) 90%, transparent);
-  border: 2px solid var(--bg);
+  background: color-mix(in srgb, var(--border) 55%, var(--bg));
+  border: 1px solid var(--bg);
   background-clip: padding-box;
 }
 

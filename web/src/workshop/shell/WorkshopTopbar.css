@@ -23,12 +23,6 @@
   z-index: 80;
 }
 
-@media (min-width: 900px) {
-  .topbar {
-    margin-left: 0.75rem;
-    margin-right: 0.75rem;
-  }
-}
 
 @media (max-width: 899px) {
   .topbar {
