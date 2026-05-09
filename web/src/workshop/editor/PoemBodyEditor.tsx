@@ -210,6 +210,23 @@ const issueHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// Strongest-line decoration — subtle gold accent for the best line in the poem.
+const setStrongestLine = StateEffect.define<DecorationSet>();
+const clearStrongestLine = StateEffect.define<void>();
+
+const strongestLineField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(setStrongestLine)) next = e.value;
+      if (e.is(clearStrongestLine)) next = Decoration.none;
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // Persistent (always-on) highlights for all AI issues after analysis
 const setPersistentIssueDecos = StateEffect.define<DecorationSet>();
 const clearPersistentIssueDecos = StateEffect.define<void>();
@@ -355,6 +372,11 @@ export interface PoemBodyEditorProps {
   spellBump: number;
   jumpLine?: number | null;
   jumpBump?: number;
+  /** Scroll a line into view WITHOUT moving the cursor or focusing. */
+  peekLine?: number | null;
+  peekBump?: number;
+  /** Subtly highlight the strongest line in the poem (from AI analysis). */
+  strongestLine?: number | null;
   issueHighlight?: [number, number, string?] | null;
   /** Persistent dim highlights for all AI issue line ranges after analysis. */
   persistentIssueHighlights?: Array<[number, number, string?]>;
@@ -374,6 +396,8 @@ export interface PoemBodyEditorProps {
   onApplyRewriteAtCursor?: (line: number) => boolean;
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
+  /** Receives a getter so callers can read the current cursor line synchronously. */
+  cursorLineGetterRef?: MutableRefObject<(() => number) | null>;
   id?: string;
   "aria-describedby"?: string;
 }
@@ -417,6 +441,39 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       // line out of range
     }
   }, [props.editorViewRef, props.jumpBump, props.jumpLine]);
+
+  // peekLine: scroll a line into view (centered) WITHOUT focusing or moving cursor.
+  useEffect(() => {
+    if (!props.peekBump) return;
+    const view = props.editorViewRef.current;
+    const n = props.peekLine;
+    if (!view || !n || n < 1) return;
+    try {
+      const line = view.state.doc.line(n);
+      view.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "center" }) });
+    } catch { /* ignore */ }
+  }, [props.editorViewRef, props.peekBump, props.peekLine]);
+
+  // Strongest-line decoration: subtle gold accent on the best line.
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const n = props.strongestLine;
+    if (!n || n < 1) {
+      try { view.dispatch({ effects: clearStrongestLine.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try {
+      const lineCount = view.state.doc.lines;
+      if (n > lineCount) {
+        view.dispatch({ effects: clearStrongestLine.of(undefined) });
+        return;
+      }
+      const line = view.state.doc.line(n);
+      const deco = Decoration.line({ class: "cm-line-strongest" }).range(line.from);
+      view.dispatch({ effects: setStrongestLine.of(Decoration.set([deco])) });
+    } catch { /* ignore */ }
+  }, [props.editorViewRef, props.strongestLine]);
 
   useEffect(() => {
     return () => {
@@ -525,6 +582,21 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     return () => { applyRewriteHandler.fn = null; };
   }, [props.onApplyRewriteAtCursor]);
 
+  // Expose a synchronous cursor-line getter so callers can decide whether to
+  // peek/jump based on where the cursor already is.
+  useEffect(() => {
+    if (!props.cursorLineGetterRef) return;
+    props.cursorLineGetterRef.current = () => {
+      const view = props.editorViewRef.current;
+      if (!view) return -1;
+      try {
+        const sel = view.state.selection.main;
+        return view.state.doc.lineAt(sel.from).number;
+      } catch { return -1; }
+    };
+    return () => { if (props.cursorLineGetterRef) props.cursorLineGetterRef.current = null; };
+  }, [props.editorViewRef, props.cursorLineGetterRef]);
+
   const extensions = useMemo(
     () => [
       // Prevent poem-load/suggestion-apply transactions from polluting undo history.
@@ -540,6 +612,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       search({ top: true }),
       highlightSelectionMatches(),
       lineFlashField,
+      strongestLineField,
       issueHighlightField,
       persistentIssueDecosField,
       issueGutterField,

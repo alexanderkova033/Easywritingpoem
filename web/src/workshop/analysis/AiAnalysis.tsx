@@ -405,6 +405,7 @@ function IssueCard({
   const { copiedIdx, copy } = useCopyFlash();
   const [showThread, setShowThread] = useState(false);
   const [previewRewrite, setPreviewRewrite] = useState(false);
+  const [showRewrite, setShowRewrite] = useState(false);
 
   const originalLineText = poemLines
     ? poemLines.slice(issue.line_start - 1, issue.line_end).join("\n")
@@ -515,9 +516,19 @@ function IssueCard({
             <p className="ai-issue-rationale">{issue.rationale}</p>
           )}
           {issue.rewrite && (
-            <div className="ai-issue-rewrite">
-              <span className="ai-rewrite-label">Suggested rewrite</span>
-              {previewRewrite && originalLineText !== null ? (
+            <div className={`ai-issue-rewrite ai-issue-rewrite-compact${showRewrite ? " is-expanded" : ""}`}>
+              {!showRewrite && !previewRewrite ? (
+                <button
+                  type="button"
+                  className="ai-rewrite-pill"
+                  onClick={() => setShowRewrite(true)}
+                  title="Show the model's suggested rewrite"
+                >
+                  <span className="ai-rewrite-pill-icon" aria-hidden>✏</span>
+                  <span className="ai-rewrite-pill-label">Suggested rewrite</span>
+                  <span className="ai-rewrite-pill-chev" aria-hidden>›</span>
+                </button>
+              ) : previewRewrite && originalLineText !== null ? (
                 <div className="ai-rewrite-preview">
                   <div className="ai-rewrite-preview-side">
                     <span className="ai-rewrite-preview-label">Before</span>
@@ -535,6 +546,7 @@ function IssueCard({
                         onApplyLine?.(issue.line_start, issue.line_end, issue.rewrite!);
                         onResolve(true);
                         setPreviewRewrite(false);
+                        setShowRewrite(false);
                       }}
                     >
                       Apply
@@ -549,9 +561,30 @@ function IssueCard({
                   </div>
                 </div>
               ) : (
-                <>
+                <div className="ai-rewrite-expanded">
+                  <span className="ai-rewrite-label">
+                    <span className="ai-rewrite-pill-icon" aria-hidden>✏</span> Suggested rewrite
+                    <button
+                      type="button"
+                      className="ai-rewrite-collapse-btn"
+                      onClick={() => setShowRewrite(false)}
+                      aria-label="Hide rewrite"
+                    >
+                      ✕
+                    </button>
+                  </span>
                   <blockquote className="ai-rewrite-text">{issue.rewrite}</blockquote>
                   <div className="ai-rewrite-actions">
+                    {onApplyLine && (
+                      <button
+                        type="button"
+                        className="small-btn small-btn-primary ai-apply-rewrite-btn"
+                        title="Apply the rewrite to the line"
+                        onClick={() => setPreviewRewrite(true)}
+                      >
+                        Preview & apply
+                      </button>
+                    )}
                     <button
                       type="button"
                       className={`ai-copy-btn${copiedIdx === 99 ? " is-copied" : ""}`}
@@ -561,18 +594,8 @@ function IssueCard({
                     >
                       {copiedIdx === 99 ? "✓" : "⎘"}
                     </button>
-                    {onApplyLine && (
-                      <button
-                        type="button"
-                        className="small-btn ai-apply-rewrite-btn"
-                        title="Preview the rewrite before applying"
-                        onClick={() => setPreviewRewrite(true)}
-                      >
-                        Preview & apply
-                      </button>
-                    )}
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
@@ -634,13 +657,15 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 type AnalysisTab = "overview" | "issues" | "chat";
 
 function AnalysisResults({
-  result, onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
+  result, onJump, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
   activeTab, onTabChange, externalTabSignal,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
   onJump?: (line: number) => void;
+  /** Soft scroll-into-view without focus/cursor change. */
+  onPeek?: (line: number) => void;
   onHighlight?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
   scoreHistory?: number[];
@@ -650,7 +675,7 @@ function AnalysisResults({
   model?: string;
   poemId?: string;
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
-  openIssueLineSignal?: { line: number; nonce: number } | null;
+  openIssueLineSignal?: { line: number; nonce: number; scroll?: boolean } | null;
   scoringEnabled?: boolean;
   activeTab?: AnalysisTab;
   onTabChange?: (t: AnalysisTab) => void;
@@ -694,26 +719,29 @@ function AnalysisResults({
   }, [visibleIssues, onVisibleIssuesChange]);
 
   // Editor → panel: when a gutter dot is clicked or the cursor parks on a
-  // flagged line, switch to the Issues tab, open the matching issue, and
-  // scroll it into view.
+  // flagged line, open the matching issue. Only scroll/switch tab when the
+  // signal explicitly asks for it (gutter dot click). Cursor-park opens the
+  // card silently so the user doesn't get yanked down while editing.
   useEffect(() => {
     if (!openIssueLineSignal) return;
-    const { line } = openIssueLineSignal;
+    const { line, scroll } = openIssueLineSignal;
     const match = visibleIssues.find((iss) => line >= iss.line_start && line <= iss.line_end);
     if (!match) return;
-    setTab("issues");
-    setActiveCategory(null);
-    setActiveSeverity(null);
     setOpenIds((prev) => {
       if (prev.has(match.id)) return prev;
       const s = new Set(prev);
       s.add(match.id);
       return s;
     });
-    requestAnimationFrame(() => {
-      const el = document.querySelector(`[data-issue-id="${match.id}"]`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    if (scroll !== false) {
+      setTab("issues");
+      setActiveCategory(null);
+      setActiveSeverity(null);
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-issue-id="${match.id}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openIssueLineSignal, visibleIssues]);
 
@@ -815,7 +843,8 @@ function AnalysisResults({
       isOpen={openIds.has(iss.id)}
       onOpenChange={(open) => {
         handleOpenChange(iss.id, open);
-        if (open) onJump?.(iss.line_start);
+        // Soft-preview: scroll editor without moving cursor or stealing focus.
+        if (open) onPeek?.(iss.line_start);
       }}
       isResolved={resolvedIds.has(iss.id)}
       onResolve={(resolved) => handleResolve(iss.id, resolved)}
@@ -888,12 +917,12 @@ function AnalysisResults({
             {result.strongest_line && (
               <div className="ai-card ai-card-strongest">
                 <span className="ai-card-label">
-                  <span className="ai-card-icon" aria-hidden>★</span> Strongest line
+                  <span className="ai-card-icon ai-card-icon-star" aria-hidden>★</span> Strongest line
                 </span>
-                {onJump ? (
+                {(onJump || onPeek) ? (
                   <button type="button" className="ai-strongest-line-jump linkish"
-                    onClick={() => onJump(result.strongest_line!.line)}
-                    title={`Jump to line ${result.strongest_line.line}`}>
+                    onClick={() => (onPeek ?? onJump)?.(result.strongest_line!.line)}
+                    title={`Show line ${result.strongest_line.line} in the editor`}>
                     Line {result.strongest_line.line}
                   </button>
                 ) : (
@@ -1093,6 +1122,8 @@ export interface AiAnalysisProps {
   localAnalysis?: LocalAnalysisContext;
   goals?: WorkshopGoals;
   onJumpToLine?: (line: number) => void;
+  /** Scroll editor to a line without moving the cursor or stealing focus. */
+  onPeekLine?: (line: number) => void;
   onHighlightLines?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
   onAnalysisDone?: (issues: AnalysisIssue[], score: number) => void;
@@ -1103,21 +1134,21 @@ export interface AiAnalysisProps {
   onAnalyzeRef?: (fn: () => void) => void;
   /** Called whenever the loading state changes — lets parent show a loading indicator */
   onLoadingChange?: (loading: boolean) => void;
-  /** Called once with a fn so external UI (e.g. editor gutter click) can open the issue covering a given line. */
-  onOpenIssueAtLineRef?: (fn: (line: number) => void) => void;
+  /** Called once with a fn so external UI (e.g. editor gutter click) can open the issue covering a given line. Pass scroll=false to open silently. */
+  onOpenIssueAtLineRef?: (fn: (line: number, scroll?: boolean) => void) => void;
   /** Fires when the displayed result changes — lets the editor render a status strip + line ribbons. */
   onResultChange?: (result: PoemAnalysis | PoemComparison | null) => void;
   /** Receives a setter so external UI (e.g. editor popover) can switch tabs. */
   onSwitchTabRef?: (fn: (tab: "overview" | "issues" | "chat") => void) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
-  const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
+  const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
   const [retryAfterSec, setRetryAfterSec] = useState<number>(0);
   const [externalTabSignal, setExternalTabSignal] = useState<{ tab: AnalysisTab; nonce: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
@@ -1287,8 +1318,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   }, [poemId, onVisibleIssuesChange]);
 
 
-  const requestOpenIssueAtLine = useCallback((line: number) => {
-    setOpenIssueLineSignal({ line, nonce: Date.now() });
+  const requestOpenIssueAtLine = useCallback((line: number, scroll = true) => {
+    setOpenIssueLineSignal({ line, nonce: Date.now(), scroll });
   }, []);
 
   useEffect(() => {
@@ -1471,6 +1502,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 result={result}
                 previous={effectiveMode === "compare" ? savedResult : null}
                 onJump={onJumpToLine}
+                onPeek={onPeekLine}
                 onHighlight={onHighlightLines}
                 onClearHighlight={onClearHighlight}
                 scoreHistory={scoreHistory}
@@ -1579,12 +1611,36 @@ function AiChat({
     void sendMessage(text);
   }, [input, chatStatus, sendMessage]);
 
+  const SUGGESTED_PROMPTS = [
+    "What's the strongest image here?",
+    "How can I sharpen the ending?",
+    "Where is the rhythm uneven?",
+    "Suggest a different title.",
+  ];
+
   return (
     <div className="ai-chat">
       <div className="ai-chat-header">
-        <span className="ai-chat-title">Ask about your poem</span>
-        <span className="ai-chat-hint">Chat with the AI about the feedback or your craft</span>
+        <span className="ai-chat-title">
+          <span className="ai-chat-title-icon" aria-hidden>✦</span>
+          Ask about your poem
+        </span>
+        <span className="ai-chat-hint">The AI knows your poem and the feedback above.</span>
       </div>
+
+      {messages.length === 0 && chatStatus !== "loading" && (
+        <div className="ai-chat-suggestions">
+          <span className="ai-chat-suggestions-label">Try asking:</span>
+          <div className="ai-chat-suggestions-chips">
+            {SUGGESTED_PROMPTS.map((p, i) => (
+              <button key={i} type="button" className="ai-chat-suggestion-chip"
+                onClick={() => void sendMessage(p)}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {messages.length > 0 && (
         <div className="ai-chat-messages" ref={listRef}>

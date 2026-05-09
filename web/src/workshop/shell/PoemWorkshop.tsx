@@ -439,8 +439,28 @@ export function PoemWorkshop() {
   const editorScrollPos = useRef(0);
   const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
-  const openIssueAtLineRef = useRef<((line: number) => void) | null>(null);
+  const openIssueAtLineRef = useRef<((line: number, scroll?: boolean) => void) | null>(null);
   const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
+  const cursorLineGetterRef = useRef<(() => number) | null>(null);
+  const [peekLine, setPeekLine] = useState<number | null>(null);
+  const [peekBump, setPeekBump] = useState(0);
+
+  /** Scroll a line into view without moving the cursor. */
+  const peekToLine = useCallback((line: number) => {
+    setPeekLine(line);
+    setPeekBump((n) => n + 1);
+  }, []);
+
+  /**
+   * Smart jump: if the user's cursor is already on that line, do nothing
+   * (avoids stealing focus / scrolling away while they're editing). Otherwise
+   * peek (scroll into view) without grabbing focus.
+   */
+  const smartPreviewLine = useCallback((line: number) => {
+    const cur = cursorLineGetterRef.current?.() ?? -1;
+    if (cur === line) return;
+    peekToLine(line);
+  }, [peekToLine]);
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
   const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
 
@@ -1722,13 +1742,17 @@ export function PoemWorkshop() {
                       spellBump={m.spellBump}
                       jumpLine={m.jumpLine}
                       jumpBump={m.jumpBump}
+                      peekLine={peekLine}
+                      peekBump={peekBump}
+                      strongestLine={aiResult?.strongest_line?.line ?? null}
                       issueHighlight={issueHighlight}
                       persistentIssueHighlights={persistentIssueHighlights}
                       issueGutterMarkers={persistentIssueHighlights}
-                      onGutterDotClick={(line) => openIssueAtLineRef.current?.(line)}
-                      onCursorLineChange={(line) => openIssueAtLineRef.current?.(line)}
+                      onGutterDotClick={(line) => openIssueAtLineRef.current?.(line, true)}
+                      onCursorLineChange={(line) => openIssueAtLineRef.current?.(line, false)}
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
+                      cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
                       onSelectionText={(text, rect) => {
@@ -2139,6 +2163,7 @@ export function PoemWorkshop() {
         localAnalysis={localAnalysis}
         goals={m.goals}
         onJumpToLine={m.goToLine}
+        onPeekLine={smartPreviewLine}
         onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
         onClearHighlight={() => setIssueHighlight(null)}
         onAnalysisDone={(issues, score) => {
@@ -2214,6 +2239,7 @@ export function PoemWorkshop() {
                 localAnalysis={localAnalysis}
                 goals={m.goals}
                 onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
+                onPeekLine={smartPreviewLine}
                 onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
                 onClearHighlight={() => setIssueHighlight(null)}
                 onAnalysisDone={(issues, score) => {

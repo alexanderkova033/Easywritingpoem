@@ -687,31 +687,71 @@ button.primary:disabled {
 
 /* ---- Issue gutter dots ---- */
 .cm-issue-gutter {
-  width: 10px;
+  width: 14px;
+  padding: 0 2px;
+}
+
+/* Each gutter cell aligns its dot vertically with its line of text. */
+.cm-issue-gutter .cm-gutterElement {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Inherit per-line height from the editor's line metrics so the dot tracks the line. */
+  line-height: inherit;
+  height: auto;
+  padding: 0;
 }
 
 .cm-issue-dot {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
+  vertical-align: middle;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cm-issue-gutter .cm-gutterElement:hover .cm-issue-dot {
+  transform: scale(1.35);
 }
 
 .cm-issue-dot-high {
   background: var(--ai-score-low, #d95f5f);
-  box-shadow: 0 0 3px color-mix(in srgb, var(--ai-score-low, #d95f5f) 60%, transparent);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--ai-score-low, #d95f5f) 60%, transparent);
 }
 
 .cm-issue-dot-medium {
   background: var(--ai-score-mid, #e6a817);
+  box-shadow: 0 0 3px color-mix(in srgb, var(--ai-score-mid, #e6a817) 50%, transparent);
 }
 
 .cm-issue-dot-low {
   background: color-mix(in srgb, var(--accent) 70%, var(--border));
+}
+
+/* ---- Strongest line: subtle gold accent ---- */
+.cm-line-strongest {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ai-score-mid, #e6a817) 12%, transparent) 0%,
+    color-mix(in srgb, var(--ai-score-mid, #e6a817) 4%, transparent) 70%,
+    transparent 100%
+  ) !important;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--ai-score-mid, #e6a817) 70%, transparent);
+  position: relative;
+}
+
+.cm-line-strongest::after {
+  content: "★";
+  position: absolute;
+  right: 0.5em;
+  top: 50%;
+  transform: translateY(-50%);
+  color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 75%, transparent);
+  font-size: 0.78em;
+  pointer-events: none;
+  opacity: 0.65;
 }
 
 /* ---- Word-level problem highlights ---- */
