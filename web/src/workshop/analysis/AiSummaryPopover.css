@@ -52,6 +52,39 @@
   font-size: 0.82rem;
 }
 
+.ai-pop-score-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ai-pop-ring-wrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+
+.ai-pop-ring {
+  display: block;
+}
+
+.ai-pop-score-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.ai-pop-verdict {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
 .ai-pop-reaction {
   margin: 0;
   font-style: italic;

@@ -8,6 +8,33 @@ function scoreColor(score: number): string {
   return "var(--ai-score-low, #d95f5f)";
 }
 
+function scoreLabel(score: number): string {
+  if (score >= 88) return "Excellent";
+  if (score >= 75) return "Strong";
+  if (score >= 60) return "Solid";
+  if (score >= 45) return "Developing";
+  return "Needs work";
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 24;
+  const circ = 2 * Math.PI * r;
+  const color = scoreColor(score);
+  const offset = circ - (score / 100) * circ;
+  return (
+    <svg className="ai-pop-ring" viewBox="0 0 60 60" aria-hidden width="48" height="48">
+      <circle cx="30" cy="30" r={r} fill="none"
+        stroke="color-mix(in srgb, currentColor 12%, transparent)" strokeWidth="5" />
+      <circle cx="30" cy="30" r={r} fill="none"
+        stroke={color} strokeWidth="5" strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        transform="rotate(-90 30 30)"
+      />
+    </svg>
+  );
+}
+
 export interface AiSummaryPopoverProps {
   result: PoemAnalysis | PoemComparison;
   scoringEnabled: boolean;
@@ -59,6 +86,26 @@ export function AiSummaryPopover({ result, scoringEnabled, onJumpToLine }: AiSum
 
       {open && (
         <div className="ai-pop-panel" role="dialog" aria-label="AI summary">
+          {scoringEnabled && (
+            <div className="ai-pop-score-row">
+              <div className="ai-pop-ring-wrap">
+                <ScoreRing score={result.overall_score} />
+                <span
+                  className="ai-pop-score-num"
+                  style={{ color: scoreColor(result.overall_score) }}
+                >
+                  {result.overall_score}
+                </span>
+              </div>
+              <span
+                className="ai-pop-verdict"
+                style={{ color: scoreColor(result.overall_score) }}
+              >
+                {scoreLabel(result.overall_score)}
+              </span>
+            </div>
+          )}
+
           {result.warm_reaction && (
             <p className="ai-pop-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
           )}

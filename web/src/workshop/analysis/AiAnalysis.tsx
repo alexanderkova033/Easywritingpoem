@@ -193,6 +193,41 @@ function loadStoredModel(): string {
   } catch { return DEFAULT_MODEL; }
 }
 
+// ---- score helpers ---- //
+function scoreColor(score: number): string {
+  if (score >= 80) return "var(--ai-score-high, #5fba7d)";
+  if (score >= 55) return "var(--ai-score-mid, #e6a817)";
+  return "var(--ai-score-low, #d95f5f)";
+}
+
+function scoreLabel(score: number): string {
+  if (score >= 88) return "Excellent";
+  if (score >= 75) return "Strong";
+  if (score >= 60) return "Solid";
+  if (score >= 45) return "Developing";
+  return "Needs work";
+}
+
+function ScoreRing({ score }: { score: number }) {
+  const r = 30;
+  const circ = 2 * Math.PI * r;
+  const color = scoreColor(score);
+  const offset = circ - (score / 100) * circ;
+  return (
+    <svg className="ai-score-ring" viewBox="0 0 76 76" aria-hidden>
+      <circle cx="38" cy="38" r={r} fill="none"
+        stroke="color-mix(in srgb, currentColor 10%, transparent)" strokeWidth="6" />
+      <circle cx="38" cy="38" r={r} fill="none"
+        stroke={color} strokeWidth="6" strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        transform="rotate(-90 38 38)"
+        className="ai-score-arc"
+      />
+    </svg>
+  );
+}
+
 // ---- issue category derivation ---- //
 const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
   { label: "Imagery",     color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
@@ -598,7 +633,7 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 
 function AnalysisResults({
   result, onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
-  poemId, onVisibleIssuesChange, openIssueLineSignal,
+  poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -705,6 +740,70 @@ function AnalysisResults({
 
   return (
     <div className="ai-results">
+      {/* Overview: warm reaction + score + S/W + strongest line */}
+      {result.warm_reaction && (
+        <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
+      )}
+
+      {scoringEnabled && (
+        <div className="ai-overall">
+          <div className="ai-score-wrap">
+            <ScoreRing score={result.overall_score} />
+            <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
+              {result.overall_score}
+              <span className="ai-score-outof">/100</span>
+            </span>
+          </div>
+          <div className="ai-overall-label">
+            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+              {scoreLabel(result.overall_score)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
+        <div className="ai-sw-grid">
+          {(result.strengths?.length ?? 0) > 0 && (
+            <div className="ai-sw-card ai-sw-strengths">
+              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>+</span> Strengths</span>
+              <ul className="ai-sw-list">
+                {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+          {(result.weaknesses?.length ?? 0) > 0 && (
+            <div className="ai-sw-card ai-sw-weaknesses">
+              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>−</span> Work on</span>
+              <ul className="ai-sw-list">
+                {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {result.strongest_line && (
+        <div className="ai-strongest-line ai-strongest-line-compact">
+          <span className="ai-strongest-line-icon" aria-hidden>★</span>
+          {onJump ? (
+            <button
+              type="button"
+              className="ai-strongest-line-jump linkish"
+              onClick={() => onJump(result.strongest_line!.line)}
+              title={`Jump to line ${result.strongest_line.line}`}
+            >
+              Line {result.strongest_line.line}
+            </button>
+          ) : (
+            <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
+          )}
+          {result.strongest_line.why && (
+            <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
+          )}
+        </div>
+      )}
+
       {/* Comparison panel above the issues list when comparing drafts. */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
@@ -813,11 +912,6 @@ function AnalysisResults({
         </div>
       )}
 
-      <p className="ai-meta muted small">
-        {new Date(result.meta.analyzedAt).toLocaleString(undefined, {
-          dateStyle: "medium", timeStyle: "short",
-        })}
-      </p>
     </div>
   );
 }
@@ -1229,13 +1323,6 @@ interface ChatMessage {
   text: string;
 }
 
-const QUICK_REPLY_CHIPS = [
-  "Why is the weakest line weak?",
-  "Suggest stronger verbs",
-  "Make it more concrete",
-  "What's the central image?",
-];
-
 function AiChat({
   title,
   lines,
@@ -1333,22 +1420,6 @@ function AiChat({
               <span className="ai-chat-dot" /><span className="ai-chat-dot" /><span className="ai-chat-dot" />
             </div>
           )}
-        </div>
-      )}
-
-      {messages.length === 0 && (
-        <div className="ai-chat-quickreplies" role="group" aria-label="Quick replies">
-          {QUICK_REPLY_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              className="ai-chat-quickreply"
-              onClick={() => void sendMessage(chip)}
-              disabled={chatStatus === "loading"}
-            >
-              {chip}
-            </button>
-          ))}
         </div>
       )}
 

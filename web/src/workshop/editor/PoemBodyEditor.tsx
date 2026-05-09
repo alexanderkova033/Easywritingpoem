@@ -284,6 +284,7 @@ const applyRewriteKeymap = keymap.of([
 const issueGutterExtension = gutter({
   class: "cm-issue-gutter",
   markers: (view) => view.state.field(issueGutterField),
+  initialSpacer: () => new SeverityDot("low"),
   domEventHandlers: {
     click(view, line) {
       const set = view.state.field(issueGutterField);
