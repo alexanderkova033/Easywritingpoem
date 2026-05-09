@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const analysisContext = typeof body.analysisContext === "string" ? body.analysisContext : "";
-  const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
 
   // Cap forwarded history to keep token usage bounded.
   const MAX_HISTORY_TURNS = 10;

@@ -370,6 +370,7 @@ export function PoemWorkshop() {
   const editorScrollPos = useRef(0);
   const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
+  const openIssueAtLineRef = useRef<((line: number) => void) | null>(null);
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
   const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
   // Set to true just before opening the sheet so analysis auto-triggers on mount only.
@@ -1640,6 +1641,7 @@ export function PoemWorkshop() {
                       issueHighlight={issueHighlight}
                       persistentIssueHighlights={persistentIssueHighlights}
                       issueGutterMarkers={persistentIssueHighlights}
+                      onGutterDotClick={(line) => openIssueAtLineRef.current?.(line)}
                       wordHighlights={wordHighlights}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
@@ -2051,6 +2053,7 @@ export function PoemWorkshop() {
         onVisibleIssuesChange={handleVisibleIssuesChange}
         onApplyLine={m.applyLineRewrite}
         onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
+        onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
       />
 
       <MobileActionBar

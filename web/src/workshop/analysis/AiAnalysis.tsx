@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   analyzePoem,
   comparePoem,
-  type AnalysisDimensions,
   type AnalysisIssue,
   type ComparisonChanges,
   type HarshnessLevel,
@@ -13,10 +12,14 @@ import {
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
-import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
-const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_MODEL = "gpt-5-mini";
+const LEGACY_MODEL_MAP: Record<string, string> = {
+  "gpt-4o-mini": "gpt-5-mini",
+  "gpt-4o": "gpt-5",
+};
 
 // ---- last analysis per poem ---- //
 const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
@@ -82,9 +85,25 @@ function appendScoreHistory(poemId: string | undefined, score: number): number[]
   return next;
 }
 
+function loadScoringEnabled(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_AI_SCORING_ENABLED);
+    if (raw === "0" || raw === "false") return false;
+  } catch { /* ignore */ }
+  return true;
+}
+
 function loadStoredModel(): string {
-  try { return localStorage.getItem(LS_KEY_MODEL) ?? DEFAULT_MODEL; }
-  catch { return DEFAULT_MODEL; }
+  try {
+    const raw = localStorage.getItem(LS_KEY_MODEL);
+    if (!raw) return DEFAULT_MODEL;
+    const migrated = LEGACY_MODEL_MAP[raw];
+    if (migrated) {
+      try { localStorage.setItem(LS_KEY_MODEL, migrated); } catch { /* ignore */ }
+      return migrated;
+    }
+    return raw;
+  } catch { return DEFAULT_MODEL; }
 }
 
 // ---- utils ---- //
@@ -114,28 +133,26 @@ function deltaClass(d: number): string {
   return "ai-delta ai-delta-flat";
 }
 
-// ---- dimension descriptions ---- //
-const DIM_META: Record<keyof AnalysisDimensions, { label: string; desc: string }> = {
-  imagery:     { label: "Imagery",     desc: "Vividness and specificity of sensory language" },
-  musicality:  { label: "Musicality",  desc: "Rhythm, sound patterns, and how it reads aloud" },
-  originality: { label: "Originality", desc: "Freshness of language, images, and perspective" },
-  clarity:     { label: "Clarity",     desc: "Coherence and ease of following the poem's meaning" },
-};
-
 // ---- issue category derivation ---- //
-const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
-  { label: "Imagery",    color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
-  { label: "Rhythm",     color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
-  { label: "Sound",      color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
-  { label: "Word choice", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
-  { label: "Structure",  color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
-  { label: "Clarity",    color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
+const CATEGORY_RULES: { label: string; emoji: string; color: string; keywords: RegExp }[] = [
+  { label: "Imagery",     emoji: "🎨", color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
+  { label: "Rhythm",      emoji: "🥁", color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
+  { label: "Sound",       emoji: "🎵", color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
+  { label: "Word choice", emoji: "🪶", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
+  { label: "Structure",   emoji: "🏗", color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
+  { label: "Clarity",     emoji: "💡", color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
 ];
 
-function deriveCategory(issue: AnalysisIssue): { label: string; color: string } | null {
+function severityEmoji(s?: "high" | "medium" | "low"): string {
+  if (s === "high") return "🔴";
+  if (s === "medium") return "🟡";
+  return "🟢";
+}
+
+function deriveCategory(issue: AnalysisIssue): { label: string; emoji: string; color: string } | null {
   const text = `${issue.rationale} ${issue.improvements.join(" ")}`;
   for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.test(text)) return { label: rule.label, color: rule.color };
+    if (rule.keywords.test(text)) return { label: rule.label, emoji: rule.emoji, color: rule.color };
   }
   return null;
 }
@@ -204,25 +221,6 @@ function ScoreSparkline({ history }: { history: number[] }) {
           strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
         <circle cx={lastX} cy={lastY} r="2.2" fill="var(--accent)" />
       </svg>
-    </div>
-  );
-}
-
-function DimensionBar({
-  label, desc, value, delta,
-}: { label: string; desc: string; value: number; delta?: number }) {
-  return (
-    <div className="ai-dim-row" title={desc}>
-      <span className="ai-dim-label">{label}</span>
-      <div className="ai-dim-track">
-        <div className="ai-dim-fill" style={{ width: `${value}%`, background: scoreColor(value) }} />
-      </div>
-      <span className="ai-dim-val" style={{ color: scoreColor(value) }}>{value}</span>
-      {delta !== undefined ? (
-        <span className={deltaClass(delta)} title={`Changed by ${deltaLabel(delta)}`}>
-          {deltaLabel(delta)}
-        </span>
-      ) : null}
     </div>
   );
 }
@@ -377,6 +375,7 @@ function IssueCard({
   return (
     <div
       className={`ai-issue ai-issue-sev-${issue.severity ?? "low"}${isResolved ? " is-resolved" : ""}`}
+      data-issue-id={issue.id}
       style={{ borderLeftColor: isResolved ? "var(--border)" : sevColor }}
       onMouseEnter={triggerHighlight}
       onMouseLeave={() => onClearHighlight?.()}
@@ -407,6 +406,9 @@ function IssueCard({
           {isResolved ? "✓" : index + 1}
         </span>
         <span className="ai-issue-head-inner">
+          {!isResolved && (
+            <span className="ai-issue-sev-emoji" aria-hidden>{severityEmoji(issue.severity)}</span>
+          )}
           {onJump && !isResolved ? (
             <button type="button" className="ai-issue-line linkish"
               onClick={(e) => { e.stopPropagation(); onJump(issue.line_start); triggerHighlight(); }}
@@ -416,12 +418,14 @@ function IssueCard({
           ) : <span className="ai-issue-line">{rangeLabel}</span>}
           {cat && !isResolved && (
             <span className="ai-issue-cat" style={{ borderColor: cat.color, color: cat.color }}>
-              {cat.label}
+              <span aria-hidden>{cat.emoji}</span> {cat.label}
             </span>
           )}
-          {!isResolved && issue.excerpt
-            ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span>
-            : null}
+          {!isResolved && (issue.headline
+            ? <span className="ai-issue-headline">{issue.headline}</span>
+            : issue.excerpt
+              ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span>
+              : null)}
           {isResolved && <span className="ai-issue-resolved-label">Addressed</span>}
         </span>
         <div className="ai-issue-actions" onClick={(e) => e.stopPropagation()}>
@@ -598,7 +602,7 @@ type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
   result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine, poemLines, poemTitle, model,
-  poemId, onVisibleIssuesChange,
+  poemId, onVisibleIssuesChange, onClarifyReply, openIssueLineSignal, scoringEnabled,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -612,17 +616,12 @@ function AnalysisResults({
   model?: string;
   poemId?: string;
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
+  onClarifyReply?: (answer: string) => void;
+  openIssueLineSignal?: { line: number; nonce: number } | null;
+  scoringEnabled?: boolean;
 }) {
   const isCompare = "comparison" in result;
-  const deltas = previous
-    ? {
-        overall: result.overall_score - previous.overall_score,
-        imagery: result.dimensions.imagery - previous.dimensions.imagery,
-        musicality: result.dimensions.musicality - previous.dimensions.musicality,
-        originality: result.dimensions.originality - previous.dimensions.originality,
-        clarity: result.dimensions.clarity - previous.dimensions.clarity,
-      }
-    : null;
+  const overallDelta = previous ? result.overall_score - previous.overall_score : null;
 
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => loadIdSet(LS_RESOLVED_PREFIX, poemId));
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => loadIdSet(LS_IGNORED_PREFIX, poemId));
@@ -631,7 +630,6 @@ function AnalysisResults({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
-  const [dimsExpanded, setDimsExpanded] = useState(false);
 
   // Persist resolved/ignored across reloads — drop entries that no longer
   // match an issue in the current analysis to avoid stale junk accumulating.
@@ -647,6 +645,28 @@ function AnalysisResults({
   useEffect(() => {
     onVisibleIssuesChange?.(visibleIssues);
   }, [visibleIssues, onVisibleIssuesChange]);
+
+  // Editor → panel: when a gutter dot is clicked, open the matching issue
+  // and scroll it into view inside the analysis panel.
+  useEffect(() => {
+    if (!openIssueLineSignal) return;
+    const { line } = openIssueLineSignal;
+    const match = visibleIssues.find((iss) => line >= iss.line_start && line <= iss.line_end);
+    if (!match) return;
+    setOpenIds((prev) => {
+      if (prev.has(match.id)) return prev;
+      const s = new Set(prev);
+      s.add(match.id);
+      return s;
+    });
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-issue-id="${match.id}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [openIssueLineSignal, visibleIssues]);
+
+  const [clarifyAnswer, setClarifyAnswer] = useState("");
+  const [clarifyDismissed, setClarifyDismissed] = useState(false);
   const totalIssues = visibleIssues.length;
   const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
@@ -726,62 +746,92 @@ function AnalysisResults({
 
   return (
     <div className="ai-results">
-      {/* Score row — always visible */}
-      <div className="ai-overall">
-        <div className="ai-score-wrap">
-          <ScoreRing score={result.overall_score} />
-          <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
-            {result.overall_score}
-            <span className="ai-score-outof">/100</span>
-          </span>
-        </div>
-        <div className="ai-overall-label">
-          <div className="ai-overall-verdict-row">
-            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-              {scoreLabel(result.overall_score)}
-            </span>
-            <ScoreSparkline history={scoreHistory ?? []} />
-          </div>
-          {deltas && (
-            <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
-              {deltaLabel(deltas.overall)} from last
-            </span>
-          )}
-          <span className="ai-overall-prose muted small">
-            {buildProseSummary(result.dimensions)}
-          </span>
-        </div>
-      </div>
+      {/* Warm human-voice opener */}
+      {result.warm_reaction && (
+        <p className="ai-warm-reaction">{result.warm_reaction}</p>
+      )}
 
-      {/* Dimension breakdown — collapsible */}
-      <div className="ai-dims-section">
-        <button
-          type="button"
-          className="ai-dims-toggle"
-          onClick={() => setDimsExpanded((p) => !p)}
-          aria-expanded={dimsExpanded}
-        >
-          <span>Breakdown</span>
-          <span className="ai-dims-chevron" aria-hidden>{dimsExpanded ? "▾" : "▸"}</span>
-        </button>
-        {dimsExpanded && (
-          <div className="ai-dimensions">
-            {(Object.keys(DIM_META) as (keyof AnalysisDimensions)[]).map((k) => (
-              <DimensionBar
-                key={k}
-                label={DIM_META[k].label}
-                desc={DIM_META[k].desc}
-                value={result.dimensions[k]}
-                delta={deltas ? deltas[k] : undefined}
-              />
-            ))}
+      {/* Score row — only when scoring is enabled */}
+      {scoringEnabled && (
+        <div className="ai-overall">
+          <div className="ai-score-wrap">
+            <ScoreRing score={result.overall_score} />
+            <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
+              {result.overall_score}
+              <span className="ai-score-outof">/100</span>
+            </span>
           </div>
-        )}
-      </div>
+          <div className="ai-overall-label">
+            <div className="ai-overall-verdict-row">
+              <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+                {scoreLabel(result.overall_score)}
+              </span>
+              <ScoreSparkline history={scoreHistory ?? []} />
+            </div>
+            {overallDelta !== null && (
+              <span className={deltaClass(overallDelta) + " ai-overall-delta"}>
+                {deltaLabel(overallDelta)} from last
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Overall summary */}
       {result.summary && (
         <p className="ai-poem-summary">{result.summary}</p>
+      )}
+
+      {/* Strengths + Weaknesses cards */}
+      {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
+        <div className="ai-sw-grid">
+          {(result.strengths?.length ?? 0) > 0 && (
+            <div className="ai-sw-card ai-sw-strengths">
+              <span className="ai-sw-label" aria-hidden>✨ Strengths</span>
+              <ul className="ai-sw-list">
+                {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+          {(result.weaknesses?.length ?? 0) > 0 && (
+            <div className="ai-sw-card ai-sw-weaknesses">
+              <span className="ai-sw-label" aria-hidden>🎯 Work on</span>
+              <ul className="ai-sw-list">
+                {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Strongest line callout */}
+      {result.strongest_line && (
+        <div className="ai-strongest-line">
+          <span className="ai-strongest-line-icon" aria-hidden>⭐</span>
+          <div className="ai-strongest-line-body">
+            <div className="ai-strongest-line-head">
+              <span className="ai-strongest-line-label">Strongest line</span>
+              {onJump ? (
+                <button
+                  type="button"
+                  className="ai-strongest-line-jump linkish"
+                  onClick={() => onJump(result.strongest_line!.line)}
+                  title={`Jump to line ${result.strongest_line.line}`}
+                >
+                  Line {result.strongest_line.line}
+                </button>
+              ) : (
+                <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
+              )}
+            </div>
+            {result.strongest_line.excerpt && (
+              <blockquote className="ai-strongest-line-excerpt">&ldquo;{result.strongest_line.excerpt}&rdquo;</blockquote>
+            )}
+            {result.strongest_line.why && (
+              <p className="ai-strongest-line-why muted small">{result.strongest_line.why}</p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Whole-poem improvement direction */}
@@ -792,6 +842,54 @@ function AnalysisResults({
         </div>
       )}
 
+      {/* Clarifying question from the model */}
+      {result.clarifying_question && !clarifyDismissed && (
+        <div className="ai-clarifying-question">
+          <span className="ai-clarifying-icon" aria-hidden>❓</span>
+          <div className="ai-clarifying-body">
+            <p className="ai-clarifying-text">{result.clarifying_question}</p>
+            {onClarifyReply ? (
+              <div className="ai-clarifying-reply-row">
+                <input
+                  type="text"
+                  className="ai-clarifying-input"
+                  value={clarifyAnswer}
+                  onChange={(e) => setClarifyAnswer(e.target.value)}
+                  placeholder="Your answer (re-runs analysis)…"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && clarifyAnswer.trim()) {
+                      onClarifyReply(clarifyAnswer.trim());
+                      setClarifyAnswer("");
+                      setClarifyDismissed(true);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="small-btn small-btn-primary"
+                  disabled={!clarifyAnswer.trim()}
+                  onClick={() => {
+                    onClarifyReply(clarifyAnswer.trim());
+                    setClarifyAnswer("");
+                    setClarifyDismissed(true);
+                  }}
+                >
+                  Send
+                </button>
+                <button
+                  type="button"
+                  className="small-btn"
+                  onClick={() => setClarifyDismissed(true)}
+                  title="Dismiss"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       {/* Comparison panel */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
@@ -799,12 +897,10 @@ function AnalysisResults({
       {result.issues.length > 0 ? (
         <div className="ai-issues-section">
 
-          {/* What to do next */}
-          {resolvedCount < totalIssues && (
+          {/* What to do next — only when high-severity issues remain */}
+          {resolvedCount < totalIssues && sevCounts.high > 0 && (
             <div className="ai-next-steps">
-              {sevCounts.high > 0
-                ? <>Fix the <strong>{sevCounts.high} high-priority</strong> issue{sevCounts.high > 1 ? "s" : ""} first — then re-analyse to track improvement.</>
-                : <>Pick an issue below, edit that line, and re-analyse to see your score move.</>}
+              Fix the <strong>{sevCounts.high} high-priority</strong> issue{sevCounts.high > 1 ? "s" : ""} first — then re-analyse to track improvement.
             </div>
           )}
 
@@ -968,33 +1064,12 @@ function AnalysisResults({
       )}
 
       <p className="ai-meta muted small">
-        {result.meta.model} ·{" "}
         {new Date(result.meta.analyzedAt).toLocaleString(undefined, {
           dateStyle: "medium", timeStyle: "short",
         })}
       </p>
     </div>
   );
-}
-
-// ---- prose summary from dimensions ---- //
-function buildProseSummary(dims: AnalysisDimensions): string {
-  const entries = Object.entries(dims) as [keyof AnalysisDimensions, number][];
-  entries.sort((a, b) => b[1] - a[1]);
-  const top = entries[0]!;
-  const bottom = entries[entries.length - 1]!;
-  const label = DIM_META[top[0]].label.toLowerCase();
-  const weakLabel = DIM_META[bottom[0]].label.toLowerCase();
-  if (top[1] >= 75 && bottom[1] < 55) {
-    return `Strongest in ${label}; most room to grow in ${weakLabel}.`;
-  }
-  if (top[1] >= 75) {
-    return `${DIM_META[top[0]].label} is a clear strength here.`;
-  }
-  if (bottom[1] < 45) {
-    return `Focus next revision on ${weakLabel}.`;
-  }
-  return `Balanced across all four dimensions.`;
 }
 
 // ---- main component ---- //
@@ -1016,12 +1091,18 @@ export interface AiAnalysisProps {
   onAnalyzeRef?: (fn: () => void) => void;
   /** Called whenever the loading state changes — lets parent show a loading indicator */
   onLoadingChange?: (loading: boolean) => void;
+  /** Called once with a fn so external UI (e.g. editor gutter click) can open the issue covering a given line. */
+  onOpenIssueAtLineRef?: (fn: (line: number) => void) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
+  const [analysisStyle, setAnalysisStyle] = useState<"detailed" | "big-picture">("detailed");
+  const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
+  const [sessionNonce, setSessionNonce] = useState(0);
+  const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -1037,6 +1118,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [isOpen, setIsOpen] = useState(true);
   const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory(poemId));
   const abortRef = useRef<AbortController | null>(null);
+  const clarifyContextRef = useRef<string>("");
   const prevPoemId = useRef(poemId);
 
   useEffect(() => {
@@ -1065,6 +1147,14 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     tryLocalStorageSetItem(LS_KEY_MODEL, val);
   }, []);
 
+  const toggleScoring = useCallback(() => {
+    setScoringEnabled((prev) => {
+      const next = !prev;
+      tryLocalStorageSetItem(STORAGE_KEY_AI_SCORING_ENABLED, next ? "1" : "0");
+      return next;
+    });
+  }, []);
+
   const canCompare = savedResult !== null && savedLines.length > 0;
   const hasPoem = lines.some((l) => l.trim().length > 0);
   const wordCount = lines.join(" ").split(/\s+/).filter(Boolean).length;
@@ -1083,14 +1173,20 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       ? Object.fromEntries(Object.entries(goals).filter(([, v]) => v != null)) as Record<string, number>
       : undefined;
 
+    const writingFocusParts: string[] = [];
+    if (mainIdea?.trim()) writingFocusParts.push(`Main idea: ${mainIdea.trim()}`);
+    if (clarifyContextRef.current) writingFocusParts.push(`Answer to clarifying question: ${clarifyContextRef.current}`);
+    const writingFocus = writingFocusParts.length > 0 ? writingFocusParts.join("\n") : undefined;
+    clarifyContextRef.current = "";
+
     try {
       if (mode === "compare" && canCompare) {
         const res = await comparePoem(
           {
             title, lines, previousLines: savedLines,
-            previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions },
-            localAnalysis, goals: goalsPlain, writingFocus: mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined,
-            scoreHistory: scoreHistory.slice(-10),
+            previousScores: { overall_score: savedResult!.overall_score },
+            localAnalysis, goals: goalsPlain, writingFocus,
+            scoreHistory: scoreHistory.slice(-3),
           },
           model, ctrl.signal,
         );
@@ -1101,8 +1197,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       } else {
-        const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, model, ctrl.signal);
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, analysisStyle }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
@@ -1122,12 +1217,46 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, analysisStyle, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone]);
 
 
   useEffect(() => {
     onAnalyzeRef?.(() => { if (hasPoem) void handleAnalyze(); });
   }, [handleAnalyze, hasPoem, onAnalyzeRef]);
+
+  const handleNewSession = useCallback(() => {
+    abortRef.current?.abort();
+    if (poemId) {
+      try {
+        localStorage.removeItem(LS_LAST_ANALYSIS_PREFIX + poemId);
+        localStorage.removeItem(LS_RESOLVED_PREFIX + poemId);
+        localStorage.removeItem(LS_IGNORED_PREFIX + poemId);
+        localStorage.removeItem(LS_SCORE_HISTORY_PREFIX + poemId);
+      } catch { /* ignore */ }
+    }
+    setResult(null);
+    setSavedResult(null);
+    setSavedLines([]);
+    setStatus("idle");
+    setErrorMsg("");
+    setScoreHistory([]);
+    setSessionNonce((n) => n + 1);
+    onVisibleIssuesChange?.([]);
+  }, [poemId, onVisibleIssuesChange]);
+
+  const requestOpenIssueAtLine = useCallback((line: number) => {
+    setOpenIssueLineSignal({ line, nonce: Date.now() });
+  }, []);
+
+  useEffect(() => {
+    onOpenIssueAtLineRef?.(requestOpenIssueAtLine);
+  }, [onOpenIssueAtLineRef, requestOpenIssueAtLine]);
+
+  const handleClarifyReply = useCallback((answer: string) => {
+    if (!answer.trim() || !hasPoem) return;
+    clarifyContextRef.current = answer.trim();
+    void handleAnalyze();
+  }, [handleAnalyze, hasPoem]);
 
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
@@ -1156,7 +1285,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 <button type="button"
                   className={`ai-mode-btn ${effectiveMode === "fresh" ? "is-active" : ""}`}
                   onClick={() => setMode("fresh")}>
-                  Fresh
+                  Re-score
                 </button>
                 <button type="button"
                   className={`ai-mode-btn ${effectiveMode === "compare" ? "is-active" : ""}`}
@@ -1164,16 +1293,43 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                   disabled={!canCompare}
                   title={canCompare
                     ? "Compare to your previous analysis"
-                    : "Run a Fresh analysis first to unlock comparison"}>
+                    : "Run a Re-score first to unlock comparison"}>
                   Compare
                 </button>
               </div>
 
+              <div className="ai-style-toggle" role="group" aria-label="Feedback depth">
+                <button type="button"
+                  className={`ai-mode-btn ${analysisStyle === "detailed" ? "is-active" : ""}`}
+                  onClick={() => setAnalysisStyle("detailed")}
+                  title="Line-level issues with specific suggestions">
+                  Line-level
+                </button>
+                <button type="button"
+                  className={`ai-mode-btn ${analysisStyle === "big-picture" ? "is-active" : ""}`}
+                  onClick={() => setAnalysisStyle("big-picture")}
+                  title="Strengths, weaknesses, and direction — no line-by-line nitpicks">
+                  Big-picture
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className={`small-btn ai-scoring-toggle${scoringEnabled ? " is-active" : ""}`}
+                onClick={toggleScoring}
+                title={scoringEnabled
+                  ? "Hide the numeric score and trend"
+                  : "Show the numeric score and trend"}
+                aria-pressed={scoringEnabled}
+              >
+                {scoringEnabled ? "🎯 Score on" : "🎯 Score off"}
+              </button>
+
               <label className="ai-model-label">
                 <select className="ai-model-select" value={model}
                   onChange={(e) => saveModel(e.target.value)}>
-                  <option value="gpt-4o-mini">Fast</option>
-                  <option value="gpt-4o">Thinking</option>
+                  <option value="gpt-5-mini">Fast</option>
+                  <option value="gpt-5">Thinking</option>
                 </select>
               </label>
 
@@ -1190,17 +1346,28 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               </label>
             </div>
 
-            <button type="button"
-              className="small-btn small-btn-primary ai-analyze-btn"
-              onClick={() => void handleAnalyze()}
-              disabled={!hasPoem || status === "loading"}
-              title={!hasPoem ? "Write some lines first" : undefined}>
-              {status === "loading"
-                ? "Analyzing…"
-                : effectiveMode === "compare"
-                  ? "Compare versions"
-                  : "Analyze poem"}
-            </button>
+            <div className="ai-analyze-actions">
+              <button type="button"
+                className="small-btn small-btn-primary ai-analyze-btn"
+                onClick={() => void handleAnalyze()}
+                disabled={!hasPoem || status === "loading"}
+                title={!hasPoem ? "Write some lines first" : undefined}>
+                {status === "loading"
+                  ? "Analyzing…"
+                  : effectiveMode === "compare"
+                    ? "Compare versions"
+                    : "Analyze poem"}
+              </button>
+              {(result || scoreHistory.length > 0) && (
+                <button type="button"
+                  className="small-btn ai-new-session-btn"
+                  onClick={handleNewSession}
+                  disabled={status === "loading"}
+                  title="Start a fresh session — clears chat, ignored issues, and score history for this poem">
+                  New session
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Word count hint */}
@@ -1282,6 +1449,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           {status === "done" && result && (
             <>
               <AnalysisResults
+                key={`results-${sessionNonce}`}
                 result={result}
                 previous={effectiveMode === "compare" ? savedResult : null}
                 onJump={onJumpToLine}
@@ -1294,6 +1462,9 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 model={model}
                 poemId={poemId}
                 onVisibleIssuesChange={onVisibleIssuesChange}
+                onClarifyReply={handleClarifyReply}
+                openIssueLineSignal={openIssueLineSignal}
+                scoringEnabled={scoringEnabled}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"

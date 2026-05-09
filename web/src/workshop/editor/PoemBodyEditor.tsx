@@ -264,10 +264,25 @@ const issueGutterField = StateField.define<RangeSet<GutterMarker>>({
   },
 });
 
+// Module-level handler ref so the gutter extension (defined once) can call
+// the latest React callback. Only one editor instance runs at a time.
+const gutterDotClickHandler: { fn: ((line: number) => void) | null } = { fn: null };
+
 const issueGutterExtension = gutter({
   class: "cm-issue-gutter",
   markers: (view) => view.state.field(issueGutterField),
   initialSpacer: () => new SeverityDot("low"),
+  domEventHandlers: {
+    click(view, line) {
+      const set = view.state.field(issueGutterField);
+      let hit = false;
+      set.between(line.from, line.from, () => { hit = true; });
+      if (!hit) return false;
+      const lineNo = view.state.doc.lineAt(line.from).number;
+      gutterDotClickHandler.fn?.(lineNo);
+      return true;
+    },
+  },
 });
 
 // ---- Word-level problem highlights ---- //
@@ -338,6 +353,8 @@ export interface PoemBodyEditorProps {
   onSelectionText?: (text: string | null, rect: DOMRect | null) => void;
   /** Severity dot markers in the gutter for lines with AI issues. */
   issueGutterMarkers?: Array<[number, number, string?]>;
+  /** Called when the user clicks a severity dot in the gutter. */
+  onGutterDotClick?: (line: number) => void;
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   id?: string;
@@ -499,6 +516,12 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     if (!view) return;
     try { view.dispatch({ effects: setLineFocusEnabled.of(props.lineFocusMode ?? false) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.lineFocusMode]);
+
+  // Forward latest gutter-dot click callback to the module-level extension.
+  useEffect(() => {
+    gutterDotClickHandler.fn = props.onGutterDotClick ?? null;
+    return () => { gutterDotClickHandler.fn = null; };
+  }, [props.onGutterDotClick]);
 
   const extensions = useMemo(
     () => [

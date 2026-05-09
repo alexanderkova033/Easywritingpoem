@@ -101,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const result = await callOpenAI(
     apiKey,
     {
-      model: "gpt-4o-mini",
+      model: "gpt-5-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: prompt },

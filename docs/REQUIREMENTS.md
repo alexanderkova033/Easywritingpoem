@@ -38,7 +38,7 @@ Make writing, revising, and understanding poetry faster and clearer through **li
 The **shipping** web app is **static** and does **not** call OpenAI. When you choose to add critique:
 
 - **Provider (planned):** OpenAI.
-- **Models:** **`gpt-4o-mini`** by default; **`OPENAI_MODEL=gpt-4o`** for more depth.
+- **Models:** **`gpt-5-mini`** by default; **`OPENAI_MODEL=gpt-5`** for more depth.
 - **Proxy:** **`server/`** would expose **`POST /api/analyze`**; **API key stays on the server**.
 - **Contract:** [AI_INTEGRATION.md](./AI_INTEGRATION.md) (1–100 scores, issues with line ranges, improvements).
 
@@ -137,7 +137,7 @@ Poem-level **comments** or **critiques** between users (similar in spirit to lar
 ## 10. Open decisions (remaining)
 
 - **Ops** for `server/` and APIs: CORS allowlist for the website origin, monitoring, **budget / rate limits** per IP or per deploy (optional guardrails).
-- **`gpt-4o-mini` vs `gpt-4o`** per environment—validate with real poems.
+- **`gpt-5-mini` vs `gpt-5`** per environment—validate with real poems.
 
 ## 11. Future exploration (not committed)
 

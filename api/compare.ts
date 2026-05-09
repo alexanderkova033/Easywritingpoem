@@ -15,13 +15,17 @@ Return valid JSON with this exact shape:
 {
   "meta": { "model": "<model-id>", "analyzedAt": "<ISO-8601>" },
   "overall_score": <integer 1-100 for the CURRENT version>,
-  "dimensions": {
-    "imagery": <integer 1-100>,
-    "musicality": <integer 1-100>,
-    "originality": <integer 1-100>,
-    "clarity": <integer 1-100>
-  },
+  "warm_reaction": "<one warm honest sentence (≤18 words) reacting to the current draft>",
   "summary": "<2-3 sentences: honest, specific overall impression of the current poem — what it achieves and the single most important improvement direction>",
+  "strengths": ["<2-4 short phrases (≤10 words each) naming what works in the CURRENT draft>"],
+  "weaknesses": ["<2-4 short phrases (≤10 words each) naming what most needs work in the CURRENT draft>"],
+  "strongest_line": {
+    "line": <1-based integer of the single best line in the CURRENT draft>,
+    "excerpt": "<the line itself or a short quote>",
+    "why": "<one short sentence>"
+  },
+  "overall_direction": "<3-5 sentences of whole-poem craft advice for the next revision — big picture, not a list of line problems>",
+  "clarifying_question": "<optional — one short clarifying question; omit field if not needed>",
   "issues": [
     {
       "id": "issue-1",
@@ -30,6 +34,7 @@ Return valid JSON with this exact shape:
       "line_end": <1-based int>,
       "excerpt": "<short quote, optional>",
       "problem_words": ["<specific weak word or phrase>"],
+      "headline": "<one fragment (≤8 words) naming the problem>",
       "rationale": "<polite, specific — mention exact weak words when relevant>",
       "improvements": ["<direction>"],
       "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling>"
@@ -45,9 +50,15 @@ Return valid JSON with this exact shape:
 
 Rules:
 - Scores are for the CURRENT version, integers 1-100.
+- warm_reaction: always present, one sentence (≤18 words), human-sounding.
 - summary: always present, 2-3 sentences, honest and specific.
+- strengths / weaknesses: 2-4 short phrases each (≤10 words).
+- strongest_line: always present for the current draft.
+- overall_direction: always present, 3-5 sentences, big picture.
+- clarifying_question: include only if intent is genuinely ambiguous; otherwise omit.
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
+- headline: required on every issue, ≤8 words, fragment style.
 - improvements/regressions/unchanged: 1-4 items each, or empty arrays.
 - issues: 3-6 most actionable, or fewer for strong poems.
 - rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction.
@@ -160,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
   const prevLines = (body.previousLines as unknown[]).map((l) => String(l ?? ""));
-  const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
@@ -186,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 2600,
+      max_tokens: 3000,
       temperature: 0.4,
     },
     res,

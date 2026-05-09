@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const context = typeof body.context === "string" ? body.context : "";
   const targetLine = typeof body.targetLine === "string" ? body.targetLine : undefined;
   const syllableTarget = typeof body.syllableTarget === "number" && body.syllableTarget > 0 ? body.syllableTarget : undefined;
-  const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
 
   const result = await callOpenAI(
     apiKey,

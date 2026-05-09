@@ -8,13 +8,6 @@ export interface AnalysisMeta {
   analyzedAt: string;
 }
 
-export interface AnalysisDimensions {
-  imagery: number;
-  musicality: number;
-  originality: number;
-  clarity: number;
-}
-
 export interface AnalysisIssue {
   id: string;
   severity?: "high" | "medium" | "low";
@@ -22,18 +15,30 @@ export interface AnalysisIssue {
   line_end: number;
   excerpt?: string;
   problem_words?: string[];
+  /** One-line preview shown when the issue card is collapsed. */
+  headline?: string;
   rationale: string;
   improvements: string[];
   /** Concrete rewritten version of the line(s), when provided by the model. */
   rewrite?: string;
 }
 
+export interface StrongestLine {
+  line: number;
+  excerpt: string;
+  why: string;
+}
+
 export interface PoemAnalysis {
   meta: AnalysisMeta;
   overall_score: number;
+  warm_reaction?: string;
   summary?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  strongest_line?: StrongestLine;
   overall_direction?: string;
-  dimensions: AnalysisDimensions;
+  clarifying_question?: string;
   issues: AnalysisIssue[];
 }
 
@@ -77,26 +82,46 @@ function parseSeverity(v: unknown): "high" | "medium" | "low" | undefined {
   return undefined;
 }
 
+function parseStringArray(v: unknown, max: number): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = (v as unknown[])
+    .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+    .map((s) => s.trim())
+    .slice(0, max);
+  return out.length > 0 ? out : undefined;
+}
+
+function parseStrongestLine(v: unknown): StrongestLine | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const line = typeof o.line === "number" ? o.line : parseInt(String(o.line), 10);
+  if (!Number.isFinite(line) || line < 1) return undefined;
+  const excerpt = typeof o.excerpt === "string" ? o.excerpt.trim() : "";
+  const why = typeof o.why === "string" ? o.why.trim() : "";
+  if (!excerpt && !why) return undefined;
+  return { line: Math.round(line), excerpt, why };
+}
+
 function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
-  const dims = (obj.dimensions ?? {}) as Record<string, unknown>;
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
 
   return {
     meta: {
-      model: typeof meta.model === "string" ? meta.model : "gpt-4o-mini",
+      model: typeof meta.model === "string" ? meta.model : "gpt-5-mini",
       analyzedAt:
         typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
     },
     overall_score: clampScore(obj.overall_score),
+    warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
+      ? obj.warm_reaction.trim() : undefined,
     summary: typeof obj.summary === "string" ? obj.summary : undefined,
+    strengths: parseStringArray(obj.strengths, 4),
+    weaknesses: parseStringArray(obj.weaknesses, 4),
+    strongest_line: parseStrongestLine(obj.strongest_line),
     overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
-    dimensions: {
-      imagery: clampScore(dims.imagery),
-      musicality: clampScore(dims.musicality),
-      originality: clampScore(dims.originality),
-      clarity: clampScore(dims.clarity),
-    },
+    clarifying_question: typeof obj.clarifying_question === "string" && obj.clarifying_question.trim()
+      ? obj.clarifying_question.trim() : undefined,
     issues: issuesRaw
       .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
       .map((iss, idx) => ({
@@ -110,6 +135,8 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
               .filter((s): s is string => typeof s === "string")
               .slice(0, 3)
           : undefined,
+        headline: typeof iss.headline === "string" && iss.headline.trim()
+          ? iss.headline.trim() : undefined,
         rationale: typeof iss.rationale === "string" ? iss.rationale : "",
         improvements: Array.isArray(iss.improvements)
           ? (iss.improvements as unknown[])
@@ -162,13 +189,13 @@ export async function comparePoem(
     title: string;
     lines: string[];
     previousLines: string[];
-    previousScores: { overall_score: number; dimensions: AnalysisDimensions };
+    previousScores: { overall_score: number };
     localAnalysis?: LocalAnalysisContext;
     goals?: Record<string, number>;
     writingFocus?: string;
     scoreHistory?: number[];
   },
-  model = "gpt-4o-mini",
+  model = "gpt-5-mini",
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
   const response = await fetch("/api/compare", {
@@ -193,6 +220,8 @@ export async function comparePoem(
 
 export type HarshnessLevel = "baby" | "casual" | "student" | "editor" | "critic";
 
+export type AnalysisStyle = "detailed" | "big-picture";
+
 export async function analyzePoem(
   {
     title,
@@ -201,6 +230,7 @@ export async function analyzePoem(
     goals,
     harshness,
     writingFocus,
+    analysisStyle,
   }: {
     title: string;
     lines: string[];
@@ -208,15 +238,16 @@ export async function analyzePoem(
     goals?: Record<string, number>;
     harshness?: HarshnessLevel;
     writingFocus?: string;
+    analysisStyle?: AnalysisStyle;
   },
-  model = "gpt-4o-mini",
+  model = "gpt-5-mini",
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
   const response = await fetch("/api/analyze", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus }),
+    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus, analysisStyle }),
   });
 
   if (!response.ok) {

@@ -25,14 +25,17 @@ function buildSystemPrompt(harshness?: string): string {
 {
   "meta": { "model": "<model-id>", "analyzedAt": "<ISO-8601>" },
   "overall_score": <integer 1-100>,
+  "warm_reaction": "<one warm, honest sentence (max 18 words) reacting to the poem as a person, not an evaluator>",
   "summary": "<2-3 sentences: an honest, specific overall impression — what the poem achieves, what mood it creates, and its defining strength>",
-  "overall_direction": "<3-5 sentences giving the single most important whole-poem improvement direction. This should be broad craft advice — about the poem's arc, emotional range, tonal consistency, structural choices, or central image — NOT a repeat of individual line issues. Write as if advising a poet before their next full revision.>",
-  "dimensions": {
-    "imagery": <integer 1-100>,
-    "musicality": <integer 1-100>,
-    "originality": <integer 1-100>,
-    "clarity": <integer 1-100>
+  "strengths": ["<2-4 brief phrases (each max 10 words) naming what the poem does well — concrete, not generic>"],
+  "weaknesses": ["<2-4 brief phrases (each max 10 words) naming what most needs work — concrete, not generic>"],
+  "strongest_line": {
+    "line": <1-based integer of the single best line>,
+    "excerpt": "<the line itself or a short quote from it>",
+    "why": "<one short sentence on what makes this line land>"
   },
+  "overall_direction": "<3-5 sentences giving the single most important whole-poem improvement direction. This should be broad craft advice — about the poem's arc, emotional range, tonal consistency, structural choices, or central image — NOT a repeat of individual line issues. Write as if advising a poet before their next full revision.>",
+  "clarifying_question": "<optional — one short clarifying question to ask the poet if a major intent is ambiguous; omit field if not needed>",
   "issues": [
     {
       "id": "issue-1",
@@ -41,6 +44,7 @@ function buildSystemPrompt(harshness?: string): string {
       "line_end": <1-based integer>,
       "excerpt": "<short quote, optional>",
       "problem_words": ["<specific weak word or phrase>"],
+      "headline": "<one short fragment (max 8 words) naming the problem — used as a one-line preview>",
       "rationale": "<polite, specific reason — mention the exact words or phrases that are weak when relevant>",
       "improvements": ["<direction 1>", "<optional direction 2>"],
       "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling; omit for structural issues or when directions suffice>"
@@ -49,11 +53,16 @@ function buildSystemPrompt(harshness?: string): string {
 }
 Rules:
 - Scores are integers 1-100.
+- warm_reaction: always present, ONE sentence, ≤18 words. Sound like a person reacting, not a rubric. Specific, not generic.
 - summary: always present, 2-3 sentences, honest and specific — not generic praise.
+- strengths / weaknesses: 2-4 items each. Each item is a SHORT phrase (≤10 words), no full sentences. Concrete: name the technique, image, or move — not vague praise.
+- strongest_line: always present. Pick the single line that does the most work; \`line\` is its 1-based index.
 - overall_direction: always present, 3-5 sentences of whole-poem craft advice. Never a list of line problems — think big picture: arc, theme, voice, structure, emotional progression.
+- clarifying_question: include ONLY when intent is genuinely ambiguous. Otherwise omit the field entirely.
 - Limit issues to the 3-6 most actionable ones; fewer is fine for strong poems.
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
+- headline: required for every issue. ≤8 words, fragment style, names the problem at a glance.
 - improvements: 1-3 strings per issue.
 - rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction. Keep it as 1-2 lines max.
 - If local analysis context is provided (syllables, rhyme scheme, clichés, goals), use it to make your feedback more precise and specific. Reference detected clichés directly.
@@ -157,6 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     goals?: unknown;
     harshness?: unknown;
     writingFocus?: unknown;
+    analysisStyle?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -165,26 +175,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
-  const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
+  const analysisStyle = body.analysisStyle === "big-picture" ? "big-picture" : "detailed";
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
     return res.status(400).json({ error: `Too many lines (max ${MAX_LINES}).` });
   }
 
+  const styleDirective = analysisStyle === "big-picture"
+    ? `\n\nIMPORTANT: For this analysis, the poet wants BIG-PICTURE feedback. Set "issues" to an empty array []. Do NOT identify or list any line-level problems. Put all your craft observations into warm_reaction, strengths, weaknesses, strongest_line, summary, and overall_direction. Be more discursive in summary and overall_direction since you have no issue list to carry the detail.`
+    : "";
+
   const result = await callOpenAI(
     apiKey,
     {
       model,
       messages: [
-        { role: "system", content: buildSystemPrompt(harshness) },
+        { role: "system", content: buildSystemPrompt(harshness) + styleDirective },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 2200,
+      max_tokens: 2600,
       temperature: 0.4,
     },
     res,

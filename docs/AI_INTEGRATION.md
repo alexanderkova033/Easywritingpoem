@@ -9,8 +9,8 @@ Previously, the **implemented product decision** was: poem analysis ran through 
 | Piece | Choice |
 |--------|--------|
 | Provider | **OpenAI** |
-| Default model | **`gpt-4o-mini`** (cost/latency for short texts) |
-| Upgrade | **`gpt-4o`** via `OPENAI_MODEL` if critiques need more nuance |
+| Default model | **`gpt-5-mini`** (cost/latency for short texts) |
+| Upgrade | **`gpt-5`** via `OPENAI_MODEL` if critiques need more nuance |
 | Transport | HTTPS **POST** from the website to your deploy of `server/` |
 | Response shape | **JSON object** validated server-side (see schema below) |
 
@@ -43,7 +43,7 @@ Previously, the **implemented product decision** was: poem analysis ran through 
 ```json
 {
   "meta": {
-    "model": "gpt-4o-mini",
+    "model": "gpt-5-mini",
     "analyzedAt": "2026-03-29T12:00:00.000Z"
   },
   "overall_score": 72,
@@ -97,7 +97,7 @@ See `server/.env.example`. Required:
 
 Optional:
 
-- **`OPENAI_MODEL`** — default `gpt-4o-mini`
+- **`OPENAI_MODEL`** — default `gpt-5-mini`
 - **`PORT`** — default `8787`
 - **`CORS_ORIGIN`** — e.g. `http://localhost:5173` for local Vite; omit in dev for permissive `*` (tighten in production)
 - **`OPENAI_TIMEOUT_MS`** — OpenAI client timeout (default `90000`)
