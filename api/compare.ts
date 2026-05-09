@@ -212,8 +212,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 3000,
+      max_tokens: 9000,
       temperature: 0.4,
+      reasoningEffort: "low",
     },
     res,
   );

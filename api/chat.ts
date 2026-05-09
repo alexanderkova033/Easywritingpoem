@@ -78,9 +78,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...history,
         { role: "user", content: message },
       ],
-      max_tokens: 400,
+      max_tokens: 1500,
       temperature: 0.7,
       jsonMode: false,
+      reasoningEffort: "minimal",
     },
     res,
   );

@@ -80,8 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: PROMPTS[suggestType] },
         { role: "user", content: buildPrompt(title, lines, context, targetLine, syllableTarget) },
       ],
-      max_tokens: suggestType === "line" ? 700 : 600,
+      max_tokens: suggestType === "line" ? 2500 : 2000,
       temperature: 0.85,
+      reasoningEffort: "minimal",
     },
     res,
   );

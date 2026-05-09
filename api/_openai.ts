@@ -60,6 +60,8 @@ export async function callOpenAI(
     max_tokens: number;
     temperature: number;
     jsonMode?: boolean;
+    /** GPT-5 reasoning budget. "minimal" sends nearly all tokens to output. */
+    reasoningEffort?: "minimal" | "low" | "medium" | "high";
   },
   res: VercelResponse,
 ): Promise<OpenAICallResult | null> {
@@ -68,13 +70,19 @@ export async function callOpenAI(
   try {
     // GPT-5 / o-series models reject `max_tokens` and require
     // `max_completion_tokens`. They also reject custom `temperature` (only
-    // default 1 allowed). Drop both legacy params from the request.
+    // default 1 allowed). And they consume tokens internally for reasoning,
+    // so without an explicit `reasoning_effort` the entire budget can be eaten
+    // before any visible output is produced. Default to "minimal" so tokens
+    // go to the answer.
     void opts.temperature;
     const body: Record<string, unknown> = {
       model: opts.model,
       messages: opts.messages,
       max_completion_tokens: opts.max_tokens,
     };
+    if (opts.model.startsWith("gpt-5") || opts.model.startsWith("o")) {
+      body.reasoning_effort = opts.reasoningEffort ?? "minimal";
+    }
     if (opts.jsonMode !== false) {
       body.response_format = { type: "json_object" };
     }

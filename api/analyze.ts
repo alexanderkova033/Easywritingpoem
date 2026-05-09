@@ -206,8 +206,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 2600,
+      max_tokens: 8000,
       temperature: 0.4,
+      reasoningEffort: "low",
     },
     res,
   );
