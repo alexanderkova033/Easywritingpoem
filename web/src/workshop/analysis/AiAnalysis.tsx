@@ -208,6 +208,47 @@ function scoreLabel(score: number): string {
   return "Needs work";
 }
 
+function ScoreSparkline({ history }: { history: number[] }) {
+  if (history.length < 2) return null;
+  const w = 120;
+  const h = 28;
+  const pad = 2;
+  const xs = history.length;
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = Math.max(1, max - min);
+  const dx = (w - pad * 2) / (xs - 1);
+  const points = history.map((v, i) => {
+    const x = pad + i * dx;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return [x, y] as const;
+  });
+  const path = points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const area = `${path} L${points[points.length - 1]![0].toFixed(1)},${h - pad} L${pad},${h - pad} Z`;
+  const last = history[history.length - 1]!;
+  const prev = history[history.length - 2]!;
+  const delta = last - prev;
+  const trendColor = delta > 0
+    ? "var(--ai-score-high, #5fba7d)"
+    : delta < 0
+      ? "var(--ai-score-low, #d95f5f)"
+      : "var(--muted)";
+  return (
+    <div className="ai-score-spark" title={`Score history: ${history.join(" → ")}`}>
+      <svg className="ai-score-spark-svg" viewBox={`0 0 ${w} ${h}`} aria-hidden>
+        <path d={area} fill={trendColor} fillOpacity="0.18" />
+        <path d={path} fill="none" stroke={trendColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r={i === points.length - 1 ? 2.4 : 1.4} fill={trendColor} />
+        ))}
+      </svg>
+      <span className="ai-score-spark-delta" style={{ color: trendColor }}>
+        {delta > 0 ? `↑ ${delta}` : delta < 0 ? `↓ ${Math.abs(delta)}` : "·"}
+      </span>
+    </div>
+  );
+}
+
 function ScoreRing({ score }: { score: number }) {
   const r = 30;
   const circ = 2 * Math.PI * r;
@@ -628,6 +669,48 @@ function IssueCard({
   );
 }
 
+function CompareCelebration({
+  cmp, scoreDelta, dismissed, onDismiss,
+}: {
+  cmp: ComparisonChanges;
+  scoreDelta: number;
+  dismissed: boolean;
+  onDismiss: () => void;
+}) {
+  if (dismissed) return null;
+  const isWin = scoreDelta > 0 || cmp.improvements.length > cmp.regressions.length;
+  const isLoss = scoreDelta < 0 && cmp.regressions.length > cmp.improvements.length;
+  const tone = isWin ? "win" : isLoss ? "loss" : "neutral";
+  return (
+    <div className={`ai-cmp-toast ai-cmp-toast-${tone}`} role="status">
+      <span className="ai-cmp-toast-icon" aria-hidden>{isWin ? "▲" : isLoss ? "▼" : "·"}</span>
+      <div className="ai-cmp-toast-body">
+        <div className="ai-cmp-toast-head">
+          {scoreDelta !== 0 && (
+            <span className="ai-cmp-toast-delta">
+              {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta} score
+            </span>
+          )}
+          <span className="ai-cmp-toast-summary">
+            {isWin ? "Revision lifted the poem." : isLoss ? "Some craft moves regressed." : "Mixed revision."}
+          </span>
+        </div>
+        {cmp.improvements.length > 0 && (
+          <ul className="ai-cmp-toast-list ai-cmp-toast-improvements">
+            {cmp.improvements.slice(0, 3).map((s, i) => <li key={i}>✓ {s}</li>)}
+          </ul>
+        )}
+        {cmp.regressions.length > 0 && (
+          <ul className="ai-cmp-toast-list ai-cmp-toast-regressions">
+            {cmp.regressions.slice(0, 2).map((s, i) => <li key={i}>↓ {s}</li>)}
+          </ul>
+        )}
+      </div>
+      <button type="button" className="ai-cmp-toast-close" onClick={onDismiss} aria-label="Dismiss">✕</button>
+    </div>
+  );
+}
+
 function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   return (
     <div className="ai-comparison">
@@ -659,7 +742,7 @@ type AnalysisTab = "overview" | "issues" | "chat";
 function AnalysisResults({
   result, onJump, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
-  activeTab, onTabChange, externalTabSignal,
+  activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -680,6 +763,7 @@ function AnalysisResults({
   activeTab?: AnalysisTab;
   onTabChange?: (t: AnalysisTab) => void;
   externalTabSignal?: { tab: AnalysisTab; nonce: number } | null;
+  localAnalysis?: LocalAnalysisContext;
 }) {
   const isCompare = "comparison" in result;
 
@@ -689,6 +773,18 @@ function AnalysisResults({
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
   const [internalTab, setInternalTab] = useState<AnalysisTab>("overview");
+  const [overallExpanded, setOverallExpanded] = useState(false);
+  const [personalExpanded, setPersonalExpanded] = useState(false);
+  const [cmpToastDismissed, setCmpToastDismissed] = useState(false);
+  const lastResultIdRef = useRef<string | null>(null);
+  // Reset dismissal whenever a new compare result arrives.
+  useEffect(() => {
+    const id = result.meta.analyzedAt;
+    if (lastResultIdRef.current !== id) {
+      lastResultIdRef.current = id;
+      setCmpToastDismissed(false);
+    }
+  }, [result.meta.analyzedAt]);
   const tab = activeTab ?? internalTab;
   const setTab = (t: AnalysisTab) => {
     if (onTabChange) onTabChange(t); else setInternalTab(t);
@@ -892,6 +988,15 @@ function AnalysisResults({
       {/* Overview tab */}
       {tab === "overview" && (
         <div className="ai-tab-panel ai-tab-overview">
+          {isCompare && scoreHistory && scoreHistory.length >= 2 && (
+            <CompareCelebration
+              cmp={(result as PoemComparison).comparison}
+              scoreDelta={result.overall_score - (scoreHistory[scoreHistory.length - 2] ?? result.overall_score)}
+              dismissed={cmpToastDismissed}
+              onDismiss={() => setCmpToastDismissed(true)}
+            />
+          )}
+
           {result.warm_reaction && (
             <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
           )}
@@ -906,9 +1011,14 @@ function AnalysisResults({
                     <span className="ai-score-outof">/100</span>
                   </span>
                 </div>
-                <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-                  {scoreLabel(result.overall_score)}
-                </span>
+                <div className="ai-card-score-meta">
+                  <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+                    {scoreLabel(result.overall_score)}
+                  </span>
+                  {scoreHistory && scoreHistory.length >= 2 && (
+                    <ScoreSparkline history={scoreHistory} />
+                  )}
+                </div>
               </div>
             )}
 
@@ -954,18 +1064,43 @@ function AnalysisResults({
           {(result.overall_feedback || result.personal_feedback) && (
             <div className="ai-feedback-blocks">
               {result.overall_feedback && (
-                <div className="ai-feedback-card ai-feedback-overall">
+                <div className={`ai-feedback-card ai-feedback-overall${overallExpanded ? " is-expanded" : ""}`}>
                   <span className="ai-feedback-label">Overall</span>
-                  <p className="ai-feedback-text">{result.overall_feedback}</p>
+                  <p className={`ai-feedback-text${overallExpanded ? "" : " is-clamped"}`}>
+                    {result.overall_feedback}
+                  </p>
+                  {result.overall_feedback.length > 90 && (
+                    <button type="button" className="ai-feedback-toggle"
+                      onClick={() => setOverallExpanded((v) => !v)}>
+                      {overallExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
                 </div>
               )}
               {result.personal_feedback && (
-                <div className="ai-feedback-card ai-feedback-personal">
+                <div className={`ai-feedback-card ai-feedback-personal${personalExpanded ? " is-expanded" : ""}`}>
                   <span className="ai-feedback-label">For you</span>
-                  <p className="ai-feedback-text">{result.personal_feedback}</p>
+                  <p className={`ai-feedback-text${personalExpanded ? "" : " is-clamped"}`}>
+                    {result.personal_feedback}
+                  </p>
+                  {result.personal_feedback.length > 90 && (
+                    <button type="button" className="ai-feedback-toggle"
+                      onClick={() => setPersonalExpanded((v) => !v)}>
+                      {personalExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
+          )}
+
+          {localAnalysis && localAnalysis.form !== "free" && poemLines && (
+            <FormCoach
+              form={localAnalysis.form}
+              syllablesPerLine={localAnalysis.syllablesPerLine}
+              lines={poemLines}
+              onPeek={onPeek ?? onJump}
+            />
           )}
 
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
@@ -1138,6 +1273,65 @@ export interface AiAnalysisProps {
   onResultChange?: (result: PoemAnalysis | PoemComparison | null) => void;
   /** Receives a setter so external UI (e.g. editor popover) can switch tabs. */
   onSwitchTabRef?: (fn: (tab: "overview" | "issues" | "chat") => void) => void;
+}
+
+interface FormCoachLine { lineNumber: number; syllables: number; target: number; ok: boolean; }
+
+function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
+  form: string;
+  syllablesPerLine: number[];
+  lines: string[];
+  onPeek?: (line: number) => void;
+}) {
+  const targets = useMemo<number[] | null>(() => {
+    if (form === "haiku") return [5, 7, 5];
+    if (form === "sonnet") return Array(14).fill(10);
+    return null;
+  }, [form]);
+  if (!targets) return null;
+
+  const checks: FormCoachLine[] = [];
+  let lineIdx = 0;
+  for (let i = 0; i < lines.length && lineIdx < targets.length; i++) {
+    if (!lines[i]?.trim()) continue;
+    const syl = syllablesPerLine[i] ?? 0;
+    const target = targets[lineIdx]!;
+    checks.push({ lineNumber: i + 1, syllables: syl, target, ok: syl === target });
+    lineIdx++;
+  }
+
+  const passed = checks.filter((c) => c.ok).length;
+  const total = checks.length;
+
+  const formLabel = form.charAt(0).toUpperCase() + form.slice(1);
+
+  return (
+    <div className="ai-form-coach">
+      <div className="ai-form-coach-head">
+        <span className="ai-form-coach-icon" aria-hidden>◐</span>
+        <span className="ai-form-coach-title">{formLabel} coach</span>
+        <span className="ai-form-coach-progress">
+          {passed}/{total} lines on target
+        </span>
+      </div>
+      <div className="ai-form-coach-rows">
+        {checks.map((c) => (
+          <button
+            key={c.lineNumber}
+            type="button"
+            className={`ai-form-row${c.ok ? " is-ok" : " is-off"}`}
+            onClick={() => onPeek?.(c.lineNumber)}
+            title={`Line ${c.lineNumber}: ${c.syllables} syllables (target ${c.target})`}
+          >
+            <span className="ai-form-row-num">L{c.lineNumber}</span>
+            <span className="ai-form-row-mark" aria-hidden>{c.ok ? "✓" : "✗"}</span>
+            <span className="ai-form-row-syl">{c.syllables}</span>
+            <span className="ai-form-row-target muted">/{c.target}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
@@ -1375,14 +1569,20 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
               <button
                 type="button"
-                className={`small-btn ai-scoring-toggle${scoringEnabled ? " is-active" : ""}`}
+                className={`ai-score-toggle${scoringEnabled ? " is-on" : " is-off"}`}
                 onClick={toggleScoring}
                 title={scoringEnabled
                   ? "Hide the numeric score and trend"
                   : "Show the numeric score and trend"}
                 aria-pressed={scoringEnabled}
+                aria-label={scoringEnabled ? "Score visible — click to hide" : "Score hidden — click to show"}
               >
-                {scoringEnabled ? "Score on" : "Score off"}
+                <span className="ai-score-toggle-track">
+                  <span className="ai-score-toggle-thumb">
+                    {scoringEnabled ? "100" : "—"}
+                  </span>
+                </span>
+                <span className="ai-score-toggle-label">Score</span>
               </button>
 
               <label className="ai-model-label">
@@ -1394,16 +1594,27 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 </select>
               </label>
 
-              <label className="ai-model-label ai-harshness-label" title="Who should read your poem? Changes how critical the feedback is.">
-                <select className="ai-model-select" value={harshness}
-                  onChange={(e) => setHarshness(e.target.value as HarshnessLevel)}>
-                  <option value="baby">Child reader</option>
-                  <option value="casual">Casual reader</option>
-                  <option value="student">Student</option>
-                  <option value="editor">Editor</option>
-                  <option value="critic">Literary critic</option>
-                </select>
-              </label>
+              <div className="ai-harshness-toggle" role="group" aria-label="Feedback tone">
+                {([
+                  { id: "casual" as const, label: "Gentle", icon: "♡" },
+                  { id: "editor" as const, label: "Honest", icon: "✦" },
+                  { id: "critic" as const, label: "Critic", icon: "⚡" },
+                ]).map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`ai-harshness-btn${harshness === opt.id ? " is-active" : ""} ai-harshness-${opt.id}`}
+                    onClick={() => setHarshness(opt.id)}
+                    title={
+                      opt.id === "casual" ? "Warm, encouraging — only major issues"
+                        : opt.id === "editor" ? "Direct, specific, craft-focused"
+                          : "Uncompromising literary critique"
+                    }
+                  >
+                    <span aria-hidden>{opt.icon}</span> {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="ai-analyze-actions">
@@ -1513,6 +1724,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 openIssueLineSignal={openIssueLineSignal}
                 scoringEnabled={scoringEnabled}
                 externalTabSignal={externalTabSignal}
+                localAnalysis={localAnalysis}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"

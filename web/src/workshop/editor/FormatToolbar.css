@@ -730,6 +730,44 @@ button.primary:disabled {
   background: color-mix(in srgb, var(--accent) 70%, var(--border));
 }
 
+/* ---- Inline "✦ AI" chip on active line ---- */
+.cm-ai-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  margin-left: 0.6rem;
+  padding: 0.05rem 0.5rem 0.08rem;
+  border: 1px solid color-mix(in srgb, var(--accent, #5fba7d) 40%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #5fba7d) 8%, var(--surface));
+  color: var(--accent, #5fba7d);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  user-select: none;
+  vertical-align: middle;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease, border-color 0.15s ease;
+  pointer-events: auto;
+}
+
+.cm-line:hover .cm-ai-chip,
+.cm-activeLine .cm-ai-chip {
+  opacity: 0.85;
+  transform: translateX(0);
+}
+
+.cm-ai-chip:hover {
+  opacity: 1 !important;
+  background: color-mix(in srgb, var(--accent, #5fba7d) 18%, var(--surface));
+  border-color: var(--accent, #5fba7d);
+}
+
+.cm-ai-chip-icon { font-size: 0.78rem; line-height: 1; }
+.cm-ai-chip-label { line-height: 1; }
+
 /* ---- Strongest line: subtle gold accent ---- */
 .cm-line-strongest {
   background: linear-gradient(

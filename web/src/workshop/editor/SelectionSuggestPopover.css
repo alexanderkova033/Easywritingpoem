@@ -372,3 +372,101 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ---- AI issue feedback (problem-word match) ---- */
+.ssp-issue {
+  margin: 0.45rem 0.75rem 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--ai-score-mid, #e6a817) 30%, var(--border));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--ai-score-mid, #e6a817) 8%, var(--surface)) 0%,
+    var(--surface) 100%);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-left-width: 3px;
+}
+
+.ssp-issue-sev-high {
+  border-color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 35%, var(--border));
+  border-left-color: var(--ai-score-low, #d95f5f);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--ai-score-low, #d95f5f) 8%, var(--surface)) 0%,
+    var(--surface) 100%);
+}
+
+.ssp-issue-sev-medium {
+  border-left-color: var(--ai-score-mid, #e6a817);
+}
+
+.ssp-issue-sev-low {
+  border-left-color: var(--accent, #5fba7d);
+  background: var(--surface);
+}
+
+.ssp-issue-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ssp-issue-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.72rem;
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 20%, transparent);
+  color: var(--ai-score-mid, #e6a817);
+}
+
+.ssp-issue-sev-high .ssp-issue-mark {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 20%, transparent);
+  color: var(--ai-score-low, #d95f5f);
+}
+
+.ssp-issue-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.ssp-issue-headline {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ssp-issue-rationale {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text);
+  opacity: 0.9;
+}
+
+.ssp-issue-apply {
+  align-self: flex-start;
+  appearance: none;
+  border: 1px solid var(--accent, #5fba7d);
+  background: color-mix(in srgb, var(--accent, #5fba7d) 10%, transparent);
+  color: var(--accent, #5fba7d);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.1rem;
+  transition: background 0.15s ease;
+}
+
+.ssp-issue-apply:hover {
+  background: var(--accent, #5fba7d);
+  color: #fff;
+}

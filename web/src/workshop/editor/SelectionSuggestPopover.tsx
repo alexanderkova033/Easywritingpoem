@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -71,6 +72,10 @@ export interface SelectionSuggestPopoverProps {
   poemTitle: string;
   poemLines: string[];
   wordLookupEnabled?: boolean;
+  /** AI analysis issues currently visible — used to surface AI feedback when the selection matches a flagged word. */
+  aiIssues?: AnalysisIssue[];
+  /** Apply a full-line rewrite (used when the user accepts an issue's suggested rewrite from the popover). */
+  onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
   onApply: (text: string) => void;
   onClose: () => void;
 }
@@ -81,11 +86,27 @@ export function SelectionSuggestPopover({
   poemTitle,
   poemLines,
   wordLookupEnabled = true,
+  aiIssues,
+  onApplyLine,
   onApply,
   onClose,
 }: SelectionSuggestPopoverProps) {
   const isSingleWord = !selectedText.trim().includes(" ") && selectedText.trim().length >= 1;
   const trimmedText = selectedText.trim();
+
+  // Match selection against any issue's problem_words to surface AI feedback.
+  const matchedIssue = useMemo<AnalysisIssue | null>(() => {
+    if (!aiIssues || aiIssues.length === 0 || !isSingleWord) return null;
+    const needle = trimmedText.toLowerCase().replace(/[^a-z'-]/g, "");
+    if (!needle) return null;
+    for (const iss of aiIssues) {
+      if (!iss.problem_words || iss.problem_words.length === 0) continue;
+      if (iss.problem_words.some((w) => w.toLowerCase().replace(/[^a-z'-]/g, "") === needle)) {
+        return iss;
+      }
+    }
+    return null;
+  }, [aiIssues, isSingleWord, trimmedText]);
 
   const [mode, setMode] = useState<"menu" | "rewrite" | "define">("menu");
   const [rewritePhase, setRewritePhase] = useState<"idle" | "loading" | "results" | "error">("idle");
@@ -200,6 +221,39 @@ export function SelectionSuggestPopover({
         <span className="ssp-source-text">{trimmedText.slice(0, 60)}{trimmedText.length > 60 ? "…" : ""}</span>
       </div>
 
+      {/* AI issue feedback — appears when the selected word was flagged in analysis. */}
+      {matchedIssue && mode === "menu" && (
+        <div className={`ssp-issue ssp-issue-sev-${matchedIssue.severity ?? "low"}`}>
+          <div className="ssp-issue-head">
+            <span className="ssp-issue-mark" aria-hidden>!</span>
+            <span className="ssp-issue-title">
+              AI flagged this · Line {matchedIssue.line_start === matchedIssue.line_end
+                ? matchedIssue.line_start
+                : `${matchedIssue.line_start}–${matchedIssue.line_end}`}
+            </span>
+          </div>
+          {matchedIssue.headline && (
+            <div className="ssp-issue-headline">{matchedIssue.headline}</div>
+          )}
+          {matchedIssue.rationale && (
+            <p className="ssp-issue-rationale">{matchedIssue.rationale}</p>
+          )}
+          {matchedIssue.rewrite && onApplyLine && (
+            <button
+              type="button"
+              className="ssp-issue-apply"
+              onClick={() => {
+                onApplyLine(matchedIssue.line_start, matchedIssue.line_end, matchedIssue.rewrite!);
+                onClose();
+              }}
+              title="Apply the AI's suggested rewrite for this whole line"
+            >
+              ✦ Apply suggested rewrite
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Menu mode ── */}
       {mode === "menu" && (
         <div className="ssp-menu">
@@ -219,7 +273,7 @@ export function SelectionSuggestPopover({
             onClick={() => setMode("rewrite")}
           >
             <span className="ssp-menu-icon" aria-hidden>✦</span>
-            AI rewrite suggestions
+            {matchedIssue ? "Try a different word" : "AI rewrite suggestions"}
           </button>
         </div>
       )}

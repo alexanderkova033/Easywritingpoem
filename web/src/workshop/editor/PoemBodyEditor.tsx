@@ -210,6 +210,59 @@ const issueHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Inline "✦ AI" chip on the active cursor line ---- //
+class AiChipWidget extends WidgetType {
+  toDOM() {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "cm-ai-chip";
+    el.setAttribute("aria-label", "Rewrite this line with AI");
+    el.title = "Rewrite this line with AI";
+    el.innerHTML = '<span class="cm-ai-chip-icon" aria-hidden>✦</span><span class="cm-ai-chip-label">AI</span>';
+    return el;
+  }
+  ignoreEvent() { return false; }
+}
+
+const aiChipPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet = Decoration.none;
+    constructor(view: EditorView) { this.compute(view); }
+    update(u: ViewUpdate) {
+      if (u.selectionSet || u.docChanged || u.viewportChanged) this.compute(u.view);
+    }
+    compute(view: EditorView) {
+      const sel = view.state.selection.main;
+      if (!sel.empty) { this.decorations = Decoration.none; return; }
+      try {
+        const line = view.state.doc.lineAt(sel.from);
+        if (!line.text.trim()) { this.decorations = Decoration.none; return; }
+        const w = Decoration.widget({ widget: new AiChipWidget(), side: 2 }).range(line.to);
+        this.decorations = Decoration.set([w]);
+      } catch { this.decorations = Decoration.none; }
+    }
+  },
+  {
+    decorations: (v) => v.decorations,
+    eventHandlers: {
+      mousedown(e, view) {
+        const target = e.target as HTMLElement;
+        if (!target.closest(".cm-ai-chip")) return false;
+        e.preventDefault();
+        e.stopPropagation();
+        const sel = view.state.selection.main;
+        try {
+          const line = view.state.doc.lineAt(sel.from);
+          // Selecting the whole line text triggers the workshop's onSelectionText
+          // callback, which opens SelectionSuggestPopover with the line as input.
+          view.dispatch({ selection: { anchor: line.from, head: line.to } });
+        } catch { /* ignore */ }
+        return true;
+      },
+    },
+  },
+);
+
 // Strongest-line decoration — subtle gold accent for the best line in the poem.
 const setStrongestLine = StateEffect.define<DecorationSet>();
 const clearStrongestLine = StateEffect.define<void>();
@@ -613,6 +666,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       highlightSelectionMatches(),
       lineFlashField,
       strongestLineField,
+      aiChipPlugin,
       issueHighlightField,
       persistentIssueDecosField,
       issueGutterField,

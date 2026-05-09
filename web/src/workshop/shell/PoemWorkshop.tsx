@@ -1790,6 +1790,8 @@ export function PoemWorkshop() {
                         poemTitle={m.title}
                         poemLines={m.lines}
                         wordLookupEnabled={wordLookupEnabled}
+                        aiIssues={aiVisibleIssues}
+                        onApplyLine={m.applyLineRewrite}
                         onApply={(text) => {
                           const view = m.editorViewRef.current;
                           if (!view) return;
