@@ -540,6 +540,10 @@ export function PoemWorkshop() {
         m.setToolTab("snapshots");
         m.saveSnapshot();
       }
+      if (e.key.toLowerCase() === "a" && (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey) {
+        e.preventDefault();
+        mobileAnalyzeFnRef.current?.();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

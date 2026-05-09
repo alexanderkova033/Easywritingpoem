@@ -505,7 +505,7 @@
     left: 50%;
     width: 2px;
     transform: translateX(-50%);
-    background: color-mix(in srgb, var(--border) 30%, transparent);
+    background: color-mix(in srgb, var(--border) 18%, transparent);
     transition: background 0.18s ease, top 0.18s ease, bottom 0.18s ease, width 0.18s ease;
     border-radius: 2px;
     pointer-events: none;

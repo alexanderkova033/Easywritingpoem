@@ -148,6 +148,10 @@ export const poemEditorTheme = EditorView.theme({
   ".cm-selectionBackground": {
     background: "var(--selection-bg) !important",
   },
+  ".cm-selectionMatch": {
+    backgroundColor: "color-mix(in srgb, var(--accent) 14%, transparent)",
+    borderRadius: "2px",
+  },
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
     background:
       "color-mix(in srgb, var(--selection-bg) 96%, var(--accent)) !important",

@@ -41,6 +41,10 @@ export function KeyboardShortcutsContent() {
           <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">S</kbd> — save snapshot.
         </li>
         <li>
+          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+          <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">A</kbd> — run AI analysis.
+        </li>
+        <li>
           <kbd className="kbd-hint">Alt</kbd> + <kbd className="kbd-hint">Z</kbd> — toggle focus mode.
         </li>
         <li>
