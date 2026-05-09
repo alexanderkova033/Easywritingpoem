@@ -2608,22 +2608,26 @@ export function PoemWorkshop() {
         </section>
 
         {/* Rail resize gutter */}
-        <div
-          className="rail-resize-gutter"
-          onMouseDown={handleRailResizeStart}
-          onDoubleClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}
-          aria-hidden
-          title="Drag to resize · double-click to reset"
-        />
+        {!isReadingMode && (
+          <div
+            className="rail-resize-gutter"
+            onMouseDown={handleRailResizeStart}
+            onDoubleClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}
+            aria-hidden
+            title="Drag to resize · double-click to reset"
+          />
+        )}
 
         {/* Tools resize gutter */}
-        <div
-          className="tools-resize-gutter"
-          onMouseDown={handleResizeStart}
-          onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
-          aria-hidden
-          title="Drag to resize · double-click to reset"
-        />
+        {!isReadingMode && (
+          <div
+            className="tools-resize-gutter"
+            onMouseDown={handleResizeStart}
+            onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
+            aria-hidden
+            title="Drag to resize · double-click to reset"
+          />
+        )}
 
         <aside
           ref={toolsPanelRef}
