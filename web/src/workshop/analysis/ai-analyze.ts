@@ -8,9 +8,13 @@ export interface AnalysisMeta {
   analyzedAt: string;
 }
 
+export type Confidence = "high" | "medium" | "low";
+
 export interface AnalysisIssue {
   id: string;
   severity?: "high" | "medium" | "low";
+  /** How sure the model is this is actually a problem (vs taste). */
+  confidence?: Confidence;
   line_start: number;
   line_end: number;
   excerpt?: string;
@@ -82,6 +86,11 @@ function parseSeverity(v: unknown): "high" | "medium" | "low" | undefined {
   return undefined;
 }
 
+function parseConfidence(v: unknown): Confidence | undefined {
+  if (v === "high" || v === "medium" || v === "low") return v;
+  return undefined;
+}
+
 function parseStringArray(v: unknown, max: number): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out = (v as unknown[])
@@ -127,6 +136,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
       .map((iss, idx) => ({
         id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
         severity: parseSeverity(iss.severity),
+        confidence: parseConfidence(iss.confidence),
         line_start: clampScore(iss.line_start),
         line_end: clampScore(iss.line_end),
         excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
@@ -175,6 +185,57 @@ function parseComparison(obj: Record<string, unknown>): PoemComparison {
   };
 }
 
+/**
+ * Build a compact line-level diff between two drafts. We send this instead of
+ * the entire previous version so the model doesn't pay tokens for unchanged
+ * lines. Uses a simple LCS to align lines, then coalesces removed+added pairs
+ * into "changed" entries when they touch.
+ */
+export function buildChangesText(prev: string[], curr: string[]): string {
+  const n = prev.length;
+  const m = curr.length;
+  // dp[i][j] = LCS of prev[i..] and curr[j..]
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      if (prev[i] === curr[j]) dp[i]![j]! = dp[i + 1]![j + 1]! + 1;
+      else dp[i]![j]! = Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!);
+    }
+  }
+  type RawOp = { type: "removed"; oldLine: number; oldText: string }
+    | { type: "added"; newLine: number; newText: string };
+  const ops: RawOp[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < n && j < m) {
+    if (prev[i] === curr[j]) { i++; j++; continue; }
+    if ((dp[i + 1]?.[j] ?? 0) >= (dp[i]?.[j + 1] ?? 0)) {
+      ops.push({ type: "removed", oldLine: i + 1, oldText: prev[i]! });
+      i++;
+    } else {
+      ops.push({ type: "added", newLine: j + 1, newText: curr[j]! });
+      j++;
+    }
+  }
+  while (i < n) { ops.push({ type: "removed", oldLine: i + 1, oldText: prev[i]! }); i++; }
+  while (j < m) { ops.push({ type: "added", newLine: j + 1, newText: curr[j]! }); j++; }
+
+  const lines: string[] = [];
+  for (let k = 0; k < ops.length; k++) {
+    const o = ops[k]!;
+    const next = ops[k + 1];
+    if (o.type === "removed" && next?.type === "added") {
+      lines.push(`Line ${next.newLine} changed (was line ${o.oldLine}): "${o.oldText}" → "${next.newText}"`);
+      k++;
+    } else if (o.type === "removed") {
+      lines.push(`Line ${o.oldLine} removed: "${o.oldText}"`);
+    } else {
+      lines.push(`Line ${o.newLine} added: "${o.newText}"`);
+    }
+  }
+  return lines.length === 0 ? "(no line-level changes — same text)" : lines.join("\n");
+}
+
 export async function comparePoem(
   {
     title,
@@ -198,20 +259,25 @@ export async function comparePoem(
   model = "gpt-5-mini",
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
+  const changesText = buildChangesText(previousLines, lines);
   const response = await fetch("/api/compare", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, previousLines, previousScores, model, localAnalysis, goals, writingFocus, scoreHistory }),
+    body: JSON.stringify({ title, lines, changesText, previousScores, model, localAnalysis, goals, writingFocus, scoreHistory }),
   });
 
   if (!response.ok) {
     let msg = `HTTP ${response.status}`;
+    let retryAfterSec: number | undefined;
     try {
-      const body = (await response.json()) as { error?: string };
+      const body = (await response.json()) as { error?: string; retryAfterSec?: number };
       if (body?.error) msg = body.error;
+      if (typeof body.retryAfterSec === "number") retryAfterSec = body.retryAfterSec;
     } catch { /* ignore */ }
-    throw new Error(msg);
+    const e = new Error(msg) as Error & { retryAfterSec?: number };
+    if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
+    throw e;
   }
 
   const data = (await response.json()) as Record<string, unknown>;
@@ -219,8 +285,6 @@ export async function comparePoem(
 }
 
 export type HarshnessLevel = "baby" | "casual" | "student" | "editor" | "critic";
-
-export type AnalysisStyle = "detailed" | "big-picture";
 
 export async function analyzePoem(
   {
@@ -230,7 +294,6 @@ export async function analyzePoem(
     goals,
     harshness,
     writingFocus,
-    analysisStyle,
   }: {
     title: string;
     lines: string[];
@@ -238,7 +301,6 @@ export async function analyzePoem(
     goals?: Record<string, number>;
     harshness?: HarshnessLevel;
     writingFocus?: string;
-    analysisStyle?: AnalysisStyle;
   },
   model = "gpt-5-mini",
   signal?: AbortSignal,
@@ -247,18 +309,22 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus, analysisStyle }),
+    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus }),
   });
 
   if (!response.ok) {
     let msg = `HTTP ${response.status}`;
+    let retryAfterSec: number | undefined;
     try {
-      const body = (await response.json()) as { error?: string };
+      const body = (await response.json()) as { error?: string; retryAfterSec?: number };
       if (body?.error) msg = body.error;
+      if (typeof body.retryAfterSec === "number") retryAfterSec = body.retryAfterSec;
     } catch {
       /* ignore */
     }
-    throw new Error(msg);
+    const e = new Error(msg) as Error & { retryAfterSec?: number };
+    if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
+    throw e;
   }
 
   const data = (await response.json()) as Record<string, unknown>;

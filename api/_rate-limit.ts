@@ -26,6 +26,11 @@ function gc(): void {
   }
 }
 
+function normalizeIp(rawIp: string | string[] | undefined): string {
+  if (!rawIp) return "";
+  return Array.isArray(rawIp) ? rawIp[0]! : rawIp.split(",")[0]!.trim();
+}
+
 /**
  * Returns true if the request is allowed, false if the IP is over limit.
  * Pass the raw value of the `x-forwarded-for` (or similar) header.
@@ -34,7 +39,7 @@ export function checkRateLimit(rawIp: string | string[] | undefined): boolean {
   // Always allow when running locally (no IP header).
   if (!rawIp) return true;
 
-  const ip = Array.isArray(rawIp) ? rawIp[0] : rawIp.split(",")[0].trim();
+  const ip = normalizeIp(rawIp);
   if (!ip) return true;
 
   const now = Date.now();
@@ -52,4 +57,13 @@ export function checkRateLimit(rawIp: string | string[] | undefined): boolean {
 
   bucket.count++;
   return true;
+}
+
+/** Seconds until the IP's window resets. 0 if no active bucket. */
+export function getRateLimitRetrySec(rawIp: string | string[] | undefined): number {
+  const ip = normalizeIp(rawIp);
+  if (!ip) return 0;
+  const bucket = store.get(ip);
+  if (!bucket) return 0;
+  return Math.max(0, Math.ceil((bucket.resetAt - Date.now()) / 1000));
 }

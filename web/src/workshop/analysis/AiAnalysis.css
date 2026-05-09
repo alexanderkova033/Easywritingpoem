@@ -1903,10 +1903,29 @@
   line-height: 1.45;
 }
 
-.ai-issue-sev-emoji {
-  font-size: 0.85rem;
-  margin-right: 0.15rem;
+.ai-issue-sev-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  margin-right: 0.3rem;
+  flex: none;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 }
+.ai-issue-sev-dot-high   { background: var(--ai-score-low,  #d95f5f); }
+.ai-issue-sev-dot-medium { background: var(--ai-score-mid,  #e6a817); }
+.ai-issue-sev-dot-low    { background: var(--ai-score-high, #5fba7d); }
+
+.ai-sw-mark {
+  display: inline-block;
+  width: 1.05rem;
+  text-align: center;
+  font-weight: 700;
+  opacity: 0.7;
+  margin-right: 0.1rem;
+}
+.ai-sw-strengths .ai-sw-mark  { color: var(--ai-score-high, #5fba7d); }
+.ai-sw-weaknesses .ai-sw-mark { color: var(--ai-score-mid,  #e6a817); }
 
 .ai-issue-headline {
   font-size: 0.85rem;
@@ -1967,4 +1986,155 @@
 }
 
 .cm-issue-dot { cursor: pointer; }
+
+/* ----- Style input ----- */
+.ai-style-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+.ai-style-input-label {
+  font-size: 0.78rem;
+  color: var(--text);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.ai-style-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.ai-style-input:focus {
+  outline: none;
+  border-color: var(--accent, #5fba7d);
+}
+
+/* ----- Snapshot strip ----- */
+.ai-snapshots-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+}
+
+.ai-snapshots-label {
+  margin-right: 0.2rem;
+}
+
+.ai-snapshot-chip {
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ai-snapshot-chip:hover { border-color: var(--accent, #5fba7d); }
+.ai-snapshot-chip.is-active {
+  border-color: var(--accent, #5fba7d);
+  background: color-mix(in srgb, var(--accent, #5fba7d) 12%, var(--surface));
+}
+
+/* ----- Retry banner ----- */
+.ai-retry-banner {
+  margin: 0.4rem 0;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--ai-score-mid, #e6a817);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 10%, var(--surface));
+}
+
+/* ----- Quick-reply chips on chat ----- */
+.ai-chat-quickreplies {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.ai-chat-quickreply {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #5fba7d) 5%, var(--surface));
+  color: var(--text);
+  cursor: pointer;
+}
+
+.ai-chat-quickreply:hover {
+  border-color: var(--accent, #5fba7d);
+  background: color-mix(in srgb, var(--accent, #5fba7d) 12%, var(--surface));
+}
+
+.ai-chat-quickreply:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ----- Low-confidence issue dim ----- */
+.ai-issue-conf-low { opacity: 0.62; }
+.ai-issue-conf-low:hover { opacity: 0.95; }
+
+/* ----- Tabs (Overview / Issues) ----- */
+.ai-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin: 0.6rem 0 0.85rem;
+}
+
+.ai-tab {
+  padding: 0.4rem 0.85rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+  opacity: 0.65;
+  margin-bottom: -1px;
+}
+
+.ai-tab:hover { opacity: 0.9; }
+
+.ai-tab.is-active {
+  opacity: 1;
+  border-bottom-color: var(--accent, #5fba7d);
+  font-weight: 600;
+}
+
+.ai-tab-count {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.ai-tab.is-active .ai-tab-count {
+  background: color-mix(in srgb, var(--accent, #5fba7d) 22%, transparent);
+}
+
+.ai-issue-conf-pill {
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.35rem;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  opacity: 0.7;
+  margin-right: 0.25rem;
+}
 

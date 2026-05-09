@@ -1,11 +1,11 @@
 /**
  * Vercel serverless function — POST /api/compare
  *
- * Receives { title, lines, previousLines, previousScores, localAnalysis?, goals? }
+ * Receives { title, lines, changesText, previousScores, localAnalysis?, goals? }
  * and asks the model to analyse the current poem AND compare it to the previous version.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkRateLimit } from "./_rate-limit";
+import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 
 const SYSTEM_PROMPT = `You are an encouraging poetry editor reviewing a revised poem.
@@ -35,6 +35,7 @@ Return valid JSON with this exact shape:
       "excerpt": "<short quote, optional>",
       "problem_words": ["<specific weak word or phrase>"],
       "headline": "<one fragment (≤8 words) naming the problem>",
+      "confidence": "<high|medium|low>",
       "rationale": "<polite, specific — mention exact weak words when relevant>",
       "improvements": ["<direction>"],
       "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling>"
@@ -59,6 +60,7 @@ Rules:
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
 - headline: required on every issue, ≤8 words, fragment style.
+- confidence: required on every issue. high = clear problem; medium = partly subjective; low = taste call.
 - improvements/regressions/unchanged: 1-4 items each, or empty arrays.
 - issues: 3-6 most actionable, or fewer for strong poems.
 - rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction.
@@ -90,7 +92,15 @@ function numbered(lines: string[]): string {
 function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const hints: string[] = [];
 
-  if (local?.form && local.form !== "free") hints.push(`Detected form: ${local.form}`);
+  if (local?.form && local.form !== "free") {
+    const formRules: Record<string, string> = {
+      haiku: "Strict: 5-7-5 syllables; one nature image; cutting word/turn between images; no metaphor stacking.",
+      sonnet: "14 lines; expect a clear volta around line 8 or 9; consistent meter; coherent rhyme scheme.",
+      villanelle: "19 lines; two refrains alternating; pattern A1 b A2 / a b A1 / a b A2 / a b A1 / a b A2 / a b A1 A2.",
+    };
+    const rule = formRules[local.form];
+    hints.push(`Detected form: ${local.form}${rule ? ` — ${rule}` : ""}\nJudge against this form's conventions when relevant.`);
+  }
 
   if (local?.syllablesPerLine && local.syllablesPerLine.length > 0) {
     const syllLines = local.syllablesPerLine
@@ -141,7 +151,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!checkRateLimit(req.headers["x-forwarded-for"])) {
-    return res.status(429).json({ error: "Too many requests — please wait a moment before analyzing again." });
+    const retryAfterSec = getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
+    return res.status(429).json({
+      error: "Too many requests — please wait a moment before analyzing again.",
+      retryAfterSec,
+    });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -152,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const body = req.body as {
     title?: unknown;
     lines?: unknown;
-    previousLines?: unknown;
+    changesText?: unknown;
     previousScores?: unknown;
     scoreHistory?: unknown;
     model?: unknown;
@@ -164,13 +179,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
     return res.status(400).json({ error: "Missing or empty `lines` array." });
   }
-  if (!Array.isArray(body.previousLines) || body.previousLines.length === 0) {
-    return res.status(400).json({ error: "Missing or empty `previousLines` array." });
+  if (typeof body.changesText !== "string" || !body.changesText.trim()) {
+    return res.status(400).json({ error: "Missing `changesText` describing the diff from the previous draft." });
   }
 
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
-  const prevLines = (body.previousLines as unknown[]).map((l) => String(l ?? ""));
+  const changesText = (body.changesText as string).slice(0, 12_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
@@ -181,13 +196,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : undefined;
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
-  const prevScoreText = prevScores ? `\nPrevious scores: ${JSON.stringify(prevScores)}\n` : "";
+  const prevScoreText = prevScores ? `\nPrevious score: ${JSON.stringify(prevScores)}\n` : "";
   const historyText = scoreHistory && scoreHistory.length > 1
     ? `\nScore history (oldest → newest): ${scoreHistory.join(" → ")}\n`
     : "";
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}${historyText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
+  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\nNote: only the diff is shown above, not the full previous draft. Score and review the CURRENT version, but use the diff to identify what improved or regressed.`;
 
   const result = await callOpenAI(
     apiKey,

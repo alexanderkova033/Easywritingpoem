@@ -26,6 +26,98 @@ const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
 const LS_RESOLVED_PREFIX = "easy-poems:ai-resolved:";
 const LS_IGNORED_PREFIX = "easy-poems:ai-ignored:";
 const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
+const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
+const LS_CHAT_PREFIX = "easy-poems:ai-chat:";
+const LS_SNAPSHOTS_PREFIX = "easy-poems:ai-snapshots:";
+const LS_STYLE_NOTES = "easy-poems:ai-style-notes";
+const MAX_SNAPSHOTS = 3;
+
+function hashInput(input: string): string {
+  // 53-bit cyrb53 — collision-resistant enough for "did the input change".
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+function loadLastHash(poemId?: string): string | null {
+  if (!poemId) return null;
+  try { return localStorage.getItem(LS_LAST_HASH_PREFIX + poemId); }
+  catch { return null; }
+}
+
+function saveLastHash(poemId: string | undefined, hash: string) {
+  if (!poemId) return;
+  try { localStorage.setItem(LS_LAST_HASH_PREFIX + poemId, hash); } catch { /* ignore */ }
+}
+
+export interface AnalysisSnapshot {
+  analyzedAt: string;
+  overall_score: number;
+  summary?: string;
+  issuesCount: number;
+  /** Full result for restoration. */
+  result: PoemAnalysis | PoemComparison;
+}
+
+function loadSnapshots(poemId?: string): AnalysisSnapshot[] {
+  if (!poemId) return [];
+  try {
+    const raw = localStorage.getItem(LS_SNAPSHOTS_PREFIX + poemId);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return arr as AnalysisSnapshot[];
+  } catch { return []; }
+}
+
+function pushSnapshot(poemId: string | undefined, result: PoemAnalysis | PoemComparison) {
+  if (!poemId) return;
+  const existing = loadSnapshots(poemId);
+  const snap: AnalysisSnapshot = {
+    analyzedAt: result.meta.analyzedAt,
+    overall_score: result.overall_score,
+    summary: result.summary,
+    issuesCount: result.issues.length,
+    result,
+  };
+  // Avoid duplicate snapshots when nothing changed (same analyzedAt rare but possible).
+  const next = [snap, ...existing.filter((s) => s.analyzedAt !== snap.analyzedAt)].slice(0, MAX_SNAPSHOTS);
+  try { localStorage.setItem(LS_SNAPSHOTS_PREFIX + poemId, JSON.stringify(next)); } catch { /* ignore */ }
+}
+
+function loadStyleNotes(): string {
+  try { return localStorage.getItem(LS_STYLE_NOTES) ?? ""; } catch { return ""; }
+}
+
+interface StoredChatMessage { role: "user" | "assistant"; text: string; }
+
+function loadChat(poemId?: string): StoredChatMessage[] {
+  if (!poemId) return [];
+  try {
+    const raw = localStorage.getItem(LS_CHAT_PREFIX + poemId);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return (arr as Record<string, unknown>[])
+      .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.text === "string")
+      .map((m) => ({ role: m.role as "user" | "assistant", text: m.text as string }));
+  } catch { return []; }
+}
+
+function saveChat(poemId: string | undefined, msgs: StoredChatMessage[]) {
+  if (!poemId) return;
+  try {
+    if (msgs.length === 0) localStorage.removeItem(LS_CHAT_PREFIX + poemId);
+    else localStorage.setItem(LS_CHAT_PREFIX + poemId, JSON.stringify(msgs));
+  } catch { /* ignore */ }
+}
 
 export function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
   if (!poemId) return null;
@@ -134,25 +226,19 @@ function deltaClass(d: number): string {
 }
 
 // ---- issue category derivation ---- //
-const CATEGORY_RULES: { label: string; emoji: string; color: string; keywords: RegExp }[] = [
-  { label: "Imagery",     emoji: "🎨", color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
-  { label: "Rhythm",      emoji: "🥁", color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
-  { label: "Sound",       emoji: "🎵", color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
-  { label: "Word choice", emoji: "🪶", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
-  { label: "Structure",   emoji: "🏗", color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
-  { label: "Clarity",     emoji: "💡", color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
+const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
+  { label: "Imagery",     color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
+  { label: "Rhythm",      color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
+  { label: "Sound",       color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
+  { label: "Word choice", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
+  { label: "Structure",   color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
+  { label: "Clarity",     color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
 ];
 
-function severityEmoji(s?: "high" | "medium" | "low"): string {
-  if (s === "high") return "🔴";
-  if (s === "medium") return "🟡";
-  return "🟢";
-}
-
-function deriveCategory(issue: AnalysisIssue): { label: string; emoji: string; color: string } | null {
+function deriveCategory(issue: AnalysisIssue): { label: string; color: string } | null {
   const text = `${issue.rationale} ${issue.improvements.join(" ")}`;
   for (const rule of CATEGORY_RULES) {
-    if (rule.keywords.test(text)) return { label: rule.label, emoji: rule.emoji, color: rule.color };
+    if (rule.keywords.test(text)) return { label: rule.label, color: rule.color };
   }
   return null;
 }
@@ -374,7 +460,7 @@ function IssueCard({
 
   return (
     <div
-      className={`ai-issue ai-issue-sev-${issue.severity ?? "low"}${isResolved ? " is-resolved" : ""}`}
+      className={`ai-issue ai-issue-sev-${issue.severity ?? "low"}${isResolved ? " is-resolved" : ""}${issue.confidence === "low" ? " ai-issue-conf-low" : ""}`}
       data-issue-id={issue.id}
       style={{ borderLeftColor: isResolved ? "var(--border)" : sevColor }}
       onMouseEnter={triggerHighlight}
@@ -407,7 +493,15 @@ function IssueCard({
         </span>
         <span className="ai-issue-head-inner">
           {!isResolved && (
-            <span className="ai-issue-sev-emoji" aria-hidden>{severityEmoji(issue.severity)}</span>
+            <span
+              className={`ai-issue-sev-dot ai-issue-sev-dot-${issue.severity ?? "low"}`}
+              aria-hidden
+            />
+          )}
+          {!isResolved && issue.confidence === "low" && (
+            <span className="ai-issue-conf-pill" title="Low confidence — taste call you may reasonably reject">
+              taste
+            </span>
           )}
           {onJump && !isResolved ? (
             <button type="button" className="ai-issue-line linkish"
@@ -418,7 +512,7 @@ function IssueCard({
           ) : <span className="ai-issue-line">{rangeLabel}</span>}
           {cat && !isResolved && (
             <span className="ai-issue-cat" style={{ borderColor: cat.color, color: cat.color }}>
-              <span aria-hidden>{cat.emoji}</span> {cat.label}
+              {cat.label}
             </span>
           )}
           {!isResolved && (issue.headline
@@ -630,6 +724,7 @@ function AnalysisResults({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "issues">("overview");
 
   // Persist resolved/ignored across reloads — drop entries that no longer
   // match an issue in the current analysis to avoid stale junk accumulating.
@@ -646,13 +741,15 @@ function AnalysisResults({
     onVisibleIssuesChange?.(visibleIssues);
   }, [visibleIssues, onVisibleIssuesChange]);
 
-  // Editor → panel: when a gutter dot is clicked, open the matching issue
-  // and scroll it into view inside the analysis panel.
+  // Editor → panel: when a gutter dot is clicked or the cursor parks on a
+  // flagged line, switch to the Issues tab, open the matching issue, and
+  // scroll it into view.
   useEffect(() => {
     if (!openIssueLineSignal) return;
     const { line } = openIssueLineSignal;
     const match = visibleIssues.find((iss) => line >= iss.line_start && line <= iss.line_end);
     if (!match) return;
+    setActiveTab("issues");
     setOpenIds((prev) => {
       if (prev.has(match.id)) return prev;
       const s = new Set(prev);
@@ -751,6 +848,30 @@ function AnalysisResults({
         <p className="ai-warm-reaction">{result.warm_reaction}</p>
       )}
 
+      {/* Tab bar splits Overview from Issues so neither pane becomes a wall. */}
+      <div className="ai-tabs" role="tablist" aria-label="Analysis sections">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "overview"}
+          className={`ai-tab${activeTab === "overview" ? " is-active" : ""}`}
+          onClick={() => setActiveTab("overview")}
+        >
+          Overview
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "issues"}
+          className={`ai-tab${activeTab === "issues" ? " is-active" : ""}`}
+          onClick={() => setActiveTab("issues")}
+        >
+          Issues <span className="ai-tab-count">{totalIssues}</span>
+        </button>
+      </div>
+
+      {activeTab === "overview" && (<>
+
       {/* Score row — only when scoring is enabled */}
       {scoringEnabled && (
         <div className="ai-overall">
@@ -787,7 +908,7 @@ function AnalysisResults({
         <div className="ai-sw-grid">
           {(result.strengths?.length ?? 0) > 0 && (
             <div className="ai-sw-card ai-sw-strengths">
-              <span className="ai-sw-label" aria-hidden>✨ Strengths</span>
+              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>+</span> Strengths</span>
               <ul className="ai-sw-list">
                 {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
               </ul>
@@ -795,7 +916,7 @@ function AnalysisResults({
           )}
           {(result.weaknesses?.length ?? 0) > 0 && (
             <div className="ai-sw-card ai-sw-weaknesses">
-              <span className="ai-sw-label" aria-hidden>🎯 Work on</span>
+              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>−</span> Work on</span>
               <ul className="ai-sw-list">
                 {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
               </ul>
@@ -807,7 +928,7 @@ function AnalysisResults({
       {/* Strongest line callout */}
       {result.strongest_line && (
         <div className="ai-strongest-line">
-          <span className="ai-strongest-line-icon" aria-hidden>⭐</span>
+          <span className="ai-strongest-line-icon" aria-hidden>★</span>
           <div className="ai-strongest-line-body">
             <div className="ai-strongest-line-head">
               <span className="ai-strongest-line-label">Strongest line</span>
@@ -845,7 +966,7 @@ function AnalysisResults({
       {/* Clarifying question from the model */}
       {result.clarifying_question && !clarifyDismissed && (
         <div className="ai-clarifying-question">
-          <span className="ai-clarifying-icon" aria-hidden>❓</span>
+          <span className="ai-clarifying-icon" aria-hidden>?</span>
           <div className="ai-clarifying-body">
             <p className="ai-clarifying-text">{result.clarifying_question}</p>
             {onClarifyReply ? (
@@ -892,6 +1013,10 @@ function AnalysisResults({
 
       {/* Comparison panel */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
+
+      </>)}
+
+      {activeTab === "issues" && (<>
 
       {/* Issues section */}
       {result.issues.length > 0 ? (
@@ -1063,6 +1188,8 @@ function AnalysisResults({
         </div>
       )}
 
+      </>)}
+
       <p className="ai-meta muted small">
         {new Date(result.meta.analyzedAt).toLocaleString(undefined, {
           dateStyle: "medium", timeStyle: "short",
@@ -1099,10 +1226,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
-  const [analysisStyle, setAnalysisStyle] = useState<"detailed" | "big-picture">("detailed");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
+  const [styleNotes, setStyleNotes] = useState<string>(loadStyleNotes);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
+  const [snapshots, setSnapshots] = useState<AnalysisSnapshot[]>(() => loadSnapshots(poemId));
+  const [retryAfterSec, setRetryAfterSec] = useState<number>(0);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -1133,6 +1262,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       setErrorMsg("");
       setIsUnconfigured(false);
       setScoreHistory(loadScoreHistory(poemId));
+      setSnapshots(loadSnapshots(poemId));
     }
   }, [poemId]);
 
@@ -1155,6 +1285,20 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     });
   }, []);
 
+  const updateStyleNotes = useCallback((val: string) => {
+    setStyleNotes(val);
+    tryLocalStorageSetItem(LS_STYLE_NOTES, val);
+  }, []);
+
+  // Retry-after countdown ticker.
+  useEffect(() => {
+    if (retryAfterSec <= 0) return;
+    const id = setInterval(() => {
+      setRetryAfterSec((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [retryAfterSec]);
+
   const canCompare = savedResult !== null && savedLines.length > 0;
   const hasPoem = lines.some((l) => l.trim().length > 0);
   const wordCount = lines.join(" ").split(/\s+/).filter(Boolean).length;
@@ -1175,13 +1319,30 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
     const writingFocusParts: string[] = [];
     if (mainIdea?.trim()) writingFocusParts.push(`Main idea: ${mainIdea.trim()}`);
+    if (styleNotes.trim()) writingFocusParts.push(`Style / influences: ${styleNotes.trim().slice(0, 240)}`);
     if (clarifyContextRef.current) writingFocusParts.push(`Answer to clarifying question: ${clarifyContextRef.current}`);
     const writingFocus = writingFocusParts.length > 0 ? writingFocusParts.join("\n") : undefined;
     clarifyContextRef.current = "";
 
+    // Skip the API call when input + settings haven't changed since the last
+    // analysis — no point burning tokens on identical input.
+    const inputHash = hashInput([
+      lines.join("\n"),
+      title,
+      harshness,
+      styleNotes,
+      mainIdea ?? "",
+      mode === "compare" && canCompare ? "compare" : "fresh",
+    ].join("|"));
+    if (mode !== "compare" && result && loadLastHash(poemId) === inputHash) {
+      setStatus("done");
+      return;
+    }
+
     try {
+      let res: PoemAnalysis | PoemComparison;
       if (mode === "compare" && canCompare) {
-        const res = await comparePoem(
+        res = await comparePoem(
           {
             title, lines, previousLines: savedLines,
             previousScores: { overall_score: savedResult!.overall_score },
@@ -1190,25 +1351,26 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           },
           model, ctrl.signal,
         );
-        setResult(res);
-        setSavedResult(res);
-        setSavedLines(lines);
-        saveLastAnalysis(poemId, res);
-        onAnalysisDone?.(res.issues, res.overall_score);
-        setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       } else {
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, analysisStyle }, model, ctrl.signal);
-        setResult(res);
-        setSavedResult(res);
-        setSavedLines(lines);
-        saveLastAnalysis(poemId, res);
-        onAnalysisDone?.(res.issues, res.overall_score);
-        setScoreHistory(appendScoreHistory(poemId, res.overall_score));
+        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, model, ctrl.signal);
       }
+      setResult(res);
+      setSavedResult(res);
+      setSavedLines(lines);
+      saveLastAnalysis(poemId, res);
+      saveLastHash(poemId, inputHash);
+      pushSnapshot(poemId, res);
+      setSnapshots(loadSnapshots(poemId));
+      onAnalysisDone?.(res.issues, res.overall_score);
+      setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       setStatus("done");
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
-      const msg = (err as Error).message ?? "Unknown error";
+      const e = err as Error & { retryAfterSec?: number };
+      const msg = e.message ?? "Unknown error";
+      if (typeof e.retryAfterSec === "number" && e.retryAfterSec > 0) {
+        setRetryAfterSec(e.retryAfterSec);
+      }
       if (msg.toLowerCase().includes("not configured") || msg.toLowerCase().includes("api key")) {
         setIsUnconfigured(true);
         setStatus("idle");
@@ -1217,7 +1379,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, analysisStyle, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, styleNotes, result]);
 
 
   useEffect(() => {
@@ -1232,6 +1394,9 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         localStorage.removeItem(LS_RESOLVED_PREFIX + poemId);
         localStorage.removeItem(LS_IGNORED_PREFIX + poemId);
         localStorage.removeItem(LS_SCORE_HISTORY_PREFIX + poemId);
+        localStorage.removeItem(LS_LAST_HASH_PREFIX + poemId);
+        localStorage.removeItem(LS_CHAT_PREFIX + poemId);
+        localStorage.removeItem(LS_SNAPSHOTS_PREFIX + poemId);
       } catch { /* ignore */ }
     }
     setResult(null);
@@ -1240,9 +1405,19 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     setStatus("idle");
     setErrorMsg("");
     setScoreHistory([]);
+    setSnapshots([]);
     setSessionNonce((n) => n + 1);
     onVisibleIssuesChange?.([]);
   }, [poemId, onVisibleIssuesChange]);
+
+  const restoreSnapshot = useCallback((snap: AnalysisSnapshot) => {
+    setResult(snap.result);
+    setSavedResult(snap.result);
+    setStatus("done");
+    setErrorMsg("");
+    saveLastAnalysis(poemId, snap.result);
+    onAnalysisDone?.(snap.result.issues, snap.result.overall_score);
+  }, [poemId, onAnalysisDone]);
 
   const requestOpenIssueAtLine = useCallback((line: number) => {
     setOpenIssueLineSignal({ line, nonce: Date.now() });
@@ -1298,21 +1473,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 </button>
               </div>
 
-              <div className="ai-style-toggle" role="group" aria-label="Feedback depth">
-                <button type="button"
-                  className={`ai-mode-btn ${analysisStyle === "detailed" ? "is-active" : ""}`}
-                  onClick={() => setAnalysisStyle("detailed")}
-                  title="Line-level issues with specific suggestions">
-                  Line-level
-                </button>
-                <button type="button"
-                  className={`ai-mode-btn ${analysisStyle === "big-picture" ? "is-active" : ""}`}
-                  onClick={() => setAnalysisStyle("big-picture")}
-                  title="Strengths, weaknesses, and direction — no line-by-line nitpicks">
-                  Big-picture
-                </button>
-              </div>
-
               <button
                 type="button"
                 className={`small-btn ai-scoring-toggle${scoringEnabled ? " is-active" : ""}`}
@@ -1322,7 +1482,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                   : "Show the numeric score and trend"}
                 aria-pressed={scoringEnabled}
               >
-                {scoringEnabled ? "🎯 Score on" : "🎯 Score off"}
+                {scoringEnabled ? "Score on" : "Score off"}
               </button>
 
               <label className="ai-model-label">
@@ -1334,7 +1494,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               </label>
 
               <label className="ai-model-label ai-harshness-label" title="Who should read your poem? Changes how critical the feedback is.">
-                <span className="ai-harshness-icon" aria-hidden>👁</span>
                 <select className="ai-model-select" value={harshness}
                   onChange={(e) => setHarshness(e.target.value as HarshnessLevel)}>
                   <option value="baby">Child reader</option>
@@ -1370,6 +1529,46 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
             </div>
           </div>
 
+          {/* Style / influences input — global, persists across poems */}
+          <div className="ai-style-input-row">
+            <label className="ai-style-input-label" htmlFor="ai-style-input">
+Style / influences
+            </label>
+            <input
+              id="ai-style-input"
+              type="text"
+              className="ai-style-input"
+              value={styleNotes}
+              onChange={(e) => updateStyleNotes(e.target.value)}
+              placeholder="e.g. Mary Oliver, plainspoken modernism…"
+              maxLength={240}
+            />
+          </div>
+
+          {/* Snapshot strip — last 3 runs */}
+          {snapshots.length > 0 && (
+            <div className="ai-snapshots-row" role="group" aria-label="Recent analyses">
+              <span className="ai-snapshots-label muted small">History:</span>
+              {snapshots.map((snap, i) => (
+                <button
+                  key={snap.analyzedAt}
+                  type="button"
+                  className={`ai-snapshot-chip${result?.meta?.analyzedAt === snap.analyzedAt ? " is-active" : ""}`}
+                  onClick={() => restoreSnapshot(snap)}
+                  title={`${new Date(snap.analyzedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · ${snap.issuesCount} issue${snap.issuesCount !== 1 ? "s" : ""}`}
+                >
+                  {i === 0 ? "Latest" : `−${i}`} {scoringEnabled ? `· ${snap.overall_score}` : ""}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {retryAfterSec > 0 && (
+            <div className="ai-retry-banner muted small" role="status" aria-live="polite">
+              Rate limit hit — wait <strong>{retryAfterSec}s</strong> before retrying.
+            </div>
+          )}
+
           {/* Word count hint */}
           {hasPoem && status !== "loading" && (
             <p className="ai-word-hint muted small">
@@ -1402,11 +1601,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           {!isUnconfigured && status === "idle" && !result && (
             <div className="ai-idle-hint">
               <p className="muted small">
-                Scores your poem on <strong>Imagery</strong>,{" "}
-                <strong>Musicality</strong>, <strong>Originality</strong>, and{" "}
-                <strong>Clarity</strong> — then gives line-level feedback with
-                specific suggestions. After the first run, <strong>Compare</strong>{" "}
-                shows exactly what improved between drafts.
+                Reads your poem and returns a warm reaction, strengths,
+                weaknesses, the strongest line, and line-level suggestions.
+                After the first run, <strong>Compare</strong> shows what
+                changed.
               </p>
             </div>
           )}
@@ -1471,7 +1669,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 onClick={() => void handleAnalyze()}>
                 Analyze again
               </button>
-              <AiChat title={title} lines={lines} result={result} model={model} />
+              <AiChat title={title} lines={lines} result={result} model={model} poemId={poemId} />
             </>
           )}
         </div>
@@ -1486,21 +1684,41 @@ interface ChatMessage {
   text: string;
 }
 
+const QUICK_REPLY_CHIPS = [
+  "Why is the weakest line weak?",
+  "Suggest stronger verbs",
+  "Make it more concrete",
+  "What's the central image?",
+];
+
 function AiChat({
   title,
   lines,
   result,
   model,
+  poemId,
 }: {
   title: string;
   lines: string[];
   result: PoemAnalysis | PoemComparison;
   model: string;
+  poemId?: string;
 }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => loadChat(poemId));
   const [input, setInput] = useState("");
   const [chatStatus, setChatStatus] = useState<"idle" | "loading" | "error">("idle");
   const [chatError, setChatError] = useState("");
+
+  // Persist chat per poem.
+  useEffect(() => { saveChat(poemId, messages); }, [poemId, messages]);
+  // When poemId changes, reload that poem's saved messages.
+  const lastPoemRef = useRef(poemId);
+  useEffect(() => {
+    if (lastPoemRef.current !== poemId) {
+      lastPoemRef.current = poemId;
+      setMessages(loadChat(poemId));
+    }
+  }, [poemId]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -1513,11 +1731,9 @@ function AiChat({
     return parts.join("\n");
   })();
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim();
-    if (!text || chatStatus === "loading") return;
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || chatStatus === "loading") return;
     const priorHistory = messages.map((m) => ({ role: m.role, content: m.text }));
-    setInput("");
     setMessages((prev) => [...prev, { role: "user", text }]);
     setChatStatus("loading");
     setChatError("");
@@ -1542,7 +1758,14 @@ function AiChat({
       setChatError((err as Error).message);
       setChatStatus("error");
     }
-  }, [input, chatStatus, messages, title, lines, analysisContext, model]);
+  }, [chatStatus, messages, title, lines, analysisContext, model]);
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || chatStatus === "loading") return;
+    setInput("");
+    void sendMessage(text);
+  }, [input, chatStatus, sendMessage]);
 
   return (
     <div className="ai-chat">
@@ -1565,6 +1788,22 @@ function AiChat({
               <span className="ai-chat-dot" /><span className="ai-chat-dot" /><span className="ai-chat-dot" />
             </div>
           )}
+        </div>
+      )}
+
+      {messages.length === 0 && (
+        <div className="ai-chat-quickreplies" role="group" aria-label="Quick replies">
+          {QUICK_REPLY_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              className="ai-chat-quickreply"
+              onClick={() => void sendMessage(chip)}
+              disabled={chatStatus === "loading"}
+            >
+              {chip}
+            </button>
+          ))}
         </div>
       )}
 

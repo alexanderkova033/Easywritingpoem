@@ -66,10 +66,13 @@ export async function callOpenAI(
   let upstream: Response;
 
   try {
+    // GPT-5 / o-series models reject `max_tokens` and require
+    // `max_completion_tokens`. Send the new name unconditionally — older
+    // models that still accept the old name are not in use here.
     const body: Record<string, unknown> = {
       model: opts.model,
       messages: opts.messages,
-      max_tokens: opts.max_tokens,
+      max_completion_tokens: opts.max_tokens,
       temperature: opts.temperature,
     };
     if (opts.jsonMode !== false) {
@@ -142,23 +145,55 @@ export async function callOpenAI(
   };
 }
 
+/**
+ * Strict JSON parse first, then a salvage pass for the common failure mode:
+ * the model truncates mid-array (max_tokens hit) leaving unbalanced braces.
+ * We strip code fences, trim partial trailing strings/keys, and close any
+ * still-open brackets so partial responses still render most of the result.
+ */
+function tolerantJsonParse(raw: string): unknown | null {
+  try { return JSON.parse(raw); } catch { /* fall through */ }
+  let s = raw.trim();
+  // Strip optional ```json ... ``` fences.
+  s = s.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  // Drop trailing commas before } or ].
+  s = s.replace(/,\s*([\]}])/g, "$1");
+  try { return JSON.parse(s); } catch { /* fall through */ }
+  let inStr = false;
+  let esc = false;
+  let openCurly = 0;
+  let openSquare = 0;
+  for (const ch of s) {
+    if (esc) { esc = false; continue; }
+    if (ch === "\\") { esc = true; continue; }
+    if (ch === "\"") { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === "{") openCurly++;
+    else if (ch === "}") openCurly--;
+    else if (ch === "[") openSquare++;
+    else if (ch === "]") openSquare--;
+  }
+  if (inStr) {
+    const lastQuote = s.lastIndexOf("\"");
+    if (lastQuote > -1) s = s.slice(0, lastQuote);
+    s = s.replace(/,?\s*"[^"]*"\s*:\s*$/, "");
+    s = s.replace(/,\s*$/, "");
+  }
+  while (openSquare > 0) { s += "]"; openSquare--; }
+  while (openCurly > 0) { s += "}"; openCurly--; }
+  s = s.replace(/,\s*([\]}])/g, "$1");
+  try { return JSON.parse(s); } catch { return null; }
+}
+
 export function sendParsedResponse(
   res: VercelResponse,
   rawContent: string,
   resolvedModel: string,
 ): boolean {
-  let parsed: unknown;
-
-  try {
-    parsed = JSON.parse(rawContent);
-  } catch (err) {
-    console.error("Failed to parse OpenAI JSON:", err);
-    console.error("Raw OpenAI content:", rawContent);
-
-    res.status(502).json({
-      error: "OpenAI returned invalid JSON.",
-    });
-
+  const parsed = tolerantJsonParse(rawContent);
+  if (parsed === null || typeof parsed !== "object") {
+    console.error("Failed to parse OpenAI JSON. Raw content:", rawContent);
+    res.status(502).json({ error: "OpenAI returned invalid JSON." });
     return false;
   }
 

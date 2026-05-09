@@ -355,6 +355,8 @@ export interface PoemBodyEditorProps {
   issueGutterMarkers?: Array<[number, number, string?]>;
   /** Called when the user clicks a severity dot in the gutter. */
   onGutterDotClick?: (line: number) => void;
+  /** Called when the cursor parks on a different line for ~400ms. */
+  onCursorLineChange?: (line: number) => void;
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   id?: string;
@@ -559,6 +561,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   selectionCallbackRef.current = props.onSelectionText;
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const cursorLineCallbackRef = useRef(props.onCursorLineChange);
+  cursorLineCallbackRef.current = props.onCursorLineChange;
+  const cursorLineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCursorLineRef = useRef<number>(-1);
+
   return (
     <div className="poem-cm-wrap" id={props.id}>
       <CodeMirror
@@ -575,6 +582,21 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           props.editorViewRef.current = view;
         }}
         onUpdate={(update) => {
+          // Debounced cursor-line tracker — fires when the cursor parks on a
+          // different line for ~400ms, lets parent open the matching issue.
+          if (cursorLineCallbackRef.current && (update.docChanged || update.selectionSet)) {
+            const sel = update.state.selection.main;
+            if (sel.empty) {
+              const lineNo = update.state.doc.lineAt(sel.from).number;
+              if (lineNo !== lastCursorLineRef.current) {
+                lastCursorLineRef.current = lineNo;
+                if (cursorLineTimerRef.current) clearTimeout(cursorLineTimerRef.current);
+                cursorLineTimerRef.current = setTimeout(() => {
+                  cursorLineCallbackRef.current?.(lineNo);
+                }, 400);
+              }
+            }
+          }
           if (!selectionCallbackRef.current) return;
           const sel = update.state.selection.main;
           if (!sel.empty) {

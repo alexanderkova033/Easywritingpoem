@@ -1642,6 +1642,7 @@ export function PoemWorkshop() {
                       persistentIssueHighlights={persistentIssueHighlights}
                       issueGutterMarkers={persistentIssueHighlights}
                       onGutterDotClick={(line) => openIssueAtLineRef.current?.(line)}
+                      onCursorLineChange={(line) => openIssueAtLineRef.current?.(line)}
                       wordHighlights={wordHighlights}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}

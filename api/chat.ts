@@ -5,7 +5,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkRateLimit } from "./_rate-limit";
+import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
 
 const SYSTEM_PROMPT = `You are a thoughtful poetry editor and writing coach. The user has just written a poem and received AI feedback on it. They want to have a conversation with you about their poem — asking questions, getting clarification on feedback, brainstorming ideas, or exploring craft.
@@ -18,7 +18,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!checkRateLimit(req.headers["x-forwarded-for"])) {
-    return res.status(429).json({ error: "Too many requests — please wait a moment." });
+    const retryAfterSec = getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
+    return res.status(429).json({
+      error: "Too many requests — please wait a moment.",
+      retryAfterSec,
+    });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;

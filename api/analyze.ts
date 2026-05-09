@@ -6,7 +6,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkRateLimit } from "./_rate-limit";
+import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 
 const HARSHNESS_PERSONAS: Record<string, string> = {
@@ -40,6 +40,7 @@ function buildSystemPrompt(harshness?: string): string {
     {
       "id": "issue-1",
       "severity": "<high|medium|low>",
+      "confidence": "<high|medium|low — how sure you are this is actually a problem>",
       "line_start": <1-based integer>,
       "line_end": <1-based integer>,
       "excerpt": "<short quote, optional>",
@@ -63,6 +64,7 @@ Rules:
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
 - headline: required for every issue. ≤8 words, fragment style, names the problem at a glance.
+- confidence: required. "high" = clearly a problem in nearly any reading; "medium" = real issue but partly subjective; "low" = personal-taste flag the poet may reasonably reject.
 - improvements: 1-3 strings per issue.
 - rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction. Keep it as 1-2 lines max.
 - If local analysis context is provided (syllables, rhyme scheme, clichés, goals), use it to make your feedback more precise and specific. Reference detected clichés directly.
@@ -92,7 +94,13 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
   const hints: string[] = [];
 
   if (local?.form && local.form !== "free") {
-    hints.push(`Detected form: ${local.form}`);
+    const formRules: Record<string, string> = {
+      haiku: "Strict: 5-7-5 syllables; one nature image; cutting word/turn between images; no metaphor stacking.",
+      sonnet: "14 lines; expect a clear volta around line 8 or 9; consistent meter (typically iambic pentameter); rhyme scheme should be coherent.",
+      villanelle: "19 lines; two refrains alternating then both at the end; A1 b A2 / a b A1 / a b A2 / a b A1 / a b A2 / a b A1 A2 pattern. Refrains must reward repetition.",
+    };
+    const rule = formRules[local.form];
+    hints.push(`Detected form: ${local.form}${rule ? ` — ${rule}` : ""}\nJudge the poem against this form's conventions when relevant.`);
   }
 
   if (local?.syllablesPerLine && local.syllablesPerLine.length > 0) {
@@ -150,7 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!checkRateLimit(req.headers["x-forwarded-for"])) {
-    return res.status(429).json({ error: "Too many requests — please wait a moment before analyzing again." });
+    const retryAfterSec = getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
+    return res.status(429).json({
+      error: "Too many requests — please wait a moment before analyzing again.",
+      retryAfterSec,
+    });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -166,7 +179,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     goals?: unknown;
     harshness?: unknown;
     writingFocus?: unknown;
-    analysisStyle?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -180,23 +192,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
-  const analysisStyle = body.analysisStyle === "big-picture" ? "big-picture" : "detailed";
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
     return res.status(400).json({ error: `Too many lines (max ${MAX_LINES}).` });
   }
 
-  const styleDirective = analysisStyle === "big-picture"
-    ? `\n\nIMPORTANT: For this analysis, the poet wants BIG-PICTURE feedback. Set "issues" to an empty array []. Do NOT identify or list any line-level problems. Put all your craft observations into warm_reaction, strengths, weaknesses, strongest_line, summary, and overall_direction. Be more discursive in summary and overall_direction since you have no issue list to carry the detail.`
-    : "";
-
   const result = await callOpenAI(
     apiKey,
     {
       model,
       messages: [
-        { role: "system", content: buildSystemPrompt(harshness) + styleDirective },
+        { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
       max_tokens: 2600,
