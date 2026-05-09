@@ -24,14 +24,22 @@ const PROMPTS: Record<SuggestType, string> = {
   line: `The user wants to improve a specific line in their poem. Study the poem's full context — its tone, imagery, rhythm, and voice — then suggest 4 distinct rewrites of the target line. Each rewrite should take a different approach: vary the imagery, rhythm, or angle while staying true to the poem's overall voice. Keep each to 1-2 lines. Return valid JSON: { "suggestions": ["...", "...", "...", "..."] }. No markdown fences. If a syllable count is specified, match it closely.`,
 };
 
-function buildPrompt(title: string, lines: string[], context: string, targetLine?: string, syllableTarget?: number): string {
+function buildPrompt(title: string, lines: string[], context: string, targetLine?: string, syllableTarget?: number, syllableTolerance?: number): string {
   const parts: string[] = [];
   if (title.trim()) parts.push(`Title: ${title.trim()}`);
   if (lines.length > 0) {
     parts.push("Poem so far:\n" + lines.map((l, i) => `${i + 1}: ${l}`).join("\n"));
   }
   if (targetLine) parts.push(`Line to rewrite: "${targetLine}"`);
-  if (syllableTarget != null && syllableTarget > 0) parts.push(`Target syllable count: ${syllableTarget} syllables. Each rewrite should match this count as closely as possible.`);
+  if (syllableTarget != null && syllableTarget > 0) {
+    if (syllableTolerance != null && syllableTolerance > 0) {
+      const lo = Math.max(1, syllableTarget - syllableTolerance);
+      const hi = syllableTarget + syllableTolerance;
+      parts.push(`Target syllable range: ${lo}–${hi} syllables (centered on ${syllableTarget}). Each rewrite must fall inside this range.`);
+    } else {
+      parts.push(`Target syllable count: ${syllableTarget} syllables. Each rewrite should match this count as closely as possible.`);
+    }
+  }
   if (context.trim()) parts.push(`User note: ${context.trim()}`);
   return parts.join("\n\n");
 }
@@ -57,6 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     context?: unknown;
     targetLine?: unknown;
     syllableTarget?: unknown;
+    syllableTolerance?: unknown;
     model?: unknown;
   };
 
@@ -70,6 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const context = typeof body.context === "string" ? body.context : "";
   const targetLine = typeof body.targetLine === "string" ? body.targetLine : undefined;
   const syllableTarget = typeof body.syllableTarget === "number" && body.syllableTarget > 0 ? body.syllableTarget : undefined;
+  const syllableTolerance = typeof body.syllableTolerance === "number" && body.syllableTolerance >= 0 ? Math.min(10, Math.round(body.syllableTolerance)) : undefined;
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
 
   const result = await callOpenAI(
@@ -78,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: PROMPTS[suggestType] },
-        { role: "user", content: buildPrompt(title, lines, context, targetLine, syllableTarget) },
+        { role: "user", content: buildPrompt(title, lines, context, targetLine, syllableTarget, syllableTolerance) },
       ],
       max_tokens: suggestType === "line" ? 2500 : 2000,
       temperature: 0.85,

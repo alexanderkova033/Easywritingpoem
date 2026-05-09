@@ -218,7 +218,7 @@ class AiChipWidget extends WidgetType {
     el.className = "cm-ai-chip";
     el.setAttribute("aria-label", "Rewrite this line with AI");
     el.title = "Rewrite this line with AI";
-    el.innerHTML = '<span class="cm-ai-chip-icon" aria-hidden>✦</span><span class="cm-ai-chip-label">AI</span>';
+    el.textContent = "✦";
     return el;
   }
   ignoreEvent() { return false; }

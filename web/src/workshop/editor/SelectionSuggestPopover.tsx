@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
+import { countSyllablesInLine } from "@/workshop/analysis/syllables";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -20,11 +21,12 @@ async function fetchLineSuggestions(
   lines: string[],
   targetLine: string,
   syllableTarget?: number,
+  syllableTolerance?: number,
 ): Promise<string[]> {
   const res = await fetch("/api/suggest", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, type: "line", targetLine, syllableTarget }),
+    body: JSON.stringify({ title, lines, type: "line", targetLine, syllableTarget, syllableTolerance }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = (await res.json()) as { suggestions?: string[] };
@@ -114,7 +116,23 @@ export function SelectionSuggestPopover({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [definition, setDefinition] = useState<DefineResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const [syllableInput, setSyllableInput] = useState("");
+
+  // Syllable count of selection — prefill so the user has a sensible default,
+  // but do NOT auto-fire the request (they may want to nudge the target).
+  const detectedSyllables = useMemo(() => {
+    if (!trimmedText) return 0;
+    try { return countSyllablesInLine(trimmedText) ?? 0; } catch { return 0; }
+  }, [trimmedText]);
+
+  const [syllableInput, setSyllableInput] = useState(() => detectedSyllables > 0 ? String(detectedSyllables) : "");
+  const [syllableTolerance, setSyllableTolerance] = useState(0); // ±N around target
+
+  const adjustSyllables = (delta: number) => {
+    const cur = parseInt(syllableInput.trim(), 10);
+    const base = Number.isFinite(cur) ? cur : detectedSyllables;
+    const next = Math.max(1, Math.min(30, base + delta));
+    setSyllableInput(String(next));
+  };
   const popoverRef = useRef<HTMLDivElement>(null);
   const defineAbortRef = useRef<AbortController | null>(null);
   const readyToCloseRef = useRef(false);
@@ -128,6 +146,7 @@ export function SelectionSuggestPopover({
         poemLines,
         trimmedText,
         Number.isFinite(sylTarget) && sylTarget! > 0 ? sylTarget : undefined,
+        Number.isFinite(sylTarget) && sylTarget! > 0 && syllableTolerance > 0 ? syllableTolerance : undefined,
       );
       setSuggestions(results.map((t) => ({ text: t, copied: false })));
       setRewritePhase("results");
@@ -135,7 +154,7 @@ export function SelectionSuggestPopover({
       setErrorMsg((err as Error).message);
       setRewritePhase("error");
     }
-  }, [poemTitle, poemLines, trimmedText, syllableInput]);
+  }, [poemTitle, poemLines, trimmedText, syllableInput, syllableTolerance]);
 
   const handleDefine = useCallback(async () => {
     setDefinePhase("loading");
@@ -282,20 +301,47 @@ export function SelectionSuggestPopover({
       {mode === "rewrite" && (
         <>
           <div className="ssp-syllable-row">
-            <label className="ssp-syllable-label">
-              Target syllables
-              <input
-                type="number"
-                className="ssp-syllable-input"
-                min={1}
-                max={30}
-                placeholder="any"
-                value={syllableInput}
-                onChange={(e) => setSyllableInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") void handleRewrite(); }}
-              />
-            </label>
-            <span className="ssp-syllable-hint">Leave blank to match naturally</span>
+            <div className="ssp-syllable-control">
+              <span className="ssp-syllable-label-text">Target syllables</span>
+              <div className="ssp-syllable-stepper">
+                <button type="button" className="ssp-syllable-step" aria-label="Decrease"
+                  onClick={() => adjustSyllables(-1)}>−</button>
+                <input
+                  type="number"
+                  className="ssp-syllable-input"
+                  min={1}
+                  max={30}
+                  placeholder="any"
+                  value={syllableInput}
+                  onChange={(e) => setSyllableInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") void handleRewrite(); }}
+                />
+                <button type="button" className="ssp-syllable-step" aria-label="Increase"
+                  onClick={() => adjustSyllables(1)}>+</button>
+              </div>
+            </div>
+
+            <div className="ssp-tolerance-row">
+              <span className="ssp-tolerance-label">Range</span>
+              <div className="ssp-tolerance-chips" role="group" aria-label="Syllable tolerance">
+                {([0, 1, 2] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`ssp-tolerance-chip${syllableTolerance === t ? " is-active" : ""}`}
+                    onClick={() => setSyllableTolerance(t)}
+                  >
+                    {t === 0 ? "Exact" : `±${t}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {detectedSyllables > 0 && (
+              <span className="ssp-syllable-hint">
+                Selection has {detectedSyllables} syllables. Adjust then generate.
+              </span>
+            )}
           </div>
 
           {rewritePhase === "idle" && (

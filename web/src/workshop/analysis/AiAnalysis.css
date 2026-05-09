@@ -2695,22 +2695,6 @@
   border-radius: 0 10px 10px 0;
 }
 
-.ai-feedback-card::before {
-  content: "";
-  position: absolute;
-  top: 0.6rem;
-  left: -1px;
-  width: 1.3rem;
-  height: 1.3rem;
-  border-radius: 50%;
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  z-index: 1;
-}
-
 .ai-feedback-overall { background: color-mix(in srgb, var(--accent, #5fba7d) 4%, var(--surface)); }
 .ai-feedback-personal { background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 5%, var(--surface)); }
 

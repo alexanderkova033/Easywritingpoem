@@ -9,11 +9,13 @@ import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 
 const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Return JSON only (no fences). Keys:
-overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
+overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (4-8 — comment on most non-trivial lines), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
 overall_feedback (string, 2-3 full sentences, holistic read of the current draft as a whole — voice, mood, what it accomplishes, where it lands).
 personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc — what improved, what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not rubric).
-Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[], rationale (1 sentence), improvements[] (1-3 short), rewrite?, confidence? ("low" only).
-Prefer single-line issues. Issues stay terse; overall_feedback and personal_feedback get full sentences. Use local analysis hints if provided. 1-based line numbers.`;
+Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
+  rationale (2-3 full sentences — name the specific craft problem, explain WHY it weakens the line in this poem's context, and reference concrete words/sounds/rhythm where relevant. Speak about THIS line, not generalities.),
+  improvements[] (1-3 short concrete moves), rewrite?, confidence? ("low" only).
+Prefer single-line issues. Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity. Headline + improvements stay terse; rationale, overall_feedback, personal_feedback get full sentences. Use local analysis hints if provided. 1-based line numbers.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
