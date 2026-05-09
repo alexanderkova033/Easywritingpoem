@@ -843,8 +843,6 @@ function AnalysisResults({
       isOpen={openIds.has(iss.id)}
       onOpenChange={(open) => {
         handleOpenChange(iss.id, open);
-        // Soft-preview: scroll editor without moving cursor or stealing focus.
-        if (open) onPeek?.(iss.line_start);
       }}
       isResolved={resolvedIds.has(iss.id)}
       onResolve={(resolved) => handleResolve(iss.id, resolved)}
