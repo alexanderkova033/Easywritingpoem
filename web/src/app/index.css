@@ -24,7 +24,7 @@
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
   --border: #283a28;
   /* Softer than near-white for easier reading */
-  --text: #d4ddd5;
+  --text: #dde5de;
   --muted: #98ae9a;
   --accent: #68aa6e;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -63,7 +63,7 @@
     --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
     --border: #d8ddd9;
     /* Softer text — not quite black, easier on the eyes for long sessions */
-    --text: #2a3329;
+    --text: #20291f;
     --muted: #5a6b60;
     --accent: #3e6b47;
     --selection-bg: color-mix(in srgb, var(--accent) 16%, #dce6de);
@@ -596,7 +596,7 @@ html[data-workshop-bg="paper"] {
   --surface-2: #f5f2ed;
   --surface-elevated: #ffffff;
   --border: #e0d8ce;
-  --text: #2a312b;
+  --text: #202721;
   --muted: #5f6a62;
   --accent: #3c6245;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -625,7 +625,7 @@ html[data-workshop-bg="night"] {
   --surface-2: #101728;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #22304a;
-  --text: #dbe6f5;
+  --text: #e4eef9;
   --muted: #7f90ad;
   --accent: #84b9ff;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -652,7 +652,7 @@ html[data-workshop-bg="forest"] {
   --surface-2: #102018;
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
   --border: #256648;
-  --text: #d4f0e4;
+  --text: #ddf5ea;
   --muted: #7eb89a;
   --accent: #5ec995;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -679,7 +679,7 @@ html[data-workshop-bg="dawn"] {
   --surface-2: #f5edf1;
   --surface-elevated: #fff9fb;
   --border: #dfd2d8;
-  --text: #292023;
+  --text: #1f1619;
   --muted: #665a61;
   --accent: #7d4a63;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -708,7 +708,7 @@ html[data-workshop-bg="slate"] {
   --surface-2: #161c28;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #2a3444;
-  --text: #d9e0ea;
+  --text: #e2e8f1;
   --muted: #8b98ab;
   --accent: #7eb8e8;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -735,7 +735,7 @@ html[data-workshop-bg="stone"] {
   --surface-2: #2e2e2b;
   --surface-elevated: #323230;
   --border: #3e3e3a;
-  --text: #d8d8d4;
+  --text: #e1e1dd;
   --muted: #888882;
   --accent: #b0a898;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -1198,7 +1198,7 @@ html[data-workshop-bg="crimson"] {
   --surface-2: #211014;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #4a1a22;
-  --text: #f0d8da;
+  --text: #f5e2e4;
   --muted: #a87880;
   --accent: #d46070;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
@@ -1257,7 +1257,7 @@ html[data-workshop-bg="ocean"] {
   --surface-2: #0c1e2c;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #1a3a52;
-  --text: #d0eaf8;
+  --text: #daeefb;
   --muted: #6a9ab8;
   --accent: #4ab8d8;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -1323,7 +1323,7 @@ html[data-workshop-bg="aurora"] {
   --surface-2: #12182e;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #2a2050;
-  --text: #e0d8f8;
+  --text: #e9e2fb;
   --muted: #8878b8;
   --accent: #a070e0;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -1395,7 +1395,7 @@ html[data-workshop-bg="parchment"] {
   --surface-2: #f8f2e4;
   --surface-elevated: #ffffff;
   --border: #d4c4a8;
-  --text: #2e2418;
+  --text: #241a0e;
   --muted: #6b5840;
   --accent: #7a5028;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1479,7 +1479,7 @@ html[data-workshop-bg="dusk"] {
   --surface-2: #1e1012;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #3a1e22;
-  --text: #f2dfc8;
+  --text: #f6e7d4;
   --muted: #a88070;
   --accent: #e07828;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -1589,7 +1589,7 @@ html[data-workshop-bg="winter"] {
   --surface-2: #eef3f9;
   --surface-elevated: #fafcff;
   --border: #ccd6e4;
-  --text: #1e2a38;
+  --text: #14202e;
   --muted: #5a6e88;
   --accent: #3a78b8;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1662,7 +1662,7 @@ html[data-workshop-bg="autumn"] {
   --surface-2: #261408;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #3a1e0c;
-  --text: #e8d4c0;
+  --text: #eedccb;
   --muted: #a88868;
   --accent: #c87832;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -1737,7 +1737,7 @@ html[data-workshop-bg="spring"] {
   --surface-2: #f2f8eb;
   --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
   --border: #c4d8b4;
-  --text: #1e2c1a;
+  --text: #142210;
   --muted: #5a7050;
   --accent: #4a8c38;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1818,7 +1818,7 @@ html[data-workshop-bg="summer"] {
   --surface-2: #eef8fc;
   --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
   --border: #b8d8ec;
-  --text: #162130;
+  --text: #0c1726;
   --muted: #4a6880;
   --accent: #1872b8;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1893,7 +1893,7 @@ html[data-workshop-bg="rain"] {
   --surface-2: #151d28;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
   --border: #243040;
-  --text: #c8d8e8;
+  --text: #d2e1ef;
   --muted: #6e8498;
   --accent: #5ea0cc;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -2020,7 +2020,7 @@ html[data-workshop-bg="park"] {
   --surface-2: #eef5e8;
   --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
   --border: #c0d8b0;
-  --text: #1e2c1a;
+  --text: #142210;
   --muted: #4e6244;
   --accent: #4a8b32;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
