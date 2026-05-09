@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { RailIcon } from "./components/RailIcon";
+import { WritingPrompt } from "./components/WritingPrompt";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   applyAppearance,
@@ -38,16 +39,16 @@ import {
   TOOL_BUCKET_LABEL,
   TOOL_BUCKET_ORDER,
   defaultTabForBucket,
-  formatRelativeSnapshotWhen,
-  formatSnapshotWhen,
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
-import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
+import { WorkshopBanners } from "./WorkshopBanners";
+import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
+import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -57,78 +58,6 @@ import {
 } from "@/workshop/hints/HoverHintsContext";
 import "./PoemWorkshop.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
-
-function RailIcon({ children }: { children: ReactNode }) {
-  return (
-    <span className="workshop-rail-icon" aria-hidden>
-      {children}
-    </span>
-  );
-}
-
-function SavedAgo({ ts }: { ts: number }) {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 15_000);
-    return () => clearInterval(id);
-  }, []);
-  const secs = Math.floor((Date.now() - ts) / 1000);
-  if (secs < 10) return <>Saved</>;
-  if (secs < 60) return <>Saved {secs}s ago</>;
-  const mins = Math.floor(secs / 60);
-  if (mins < 60) return <>Saved {mins}m ago</>;
-  return <>Saved {Math.floor(mins / 60)}h ago</>;
-}
-
-function SessionTimer({ startTs }: { startTs: number }) {
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 60_000);
-    return () => clearInterval(id);
-  }, []);
-  const mins = Math.floor((Date.now() - startTs) / 60_000);
-  if (mins < 1) return null;
-  if (mins < 60) return <>{mins}m</>;
-  return <>{Math.floor(mins / 60)}h {mins % 60}m</>;
-}
-
-const WRITING_PROMPTS = [
-  "Try opening with a single concrete image.",
-  "What does it sound like, smell like, feel like?",
-  "Start with the last thing you noticed today.",
-  "Who is speaking, and to whom?",
-  "What are you circling around without saying directly?",
-  "Begin in the middle of an action.",
-  "What would the room say if it could speak?",
-  "Name the thing you're afraid to name.",
-  "What colour is the feeling?",
-  "Write the line you've been putting off.",
-];
-
-function WritingPrompt({ visible }: { visible: boolean }) {
-  const [idx, setIdx] = useState(0);
-  const [fading, setFading] = useState(false);
-
-  useEffect(() => {
-    if (!visible) return;
-    const interval = setInterval(() => {
-      setFading(true);
-      const timer = setTimeout(() => {
-        setIdx((i) => (i + 1) % WRITING_PROMPTS.length);
-        setFading(false);
-      }, 380);
-      return () => clearTimeout(timer);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [visible]);
-
-  if (!visible) return null;
-  return (
-    <p className={`writing-prompt${fading ? " is-fading" : ""}`} aria-hidden>
-      {WRITING_PROMPTS[idx]}
-    </p>
-  );
-}
 
 export function PoemWorkshop() {
   const [rhymeBreadth, setRhymeBreadth] = useState<RhymeBreadth>(() => {
@@ -947,11 +876,6 @@ export function PoemWorkshop() {
     ];
   }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, setHoverHintsEnabled]);
 
-  const topbarLinesHint =
-    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
-      ? `${m.quickDocStats.nonEmptyLines} lines with text; ${m.quickDocStats.totalLines} total in editor (includes blanks)`
-      : "Lines containing at least one character";
-
   return (
     <div className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}>
       <CommandPalette
@@ -959,334 +883,38 @@ export function PoemWorkshop() {
         onClose={() => setIsCmdkOpen(false)}
         actions={cmdkActions}
       />
-      <header
-        className={`topbar ${isFocusMode ? "is-focus" : ""}`}
-        aria-label="Workshop header"
-      >
-        <div className="topbar-primary topbar-primary-tiered">
-          <div className="topbar-cluster topbar-cluster-brand">
-            <div className="brand brand-tiered">
-              <h1 className="brand-mark">
-                <svg
-                  className="brand-logo-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden
-                  focusable="false"
-                >
-                  {/* Feather body — vivid accent fill, white stroke for any-bg visibility */}
-                  <path
-                    d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
-                    fill="#68aa6e"
-                    stroke="white"
-                    strokeWidth="0.7"
-                    strokeLinejoin="round"
-                  />
-                  {/* Quill vein */}
-                  <path
-                    d="M19 3L12 21"
-                    stroke="rgba(0,0,0,0.18)"
-                    strokeWidth="0.55"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                  {/* Nib highlight */}
-                  <path
-                    d="M11 18L12 21"
-                    stroke="#c5e0c8"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                  {/* Dark outline for light-background visibility */}
-                  <path
-                    d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
-                    fill="none"
-                    stroke="rgba(30,60,35,0.22)"
-                    strokeWidth="0.8"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                easywriting<span className="brand-product-badge">poem</span>
-              </h1>
-              <div className="topbar-draft-inline">
-                <label className="draft-library-label" htmlFor="draft-poem-select">
-                  Draft
-                </label>
-                <select
-                  id="draft-poem-select"
-                  className="draft-library-select"
-                  value={m.activePoemId}
-                  onChange={(e) => m.selectPoem(e.target.value)}
-                  aria-label="Active draft"
-                >
-                  {m.poemOptions.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.label}
-                      {o.archived ? " (archived)" : ""}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="topbar-draft-icon-btn"
-                  onClick={() => m.newPoem()}
-                  aria-label="New draft"
-                  {...hint("New draft")}
-                >
-                  +
-                </button>
-                <button
-                  type="button"
-                  className="topbar-draft-icon-btn"
-                  onClick={() => setIsLibraryOpen(true)}
-                  aria-label="Open draft library"
-                  {...hint("Library: manage all your drafts — create, switch, or archive.")}
-                >
-                  <svg viewBox="0 0 20 20" fill="none" aria-hidden width="14" height="14">
-                    <rect x="2" y="3" width="16" height="2.5" rx="1" fill="currentColor"/>
-                    <rect x="2" y="8.75" width="16" height="2.5" rx="1" fill="currentColor"/>
-                    <rect x="2" y="14.5" width="10" height="2.5" rx="1" fill="currentColor"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <p className="brand-sub">
-              {m.library.poems.length > 1
-                ? `${m.library.poems.length} drafts saved · private, local, no account`
-                : "Private, local, no account"}
-            </p>
-          </div>
-
-          {/* Mobile-only poem title — centred between brand icon and actions */}
-          <button
-            type="button"
-            className="topbar-mobile-title"
-            onClick={() => {
-              setMobileTab("write");
-              setMetaOpen(true);
-              requestAnimationFrame(() => document.getElementById("poem-title")?.focus());
-            }}
-            aria-label="Edit poem title"
-          >
-            {m.title.trim() || "Untitled"}
-          </button>
-
-          <div
-            className="topbar-cluster topbar-cluster-context"
-            role="status"
-            aria-live="polite"
-            aria-label="Draft stats"
-          >
-            <div className={`topbar-context-stats${isFocusMode ? " topbar-focus-stats" : ""}`}>
-              <span
-                className={isFocusMode ? "topbar-focus-stat" : "topbar-context-stat"}
-                {...hint("Word count in poem body")}
-              >
-                {m.quickDocStats.totalWords} words
-              </span>
-              <span className={isFocusMode ? "topbar-focus-sep" : "topbar-context-sep"} aria-hidden>·</span>
-              <span
-                className={isFocusMode ? "topbar-focus-stat" : "topbar-context-stat"}
-                {...hint(topbarLinesHint)}
-              >
-                {m.quickDocStats.nonEmptyLines} lines
-              </span>
-              {!isFocusMode && m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
-                <span className="topbar-context-hint"> ({m.quickDocStats.totalLines} incl. blanks)</span>
-              ) : null}
-              {m.lastAiScore != null && (
-                <>
-                  <span className={isFocusMode ? "topbar-focus-sep" : "topbar-context-sep"} aria-hidden>·</span>
-                  <span
-                    className="topbar-ai-score"
-                    {...hint(`Last AI analysis score: ${m.lastAiScore}/10`)}
-                  >
-                    ✦ {m.lastAiScore}
-                  </span>
-                </>
-              )}
-              {showRhymeScheme && m.rhymeScheme.some((l) => l) && (
-                <span
-                  className="topbar-rhyme-dot"
-                  aria-label="Rhyme scheme active"
-                  {...hint("Rhyme scheme visible in editor")}
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save" data-tour-id="topbar-actions">
-            <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
-              <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
-              <span className="topbar-saved-label">
-                {m.savedFlash ? "Saved" : m.lastSavedAt ? <SavedAgo ts={m.lastSavedAt} /> : null}
-              </span>
-            </span>
-
-            {!isFocusMode ? (
-              <>
-                {/* Stats popover */}
-                <div className="topbar-stats-wrap" ref={statsPopoverRef}>
-                  <button
-                    type="button"
-                    className={`topbar-ghost-btn topbar-stats-btn${isStatsOpen ? " is-selected" : ""}`}
-                    onClick={() => setIsStatsOpen((v) => !v)}
-                    aria-haspopup="true"
-                    aria-expanded={isStatsOpen}
-                    aria-label="Poem statistics"
-                    {...hint("Stats: full word, line, syllable & stanza counts")}
-                  >
-                    <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
-                      <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
-                    </svg>
-                  </button>
-                  {isStatsOpen && (
-                    <div className="topbar-stats-popover" role="status" aria-label="Poem statistics">
-                      <div className="tsp-grid">
-                        <div className="tsp-row">
-                          <span className="tsp-label">Words</span>
-                          <span className="tsp-val">{m.docStats.totalWords}</span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Lines</span>
-                          <span className="tsp-val">{m.docStats.nonEmptyLines}</span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Characters</span>
-                          <span className="tsp-val">{m.docStats.totalChars}</span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Syllables (est.)</span>
-                          <span className="tsp-val">{m.docStats.totalSyllables}</span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Stanzas</span>
-                          <span className="tsp-val">{m.docStats.stanzaCount}</span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Read-aloud</span>
-                          <span className="tsp-val">
-                            {m.docStats.totalWords === 0 ? "—" : `${m.docStats.estimatedReadingMinutes} min`}
-                          </span>
-                        </div>
-                        <div className="tsp-row">
-                          <span className="tsp-label">Avg words / line</span>
-                          <span className="tsp-val">
-                            {m.docStats.nonEmptyLines > 0 ? m.docStats.avgWordsPerNonEmptyLine : "—"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {/* Background */}
-                <button
-                  type="button"
-                  className={`topbar-ghost-btn ${isBackgroundOpen ? "is-selected" : ""}`}
-                  onClick={() => setIsBackgroundOpen((v) => !v)}
-                  aria-haspopup="dialog"
-                  aria-expanded={isBackgroundOpen}
-                  aria-label="Page background"
-                  {...hint("Background: choose a scene behind the page")}
-                >
-                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
-                    <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
-                    <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
-                    <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
-                  </svg>
-                </button>
-                {/* Find */}
-                <button
-                  type="button"
-                  className="topbar-ghost-btn"
-                  onClick={() => { setFindMode("find"); setIsFindOpen(true); }}
-                  aria-label="Find in poem (⌘F)"
-                  {...hint("Find text in the poem (⌘/Ctrl+F)")}
-                >
-                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
-                    <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" strokeWidth="1.75"/>
-                    <path d="M14.5 14.5L19 19" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
-                  </svg>
-                </button>
-                {/* Overflow ⋯ */}
-                <div className="topbar-overflow-wrap" ref={overflowMenuRef}>
-                  <button
-                    type="button"
-                    className={`topbar-ghost-btn topbar-overflow-btn ${topbarOverflowOpen ? "is-selected" : ""}`}
-                    aria-label="More options"
-                    aria-expanded={topbarOverflowOpen}
-                    aria-haspopup="menu"
-                    onClick={() => setTopbarOverflowOpen((v) => !v)}
-                    {...hint("More: session timer, word goal, share, shortcuts")}
-                  >
-                    <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
-                      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
-                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-                      <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
-                    </svg>
-                  </button>
-                  {topbarOverflowOpen && (
-                    <div className="topbar-overflow-menu" role="menu">
-                      {/* ── Writing ── */}
-                      <span className="topbar-overflow-group-label">Writing</span>
-                      <div className="topbar-overflow-section">
-                        <span className="topbar-overflow-label">Session</span>
-                        <span className="topbar-overflow-value"><SessionTimer startTs={sessionStartRef.current} /></span>
-                      </div>
-                      <div className="topbar-overflow-section">
-                        <span className="topbar-overflow-label">Word goal</span>
-                        {sessionWordGoal ? (
-                          <button type="button" className="topbar-word-goal topbar-word-goal-menu" onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); setTopbarOverflowOpen(false); }}>
-                            <span className="topbar-word-goal-fill" style={{ width: `${Math.min(100, Math.round((m.quickDocStats.totalWords / sessionWordGoal) * 100))}%` }} />
-                            <span className="topbar-word-goal-label">{m.quickDocStats.totalWords}/{sessionWordGoal}w</span>
-                          </button>
-                        ) : showGoalInput ? (
-                          <form className="topbar-goal-form" onSubmit={(e) => { e.preventDefault(); const n = parseInt(goalInputVal, 10); if (!isNaN(n) && n > 0) { setSessionWordGoal(n); setShowGoalInput(false); } }}>
-                            <input className="topbar-goal-input" type="number" min="1" max="9999" placeholder="e.g. 100" value={goalInputVal} onChange={(e) => setGoalInputVal(e.target.value)} aria-label="Word count goal" autoFocus onBlur={() => { if (!goalInputVal) setShowGoalInput(false); }} onKeyDown={(e) => { if (e.key === "Escape") setShowGoalInput(false); }} />
-                            <button type="submit" className="topbar-goal-submit" aria-label="Set goal">✓</button>
-                          </form>
-                        ) : (
-                          <button type="button" className="topbar-overflow-action" onClick={() => { setGoalInputVal(""); setShowGoalInput(true); }}>Set goal</button>
-                        )}
-                      </div>
-                      <hr className="topbar-overflow-divider" />
-                      {/* ── View ── */}
-                      <span className="topbar-overflow-group-label">View</span>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsFocusMode(true); setTopbarOverflowOpen(false); }}>Focus mode</button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsReadingMode(true); setTopbarOverflowOpen(false); }}>Reading view</button>
-                      <hr className="topbar-overflow-divider" />
-                      {/* ── Share ── */}
-                      <span className="topbar-overflow-group-label">Share</span>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShareOpen(true); setTopbarOverflowOpen(false); }}>Share poem</button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsExportOpen(true); setTopbarOverflowOpen(false); }}>Export poem</button>
-                      <hr className="topbar-overflow-divider" />
-                      {/* ── App ── */}
-                      <span className="topbar-overflow-group-label">App</span>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsCmdkOpen(true); setTopbarOverflowOpen(false); }}>⌘ Commands</button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShortcutsOpen(true); setTopbarOverflowOpen(false); }}>Keyboard shortcuts</button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { resetLayout(); setTopbarOverflowOpen(false); }}>Reset panel layout</button>
-                      <hr className="topbar-overflow-divider" />
-                      {/* ── Data ── */}
-                      <span className="topbar-overflow-group-label">Data</span>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { void m.exportWorkshopBackup(); setTopbarOverflowOpen(false); }}>Export backup (JSON)</button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { void m.triggerImportBackup(); setTopbarOverflowOpen(false); }}>Import backup (JSON)</button>
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="small-btn topbar-focus-exit-btn"
-                onClick={() => setIsFocusMode(false)}
-                aria-label="Exit focus mode and show tools"
-              >
-                Show tools
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+      <WorkshopTopbarHeader
+        m={m}
+        isFocusMode={isFocusMode}
+        setIsFocusMode={setIsFocusMode}
+        setIsLibraryOpen={setIsLibraryOpen}
+        setMobileTab={setMobileTab}
+        setMetaOpen={setMetaOpen}
+        showRhymeScheme={showRhymeScheme}
+        isStatsOpen={isStatsOpen}
+        setIsStatsOpen={setIsStatsOpen}
+        statsPopoverRef={statsPopoverRef}
+        isBackgroundOpen={isBackgroundOpen}
+        setIsBackgroundOpen={setIsBackgroundOpen}
+        setFindMode={setFindMode}
+        setIsFindOpen={setIsFindOpen}
+        topbarOverflowOpen={topbarOverflowOpen}
+        setTopbarOverflowOpen={setTopbarOverflowOpen}
+        overflowMenuRef={overflowMenuRef}
+        sessionStartRef={sessionStartRef}
+        sessionWordGoal={sessionWordGoal}
+        setSessionWordGoal={setSessionWordGoal}
+        showGoalInput={showGoalInput}
+        setShowGoalInput={setShowGoalInput}
+        goalInputVal={goalInputVal}
+        setGoalInputVal={setGoalInputVal}
+        setIsReadingMode={setIsReadingMode}
+        setIsShareOpen={setIsShareOpen}
+        setIsExportOpen={setIsExportOpen}
+        setIsCmdkOpen={setIsCmdkOpen}
+        setIsShortcutsOpen={setIsShortcutsOpen}
+        resetLayout={resetLayout}
+      />
 
       <FirstVisitHint
         onOpenGuide={() => setIsGuideOpen(true)}
@@ -1302,525 +930,30 @@ export function PoemWorkshop() {
 
       <RhymeTooltip sampleActive={m.samplePoemActive} />
 
-      {m.persistenceError ? (
-        <div
-          className="persistence-banner"
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <p className="persistence-banner-text">{m.persistenceError}</p>
-          {m.storageNearlyFull ? (
-            <button
-              type="button"
-              className="small-btn small-btn-primary persistence-banner-export"
-              onClick={() => {
-                void m.exportWorkshopBackup();
-                m.dismissPersistenceError();
-              }}
-            >
-              Export now
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="small-btn persistence-banner-dismiss"
-            onClick={m.dismissPersistenceError}
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
+      <WorkshopBanners m={m} />
 
-      {m.wordlistErr ? (
-        <div
-          className="spell-warn-banner"
-          role="status"
-          aria-live="polite"
-        >
-          <p className="spell-warn-banner-text">
-            Spell check unavailable: {m.wordlistErr}
-          </p>
-          <button
-            type="button"
-            className="small-btn spell-warn-retry-btn"
-            onClick={m.retryWordlist}
-          >
-            Retry
-          </button>
-        </div>
-      ) : null}
-
-      {m.importNotice ? (
-        <div
-          className={`import-notice-banner ${m.importNoticeKind === "error" ? "is-error" : "is-success"}`}
-          role="status"
-          aria-live="polite"
-        >
-          <p className="import-notice-text">{m.importNotice}</p>
-          <button
-            type="button"
-            className="small-btn import-notice-dismiss"
-            onClick={m.dismissImportNotice}
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
-      {m.showExportReminder ? (
-        <div
-          className="import-notice-banner"
-          role="status"
-          aria-live="polite"
-        >
-          <p className="import-notice-text">
-            It&rsquo;s been a while since your last backup. Export your workshop
-            to keep a local copy of all your drafts.
-          </p>
-          <button
-            type="button"
-            className="small-btn"
-            onClick={() => {
-              void m.exportWorkshopBackup();
-            }}
-          >
-            Export now
-          </button>
-          <button
-            type="button"
-            className="small-btn import-notice-dismiss"
-            onClick={m.dismissExportReminder}
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
-
-      {isLibraryOpen ? (
-        <div
-          className="overlay overlay-center"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsLibraryOpen(false);
-              setShowDeleteCurrentConfirm(false);
-            }
-          }}
-        >
-          <section
-            className="drawer library-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Draft library"
-          >
-            <div className="library-grip" aria-hidden />
-            <div className="drawer-head">
-              <h2 className="drawer-title">Library</h2>
-              <button
-                type="button"
-                className="small-btn"
-                onClick={() => setIsLibraryOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="drawer-scroll">
-            <div className="drawer-block library-drafts-section">
-                <div className="drawer-actions">
-                  <button
-                    type="button"
-                    className="small-btn small-btn-primary"
-                    onClick={() => {
-                      m.newPoem();
-                      setIsLibraryOpen(false);
-                    }}
-                  >
-                    New draft
-                  </button>
-                  <button
-                    type="button"
-                    className="small-btn"
-                    onClick={() => {
-                      m.duplicatePoem();
-                      setIsLibraryOpen(false);
-                    }}
-                  >
-                    Duplicate
-                  </button>
-                  {showDeleteCurrentConfirm ? (
-                    <span className="library-delete-confirm" role="group" aria-label="Confirm delete draft">
-                      <span className="library-delete-confirm-text">Delete this draft?</span>
-                      <button
-                        type="button"
-                        className="small-btn danger-btn"
-                        onClick={() => {
-                          m.deleteCurrentPoem();
-                          setShowDeleteCurrentConfirm(false);
-                          setIsLibraryOpen(false);
-                        }}
-                      >
-                        Yes, delete
-                      </button>
-                      <button
-                        type="button"
-                        className="small-btn"
-                        onClick={() => setShowDeleteCurrentConfirm(false)}
-                      >
-                        Cancel
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="small-btn danger-btn"
-                      onClick={() => setShowDeleteCurrentConfirm(true)}
-                    >
-                      Delete
-                    </button>
-                  )}
-                </div>
-                <div className="library-filters" role="search">
-                  <label className="library-filter-field">
-                    <span className="library-filter-label">Search</span>
-                    <input
-                      ref={librarySearchRef}
-                      type="search"
-                      value={libraryQuery}
-                      onChange={(e) => setLibraryQuery(e.target.value)}
-                      placeholder="Title, label, tags"
-                      autoComplete="off"
-                      spellCheck={false}
-                      aria-label="Filter drafts in library"
-                    />
-                  </label>
-                  <label className="library-filter-field">
-                    <span className="library-filter-label">Sort</span>
-                    <select
-                      value={librarySort}
-                      onChange={(e) =>
-                        setLibrarySort(e.target.value as typeof librarySort)
-                      }
-                      aria-label="Sort drafts"
-                    >
-                      <option value="recent">Recent (opened)</option>
-                      <option value="updated">Recently edited</option>
-                      <option value="title">Title A–Z</option>
-                    </select>
-                  </label>
-                  <label className="library-filter-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={libraryShowArchived}
-                      onChange={(e) =>
-                        setLibraryShowArchived(e.target.checked)
-                      }
-                    />
-                    Show archived
-                  </label>
-                </div>
-                {libraryListRows.length === 0 ? (
-                  <p className="drawer-note library-empty-msg" role="status">
-                    No drafts match this filter.
-                  </p>
-                ) : (
-                <div ref={libraryListParentRef} className="library-list-scroll">
-                  <div
-                    role="list"
-                    aria-label="Drafts in library"
-                    style={{
-                      height: `${libraryVirtualizer.getTotalSize()}px`,
-                      position: "relative",
-                    }}
-                  >
-                    {libraryVirtualizer.getVirtualItems().map((vItem) => {
-                      const row = libraryListRows[vItem.index]!;
-                      const { id, label, poem, meta } = row;
-                      const tags = (meta.tags ?? []).join(", ");
-                      const firstLine = poem.body.split("\n").find((l) => l.trim().length > 0)?.trim() ?? "";
-                      const isActive = id === m.activePoemId;
-                      const isArchived = Boolean(meta.archived);
-                      return (
-                        <div
-                          key={id}
-                          role="listitem"
-                          aria-selected={vItem.index === libraryActiveIdx}
-                          data-index={vItem.index}
-                          ref={libraryVirtualizer.measureElement}
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            transform: `translateY(${vItem.start}px)`,
-                            paddingBottom: "0.55rem",
-                            boxSizing: "border-box",
-                          }}
-                        >
-                          <div
-                            className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${vItem.index === libraryActiveIdx ? "is-keyboard-active" : ""}`}
-                          >
-                            <div className="draft-item-row">
-                              <button
-                                type="button"
-                                className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                                onClick={() => m.togglePinned(id)}
-                                aria-pressed={Boolean(meta.pinned)}
-                                {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
-                              >
-                                {meta.pinned ? "★" : "☆"}
-                              </button>
-                              <div className="draft-open-wrap">
-                                <button
-                                  type="button"
-                                  className="draft-open-btn"
-                                  onClick={() => {
-                                    m.selectPoem(id);
-                                    setIsLibraryOpen(false);
-                                  }}
-                                  aria-current={isActive ? "true" : undefined}
-                                  {...hint("Open this draft in the editor")}
-                                >
-                                  {label}
-                                  {isArchived ? " (archived)" : ""}
-                                </button>
-                                {firstLine && (
-                                  <span className="draft-first-line" aria-hidden>
-                                    {firstLine}
-                                  </span>
-                                )}
-                              </div>
-                              <button
-                                type="button"
-                                className="small-btn draft-row-dup"
-                                onClick={() => {
-                                  m.duplicatePoemById(id);
-                                  setIsLibraryOpen(false);
-                                }}
-                                {...hint("Duplicate this draft")}
-                              >
-                                Dup
-                              </button>
-                              {isArchived ? (
-                                <button
-                                  type="button"
-                                  className="small-btn"
-                                  onClick={() => m.setDraftArchived(id, false)}
-                                  {...hint("Return draft to main list")}
-                                >
-                                  Unarchive
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="small-btn"
-                                  disabled={isActive}
-                                  {...hint(
-                                    isActive
-                                      ? "Switch to another draft before archiving this one"
-                                      : "Archive — hide from list (data kept)",
-                                  )}
-                                  onClick={() => m.setDraftArchived(id, true)}
-                                >
-                                  Archive
-                                </button>
-                              )}
-                            </div>
-                            <div className="draft-item-edit">
-                              <label className="draft-edit-field">
-                                Label
-                                <input
-                                  type="text"
-                                  value={meta.label ?? ""}
-                                  onChange={(e) =>
-                                    m.setDraftLabel(id, e.target.value)
-                                  }
-                                  placeholder="Optional display name"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                />
-                              </label>
-                              <label className="draft-edit-field">
-                                Tags
-                                <input
-                                  type="text"
-                                  value={tags}
-                                  onChange={(e) =>
-                                    m.setDraftTags(
-                                      id,
-                                      e.target.value
-                                        .split(",")
-                                        .map((t) => t.trim())
-                                        .filter(Boolean),
-                                    )
-                                  }
-                                  placeholder="comma, separated"
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                />
-                              </label>
-                              {(meta.tags ?? []).length > 0 && (
-                                <div className="draft-tag-chips">
-                                  {(meta.tags ?? []).map((tag) => (
-                                    <button
-                                      key={tag}
-                                      type="button"
-                                      className={`draft-tag-chip ${libraryQuery === tag ? "is-active" : ""}`}
-                                      onClick={() => setLibraryQuery(libraryQuery === tag ? "" : tag)}
-                                      title={`Filter by tag: ${tag}`}
-                                    >
-                                      {tag}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                )}
-            </div>
-
-            <details className="drawer-accordion drawer-accordion-snapshots" open>
-              <summary className="drawer-accordion-summary">
-                Snapshots
-                {m.revisions.length > 0 && (
-                  <span className="drawer-accordion-badge">{m.revisions.length}</span>
-                )}
-              </summary>
-              <div className="drawer-accordion-body">
-                <div className="snapshot-save-row">
-                  <input
-                    type="text"
-                    className="snapshot-label-input"
-                    value={m.snapshotLabel}
-                    onChange={(e) => m.setSnapshotLabel(e.target.value)}
-                    placeholder="Optional label..."
-                    autoComplete="off"
-                    spellCheck={false}
-                    onKeyDown={(e) => { if (e.key === "Enter") m.saveSnapshot(); }}
-                  />
-                  <button
-                    type="button"
-                    className="small-btn small-btn-primary"
-                    onClick={m.saveSnapshot}
-                    {...hint("Save a snapshot of the current poem")}
-                  >
-                    Save now
-                  </button>
-                </div>
-                {m.revisions.length > 0 && (
-                  <div className="snapshot-history-list">
-                    {m.revisions.map((snap) => (
-                      <div key={snap.id} className="snapshot-history-item">
-                        <div className="snapshot-history-meta">
-                          <span
-                            className="snapshot-history-when"
-                            title={formatSnapshotWhen(snap.createdAt)}
-                          >
-                            {formatRelativeSnapshotWhen(snap.createdAt)}
-                          </span>
-                          {snap.label && snap.label !== "Auto" && (
-                            <span className="snapshot-history-label">{snap.label}</span>
-                          )}
-                          {snap.label === "Auto" && (
-                            <span className="snapshot-history-auto">auto</span>
-                          )}
-                          {snap.title && (
-                            <span className="snapshot-history-title">{snap.title}</span>
-                          )}
-                          {snap.aiScore != null && (
-                            <span className="snapshot-ai-score" title="AI score at time of snapshot">
-                              ✦ {snap.aiScore}
-                            </span>
-                          )}
-                        </div>
-                        <div className="snapshot-history-actions">
-                          <button
-                            type="button"
-                            className="small-btn"
-                            onClick={() => setDiffSnapshotId(diffSnapshotId === snap.id ? null : snap.id)}
-                            aria-pressed={diffSnapshotId === snap.id}
-                            {...hint("Show word-level diff between this snapshot and the current poem")}
-                          >
-                            {diffSnapshotId === snap.id ? "Hide diff" : "Diff"}
-                          </button>
-                          <button
-                            type="button"
-                            className="small-btn"
-                            onClick={() => {
-                              if (window.confirm(`Restore to "${formatRelativeSnapshotWhen(snap.createdAt)}"${snap.label ? ` (${snap.label})` : ""}?\n\nThis will replace the current poem text.`)) {
-                                m.restoreRevision(snap);
-                                setIsLibraryOpen(false);
-                              }
-                            }}
-                            {...hint("Restore poem to this snapshot")}
-                          >
-                            Restore
-                          </button>
-                          {pendingDeleteSnapId === snap.id ? (
-                            <span className="snapshot-delete-confirm" role="group" aria-label="Confirm delete snapshot">
-                              <button
-                                type="button"
-                                className="small-btn danger-btn"
-                                onClick={() => {
-                                  m.deleteRevision(snap.id);
-                                  setPendingDeleteSnapId(null);
-                                }}
-                              >
-                                Delete
-                              </button>
-                              <button
-                                type="button"
-                                className="small-btn"
-                                onClick={() => setPendingDeleteSnapId(null)}
-                              >
-                                Cancel
-                              </button>
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="small-btn snapshot-delete-btn"
-                              onClick={() => setPendingDeleteSnapId(snap.id)}
-                              aria-label={`Delete snapshot from ${formatRelativeSnapshotWhen(snap.createdAt)}`}
-                              {...hint("Delete this snapshot")}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                        {diffSnapshotId === snap.id && (() => {
-                          const tokens = wordDiff(snap.body, m.body);
-                          return (
-                            <div className="snapshot-diff-view" aria-label="Poem diff">
-                              {tokens.map((tok, i) =>
-                                tok.type === "same" ? (
-                                  <span key={i}>{tok.text}</span>
-                                ) : tok.type === "del" ? (
-                                  <del key={i} className="snapshot-diff-del">{tok.text}</del>
-                                ) : (
-                                  <ins key={i} className="snapshot-diff-add">{tok.text}</ins>
-                                )
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </details>
-
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <WorkshopLibraryModal
+        m={m}
+        isLibraryOpen={isLibraryOpen}
+        setIsLibraryOpen={setIsLibraryOpen}
+        showDeleteCurrentConfirm={showDeleteCurrentConfirm}
+        setShowDeleteCurrentConfirm={setShowDeleteCurrentConfirm}
+        libraryQuery={libraryQuery}
+        setLibraryQuery={setLibraryQuery}
+        librarySort={librarySort}
+        setLibrarySort={setLibrarySort}
+        libraryShowArchived={libraryShowArchived}
+        setLibraryShowArchived={setLibraryShowArchived}
+        libraryListRows={libraryListRows}
+        libraryListParentRef={libraryListParentRef}
+        libraryVirtualizer={libraryVirtualizer}
+        libraryActiveIdx={libraryActiveIdx}
+        librarySearchRef={librarySearchRef}
+        pendingDeleteSnapId={pendingDeleteSnapId}
+        setPendingDeleteSnapId={setPendingDeleteSnapId}
+        diffSnapshotId={diffSnapshotId}
+        setDiffSnapshotId={setDiffSnapshotId}
+      />
 
       {isExportOpen ? (
         <div
