@@ -440,8 +440,23 @@ export function PoemWorkshop() {
   const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
   const openIssueAtLineRef = useRef<((line: number) => void) | null>(null);
+  const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
   const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
+
+  const openAiTab = useCallback((tab: "overview" | "issues" | "chat") => {
+    if (window.innerWidth <= 899) {
+      setMobileAiOpen(true);
+      setMobileTab("write");
+      requestAnimationFrame(() => aiSwitchTabRef.current?.(tab));
+      return;
+    }
+    aiSwitchTabRef.current?.(tab);
+    requestAnimationFrame(() => {
+      const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
   // Set to true just before opening the sheet so analysis auto-triggers on mount only.
   const mobileSheetAutoTrigger = useRef(false);
   const mobileSheetAnalyzeFn = useRef<(() => void) | null>(null);
@@ -1727,6 +1742,8 @@ export function PoemWorkshop() {
                         result={aiResult}
                         scoringEnabled={aiScoringEnabled}
                         onJumpToLine={m.goToLine}
+                        onOpenTab={openAiTab}
+                        visibleIssueCount={aiVisibleIssues.length}
                       />
                     )}
                     {aiVisibleIssues.length > 0 && (
@@ -2143,6 +2160,7 @@ export function PoemWorkshop() {
         onApplyLine={m.applyLineRewrite}
         onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
         onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
+        onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
       />
 
       <MobileActionBar
@@ -2207,6 +2225,7 @@ export function PoemWorkshop() {
                 onApplyLine={m.applyLineRewrite}
                 onAnalyzeRef={mobileSheetAiRef}
                 onLoadingChange={setMobileIsAnalyzing}
+                onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
               />
             </div>
           </div>

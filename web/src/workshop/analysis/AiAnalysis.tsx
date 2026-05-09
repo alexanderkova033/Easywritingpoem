@@ -631,14 +631,17 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
+type AnalysisTab = "overview" | "issues" | "chat";
+
 function AnalysisResults({
   result, onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
+  activeTab, onTabChange, externalTabSignal,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
   onJump?: (line: number) => void;
-  onHighlight?: (start: number, end: number) => void;
+  onHighlight?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
   scoreHistory?: number[];
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
@@ -649,6 +652,9 @@ function AnalysisResults({
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
   openIssueLineSignal?: { line: number; nonce: number } | null;
   scoringEnabled?: boolean;
+  activeTab?: AnalysisTab;
+  onTabChange?: (t: AnalysisTab) => void;
+  externalTabSignal?: { tab: AnalysisTab; nonce: number } | null;
 }) {
   const isCompare = "comparison" in result;
 
@@ -657,6 +663,20 @@ function AnalysisResults({
   const [showIgnored, setShowIgnored] = useState(false);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
+  const [internalTab, setInternalTab] = useState<AnalysisTab>("overview");
+  const tab = activeTab ?? internalTab;
+  const setTab = (t: AnalysisTab) => {
+    if (onTabChange) onTabChange(t); else setInternalTab(t);
+  };
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeSeverity, setActiveSeverity] = useState<"high" | "medium" | "low" | null>(null);
+
+  // External request to switch tabs (e.g. from editor popover).
+  useEffect(() => {
+    if (!externalTabSignal) return;
+    setTab(externalTabSignal.tab);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalTabSignal?.nonce]);
 
   // Persist resolved/ignored across reloads — drop entries that no longer
   // match an issue in the current analysis to avoid stale junk accumulating.
@@ -681,6 +701,9 @@ function AnalysisResults({
     const { line } = openIssueLineSignal;
     const match = visibleIssues.find((iss) => line >= iss.line_start && line <= iss.line_end);
     if (!match) return;
+    setTab("issues");
+    setActiveCategory(null);
+    setActiveSeverity(null);
     setOpenIds((prev) => {
       if (prev.has(match.id)) return prev;
       const s = new Set(prev);
@@ -691,6 +714,7 @@ function AnalysisResults({
       const el = document.querySelector(`[data-issue-id="${match.id}"]`);
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openIssueLineSignal, visibleIssues]);
 
   const totalIssues = visibleIssues.length;
@@ -698,10 +722,10 @@ function AnalysisResults({
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
 
   // Unresolved first, resolved last
-  const sortedIssues = [
+  const sortedIssues = useMemo(() => [
     ...visibleIssues.filter((i) => !resolvedIds.has(i.id)),
     ...visibleIssues.filter((i) => resolvedIds.has(i.id)),
-  ];
+  ], [visibleIssues, resolvedIds]);
 
   const toggleAll = () => {
     const next = !allExpanded;
@@ -738,180 +762,324 @@ function AnalysisResults({
     setResolvedIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
   };
 
+  // Derive category for each issue once.
+  const issueCategories = useMemo(() => {
+    const map = new Map<string, { label: string; color: string } | null>();
+    for (const iss of result.issues) map.set(iss.id, deriveCategory(iss));
+    return map;
+  }, [result.issues]);
+
+  // Build category list with counts (visible issues only).
+  const categoriesWithCount = useMemo(() => {
+    const counts = new Map<string, { label: string; color: string; count: number }>();
+    for (const iss of visibleIssues) {
+      const c = issueCategories.get(iss.id);
+      if (!c) continue;
+      const cur = counts.get(c.label);
+      if (cur) cur.count++;
+      else counts.set(c.label, { label: c.label, color: c.color, count: 1 });
+    }
+    return [...counts.values()].sort((a, b) => b.count - a.count);
+  }, [visibleIssues, issueCategories]);
+
+  // Apply filter chips before grouping.
+  const filteredIssues = useMemo(() => {
+    return sortedIssues.filter((iss) => {
+      if (activeCategory) {
+        const c = issueCategories.get(iss.id);
+        if (!c || c.label !== activeCategory) return false;
+      }
+      if (activeSeverity && iss.severity !== activeSeverity) return false;
+      return true;
+    });
+  }, [sortedIssues, activeCategory, activeSeverity, issueCategories]);
+
+  // Group by severity for the issues tab.
+  const grouped = useMemo(() => {
+    const sev: Record<"high" | "medium" | "low", AnalysisIssue[]> = { high: [], medium: [], low: [] };
+    for (const iss of filteredIssues) {
+      const s = (iss.severity ?? "low") as "high" | "medium" | "low";
+      sev[s].push(iss);
+    }
+    return sev;
+  }, [filteredIssues]);
+
+  const progressPct = totalIssues > 0 ? Math.round((resolvedCount / totalIssues) * 100) : 0;
+  const issuesBadge = visibleIssues.length;
+
+  const renderIssueCard = (iss: AnalysisIssue) => (
+    <IssueCard
+      key={iss.id}
+      issue={iss}
+      index={result.issues.indexOf(iss)}
+      isOpen={openIds.has(iss.id)}
+      onOpenChange={(open) => {
+        handleOpenChange(iss.id, open);
+        if (open) onJump?.(iss.line_start);
+      }}
+      isResolved={resolvedIds.has(iss.id)}
+      onResolve={(resolved) => handleResolve(iss.id, resolved)}
+      onIgnore={() => handleIgnore(iss.id)}
+      onJump={onJump}
+      onHighlight={onHighlight}
+      onClearHighlight={onClearHighlight}
+      onApplyLine={onApplyLine}
+      poemLines={poemLines}
+      poemTitle={poemTitle}
+      model={model}
+    />
+  );
+
   return (
     <div className="ai-results">
-      {/* Overview: warm reaction + score + S/W + strongest line */}
-      {result.warm_reaction && (
-        <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
-      )}
-
-      {scoringEnabled && (
-        <div className="ai-overall">
-          <div className="ai-score-wrap">
-            <ScoreRing score={result.overall_score} />
-            <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
-              {result.overall_score}
-              <span className="ai-score-outof">/100</span>
-            </span>
+      {/* Tabs */}
+      <div className="ai-tabs" role="tablist" aria-label="Analysis sections">
+        <button type="button" role="tab" aria-selected={tab === "overview"}
+          className={`ai-tab${tab === "overview" ? " is-active" : ""}`}
+          onClick={() => setTab("overview")}>
+          Overview
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "issues"}
+          className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
+          onClick={() => setTab("issues")}>
+          Issues
+          {issuesBadge > 0 && (
+            <span className="ai-tab-badge">{issuesBadge}</span>
+          )}
+        </button>
+        {poemLines && poemTitle !== undefined && model && (
+          <button type="button" role="tab" aria-selected={tab === "chat"}
+            className={`ai-tab${tab === "chat" ? " is-active" : ""}`}
+            onClick={() => setTab("chat")}>
+            Chat
+          </button>
+        )}
+        {totalIssues > 0 && (
+          <div className="ai-tabs-progress" aria-label={`${resolvedCount} of ${totalIssues} issues addressed`}>
+            <div className="ai-tabs-progress-bar" style={{ width: `${progressPct}%` }} />
+            <span className="ai-tabs-progress-label">{resolvedCount}/{totalIssues}</span>
           </div>
-          <div className="ai-overall-label">
-            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-              {scoreLabel(result.overall_score)}
-            </span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
-        <div className="ai-sw-grid">
-          {(result.strengths?.length ?? 0) > 0 && (
-            <div className="ai-sw-card ai-sw-strengths">
-              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>+</span> Strengths</span>
-              <ul className="ai-sw-list">
-                {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
+      {/* Overview tab */}
+      {tab === "overview" && (
+        <div className="ai-tab-panel ai-tab-overview">
+          {result.warm_reaction && (
+            <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
           )}
-          {(result.weaknesses?.length ?? 0) > 0 && (
-            <div className="ai-sw-card ai-sw-weaknesses">
-              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>−</span> Work on</span>
-              <ul className="ai-sw-list">
-                {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
 
-      {result.strongest_line && (
-        <div className="ai-strongest-line ai-strongest-line-compact">
-          <span className="ai-strongest-line-icon" aria-hidden>★</span>
-          {onJump ? (
-            <button
-              type="button"
-              className="ai-strongest-line-jump linkish"
-              onClick={() => onJump(result.strongest_line!.line)}
-              title={`Jump to line ${result.strongest_line.line}`}
-            >
-              Line {result.strongest_line.line}
-            </button>
-          ) : (
-            <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
-          )}
-          {result.strongest_line.why && (
-            <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
-          )}
-        </div>
-      )}
-
-      {/* Comparison panel above the issues list when comparing drafts. */}
-      {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
-
-
-      {/* Issues section */}
-      {result.issues.length > 0 ? (
-        <div className="ai-issues-section">
-
-          {/* Compact issues toolbar — just expand/collapse-all toggle. */}
-          {totalIssues > 1 && (
-            <div className="ai-issues-toolbar">
-              {resolvedCount > 0 && (
-                <span className="ai-resolved-badge">
-                  {resolvedCount}/{totalIssues} addressed
+          <div className="ai-overview-grid">
+            {scoringEnabled && (
+              <div className="ai-card ai-card-score">
+                <div className="ai-score-wrap">
+                  <ScoreRing score={result.overall_score} />
+                  <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
+                    {result.overall_score}
+                    <span className="ai-score-outof">/100</span>
+                  </span>
+                </div>
+                <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+                  {scoreLabel(result.overall_score)}
                 </span>
-              )}
-              <button
-                type="button"
-                className="ai-expand-all-btn"
-                onClick={toggleAll}
-                title={allExpanded ? "Collapse all" : "Expand all"}
-              >
-                {allExpanded ? "Collapse all" : "Expand all"}
-              </button>
-            </div>
-          )}
-
-          {/* All-done celebration */}
-          {allDone ? (
-            <div className="ai-all-done">
-              <span className="ai-all-done-icon" aria-hidden>✦</span>
-              <div>
-                <strong>All issues addressed!</strong>
-                <p className="muted small">Great work. Run another analysis to check the revised poem.</p>
               </div>
-              <button
-                type="button"
-                className="small-btn ai-all-done-undo"
-                onClick={() => setResolvedIds(new Set())}
-              >
-                Reset
-              </button>
-            </div>
-          ) : (
-            <div className="ai-issues-list">
-              {sortedIssues.map((iss) => (
-                <IssueCard
-                  key={iss.id}
-                  issue={iss}
-                  index={result.issues.indexOf(iss)}
-                  isOpen={openIds.has(iss.id)}
-                  onOpenChange={(open) => handleOpenChange(iss.id, open)}
-                  isResolved={resolvedIds.has(iss.id)}
-                  onResolve={(resolved) => handleResolve(iss.id, resolved)}
-                  onIgnore={() => handleIgnore(iss.id)}
-                  onJump={onJump}
-                  onHighlight={onHighlight}
-                  onClearHighlight={onClearHighlight}
-                  onApplyLine={onApplyLine}
-                  poemLines={poemLines}
-                  poemTitle={poemTitle}
-                  model={model}
-                />
-              ))}
-            </div>
-          )}
+            )}
 
-          {/* Ignored issues footer */}
-          {ignoredIds.size > 0 && (
-            <div className="ai-ignored-footer">
-              <button
-                type="button"
-                className="ai-show-ignored-btn"
-                onClick={() => setShowIgnored((v) => !v)}
-              >
-                {showIgnored ? "Hide" : "Show"} {ignoredIds.size} ignored issue{ignoredIds.size !== 1 ? "s" : ""}
-              </button>
-              {showIgnored && (
-                <div className="ai-ignored-list">
-                  {result.issues.filter((i) => ignoredIds.has(i.id)).map((iss) => (
-                    <div key={iss.id} className="ai-ignored-row">
-                      <span className="ai-ignored-label">
-                        {iss.line_start === iss.line_end
-                          ? `Line ${iss.line_start}`
-                          : `Lines ${iss.line_start}–${iss.line_end}`}
-                        {iss.excerpt ? ` — "${iss.excerpt}"` : ""}
-                      </span>
-                      <button
-                        type="button"
-                        className="ai-unignore-btn"
-                        onClick={() => setIgnoredIds((prev) => { const s = new Set(prev); s.delete(iss.id); return s; })}
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  ))}
+            {result.strongest_line && (
+              <div className="ai-card ai-card-strongest">
+                <span className="ai-card-label">
+                  <span className="ai-card-icon" aria-hidden>★</span> Strongest line
+                </span>
+                {onJump ? (
+                  <button type="button" className="ai-strongest-line-jump linkish"
+                    onClick={() => onJump(result.strongest_line!.line)}
+                    title={`Jump to line ${result.strongest_line.line}`}>
+                    Line {result.strongest_line.line}
+                  </button>
+                ) : (
+                  <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
+                )}
+                {result.strongest_line.why && (
+                  <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
+                )}
+              </div>
+            )}
+
+            {(result.strengths?.length ?? 0) > 0 && (
+              <div className="ai-card ai-card-strengths">
+                <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>+</span> Strengths</span>
+                <ul className="ai-sw-list">
+                  {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {(result.weaknesses?.length ?? 0) > 0 && (
+              <div className="ai-card ai-card-weaknesses">
+                <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>−</span> Work on</span>
+                <ul className="ai-sw-list">
+                  {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {(result.overall_feedback || result.personal_feedback) && (
+            <div className="ai-feedback-blocks">
+              {result.overall_feedback && (
+                <div className="ai-feedback-card ai-feedback-overall">
+                  <span className="ai-feedback-label">Overall</span>
+                  <p className="ai-feedback-text">{result.overall_feedback}</p>
+                </div>
+              )}
+              {result.personal_feedback && (
+                <div className="ai-feedback-card ai-feedback-personal">
+                  <span className="ai-feedback-label">For you</span>
+                  <p className="ai-feedback-text">{result.personal_feedback}</p>
                 </div>
               )}
             </div>
           )}
-        </div>
-      ) : (
-        <div className="ai-no-issues-wrap">
-          <span className="ai-no-issues-check" aria-hidden>✓</span>
-          <p className="ai-no-issues muted small">No specific line-level issues — the poem reads well.</p>
+
+          {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
+
+          {visibleIssues.length > 0 && (
+            <button type="button" className="small-btn ai-jump-to-issues-btn"
+              onClick={() => setTab("issues")}>
+              See {visibleIssues.length} issue{visibleIssues.length !== 1 ? "s" : ""} →
+            </button>
+          )}
         </div>
       )}
 
+      {/* Issues tab */}
+      {tab === "issues" && (
+        <div className="ai-tab-panel ai-tab-issues">
+          {result.issues.length === 0 ? (
+            <div className="ai-no-issues-wrap">
+              <span className="ai-no-issues-check" aria-hidden>✓</span>
+              <p className="ai-no-issues muted small">No specific line-level issues — the poem reads well.</p>
+            </div>
+          ) : (
+            <>
+              {/* Filter chips: severity + category */}
+              <div className="ai-filter-row">
+                <div className="ai-filter-chips" role="group" aria-label="Filter by severity">
+                  <button type="button" className={`ai-chip${activeSeverity === null ? " is-active" : ""}`}
+                    onClick={() => setActiveSeverity(null)}>All</button>
+                  {(["high", "medium", "low"] as const)
+                    .filter((s) => visibleIssues.some((i) => (i.severity ?? "low") === s))
+                    .map((s) => (
+                      <button key={s} type="button"
+                        className={`ai-chip ai-chip-sev-${s}${activeSeverity === s ? " is-active" : ""}`}
+                        onClick={() => setActiveSeverity(activeSeverity === s ? null : s)}>
+                        <span className={`ai-issue-sev-dot ai-issue-sev-dot-${s}`} aria-hidden />
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                </div>
+                {categoriesWithCount.length > 1 && (
+                  <div className="ai-filter-chips" role="group" aria-label="Filter by category">
+                    {categoriesWithCount.map((c) => (
+                      <button key={c.label} type="button"
+                        className={`ai-chip ai-chip-cat${activeCategory === c.label ? " is-active" : ""}`}
+                        style={{ borderColor: c.color, color: activeCategory === c.label ? "#fff" : c.color, background: activeCategory === c.label ? c.color : "transparent" }}
+                        onClick={() => setActiveCategory(activeCategory === c.label ? null : c.label)}>
+                        {c.label} <span className="ai-chip-count">{c.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="ai-issues-toolbar">
+                {totalIssues > 0 && (
+                  <div className="ai-progress-bar-wrap" title={`${resolvedCount} of ${totalIssues} addressed`}>
+                    <div className="ai-progress-bar">
+                      <div className="ai-progress-bar-fill" style={{ width: `${progressPct}%` }} />
+                    </div>
+                    <span className="ai-progress-bar-label">{resolvedCount}/{totalIssues} addressed</span>
+                  </div>
+                )}
+                {filteredIssues.length > 1 && (
+                  <button type="button" className="ai-expand-all-btn"
+                    onClick={toggleAll}
+                    title={allExpanded ? "Collapse all" : "Expand all"}>
+                    {allExpanded ? "Collapse all" : "Expand all"}
+                  </button>
+                )}
+              </div>
+
+              {allDone ? (
+                <div className="ai-all-done">
+                  <span className="ai-all-done-icon" aria-hidden>✦</span>
+                  <div>
+                    <strong>All issues addressed!</strong>
+                    <p className="muted small">Run another analysis to check the revised poem.</p>
+                  </div>
+                  <button type="button" className="small-btn ai-all-done-undo"
+                    onClick={() => setResolvedIds(new Set())}>
+                    Reset
+                  </button>
+                </div>
+              ) : filteredIssues.length === 0 ? (
+                <p className="muted small ai-no-match">No issues match the active filters.</p>
+              ) : (
+                <div className="ai-issues-grouped">
+                  {(["high", "medium", "low"] as const).map((sev) =>
+                    grouped[sev].length > 0 ? (
+                      <div key={sev} className={`ai-sev-group ai-sev-group-${sev}`}>
+                        <h4 className="ai-sev-group-head">
+                          <span className={`ai-issue-sev-dot ai-issue-sev-dot-${sev}`} aria-hidden />
+                          {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                          <span className="ai-sev-group-count">{grouped[sev].length}</span>
+                        </h4>
+                        <div className="ai-issues-list">
+                          {grouped[sev].map(renderIssueCard)}
+                        </div>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              )}
+
+              {ignoredIds.size > 0 && (
+                <div className="ai-ignored-footer">
+                  <button type="button" className="ai-show-ignored-btn"
+                    onClick={() => setShowIgnored((v) => !v)}>
+                    {showIgnored ? "Hide" : "Show"} {ignoredIds.size} ignored issue{ignoredIds.size !== 1 ? "s" : ""}
+                  </button>
+                  {showIgnored && (
+                    <div className="ai-ignored-list">
+                      {result.issues.filter((i) => ignoredIds.has(i.id)).map((iss) => (
+                        <div key={iss.id} className="ai-ignored-row">
+                          <span className="ai-ignored-label">
+                            {iss.line_start === iss.line_end
+                              ? `Line ${iss.line_start}`
+                              : `Lines ${iss.line_start}–${iss.line_end}`}
+                            {iss.excerpt ? ` — "${iss.excerpt}"` : ""}
+                          </span>
+                          <button type="button" className="ai-unignore-btn"
+                            onClick={() => setIgnoredIds((prev) => { const s = new Set(prev); s.delete(iss.id); return s; })}>
+                            Restore
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Chat tab */}
+      {tab === "chat" && poemLines && poemTitle !== undefined && model && (
+        <div className="ai-tab-panel ai-tab-chat">
+          <AiChat title={poemTitle} lines={poemLines} result={result} model={model} poemId={poemId} />
+        </div>
+      )}
     </div>
   );
 }
@@ -939,9 +1107,11 @@ export interface AiAnalysisProps {
   onOpenIssueAtLineRef?: (fn: (line: number) => void) => void;
   /** Fires when the displayed result changes — lets the editor render a status strip + line ribbons. */
   onResultChange?: (result: PoemAnalysis | PoemComparison | null) => void;
+  /** Receives a setter so external UI (e.g. editor popover) can switch tabs. */
+  onSwitchTabRef?: (fn: (tab: "overview" | "issues" | "chat") => void) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
@@ -949,6 +1119,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
   const [retryAfterSec, setRetryAfterSec] = useState<number>(0);
+  const [externalTabSignal, setExternalTabSignal] = useState<{ tab: AnalysisTab; nonce: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
   );
@@ -1123,6 +1294,15 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   useEffect(() => {
     onOpenIssueAtLineRef?.(requestOpenIssueAtLine);
   }, [onOpenIssueAtLineRef, requestOpenIssueAtLine]);
+
+  const requestSwitchTab = useCallback((tab: AnalysisTab) => {
+    setExternalTabSignal({ tab, nonce: Date.now() });
+    setIsOpen(true);
+  }, []);
+
+  useEffect(() => {
+    onSwitchTabRef?.(requestSwitchTab);
+  }, [onSwitchTabRef, requestSwitchTab]);
 
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
@@ -1302,13 +1482,13 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 onVisibleIssuesChange={onVisibleIssuesChange}
                 openIssueLineSignal={openIssueLineSignal}
                 scoringEnabled={scoringEnabled}
+                externalTabSignal={externalTabSignal}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"
                 onClick={() => void handleAnalyze()}>
                 Analyze again
               </button>
-              <AiChat title={title} lines={lines} result={result} model={model} poemId={poemId} />
             </>
           )}
         </div>

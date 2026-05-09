@@ -39,9 +39,12 @@ export interface AiSummaryPopoverProps {
   result: PoemAnalysis | PoemComparison;
   scoringEnabled: boolean;
   onJumpToLine?: (line: number) => void;
+  /** Fires when user clicks one of the tab-jump buttons inside the popover. */
+  onOpenTab?: (tab: "overview" | "issues" | "chat") => void;
+  visibleIssueCount?: number;
 }
 
-export function AiSummaryPopover({ result, scoringEnabled, onJumpToLine }: AiSummaryPopoverProps) {
+export function AiSummaryPopover({ result, scoringEnabled, onJumpToLine, onOpenTab, visibleIssueCount }: AiSummaryPopoverProps) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -139,6 +142,33 @@ export function AiSummaryPopover({ result, scoringEnabled, onJumpToLine }: AiSum
               <ul className="ai-pop-list ai-pop-list-weaknesses">
                 {weaknesses.slice(0, 3).map((s, i) => <li key={`w-${i}`}>{s}</li>)}
               </ul>
+            </div>
+          )}
+
+          {result.personal_feedback && (
+            <div className="ai-pop-section ai-pop-personal">
+              <span className="ai-pop-section-label">For you</span>
+              <p className="ai-pop-personal-text">{result.personal_feedback}</p>
+            </div>
+          )}
+
+          {onOpenTab && (
+            <div className="ai-pop-actions">
+              <button type="button" className="ai-pop-action-btn"
+                onClick={() => { onOpenTab("overview"); setOpen(false); }}>
+                Overview
+              </button>
+              <button type="button" className="ai-pop-action-btn"
+                onClick={() => { onOpenTab("issues"); setOpen(false); }}>
+                Issues
+                {typeof visibleIssueCount === "number" && visibleIssueCount > 0 && (
+                  <span className="ai-pop-action-badge">{visibleIssueCount}</span>
+                )}
+              </button>
+              <button type="button" className="ai-pop-action-btn"
+                onClick={() => { onOpenTab("chat"); setOpen(false); }}>
+                Chat
+              </button>
             </div>
           )}
         </div>

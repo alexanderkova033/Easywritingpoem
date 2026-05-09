@@ -143,3 +143,57 @@
 
 .ai-pop-list-strengths li::marker { color: var(--ai-score-high, #5fba7d); }
 .ai-pop-list-weaknesses li::marker { color: var(--ai-score-mid, #e6a817); }
+
+.ai-pop-personal {
+  border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  padding-top: 0.45rem;
+}
+
+.ai-pop-personal-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.ai-pop-actions {
+  display: flex;
+  gap: 0.3rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+  padding-top: 0.5rem;
+  margin-top: 0.1rem;
+}
+
+.ai-pop-action-btn {
+  flex: 1;
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 0.3rem 0.5rem;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ai-pop-action-btn:hover {
+  border-color: var(--accent, #5fba7d);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.ai-pop-action-badge {
+  font-size: 0.66rem;
+  font-weight: 700;
+  background: var(--accent, #5fba7d);
+  color: #fff;
+  padding: 0.05em 0.4em;
+  border-radius: 999px;
+  min-width: 1.1rem;
+  text-align: center;
+}

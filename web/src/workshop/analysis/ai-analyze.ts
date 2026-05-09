@@ -42,6 +42,10 @@ export interface PoemAnalysis {
   weaknesses?: string[];
   strongest_line?: StrongestLine;
   overall_direction?: string;
+  /** 2-3 sentence holistic read of the poem as a whole. */
+  overall_feedback?: string;
+  /** 2-3 sentences addressed to the writer ("you"), warm/mentor tone. */
+  personal_feedback?: string;
   clarifying_question?: string;
   issues: AnalysisIssue[];
 }
@@ -129,6 +133,10 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     weaknesses: parseStringArray(obj.weaknesses, 4),
     strongest_line: parseStrongestLine(obj.strongest_line),
     overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
+    overall_feedback: typeof obj.overall_feedback === "string" && obj.overall_feedback.trim()
+      ? obj.overall_feedback.trim() : undefined,
+    personal_feedback: typeof obj.personal_feedback === "string" && obj.personal_feedback.trim()
+      ? obj.personal_feedback.trim() : undefined,
     clarifying_question: typeof obj.clarifying_question === "string" && obj.clarifying_question.trim()
       ? obj.clarifying_question.trim() : undefined,
     issues: issuesRaw

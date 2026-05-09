@@ -2137,4 +2137,355 @@
   opacity: 0.7;
   margin-right: 0.25rem;
 }
+
+/* ======================================================
+   Tabs (Overview / Issues / Chat) inside AnalysisResults
+   ====================================================== */
+.ai-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  margin-bottom: 0.75rem;
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2;
+  padding: 0.15rem 0;
+}
+
+.ai-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  border-radius: 4px 4px 0 0;
+}
+
+.ai-tab:hover { color: var(--text); }
+
+.ai-tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--accent, #5fba7d);
+  font-weight: 600;
+}
+
+.ai-tab-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.05em 0.45em;
+  border-radius: 999px;
+  background: var(--accent, #5fba7d);
+  color: #fff;
+  min-width: 1.25rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.ai-tab.is-active .ai-tab-badge {
+  background: var(--accent, #5fba7d);
+}
+
+/* Slim progress strip in tab bar */
+.ai-tabs-progress {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  flex: 0 0 auto;
+  padding-right: 0.25rem;
+}
+
+.ai-tabs-progress::before {
+  content: "";
+  width: 5rem;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  position: relative;
+}
+
+.ai-tabs-progress-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5rem;
+  max-width: 5rem;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent, #5fba7d), color-mix(in srgb, var(--accent) 60%, transparent));
+  transition: width 0.4s ease;
+}
+
+.ai-tabs-progress-label {
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.ai-tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  animation: ai-tab-fade 0.2s ease;
+}
+
+@keyframes ai-tab-fade {
+  from { opacity: 0; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Overview: 2x2 card grid */
+.ai-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+@media (max-width: 540px) {
+  .ai-overview-grid { grid-template-columns: 1fr; }
+}
+
+.ai-card {
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 4.5rem;
+}
+
+.ai-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ai-card-icon {
+  display: inline-flex;
+  width: 1.1rem;
+  height: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent, #5fba7d);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.ai-card-score {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.ai-card-strongest .ai-strongest-line-jump {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.ai-card-strongest .ai-strongest-line-why {
+  font-style: italic;
+}
+
+.ai-card-strengths { border-color: color-mix(in srgb, var(--ai-score-high, #5fba7d) 35%, var(--border)); }
+.ai-card-weaknesses { border-color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 35%, var(--border)); }
+
+.ai-card-strengths .ai-card-icon {
+  background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 18%, transparent);
+  color: var(--ai-score-high, #5fba7d);
+}
+
+.ai-card-weaknesses .ai-card-icon {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 18%, transparent);
+  color: var(--ai-score-mid, #e6a817);
+}
+
+/* Personal/overall feedback blocks */
+.ai-feedback-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-feedback-card {
+  border-left: 3px solid var(--accent, #5fba7d);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border-radius: 0 8px 8px 0;
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ai-feedback-overall {
+  border-left-color: color-mix(in srgb, var(--accent) 70%, var(--text));
+}
+
+.ai-feedback-personal {
+  border-left-color: var(--ai-score-high, #5fba7d);
+  background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 6%, var(--surface));
+}
+
+.ai-feedback-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.ai-feedback-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.ai-jump-to-issues-btn {
+  align-self: flex-start;
+}
+
+/* Filter chips */
+.ai-filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ai-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.ai-chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: inherit;
+  font-size: 0.74rem;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ai-chip:hover { border-color: var(--accent, #5fba7d); }
+
+.ai-chip.is-active {
+  background: var(--accent, #5fba7d);
+  border-color: var(--accent, #5fba7d);
+  color: #fff;
+}
+
+.ai-chip-sev-high.is-active { background: var(--ai-score-low, #d95f5f); border-color: var(--ai-score-low, #d95f5f); }
+.ai-chip-sev-medium.is-active { background: var(--ai-score-mid, #e6a817); border-color: var(--ai-score-mid, #e6a817); }
+.ai-chip-sev-low.is-active { background: var(--muted); border-color: var(--muted); }
+
+.ai-chip-count {
+  font-weight: 700;
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+
+.ai-chip.is-active .ai-chip-count { opacity: 1; }
+
+/* Severity groups */
+.ai-issues-grouped {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ai-sev-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ai-sev-group-head {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ai-sev-group-count {
+  font-weight: 600;
+  font-size: 0.7rem;
+  background: color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  color: var(--text);
+}
+
+.ai-sev-group-high .ai-sev-group-head { color: var(--ai-score-low, #d95f5f); }
+.ai-sev-group-medium .ai-sev-group-head { color: var(--ai-score-mid, #e6a817); }
+
+/* Progress bar in issues toolbar */
+.ai-progress-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}
+
+.ai-progress-bar {
+  height: 6px;
+  background: color-mix(in srgb, var(--border) 60%, transparent);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ai-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ai-score-high, #5fba7d), color-mix(in srgb, var(--ai-score-high, #5fba7d) 60%, transparent));
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.ai-progress-bar-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-no-match {
+  margin: 0.5rem 0;
+}
 

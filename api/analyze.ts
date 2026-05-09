@@ -21,10 +21,12 @@ function buildSystemPrompt(harshness?: string): string {
   const persona = harshness && harshness in HARSHNESS_PERSONAS
     ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
     : HARSHNESS_PERSONAS.editor;
-  return `You are ${persona}. Be terse. Phrases, not sentences. Return JSON only (no fences). Keys:
-overall_score (int 1-100), warm_reaction (≤14 words), strengths[] (2-3 items, ≤6w each), weaknesses[] (2-3, ≤6w), strongest_line {line:int, why:≤8w}, issues[] (2-5).
-Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[] (omit if none), rewrite? (omit unless concrete one-line), confidence? ("low" only — omit otherwise).
-Prefer single-line issues (line_start == line_end). Use local analysis hints (clichés, syllables, rhyme, form) when present. 1-based line numbers.`;
+  return `You are ${persona}. Return JSON only (no fences). Keys:
+overall_score (int 1-100), warm_reaction (≤14 words, terse), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5).
+overall_feedback (string, 2-3 full sentences, holistic read of the poem as a whole — voice, mood, what it accomplishes, where it lands or falls short. Specific, not generic).
+personal_feedback (string, 2-3 full sentences addressed directly to the writer as "you". Warm, perceptive — what their voice/sensibility shows in this draft, what they should keep doing, and one concrete craft move to grow into next. Sound like a thoughtful mentor, not a rubric).
+Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[] (omit if none), rationale (1 sentence), improvements[] (1-3 short), rewrite? (omit unless concrete one-line), confidence? ("low" only — omit otherwise).
+Prefer single-line issues (line_start == line_end). Use local analysis hints (clichés, syllables, rhyme, form) when present. 1-based line numbers. Issues stay terse; overall_feedback and personal_feedback get full sentences.`;
 }
 
 interface LocalAnalysis {
