@@ -284,7 +284,6 @@ const applyRewriteKeymap = keymap.of([
 const issueGutterExtension = gutter({
   class: "cm-issue-gutter",
   markers: (view) => view.state.field(issueGutterField),
-  initialSpacer: () => new SeverityDot("low"),
   domEventHandlers: {
     click(view, line) {
       const set = view.state.field(issueGutterField);
@@ -443,16 +442,17 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       try { view.dispatch({ effects: clearIssueGutter.of(undefined) }); } catch { /* ignore */ }
       return;
     }
+    // Paint a single dot at line_start per issue — multi-line ranges should
+    // not blanket every adjacent line with markers.
     const dotMap = new Map<number, string>();
     const sevOrder = (s?: string) => s === "high" ? 2 : s === "medium" ? 1 : 0;
     const entries: Array<{ pos: number; sev: string }> = [];
     try {
       const lineCount = view.state.doc.lines;
-      for (const [start, end, sev] of markers) {
-        for (let n = start; n <= Math.min(end, lineCount); n++) {
-          const existing = dotMap.get(n);
-          if (!existing || sevOrder(sev) > sevOrder(existing)) dotMap.set(n, sev ?? "low");
-        }
+      for (const [start, , sev] of markers) {
+        if (start < 1 || start > lineCount) continue;
+        const existing = dotMap.get(start);
+        if (!existing || sevOrder(sev) > sevOrder(existing)) dotMap.set(start, sev ?? "low");
       }
       for (const [lineNo, sev] of dotMap) {
         const line = view.state.doc.line(lineNo);

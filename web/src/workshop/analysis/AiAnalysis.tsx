@@ -193,33 +193,6 @@ function loadStoredModel(): string {
   } catch { return DEFAULT_MODEL; }
 }
 
-// ---- utils ---- //
-function scoreColor(score: number): string {
-  if (score >= 80) return "var(--ai-score-high, #5fba7d)";
-  if (score >= 55) return "var(--ai-score-mid, #e6a817)";
-  return "var(--ai-score-low, #d95f5f)";
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 88) return "Excellent";
-  if (score >= 75) return "Strong";
-  if (score >= 60) return "Solid";
-  if (score >= 45) return "Developing";
-  return "Needs work";
-}
-
-function deltaLabel(d: number): string {
-  if (d > 0) return `+${d}`;
-  if (d < 0) return `${d}`;
-  return "—";
-}
-
-function deltaClass(d: number): string {
-  if (d > 0) return "ai-delta ai-delta-up";
-  if (d < 0) return "ai-delta ai-delta-down";
-  return "ai-delta ai-delta-flat";
-}
-
 // ---- issue category derivation ---- //
 const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
   { label: "Imagery",     color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
@@ -257,53 +230,6 @@ function useCopyFlash() {
   }, []);
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
   return { copiedIdx, copy };
-}
-
-// ---- sub-components ---- //
-function ScoreRing({ score }: { score: number }) {
-  const r = 30;
-  const circ = 2 * Math.PI * r;
-  const color = scoreColor(score);
-  const offset = circ - (score / 100) * circ;
-  return (
-    <svg className="ai-score-ring" viewBox="0 0 76 76" aria-hidden>
-      <circle cx="38" cy="38" r={r} fill="none"
-        stroke="color-mix(in srgb, currentColor 10%, transparent)" strokeWidth="6" />
-      <circle cx="38" cy="38" r={r} fill="none"
-        stroke={color} strokeWidth="6" strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        transform="rotate(-90 38 38)"
-        className="ai-score-arc"
-      />
-    </svg>
-  );
-}
-
-function ScoreSparkline({ history }: { history: number[] }) {
-  if (history.length < 2) return null;
-  const W = 56, H = 18;
-  const min = Math.min(...history);
-  const max = Math.max(...history);
-  const range = max - min || 1;
-  const pts = history.map((s, i) => {
-    const x = (i / (history.length - 1)) * W;
-    const y = H - 2 - ((s - min) / range) * (H - 6);
-    return `${x},${y}`;
-  }).join(" ");
-  const lastScore = history[history.length - 1]!;
-  const lastX = W;
-  const lastY = H - 2 - ((lastScore - min) / range) * (H - 6);
-  return (
-    <div className="ai-sparkline-wrap" title={`Last ${history.length} scores: ${history.join(" → ")}${history.length >= 2 ? (history[history.length-1]! > history[0]! ? " ↑" : history[history.length-1]! < history[0]! ? " ↓" : "") : ""}`}>
-      <svg className="ai-sparkline" viewBox={`0 0 ${W} ${H}`} aria-hidden>
-        <polyline points={pts} fill="none"
-          stroke="var(--accent)" strokeWidth="1.5"
-          strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
-        <circle cx={lastX} cy={lastY} r="2.2" fill="var(--accent)" />
-      </svg>
-    </div>
-  );
 }
 
 // ---- per-issue mini chat ---- //
@@ -670,11 +596,9 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
-type SeverityFilter = "all" | "high" | "medium" | "low";
-
 function AnalysisResults({
-  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine, poemLines, poemTitle, model,
-  poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
+  result, onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
+  poemId, onVisibleIssuesChange, openIssueLineSignal,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -692,16 +616,12 @@ function AnalysisResults({
   scoringEnabled?: boolean;
 }) {
   const isCompare = "comparison" in result;
-  const overallDelta = previous ? result.overall_score - previous.overall_score : null;
 
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => loadIdSet(LS_RESOLVED_PREFIX, poemId));
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => loadIdSet(LS_IGNORED_PREFIX, poemId));
   const [showIgnored, setShowIgnored] = useState(false);
-  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "issues">("overview");
 
   // Persist resolved/ignored across reloads — drop entries that no longer
   // match an issue in the current analysis to avoid stale junk accumulating.
@@ -726,7 +646,6 @@ function AnalysisResults({
     const { line } = openIssueLineSignal;
     const match = visibleIssues.find((iss) => line >= iss.line_start && line <= iss.line_end);
     if (!match) return;
-    setActiveTab("issues");
     setOpenIds((prev) => {
       if (prev.has(match.id)) return prev;
       const s = new Set(prev);
@@ -743,49 +662,17 @@ function AnalysisResults({
   const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
 
-  const sevCounts: Record<SeverityFilter, number> = {
-    all: totalIssues,
-    high: visibleIssues.filter((i) => i.severity === "high").length,
-    medium: visibleIssues.filter((i) => i.severity === "medium").length,
-    low: visibleIssues.filter((i) => !i.severity || i.severity === "low").length,
-  };
-
-  // Collect categories that have at least one visible issue
-  const categoryMap = new Map<string, { color: string; count: number }>();
-  for (const iss of visibleIssues) {
-    const cat = deriveCategory(iss);
-    if (cat) {
-      const existing = categoryMap.get(cat.label);
-      categoryMap.set(cat.label, { color: cat.color, count: (existing?.count ?? 0) + 1 });
-    }
-  }
-
-  const bySeverity = severityFilter === "all"
-    ? visibleIssues
-    : visibleIssues.filter((i) =>
-        severityFilter === "low"
-          ? (!i.severity || i.severity === "low")
-          : i.severity === severityFilter
-      );
-
-  const filteredIssues = categoryFilter == null
-    ? bySeverity
-    : bySeverity.filter((i) => {
-        const cat = deriveCategory(i);
-        return cat?.label === categoryFilter;
-      });
-
   // Unresolved first, resolved last
   const sortedIssues = [
-    ...filteredIssues.filter((i) => !resolvedIds.has(i.id)),
-    ...filteredIssues.filter((i) => resolvedIds.has(i.id)),
+    ...visibleIssues.filter((i) => !resolvedIds.has(i.id)),
+    ...visibleIssues.filter((i) => resolvedIds.has(i.id)),
   ];
 
   const toggleAll = () => {
     const next = !allExpanded;
     setAllExpanded(next);
     if (next) {
-      setOpenIds(new Set(filteredIssues.map((i) => i.id)));
+      setOpenIds(new Set(visibleIssues.map((i) => i.id)));
     } else {
       setOpenIds(new Set());
     }
@@ -818,198 +705,30 @@ function AnalysisResults({
 
   return (
     <div className="ai-results">
-      {/* Warm human-voice opener */}
-      {result.warm_reaction && (
-        <p className="ai-warm-reaction">{result.warm_reaction}</p>
-      )}
-
-      {/* Tab bar splits Overview from Issues so neither pane becomes a wall. */}
-      <div className="ai-tabs" role="tablist" aria-label="Analysis sections">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "overview"}
-          className={`ai-tab${activeTab === "overview" ? " is-active" : ""}`}
-          onClick={() => setActiveTab("overview")}
-        >
-          Overview
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "issues"}
-          className={`ai-tab${activeTab === "issues" ? " is-active" : ""}`}
-          onClick={() => setActiveTab("issues")}
-        >
-          Issues <span className="ai-tab-count">{totalIssues}</span>
-        </button>
-      </div>
-
-      {activeTab === "overview" && (<>
-
-      {/* Score row — only when scoring is enabled */}
-      {scoringEnabled && (
-        <div className="ai-overall">
-          <div className="ai-score-wrap">
-            <ScoreRing score={result.overall_score} />
-            <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
-              {result.overall_score}
-              <span className="ai-score-outof">/100</span>
-            </span>
-          </div>
-          <div className="ai-overall-label">
-            <div className="ai-overall-verdict-row">
-              <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-                {scoreLabel(result.overall_score)}
-              </span>
-              <ScoreSparkline history={scoreHistory ?? []} />
-            </div>
-            {overallDelta !== null && (
-              <span className={deltaClass(overallDelta) + " ai-overall-delta"}>
-                {deltaLabel(overallDelta)} from last
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Strengths + Weaknesses cards */}
-      {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
-        <div className="ai-sw-grid">
-          {(result.strengths?.length ?? 0) > 0 && (
-            <div className="ai-sw-card ai-sw-strengths">
-              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>+</span> Strengths</span>
-              <ul className="ai-sw-list">
-                {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-          )}
-          {(result.weaknesses?.length ?? 0) > 0 && (
-            <div className="ai-sw-card ai-sw-weaknesses">
-              <span className="ai-sw-label"><span className="ai-sw-mark" aria-hidden>−</span> Work on</span>
-              <ul className="ai-sw-list">
-                {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Strongest line — compact one-line callout */}
-      {result.strongest_line && (
-        <div className="ai-strongest-line ai-strongest-line-compact">
-          <span className="ai-strongest-line-icon" aria-hidden>★</span>
-          {onJump ? (
-            <button
-              type="button"
-              className="ai-strongest-line-jump linkish"
-              onClick={() => onJump(result.strongest_line!.line)}
-              title={`Jump to line ${result.strongest_line.line}`}
-            >
-              Line {result.strongest_line.line}
-            </button>
-          ) : (
-            <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
-          )}
-          {result.strongest_line.why && (
-            <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
-          )}
-        </div>
-      )}
-
-      {/* Comparison panel */}
+      {/* Comparison panel above the issues list when comparing drafts. */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
-      </>)}
-
-      {activeTab === "issues" && (<>
 
       {/* Issues section */}
       {result.issues.length > 0 ? (
         <div className="ai-issues-section">
 
-          {/* What to do next — only when high-severity issues remain */}
-          {resolvedCount < totalIssues && sevCounts.high > 0 && (
-            <div className="ai-next-steps">
-              Fix the <strong>{sevCounts.high} high-priority</strong> issue{sevCounts.high > 1 ? "s" : ""} first — then re-analyse to track improvement.
-            </div>
-          )}
-
-          {/* Header row: title + progress + expand-all */}
-          <div className="ai-issues-toolbar">
-            <div className="ai-issues-toolbar-left">
-              <h4 className="ai-issues-heading">
-                Line-level feedback
-                <span className="ai-issues-count">{totalIssues}</span>
-              </h4>
+          {/* Compact issues toolbar — just expand/collapse-all toggle. */}
+          {totalIssues > 1 && (
+            <div className="ai-issues-toolbar">
               {resolvedCount > 0 && (
                 <span className="ai-resolved-badge">
                   {resolvedCount}/{totalIssues} addressed
                 </span>
               )}
-            </div>
-            <button
-              type="button"
-              className="ai-expand-all-btn"
-              onClick={toggleAll}
-              title={allExpanded ? "Collapse all" : "Expand all"}
-            >
-              {allExpanded ? "Collapse all" : "Expand all"}
-            </button>
-          </div>
-
-          {/* Progress bar */}
-          {totalIssues > 0 && (
-            <div className="ai-progress-track" title={`${resolvedCount} of ${totalIssues} issues addressed`}>
-              <div
-                className="ai-progress-fill"
-                style={{ width: `${(resolvedCount / totalIssues) * 100}%` }}
-              />
-            </div>
-          )}
-
-          {/* Severity filter tabs */}
-          {(sevCounts.high > 0 || sevCounts.medium > 0) && (
-            <div className="ai-sev-filter" role="group" aria-label="Filter by severity">
-              {(["all", "high", "medium", "low"] as SeverityFilter[]).map((sev) => {
-                if (sev !== "all" && sevCounts[sev] === 0) return null;
-                return (
-                  <button
-                    key={sev}
-                    type="button"
-                    className={`ai-sev-tab${severityFilter === sev ? " is-active" : ""} ai-sev-tab-${sev}`}
-                    onClick={() => setSeverityFilter(sev)}
-                  >
-                    {sev === "all" ? "All" : sev.charAt(0).toUpperCase() + sev.slice(1)}
-                    <span className="ai-sev-tab-count">{sevCounts[sev]}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Category filter chips */}
-          {categoryMap.size >= 2 && (
-            <div className="ai-cat-filter" role="group" aria-label="Filter by category">
               <button
                 type="button"
-                className={`ai-cat-chip${categoryFilter == null ? " is-active" : ""}`}
-                onClick={() => setCategoryFilter(null)}
+                className="ai-expand-all-btn"
+                onClick={toggleAll}
+                title={allExpanded ? "Collapse all" : "Expand all"}
               >
-                All types
+                {allExpanded ? "Collapse all" : "Expand all"}
               </button>
-              {[...categoryMap.entries()].map(([label, { color, count }]) => (
-                <button
-                  key={label}
-                  type="button"
-                  className={`ai-cat-chip${categoryFilter === label ? " is-active" : ""}`}
-                  style={{ "--cat-color": color } as React.CSSProperties}
-                  onClick={() => setCategoryFilter(categoryFilter === label ? null : label)}
-                >
-                  {label}
-                  <span className="ai-cat-chip-count">{count}</span>
-                </button>
-              ))}
             </div>
           )}
 
@@ -1094,8 +813,6 @@ function AnalysisResults({
         </div>
       )}
 
-      </>)}
-
       <p className="ai-meta muted small">
         {new Date(result.meta.analyzedAt).toLocaleString(undefined, {
           dateStyle: "medium", timeStyle: "short",
@@ -1137,7 +854,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
-  const [snapshots, setSnapshots] = useState<AnalysisSnapshot[]>(() => loadSnapshots(poemId));
   const [retryAfterSec, setRetryAfterSec] = useState<number>(0);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
@@ -1168,7 +884,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       setErrorMsg("");
       setIsUnconfigured(false);
       setScoreHistory(loadScoreHistory(poemId));
-      setSnapshots(loadSnapshots(poemId));
     }
   }, [poemId]);
 
@@ -1206,7 +921,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
   const canCompare = savedResult !== null && savedLines.length > 0;
   const hasPoem = lines.some((l) => l.trim().length > 0);
-  const wordCount = lines.join(" ").split(/\s+/).filter(Boolean).length;
   const effectiveMode = mode === "compare" && canCompare ? "compare" : "fresh";
 
   const handleAnalyze = useCallback(async () => {
@@ -1259,7 +973,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       saveLastAnalysis(poemId, res);
       saveLastHash(poemId, inputHash);
       pushSnapshot(poemId, res);
-      setSnapshots(loadSnapshots(poemId));
       onAnalysisDone?.(res.issues, res.overall_score);
       setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       setStatus("done");
@@ -1304,19 +1017,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     setStatus("idle");
     setErrorMsg("");
     setScoreHistory([]);
-    setSnapshots([]);
     setSessionNonce((n) => n + 1);
     onVisibleIssuesChange?.([]);
   }, [poemId, onVisibleIssuesChange]);
 
-  const restoreSnapshot = useCallback((snap: AnalysisSnapshot) => {
-    setResult(snap.result);
-    setSavedResult(snap.result);
-    setStatus("done");
-    setErrorMsg("");
-    saveLastAnalysis(poemId, snap.result);
-    onAnalysisDone?.(snap.result.issues, snap.result.overall_score);
-  }, [poemId, onAnalysisDone]);
 
   const requestOpenIssueAtLine = useCallback((line: number) => {
     setOpenIssueLineSignal({ line, nonce: Date.now() });
@@ -1423,46 +1127,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
             </div>
           </div>
 
-          {/* Snapshot strip — last 3 runs */}
-          {snapshots.length > 0 && (
-            <div className="ai-snapshots-row" role="group" aria-label="Recent analyses">
-              <span className="ai-snapshots-label muted small">History:</span>
-              {snapshots.map((snap, i) => (
-                <button
-                  key={snap.analyzedAt}
-                  type="button"
-                  className={`ai-snapshot-chip${result?.meta?.analyzedAt === snap.analyzedAt ? " is-active" : ""}`}
-                  onClick={() => restoreSnapshot(snap)}
-                  title={`${new Date(snap.analyzedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · ${snap.issuesCount} issue${snap.issuesCount !== 1 ? "s" : ""}`}
-                >
-                  {i === 0 ? "Latest" : `−${i}`} {scoringEnabled ? `· ${snap.overall_score}` : ""}
-                </button>
-              ))}
-            </div>
-          )}
-
           {retryAfterSec > 0 && (
             <div className="ai-retry-banner muted small" role="status" aria-live="polite">
               Rate limit hit — wait <strong>{retryAfterSec}s</strong> before retrying.
             </div>
-          )}
-
-          {/* Word count hint */}
-          {hasPoem && status !== "loading" && (
-            <p className="ai-word-hint muted small">
-              {wordCount} word{wordCount !== 1 ? "s" : ""}
-              {mainIdea?.trim() ? <> · <span className="ai-form-badge">{mainIdea.trim().slice(0, 32)}{mainIdea.trim().length > 32 ? "…" : ""}</span></> : null}
-              {" · "}{effectiveMode === "compare" && canCompare
-                ? "will compare to your saved baseline"
-                : "analysis with local context"}
-            </p>
-          )}
-
-          {effectiveMode === "compare" && canCompare && (
-            <p className="ai-compare-hint muted small">
-              Baseline saved from previous run — the model will score the current
-              version and show what changed.
-            </p>
           )}
 
           {isUnconfigured && (

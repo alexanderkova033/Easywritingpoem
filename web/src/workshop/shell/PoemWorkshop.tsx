@@ -29,7 +29,7 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
-import { AiStatusStrip } from "@/workshop/analysis/AiStatusStrip";
+import { AiSummaryPopover } from "@/workshop/analysis/AiSummaryPopover";
 import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
 import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
@@ -1694,13 +1694,6 @@ export function PoemWorkshop() {
                 </div>
                 <div className="poem-editor-with-scheme">
                   <div className="poem-editor-shell" style={{ display: "flex", flexDirection: "column" }}>
-                    {aiResult && (
-                      <AiStatusStrip
-                        result={aiResult}
-                        scoringEnabled={aiScoringEnabled}
-                        onJumpToLine={m.goToLine}
-                      />
-                    )}
                     <div className="poem-editor-body-wrap" style={{ position: "relative" }}>
                     <PoemBodyEditor
                       id="poem-body"
@@ -1729,6 +1722,13 @@ export function PoemWorkshop() {
                       }}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
+                    {aiResult && (
+                      <AiSummaryPopover
+                        result={aiResult}
+                        scoringEnabled={aiScoringEnabled}
+                        onJumpToLine={m.goToLine}
+                      />
+                    )}
                     {aiVisibleIssues.length > 0 && (
                       <AiLineRibbons
                         editorViewRef={m.editorViewRef}
