@@ -28,7 +28,8 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
-import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
+import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
+import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
@@ -58,6 +59,22 @@ import {
 } from "@/workshop/hints/HoverHintsContext";
 import "./PoemWorkshop.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
+
+function deriveAiHighlights(poemId: string | undefined): {
+  lines: Array<[number, number, string?]>;
+  words: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
+} {
+  const saved = loadLastAnalysis(poemId);
+  if (!saved) return { lines: [], words: [] };
+  const ignored = loadIgnoredIssueIds(poemId);
+  const issues = saved.issues.filter((i) => !ignored.has(i.id));
+  return {
+    lines: issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?]),
+    words: issues
+      .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
+      .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity })),
+  };
+}
 
 export function PoemWorkshop() {
   const [rhymeBreadth, setRhymeBreadth] = useState<RhymeBreadth>(() => {
@@ -256,8 +273,14 @@ export function PoemWorkshop() {
   }, []);
 
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
-  const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
-  const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>([]);
+  // Restore highlights from saved analysis on first mount so reload doesn't
+  // wipe the dots/line backgrounds that were visible before the refresh.
+  const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>(
+    () => deriveAiHighlights(m.activePoemId).lines,
+  );
+  const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>(
+    () => deriveAiHighlights(m.activePoemId).words,
+  );
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -278,9 +301,22 @@ export function PoemWorkshop() {
     if (m.activePoemId !== prevActivePoemIdRef.current) {
       prevActivePoemIdRef.current = m.activePoemId;
       setIssueHighlight(null);
-      setPersistentIssueHighlights([]);
+      const { lines, words } = deriveAiHighlights(m.activePoemId);
+      setPersistentIssueHighlights(lines);
+      setWordHighlights(words);
     }
   }, [m.activePoemId]);
+
+  const handleVisibleIssuesChange = useCallback((issues: AnalysisIssue[]) => {
+    setPersistentIssueHighlights(
+      issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?]),
+    );
+    setWordHighlights(
+      issues
+        .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
+        .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity })),
+    );
+  }, []);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
@@ -1999,16 +2035,8 @@ export function PoemWorkshop() {
         onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
         onClearHighlight={() => setIssueHighlight(null)}
         onAnalysisDone={(issues, score) => {
-          setPersistentIssueHighlights(
-            issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
-          );
-          setWordHighlights(
-            issues
-              .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
-              .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity }))
-          );
+          handleVisibleIssuesChange(issues);
           m.setLastAiScore(score);
-          // On desktop: scroll tools panel to AI results
           requestAnimationFrame(() => {
             const panel = toolsPanelRef.current;
             if (!panel) return;
@@ -2020,6 +2048,7 @@ export function PoemWorkshop() {
             }
           });
         }}
+        onVisibleIssuesChange={handleVisibleIssuesChange}
         onApplyLine={m.applyLineRewrite}
         onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
       />
@@ -2078,11 +2107,10 @@ export function PoemWorkshop() {
                 onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
                 onClearHighlight={() => setIssueHighlight(null)}
                 onAnalysisDone={(issues, score) => {
-                  setPersistentIssueHighlights(
-                    issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
-                  );
+                  handleVisibleIssuesChange(issues);
                   m.setLastAiScore(score);
                 }}
+                onVisibleIssuesChange={handleVisibleIssuesChange}
                 onApplyLine={m.applyLineRewrite}
                 onAnalyzeRef={mobileSheetAiRef}
                 onLoadingChange={setMobileIsAnalyzing}

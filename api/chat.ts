@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     lines?: unknown;
     message?: unknown;
     analysisContext?: unknown;
+    history?: unknown;
     model?: unknown;
   };
 
@@ -39,6 +40,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const analysisContext = typeof body.analysisContext === "string" ? body.analysisContext : "";
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+
+  // Cap forwarded history to keep token usage bounded.
+  const MAX_HISTORY_TURNS = 10;
+  const rawHistory = Array.isArray(body.history) ? body.history : [];
+  const history = rawHistory
+    .map((entry) => entry as { role?: unknown; content?: unknown })
+    .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+    .map((m) => ({ role: m.role as "user" | "assistant", content: (m.content as string).slice(0, 4000) }))
+    .slice(-MAX_HISTORY_TURNS);
 
   if (!message) {
     return res.status(400).json({ error: "No message provided." });
@@ -52,15 +62,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? `\nRecent analysis summary:\n${analysisContext}`
     : "";
 
-  const userContent = `${poemSection}${analysisSection}\n\nUser question: ${message}`;
+  const systemContent = `${SYSTEM_PROMPT}${poemSection}${analysisSection}`;
 
   const result = await callOpenAI(
     apiKey,
     {
       model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userContent },
+        { role: "system", content: systemContent },
+        ...history,
+        { role: "user", content: message },
       ],
       max_tokens: 400,
       temperature: 0.7,

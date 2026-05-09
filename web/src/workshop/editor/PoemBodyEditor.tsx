@@ -1,5 +1,5 @@
 import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
-import { StateEffect, StateField, EditorState, Transaction, RangeSetBuilder, type Range } from "@codemirror/state";
+import { StateEffect, StateField, EditorState, Transaction, RangeSet, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
 import { highlightSelectionMatches, search } from "@codemirror/search";
@@ -239,16 +239,26 @@ class SeverityDot extends GutterMarker {
   }
 }
 
-const setIssueGutter = StateEffect.define<Array<[number, string]>>();
+// Gutter dots are anchored at line.from positions and mapped through doc
+// changes so they follow the line as the user types — line-number-keyed
+// storage made the dots drift away from the line they were marking.
+const setIssueGutter = StateEffect.define<Array<{ pos: number; sev: string }>>();
 const clearIssueGutter = StateEffect.define<void>();
 
-const issueGutterField = StateField.define<Map<number, string>>({
-  create() { return new Map(); },
+const issueGutterField = StateField.define<RangeSet<GutterMarker>>({
+  create() { return RangeSet.empty; },
   update(value, tr) {
-    let next = value;
+    let next = value.map(tr.changes);
     for (const e of tr.effects) {
-      if (e.is(setIssueGutter)) { next = new Map(e.value); }
-      if (e.is(clearIssueGutter)) { next = new Map(); }
+      if (e.is(clearIssueGutter)) next = RangeSet.empty;
+      if (e.is(setIssueGutter)) {
+        const builder = new RangeSetBuilder<GutterMarker>();
+        const sorted = [...e.value].sort((a, b) => a.pos - b.pos);
+        for (const { pos, sev } of sorted) {
+          builder.add(pos, pos, new SeverityDot(sev));
+        }
+        next = builder.finish();
+      }
     }
     return next;
   },
@@ -256,19 +266,7 @@ const issueGutterField = StateField.define<Map<number, string>>({
 
 const issueGutterExtension = gutter({
   class: "cm-issue-gutter",
-  markers(view) {
-    const dotMap = view.state.field(issueGutterField);
-    const builder = new RangeSetBuilder<GutterMarker>();
-    if (dotMap.size === 0) return builder.finish();
-    const sorted = [...dotMap.entries()].sort((a, b) => a[0] - b[0]);
-    for (const [lineNo, sev] of sorted) {
-      try {
-        const line = view.state.doc.line(lineNo);
-        builder.add(line.from, line.from, new SeverityDot(sev));
-      } catch { /* line out of range */ }
-    }
-    return builder.finish();
-  },
+  markers: (view) => view.state.field(issueGutterField),
   initialSpacer: () => new SeverityDot("low"),
 });
 
@@ -432,9 +430,9 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       try { view.dispatch({ effects: clearIssueGutter.of(undefined) }); } catch { /* ignore */ }
       return;
     }
-    // Expand line ranges to individual lines with their worst severity
     const dotMap = new Map<number, string>();
     const sevOrder = (s?: string) => s === "high" ? 2 : s === "medium" ? 1 : 0;
+    const entries: Array<{ pos: number; sev: string }> = [];
     try {
       const lineCount = view.state.doc.lines;
       for (const [start, end, sev] of markers) {
@@ -443,9 +441,13 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           if (!existing || sevOrder(sev) > sevOrder(existing)) dotMap.set(n, sev ?? "low");
         }
       }
+      for (const [lineNo, sev] of dotMap) {
+        const line = view.state.doc.line(lineNo);
+        entries.push({ pos: line.from, sev });
+      }
     } catch { /* ignore */ }
     try {
-      view.dispatch({ effects: setIssueGutter.of([...dotMap.entries()]) });
+      view.dispatch({ effects: setIssueGutter.of(entries) });
     } catch { /* ignore */ }
   }, [props.editorViewRef, props.issueGutterMarkers]);
 

@@ -1,5 +1,5 @@
 import "./AiAnalysis.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   analyzePoem,
   comparePoem,
@@ -20,8 +20,11 @@ const DEFAULT_MODEL = "gpt-4o-mini";
 
 // ---- last analysis per poem ---- //
 const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
+const LS_RESOLVED_PREFIX = "easy-poems:ai-resolved:";
+const LS_IGNORED_PREFIX = "easy-poems:ai-ignored:";
+const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
 
-function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
+export function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
   if (!poemId) return null;
   try {
     const raw = localStorage.getItem(LS_LAST_ANALYSIS_PREFIX + poemId);
@@ -36,22 +39,46 @@ function saveLastAnalysis(poemId: string | undefined, analysis: PoemAnalysis) {
   catch { /* storage full */ }
 }
 
-// ---- score history ---- //
-const LS_SCORE_HISTORY = "easy-poems:ai-score-history";
+function loadIdSet(prefix: string, poemId?: string): Set<string> {
+  if (!poemId) return new Set();
+  try {
+    const raw = localStorage.getItem(prefix + poemId);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.map((x) => String(x)));
+  } catch { return new Set(); }
+}
+
+function saveIdSet(prefix: string, poemId: string | undefined, set: Set<string>) {
+  if (!poemId) return;
+  try {
+    if (set.size === 0) localStorage.removeItem(prefix + poemId);
+    else localStorage.setItem(prefix + poemId, JSON.stringify([...set]));
+  } catch { /* ignore */ }
+}
+
+export function loadIgnoredIssueIds(poemId?: string): Set<string> {
+  return loadIdSet(LS_IGNORED_PREFIX, poemId);
+}
+
+// ---- score history (per poem) ---- //
 const MAX_SCORE_HISTORY = 15;
 
-function loadScoreHistory(): number[] {
+function loadScoreHistory(poemId?: string): number[] {
+  if (!poemId) return [];
   try {
-    const raw = localStorage.getItem(LS_SCORE_HISTORY);
+    const raw = localStorage.getItem(LS_SCORE_HISTORY_PREFIX + poemId);
     if (!raw) return [];
     return JSON.parse(raw) as number[];
   } catch { return []; }
 }
 
-function appendScoreHistory(score: number): number[] {
-  const history = loadScoreHistory();
+function appendScoreHistory(poemId: string | undefined, score: number): number[] {
+  const history = loadScoreHistory(poemId);
   const next = [...history, score].slice(-MAX_SCORE_HISTORY);
-  try { localStorage.setItem(LS_SCORE_HISTORY, JSON.stringify(next)); } catch { /* ignore */ }
+  if (!poemId) return next;
+  try { localStorage.setItem(LS_SCORE_HISTORY_PREFIX + poemId, JSON.stringify(next)); } catch { /* ignore */ }
   return next;
 }
 
@@ -233,6 +260,7 @@ function IssueThread({
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || loading) return;
+    const priorHistory = messages.map((m) => ({ role: m.role, content: m.text }));
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text }]);
     setLoading(true);
@@ -246,6 +274,7 @@ function IssueThread({
           lines: poemLines,
           message: text,
           analysisContext: issueContext,
+          history: priorHistory,
           model,
         }),
       });
@@ -263,7 +292,7 @@ function IssueThread({
     } finally {
       setLoading(false);
     }
-  }, [input, loading, poemTitle, poemLines, issueContext, model]);
+  }, [input, loading, messages, poemTitle, poemLines, issueContext, model]);
 
   return (
     <div className="ai-issue-thread">
@@ -569,6 +598,7 @@ type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
   result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine, poemLines, poemTitle, model,
+  poemId, onVisibleIssuesChange,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -580,6 +610,8 @@ function AnalysisResults({
   poemLines?: string[];
   poemTitle?: string;
   model?: string;
+  poemId?: string;
+  onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
 }) {
   const isCompare = "comparison" in result;
   const deltas = previous
@@ -592,8 +624,8 @@ function AnalysisResults({
       }
     : null;
 
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set());
-  const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => new Set());
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => loadIdSet(LS_RESOLVED_PREFIX, poemId));
+  const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => loadIdSet(LS_IGNORED_PREFIX, poemId));
   const [showIgnored, setShowIgnored] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -601,7 +633,20 @@ function AnalysisResults({
   const [allExpanded, setAllExpanded] = useState(false);
   const [dimsExpanded, setDimsExpanded] = useState(false);
 
-  const visibleIssues = result.issues.filter((i) => !ignoredIds.has(i.id));
+  // Persist resolved/ignored across reloads — drop entries that no longer
+  // match an issue in the current analysis to avoid stale junk accumulating.
+  useEffect(() => { saveIdSet(LS_RESOLVED_PREFIX, poemId, resolvedIds); }, [poemId, resolvedIds]);
+  useEffect(() => { saveIdSet(LS_IGNORED_PREFIX, poemId, ignoredIds); }, [poemId, ignoredIds]);
+
+  const visibleIssues = useMemo(
+    () => result.issues.filter((i) => !ignoredIds.has(i.id)),
+    [result.issues, ignoredIds],
+  );
+
+  // Notify parent so editor highlights/gutter dots can drop ignored issues.
+  useEffect(() => {
+    onVisibleIssuesChange?.(visibleIssues);
+  }, [visibleIssues, onVisibleIssuesChange]);
   const totalIssues = visibleIssues.length;
   const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
@@ -964,6 +1009,8 @@ export interface AiAnalysisProps {
   onHighlightLines?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
   onAnalysisDone?: (issues: AnalysisIssue[], score: number) => void;
+  /** Fires whenever the user-visible issue set changes (e.g. ignore/restore). */
+  onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
   /** Called once with a trigger fn so external UI (e.g. mobile FAB) can start analysis */
   onAnalyzeRef?: (fn: () => void) => void;
@@ -971,7 +1018,7 @@ export interface AiAnalysisProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine, onAnalyzeRef, onLoadingChange }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
@@ -988,7 +1035,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
-  const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory());
+  const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory(poemId));
   const abortRef = useRef<AbortController | null>(null);
   const prevPoemId = useRef(poemId);
 
@@ -996,12 +1043,14 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     if (poemId !== prevPoemId.current) {
       prevPoemId.current = poemId;
       abortRef.current?.abort();
-      setResult(null);
-      setSavedResult(null);
+      const next = loadLastAnalysis(poemId);
+      setResult(next);
+      setSavedResult(next);
       setSavedLines([]);
-      setStatus("idle");
+      setStatus(next ? "done" : "idle");
       setErrorMsg("");
       setIsUnconfigured(false);
+      setScoreHistory(loadScoreHistory(poemId));
     }
   }, [poemId]);
 
@@ -1050,7 +1099,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setSavedLines(lines);
         saveLastAnalysis(poemId, res);
         onAnalysisDone?.(res.issues, res.overall_score);
-        setScoreHistory(appendScoreHistory(res.overall_score));
+        setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       } else {
         const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
         const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, model, ctrl.signal);
@@ -1059,7 +1108,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setSavedLines(lines);
         saveLastAnalysis(poemId, res);
         onAnalysisDone?.(res.issues, res.overall_score);
-        setScoreHistory(appendScoreHistory(res.overall_score));
+        setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       }
       setStatus("done");
     } catch (err) {
@@ -1243,6 +1292,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 poemLines={lines}
                 poemTitle={title}
                 model={model}
+                poemId={poemId}
+                onVisibleIssuesChange={onVisibleIssuesChange}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"
@@ -1294,6 +1345,7 @@ function AiChat({
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || chatStatus === "loading") return;
+    const priorHistory = messages.map((m) => ({ role: m.role, content: m.text }));
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text }]);
     setChatStatus("loading");
@@ -1302,7 +1354,7 @@ function AiChat({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, lines, message: text, analysisContext, model }),
+        body: JSON.stringify({ title, lines, message: text, analysisContext, history: priorHistory, model }),
       });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
@@ -1319,7 +1371,7 @@ function AiChat({
       setChatError((err as Error).message);
       setChatStatus("error");
     }
-  }, [input, chatStatus, title, lines, analysisContext, model]);
+  }, [input, chatStatus, messages, title, lines, analysisContext, model]);
 
   return (
     <div className="ai-chat">
