@@ -29,7 +29,6 @@ const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
 const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
 const LS_CHAT_PREFIX = "easy-poems:ai-chat:";
 const LS_SNAPSHOTS_PREFIX = "easy-poems:ai-snapshots:";
-const LS_STYLE_NOTES = "easy-poems:ai-style-notes";
 const MAX_SNAPSHOTS = 3;
 
 function hashInput(input: string): string {
@@ -90,10 +89,6 @@ function pushSnapshot(poemId: string | undefined, result: PoemAnalysis | PoemCom
   // Avoid duplicate snapshots when nothing changed (same analyzedAt rare but possible).
   const next = [snap, ...existing.filter((s) => s.analyzedAt !== snap.analyzedAt)].slice(0, MAX_SNAPSHOTS);
   try { localStorage.setItem(LS_SNAPSHOTS_PREFIX + poemId, JSON.stringify(next)); } catch { /* ignore */ }
-}
-
-function loadStyleNotes(): string {
-  try { return localStorage.getItem(LS_STYLE_NOTES) ?? ""; } catch { return ""; }
 }
 
 interface StoredChatMessage { role: "user" | "assistant"; text: string; }
@@ -1227,7 +1222,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
-  const [styleNotes, setStyleNotes] = useState<string>(loadStyleNotes);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number } | null>(null);
   const [snapshots, setSnapshots] = useState<AnalysisSnapshot[]>(() => loadSnapshots(poemId));
@@ -1285,11 +1279,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     });
   }, []);
 
-  const updateStyleNotes = useCallback((val: string) => {
-    setStyleNotes(val);
-    tryLocalStorageSetItem(LS_STYLE_NOTES, val);
-  }, []);
-
   // Retry-after countdown ticker.
   useEffect(() => {
     if (retryAfterSec <= 0) return;
@@ -1319,7 +1308,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
     const writingFocusParts: string[] = [];
     if (mainIdea?.trim()) writingFocusParts.push(`Main idea: ${mainIdea.trim()}`);
-    if (styleNotes.trim()) writingFocusParts.push(`Style / influences: ${styleNotes.trim().slice(0, 240)}`);
     if (clarifyContextRef.current) writingFocusParts.push(`Answer to clarifying question: ${clarifyContextRef.current}`);
     const writingFocus = writingFocusParts.length > 0 ? writingFocusParts.join("\n") : undefined;
     clarifyContextRef.current = "";
@@ -1330,7 +1318,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       lines.join("\n"),
       title,
       harshness,
-      styleNotes,
       mainIdea ?? "",
       mode === "compare" && canCompare ? "compare" : "fresh",
     ].join("|"));
@@ -1379,7 +1366,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, styleNotes, result]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
 
 
   useEffect(() => {
@@ -1527,22 +1514,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 </button>
               )}
             </div>
-          </div>
-
-          {/* Style / influences input — global, persists across poems */}
-          <div className="ai-style-input-row">
-            <label className="ai-style-input-label" htmlFor="ai-style-input">
-Style / influences
-            </label>
-            <input
-              id="ai-style-input"
-              type="text"
-              className="ai-style-input"
-              value={styleNotes}
-              onChange={(e) => updateStyleNotes(e.target.value)}
-              placeholder="e.g. Mary Oliver, plainspoken modernism…"
-              maxLength={240}
-            />
           </div>
 
           {/* Snapshot strip — last 3 runs */}

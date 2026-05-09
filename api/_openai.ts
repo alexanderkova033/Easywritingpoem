@@ -67,13 +67,13 @@ export async function callOpenAI(
 
   try {
     // GPT-5 / o-series models reject `max_tokens` and require
-    // `max_completion_tokens`. Send the new name unconditionally — older
-    // models that still accept the old name are not in use here.
+    // `max_completion_tokens`. They also reject custom `temperature` (only
+    // default 1 allowed). Drop both legacy params from the request.
+    void opts.temperature;
     const body: Record<string, unknown> = {
       model: opts.model,
       messages: opts.messages,
       max_completion_tokens: opts.max_tokens,
-      temperature: opts.temperature,
     };
     if (opts.jsonMode !== false) {
       body.response_format = { type: "json_object" };
