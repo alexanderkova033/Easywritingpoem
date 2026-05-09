@@ -1126,9 +1126,11 @@ export interface AiAnalysisProps {
   onLoadingChange?: (loading: boolean) => void;
   /** Called once with a fn so external UI (e.g. editor gutter click) can open the issue covering a given line. */
   onOpenIssueAtLineRef?: (fn: (line: number) => void) => void;
+  /** Fires when the displayed result changes — lets the editor render a status strip + line ribbons. */
+  onResultChange?: (result: PoemAnalysis | PoemComparison | null) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
@@ -1175,6 +1177,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   useEffect(() => {
     onLoadingChange?.(status === "loading");
   }, [status, onLoadingChange]);
+
+  useEffect(() => {
+    onResultChange?.(result);
+  }, [result, onResultChange]);
 
   const saveModel = useCallback((val: string) => {
     setModel(val);

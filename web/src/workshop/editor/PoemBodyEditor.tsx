@@ -1,4 +1,4 @@
-import { EditorView, ViewPlugin, WidgetType, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewPlugin, WidgetType, keymap, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
 import { StateEffect, StateField, EditorState, Transaction, RangeSet, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
@@ -267,6 +267,19 @@ const issueGutterField = StateField.define<RangeSet<GutterMarker>>({
 // Module-level handler ref so the gutter extension (defined once) can call
 // the latest React callback. Only one editor instance runs at a time.
 const gutterDotClickHandler: { fn: ((line: number) => void) | null } = { fn: null };
+const applyRewriteHandler: { fn: ((line: number) => boolean) | null } = { fn: null };
+
+const applyRewriteKeymap = keymap.of([
+  {
+    key: "Alt-Enter",
+    run(view) {
+      const fn = applyRewriteHandler.fn;
+      if (!fn) return false;
+      const lineNo = view.state.doc.lineAt(view.state.selection.main.from).number;
+      return fn(lineNo);
+    },
+  },
+]);
 
 const issueGutterExtension = gutter({
   class: "cm-issue-gutter",
@@ -357,6 +370,8 @@ export interface PoemBodyEditorProps {
   onGutterDotClick?: (line: number) => void;
   /** Called when the cursor parks on a different line for ~400ms. */
   onCursorLineChange?: (line: number) => void;
+  /** Alt+Enter on a flagged line — apply that issue's rewrite if available. */
+  onApplyRewriteAtCursor?: (line: number) => boolean;
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   id?: string;
@@ -504,6 +519,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     return () => { gutterDotClickHandler.fn = null; };
   }, [props.onGutterDotClick]);
 
+  useEffect(() => {
+    applyRewriteHandler.fn = props.onApplyRewriteAtCursor ?? null;
+    return () => { applyRewriteHandler.fn = null; };
+  }, [props.onApplyRewriteAtCursor]);
+
   const extensions = useMemo(
     () => [
       // Prevent poem-load/suggestion-apply transactions from polluting undo history.
@@ -524,6 +544,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       issueGutterField,
       issueGutterExtension,
       wordHighlightField,
+      applyRewriteKeymap,
       ...lineFocusExtension,
       placeholder("Start writing…"),
       ...(showSyllables ? [syllableCountPlugin] : []),

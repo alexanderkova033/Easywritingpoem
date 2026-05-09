@@ -1,0 +1,93 @@
+.ai-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+  min-height: 2.1rem;
+}
+
+.ai-strip-score {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.ai-strip-strongest {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ai-strip-strongest:hover {
+  border-color: var(--ai-score-high, #5fba7d);
+}
+
+.ai-strip-group {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.ai-strip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  border: 1px solid var(--border);
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.ai-strip-chip-strength {
+  border-color: color-mix(in srgb, var(--ai-score-high, #5fba7d) 45%, var(--border));
+}
+
+.ai-strip-chip-weakness {
+  border-color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 45%, var(--border));
+}
+
+.ai-strip-mark {
+  font-weight: 700;
+  opacity: 0.65;
+}
+.ai-strip-chip-strength .ai-strip-mark { color: var(--ai-score-high, #5fba7d); }
+.ai-strip-chip-weakness .ai-strip-mark { color: var(--ai-score-mid, #e6a817); }
+
+.ai-strip-reaction {
+  font-style: italic;
+  opacity: 0.85;
+  flex: 1;
+  min-width: 12ch;
+  font-size: 0.78rem;
+  transition: opacity 1.2s ease;
+}
+
+.ai-strip-reaction.is-faded {
+  opacity: 0.4;
+}
+
+@media (max-width: 640px) {
+  .ai-strip-reaction { display: none; }
+  .ai-strip-chip { max-width: 12ch; }
+}

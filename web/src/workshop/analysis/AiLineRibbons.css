@@ -1,0 +1,101 @@
+/* Overlay sits inside .poem-editor-body-wrap (which must be position:relative).
+   Each ribbon is absolutely positioned at the top offset of its line. */
+.ai-ribbons-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ai-ribbon {
+  position: absolute;
+  right: -0.25rem;
+  transform: translate(100%, -2px);
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  max-width: 18rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 1100px) {
+  /* No room for a margin overlay — push ribbons to overlap the right edge */
+  .ai-ribbon {
+    right: 0.5rem;
+    transform: translate(0, -2px);
+    max-width: 14rem;
+  }
+}
+
+.ai-ribbon-sev-high   { border-color: color-mix(in srgb, var(--ai-score-low,  #d95f5f) 50%, var(--border)); }
+.ai-ribbon-sev-medium { border-color: color-mix(in srgb, var(--ai-score-mid,  #e6a817) 50%, var(--border)); }
+.ai-ribbon-sev-low    { border-color: var(--border); }
+
+.ai-ribbon-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex: none;
+}
+.ai-ribbon-dot-high   { background: var(--ai-score-low,  #d95f5f); }
+.ai-ribbon-dot-medium { background: var(--ai-score-mid,  #e6a817); }
+.ai-ribbon-dot-low    { background: var(--ai-score-high, #5fba7d); }
+
+.ai-ribbon-body {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 14rem;
+  overflow: hidden;
+}
+
+.ai-ribbon-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 14rem;
+}
+
+.ai-ribbon-action {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 0.35rem;
+  font-size: 0.7rem;
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+}
+
+.ai-ribbon-apply {
+  background: color-mix(in srgb, var(--accent, #5fba7d) 15%, transparent);
+  border-color: color-mix(in srgb, var(--accent, #5fba7d) 50%, var(--border));
+}
+
+.ai-ribbon-apply:hover {
+  background: color-mix(in srgb, var(--accent, #5fba7d) 25%, transparent);
+}
+
+.ai-ribbon-dismiss {
+  font-size: 0.65rem;
+  opacity: 0.6;
+}
+
+.ai-ribbon-dismiss:hover { opacity: 1; }

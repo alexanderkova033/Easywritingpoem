@@ -29,7 +29,10 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
-import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
+import { AiStatusStrip } from "@/workshop/analysis/AiStatusStrip";
+import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
+import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
+import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
@@ -257,6 +260,16 @@ export function PoemWorkshop() {
   // Swipe gesture state
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
+  const [aiResult, setAiResult] = useState<PoemAnalysis | PoemComparison | null>(null);
+  const [aiVisibleIssues, setAiVisibleIssues] = useState<AnalysisIssue[]>([]);
+  const [aiIgnoredIds, setAiIgnoredIds] = useState<Set<string>>(() => loadIgnoredIssueIds(undefined));
+  const aiScoringEnabled = (() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_AI_SCORING_ENABLED);
+      return raw !== "0" && raw !== "false";
+    } catch { return true; }
+  })();
+
   // Hide topbar when virtual keyboard is open
   useEffect(() => {
     const vv = window.visualViewport;
@@ -304,10 +317,28 @@ export function PoemWorkshop() {
       const { lines, words } = deriveAiHighlights(m.activePoemId);
       setPersistentIssueHighlights(lines);
       setWordHighlights(words);
+      const saved = loadLastAnalysis(m.activePoemId);
+      setAiResult(saved);
+      const ignored = loadIgnoredIssueIds(m.activePoemId);
+      setAiIgnoredIds(ignored);
+      setAiVisibleIssues(saved ? saved.issues.filter((i) => !ignored.has(i.id)) : []);
     }
   }, [m.activePoemId]);
 
+  // Initial mount: hydrate aiResult/visibleIssues from saved analysis so the
+  // status strip + ribbons appear without waiting for a new analyse.
+  useEffect(() => {
+    const saved = loadLastAnalysis(m.activePoemId);
+    if (!saved) return;
+    setAiResult(saved);
+    const ignored = loadIgnoredIssueIds(m.activePoemId);
+    setAiIgnoredIds(ignored);
+    setAiVisibleIssues(saved.issues.filter((i) => !ignored.has(i.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleVisibleIssuesChange = useCallback((issues: AnalysisIssue[]) => {
+    setAiVisibleIssues(issues);
     setPersistentIssueHighlights(
       issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?]),
     );
@@ -317,6 +348,44 @@ export function PoemWorkshop() {
         .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity })),
     );
   }, []);
+
+  const ribbonApply = useCallback((iss: AnalysisIssue) => {
+    if (!iss.rewrite) return;
+    m.applyLineRewrite(iss.line_start, iss.line_end, iss.rewrite);
+    setAiIgnoredIds((prev) => {
+      const s = new Set(prev);
+      s.add(iss.id);
+      const poemId = m.activePoemId;
+      if (poemId) {
+        try { localStorage.setItem("easy-poems:ai-ignored:" + poemId, JSON.stringify([...s])); } catch { /* ignore */ }
+      }
+      return s;
+    });
+    setAiVisibleIssues((prev) => prev.filter((i) => i.id !== iss.id));
+  }, [m]);
+
+  const ribbonIgnore = useCallback((id: string) => {
+    setAiIgnoredIds((prev) => {
+      const s = new Set(prev);
+      s.add(id);
+      const poemId = m.activePoemId;
+      if (poemId) {
+        try { localStorage.setItem("easy-poems:ai-ignored:" + poemId, JSON.stringify([...s])); } catch { /* ignore */ }
+      }
+      return s;
+    });
+    setAiVisibleIssues((prev) => prev.filter((i) => i.id !== id));
+  }, [m.activePoemId]);
+
+  // Alt+Enter: apply the rewrite for the issue covering the cursor's line.
+  const handleApplyRewriteAtCursor = useCallback((line: number): boolean => {
+    const match = aiVisibleIssues.find(
+      (iss) => line >= iss.line_start && line <= iss.line_end && iss.rewrite,
+    );
+    if (!match) return false;
+    ribbonApply(match);
+    return true;
+  }, [aiVisibleIssues, ribbonApply]);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
@@ -1625,7 +1694,14 @@ export function PoemWorkshop() {
                 </div>
                 <div className="poem-editor-with-scheme">
                   <div className="poem-editor-shell" style={{ display: "flex", flexDirection: "column" }}>
-                    <div className="poem-editor-body-wrap">
+                    {aiResult && (
+                      <AiStatusStrip
+                        result={aiResult}
+                        scoringEnabled={aiScoringEnabled}
+                        onJumpToLine={m.goToLine}
+                      />
+                    )}
+                    <div className="poem-editor-body-wrap" style={{ position: "relative" }}>
                     <PoemBodyEditor
                       id="poem-body"
                       aria-describedby="poem-body-hint"
@@ -1643,6 +1719,7 @@ export function PoemWorkshop() {
                       issueGutterMarkers={persistentIssueHighlights}
                       onGutterDotClick={(line) => openIssueAtLineRef.current?.(line)}
                       onCursorLineChange={(line) => openIssueAtLineRef.current?.(line)}
+                      onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
@@ -1652,6 +1729,16 @@ export function PoemWorkshop() {
                       }}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
+                    {aiVisibleIssues.length > 0 && (
+                      <AiLineRibbons
+                        editorViewRef={m.editorViewRef}
+                        issues={aiVisibleIssues}
+                        ignoredIds={aiIgnoredIds}
+                        onApply={ribbonApply}
+                        onIgnore={ribbonIgnore}
+                        onSelect={(line) => openIssueAtLineRef.current?.(line)}
+                      />
+                    )}
                     </div>
                     <InlineRhymeHint editorViewRef={m.editorViewRef} />
                     {selectionText && selectionRect && (
@@ -2052,6 +2139,7 @@ export function PoemWorkshop() {
           });
         }}
         onVisibleIssuesChange={handleVisibleIssuesChange}
+        onResultChange={setAiResult}
         onApplyLine={m.applyLineRewrite}
         onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
         onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
@@ -2115,6 +2203,7 @@ export function PoemWorkshop() {
                   m.setLastAiScore(score);
                 }}
                 onVisibleIssuesChange={handleVisibleIssuesChange}
+                onResultChange={setAiResult}
                 onApplyLine={m.applyLineRewrite}
                 onAnalyzeRef={mobileSheetAiRef}
                 onLoadingChange={setMobileIsAnalyzing}
