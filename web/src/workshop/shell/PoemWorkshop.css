@@ -614,7 +614,7 @@
   overflow-y: auto;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) var(--surface);
+  scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) transparent;
   scrollbar-gutter: stable;
 }
 
@@ -635,7 +635,7 @@
 }
 
 .tools-scroll-body::-webkit-scrollbar-track {
-  background: var(--surface);
+  background: transparent;
 }
 
 .tools-scroll-body::-webkit-scrollbar-thumb {
