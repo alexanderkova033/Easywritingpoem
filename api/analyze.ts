@@ -21,55 +21,10 @@ function buildSystemPrompt(harshness?: string): string {
   const persona = harshness && harshness in HARSHNESS_PERSONAS
     ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
     : HARSHNESS_PERSONAS.editor;
-  return `You are ${persona}. Analyze the poem and return valid JSON with this exact shape:
-{
-  "meta": { "model": "<model-id>", "analyzedAt": "<ISO-8601>" },
-  "overall_score": <integer 1-100>,
-  "warm_reaction": "<one warm, honest sentence (max 18 words) reacting to the poem as a person, not an evaluator>",
-  "summary": "<2-3 sentences: an honest, specific overall impression — what the poem achieves, what mood it creates, and its defining strength>",
-  "strengths": ["<2-4 brief phrases (each max 10 words) naming what the poem does well — concrete, not generic>"],
-  "weaknesses": ["<2-4 brief phrases (each max 10 words) naming what most needs work — concrete, not generic>"],
-  "strongest_line": {
-    "line": <1-based integer of the single best line>,
-    "excerpt": "<the line itself or a short quote from it>",
-    "why": "<one short sentence on what makes this line land>"
-  },
-  "overall_direction": "<3-5 sentences giving the single most important whole-poem improvement direction. This should be broad craft advice — about the poem's arc, emotional range, tonal consistency, structural choices, or central image — NOT a repeat of individual line issues. Write as if advising a poet before their next full revision.>",
-  "clarifying_question": "<optional — one short clarifying question to ask the poet if a major intent is ambiguous; omit field if not needed>",
-  "issues": [
-    {
-      "id": "issue-1",
-      "severity": "<high|medium|low>",
-      "confidence": "<high|medium|low — how sure you are this is actually a problem>",
-      "line_start": <1-based integer>,
-      "line_end": <1-based integer>,
-      "excerpt": "<short quote, optional>",
-      "problem_words": ["<specific weak word or phrase>"],
-      "headline": "<one short fragment (max 8 words) naming the problem — used as a one-line preview>",
-      "rationale": "<polite, specific reason — mention the exact words or phrases that are weak when relevant>",
-      "improvements": ["<direction 1>", "<optional direction 2>"],
-      "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling; omit for structural issues or when directions suffice>"
-    }
-  ]
-}
-Rules:
-- Scores are integers 1-100.
-- warm_reaction: always present, ONE sentence, ≤18 words. Sound like a person reacting, not a rubric. Specific, not generic.
-- summary: always present, 2-3 sentences, honest and specific — not generic praise.
-- strengths / weaknesses: 2-4 items each. Each item is a SHORT phrase (≤10 words), no full sentences. Concrete: name the technique, image, or move — not vague praise.
-- strongest_line: always present. Pick the single line that does the most work; \`line\` is its 1-based index.
-- overall_direction: always present, 3-5 sentences of whole-poem craft advice. Never a list of line problems — think big picture: arc, theme, voice, structure, emotional progression.
-- clarifying_question: include ONLY when intent is genuinely ambiguous. Otherwise omit the field entirely.
-- Limit issues to the 3-6 most actionable ones; fewer is fine for strong poems.
-- severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
-- problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
-- headline: required for every issue. ≤8 words, fragment style, names the problem at a glance.
-- confidence: required. "high" = clearly a problem in nearly any reading; "medium" = real issue but partly subjective; "low" = personal-taste flag the poet may reasonably reject.
-- improvements: 1-3 strings per issue.
-- rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction. Keep it as 1-2 lines max.
-- If local analysis context is provided (syllables, rhyme scheme, clichés, goals), use it to make your feedback more precise and specific. Reference detected clichés directly.
-- line_start / line_end are 1-based indexes into the numbered lines you receive.
-- Return ONLY the JSON object, no markdown fences.`;
+  return `You are ${persona}. Be terse. Phrases, not sentences. Return JSON only (no fences). Keys:
+overall_score (int 1-100), warm_reaction (≤14 words), strengths[] (2-3 items, ≤6w each), weaknesses[] (2-3, ≤6w), strongest_line {line:int, why:≤8w}, issues[] (2-5).
+Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[] (omit if none), rewrite? (omit unless concrete one-line), confidence? ("low" only — omit otherwise).
+Prefer single-line issues (line_start == line_end). Use local analysis hints (clichés, syllables, rhyme, form) when present. 1-based line numbers.`;
 }
 
 interface LocalAnalysis {
@@ -187,7 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
-  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
@@ -206,7 +161,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 8000,
+      max_tokens: 5000,
       temperature: 0.4,
       reasoningEffort: "low",
     },

@@ -44,10 +44,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const analysisContext = typeof body.analysisContext === "string" ? body.analysisContext : "";
-  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
 
   // Cap forwarded history to keep token usage bounded.
-  const MAX_HISTORY_TURNS = 10;
+  const MAX_HISTORY_TURNS = 6;
   const rawHistory = Array.isArray(body.history) ? body.history : [];
   const history = rawHistory
     .map((entry) => entry as { role?: unknown; content?: unknown })
@@ -59,11 +59,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "No message provided." });
   }
 
-  const poemSection = lines.length > 0
+  // First turn carries the poem in the system message; subsequent turns rely
+  // on the chat history to reference it. Saves the full poem on every reply
+  // after the first.
+  const isFirstTurn = history.length < 2;
+  const poemSection = isFirstTurn && lines.length > 0
     ? `\nPoem${title ? ` — "${title}"` : ""}:\n${lines.map((l, i) => `${i + 1}: ${l}`).join("\n")}`
     : "";
 
-  const analysisSection = analysisContext
+  const analysisSection = isFirstTurn && analysisContext
     ? `\nRecent analysis summary:\n${analysisContext}`
     : "";
 

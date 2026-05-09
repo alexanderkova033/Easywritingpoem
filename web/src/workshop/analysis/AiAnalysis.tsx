@@ -15,9 +15,9 @@ import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
-const DEFAULT_MODEL = "gpt-5-mini";
+const DEFAULT_MODEL = "gpt-5-nano";
 const LEGACY_MODEL_MAP: Record<string, string> = {
-  "gpt-4o-mini": "gpt-5-mini",
+  "gpt-4o-mini": "gpt-5-nano",
   "gpt-4o": "gpt-5",
 };
 
@@ -545,30 +545,13 @@ function IssueCard({
         <div className="ai-issue-body">
           {issue.problem_words && issue.problem_words.length > 0 && (
             <div className="ai-problem-words">
-              <span className="ai-problem-words-label">Weak words:</span>
               {issue.problem_words.map((w, i) => (
                 <span key={i} className="ai-problem-word">&ldquo;{w}&rdquo;</span>
               ))}
             </div>
           )}
-          <p className="ai-issue-rationale">{issue.rationale}</p>
-          {issue.improvements.length > 0 && (
-            <ul className="ai-issue-improvements">
-              {issue.improvements.map((imp, i) => (
-                <li key={i} className="ai-improvement-row">
-                  <span className="ai-improvement-text">{imp}</span>
-                  <button
-                    type="button"
-                    className={`ai-copy-btn${copiedIdx === i ? " is-copied" : ""}`}
-                    title="Copy suggestion"
-                    onClick={() => copy(imp, i)}
-                    aria-label="Copy suggestion to clipboard"
-                  >
-                    {copiedIdx === i ? "✓" : "⎘"}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {issue.rationale && (
+            <p className="ai-issue-rationale">{issue.rationale}</p>
           )}
           {issue.rewrite && (
             <div className="ai-issue-rewrite">
@@ -691,7 +674,7 @@ type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
   result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine, poemLines, poemTitle, model,
-  poemId, onVisibleIssuesChange, onClarifyReply, openIssueLineSignal, scoringEnabled,
+  poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -705,7 +688,6 @@ function AnalysisResults({
   model?: string;
   poemId?: string;
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
-  onClarifyReply?: (answer: string) => void;
   openIssueLineSignal?: { line: number; nonce: number } | null;
   scoringEnabled?: boolean;
 }) {
@@ -757,8 +739,6 @@ function AnalysisResults({
     });
   }, [openIssueLineSignal, visibleIssues]);
 
-  const [clarifyAnswer, setClarifyAnswer] = useState("");
-  const [clarifyDismissed, setClarifyDismissed] = useState(false);
   const totalIssues = visibleIssues.length;
   const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
@@ -893,11 +873,6 @@ function AnalysisResults({
         </div>
       )}
 
-      {/* Overall summary */}
-      {result.summary && (
-        <p className="ai-poem-summary">{result.summary}</p>
-      )}
-
       {/* Strengths + Weaknesses cards */}
       {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
         <div className="ai-sw-grid">
@@ -920,89 +895,25 @@ function AnalysisResults({
         </div>
       )}
 
-      {/* Strongest line callout */}
+      {/* Strongest line — compact one-line callout */}
       {result.strongest_line && (
-        <div className="ai-strongest-line">
+        <div className="ai-strongest-line ai-strongest-line-compact">
           <span className="ai-strongest-line-icon" aria-hidden>★</span>
-          <div className="ai-strongest-line-body">
-            <div className="ai-strongest-line-head">
-              <span className="ai-strongest-line-label">Strongest line</span>
-              {onJump ? (
-                <button
-                  type="button"
-                  className="ai-strongest-line-jump linkish"
-                  onClick={() => onJump(result.strongest_line!.line)}
-                  title={`Jump to line ${result.strongest_line.line}`}
-                >
-                  Line {result.strongest_line.line}
-                </button>
-              ) : (
-                <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
-              )}
-            </div>
-            {result.strongest_line.excerpt && (
-              <blockquote className="ai-strongest-line-excerpt">&ldquo;{result.strongest_line.excerpt}&rdquo;</blockquote>
-            )}
-            {result.strongest_line.why && (
-              <p className="ai-strongest-line-why muted small">{result.strongest_line.why}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Whole-poem improvement direction */}
-      {result.overall_direction && (
-        <div className="ai-overall-direction">
-          <span className="ai-overall-direction-label">Direction for next revision</span>
-          <p className="ai-overall-direction-text">{result.overall_direction}</p>
-        </div>
-      )}
-
-      {/* Clarifying question from the model */}
-      {result.clarifying_question && !clarifyDismissed && (
-        <div className="ai-clarifying-question">
-          <span className="ai-clarifying-icon" aria-hidden>?</span>
-          <div className="ai-clarifying-body">
-            <p className="ai-clarifying-text">{result.clarifying_question}</p>
-            {onClarifyReply ? (
-              <div className="ai-clarifying-reply-row">
-                <input
-                  type="text"
-                  className="ai-clarifying-input"
-                  value={clarifyAnswer}
-                  onChange={(e) => setClarifyAnswer(e.target.value)}
-                  placeholder="Your answer (re-runs analysis)…"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && clarifyAnswer.trim()) {
-                      onClarifyReply(clarifyAnswer.trim());
-                      setClarifyAnswer("");
-                      setClarifyDismissed(true);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="small-btn small-btn-primary"
-                  disabled={!clarifyAnswer.trim()}
-                  onClick={() => {
-                    onClarifyReply(clarifyAnswer.trim());
-                    setClarifyAnswer("");
-                    setClarifyDismissed(true);
-                  }}
-                >
-                  Send
-                </button>
-                <button
-                  type="button"
-                  className="small-btn"
-                  onClick={() => setClarifyDismissed(true)}
-                  title="Dismiss"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : null}
-          </div>
+          {onJump ? (
+            <button
+              type="button"
+              className="ai-strongest-line-jump linkish"
+              onClick={() => onJump(result.strongest_line!.line)}
+              title={`Jump to line ${result.strongest_line.line}`}
+            >
+              Line {result.strongest_line.line}
+            </button>
+          ) : (
+            <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
+          )}
+          {result.strongest_line.why && (
+            <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
+          )}
         </div>
       )}
 
@@ -1241,7 +1152,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [isOpen, setIsOpen] = useState(true);
   const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory(poemId));
   const abortRef = useRef<AbortController | null>(null);
-  const clarifyContextRef = useRef<string>("");
   const prevPoemId = useRef(poemId);
 
   useEffect(() => {
@@ -1306,11 +1216,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       ? Object.fromEntries(Object.entries(goals).filter(([, v]) => v != null)) as Record<string, number>
       : undefined;
 
-    const writingFocusParts: string[] = [];
-    if (mainIdea?.trim()) writingFocusParts.push(`Main idea: ${mainIdea.trim()}`);
-    if (clarifyContextRef.current) writingFocusParts.push(`Answer to clarifying question: ${clarifyContextRef.current}`);
-    const writingFocus = writingFocusParts.length > 0 ? writingFocusParts.join("\n") : undefined;
-    clarifyContextRef.current = "";
+    const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
 
     // Skip the API call when input + settings haven't changed since the last
     // analysis — no point burning tokens on identical input.
@@ -1414,12 +1320,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     onOpenIssueAtLineRef?.(requestOpenIssueAtLine);
   }, [onOpenIssueAtLineRef, requestOpenIssueAtLine]);
 
-  const handleClarifyReply = useCallback((answer: string) => {
-    if (!answer.trim() || !hasPoem) return;
-    clarifyContextRef.current = answer.trim();
-    void handleAnalyze();
-  }, [handleAnalyze, hasPoem]);
-
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
       {/* Collapsible header */}
@@ -1475,7 +1375,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <label className="ai-model-label">
                 <select className="ai-model-select" value={model}
                   onChange={(e) => saveModel(e.target.value)}>
-                  <option value="gpt-5-mini">Fast</option>
+                  <option value="gpt-5-nano">Fast</option>
+                  <option value="gpt-5-mini">Normal</option>
                   <option value="gpt-5">Thinking</option>
                 </select>
               </label>
@@ -1631,7 +1532,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 model={model}
                 poemId={poemId}
                 onVisibleIssuesChange={onVisibleIssuesChange}
-                onClarifyReply={handleClarifyReply}
                 openIssueLineSignal={openIssueLineSignal}
                 scoringEnabled={scoringEnabled}
               />

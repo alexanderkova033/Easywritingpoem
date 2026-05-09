@@ -8,64 +8,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 
-const SYSTEM_PROMPT = `You are an encouraging poetry editor reviewing a revised poem.
-You will receive TWO versions — the previous draft and the current draft — plus the previous scores.
-Return valid JSON with this exact shape:
-
-{
-  "meta": { "model": "<model-id>", "analyzedAt": "<ISO-8601>" },
-  "overall_score": <integer 1-100 for the CURRENT version>,
-  "warm_reaction": "<one warm honest sentence (≤18 words) reacting to the current draft>",
-  "summary": "<2-3 sentences: honest, specific overall impression of the current poem — what it achieves and the single most important improvement direction>",
-  "strengths": ["<2-4 short phrases (≤10 words each) naming what works in the CURRENT draft>"],
-  "weaknesses": ["<2-4 short phrases (≤10 words each) naming what most needs work in the CURRENT draft>"],
-  "strongest_line": {
-    "line": <1-based integer of the single best line in the CURRENT draft>,
-    "excerpt": "<the line itself or a short quote>",
-    "why": "<one short sentence>"
-  },
-  "overall_direction": "<3-5 sentences of whole-poem craft advice for the next revision — big picture, not a list of line problems>",
-  "clarifying_question": "<optional — one short clarifying question; omit field if not needed>",
-  "issues": [
-    {
-      "id": "issue-1",
-      "severity": "<high|medium|low>",
-      "line_start": <1-based int>,
-      "line_end": <1-based int>,
-      "excerpt": "<short quote, optional>",
-      "problem_words": ["<specific weak word or phrase>"],
-      "headline": "<one fragment (≤8 words) naming the problem>",
-      "confidence": "<high|medium|low>",
-      "rationale": "<polite, specific — mention exact weak words when relevant>",
-      "improvements": ["<direction>"],
-      "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling>"
-    }
-  ],
-  "comparison": {
-    "summary": "<2-3 sentence overview of what changed overall>",
-    "improvements": ["<specific thing that got better>"],
-    "regressions": ["<specific thing that got worse, if any>"],
-    "unchanged": ["<what stayed strong>"]
-  }
-}
-
-Rules:
-- Scores are for the CURRENT version, integers 1-100.
-- warm_reaction: always present, one sentence (≤18 words), human-sounding.
-- summary: always present, 2-3 sentences, honest and specific.
-- strengths / weaknesses: 2-4 short phrases each (≤10 words).
-- strongest_line: always present for the current draft.
-- overall_direction: always present, 3-5 sentences, big picture.
-- clarifying_question: include only if intent is genuinely ambiguous; otherwise omit.
-- severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
-- problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
-- headline: required on every issue, ≤8 words, fragment style.
-- confidence: required on every issue. high = clear problem; medium = partly subjective; low = taste call.
-- improvements/regressions/unchanged: 1-4 items each, or empty arrays.
-- issues: 3-6 most actionable, or fewer for strong poems.
-- rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction.
-- If local analysis context is provided, use it to make feedback more precise.
-- Return ONLY the JSON object, no markdown fences.`;
+const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Be terse. Phrases, not sentences. Return JSON only (no fences). Keys:
+overall_score (int 1-100, CURRENT), warm_reaction (≤14w), strengths[] (2-3, ≤6w), weaknesses[] (2-3, ≤6w), strongest_line {line:int, why:≤8w}, issues[] (2-5), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
+Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[], rewrite?, confidence? ("low" only).
+Prefer single-line issues. Use local analysis hints if provided. 1-based line numbers.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -186,7 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
   const changesText = (body.changesText as string).slice(0, 12_000);
-  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
@@ -212,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 9000,
+      max_tokens: 6000,
       temperature: 0.4,
       reasoningEffort: "low",
     },

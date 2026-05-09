@@ -117,7 +117,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
 
   return {
     meta: {
-      model: typeof meta.model === "string" ? meta.model : "gpt-5-mini",
+      model: typeof meta.model === "string" ? meta.model : "gpt-5-nano",
       analyzedAt:
         typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
     },
@@ -256,7 +256,7 @@ export async function comparePoem(
     writingFocus?: string;
     scoreHistory?: number[];
   },
-  model = "gpt-5-mini",
+  model = "gpt-5-nano",
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
   const changesText = buildChangesText(previousLines, lines);
@@ -302,7 +302,7 @@ export async function analyzePoem(
     harshness?: HarshnessLevel;
     writingFocus?: string;
   },
-  model = "gpt-5-mini",
+  model = "gpt-5-nano",
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
   const response = await fetch("/api/analyze", {
