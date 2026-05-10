@@ -212,54 +212,6 @@ const issueHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-// ---- Left-gutter "✦ AI" chip on the active cursor line ---- //
-class AiChipMarker extends GutterMarker {
-  toDOM() {
-    const el = document.createElement("button");
-    el.type = "button";
-    el.className = "cm-ai-chip";
-    el.setAttribute("aria-label", "Rewrite this line with AI");
-    el.title = "Rewrite this line with AI";
-    el.textContent = "✦";
-    return el;
-  }
-}
-
-const aiChipMarker = new AiChipMarker();
-
-const aiChipGutter = gutter({
-  class: "cm-ai-chip-gutter",
-  lineMarker(view, line) {
-    const sel = view.state.selection.main;
-    if (!sel.empty) return null;
-    try {
-      const cursorLine = view.state.doc.lineAt(sel.from);
-      if (cursorLine.from !== line.from) return null;
-      if (!cursorLine.text.trim()) return null;
-    } catch { return null; }
-    return aiChipMarker;
-  },
-  lineMarkerChange(update) {
-    return update.selectionSet || update.docChanged;
-  },
-  initialSpacer: () => aiChipMarker,
-  domEventHandlers: {
-    mousedown(view, line, event) {
-      const target = (event as MouseEvent).target as HTMLElement;
-      if (!target.closest(".cm-ai-chip")) return false;
-      event.preventDefault();
-      event.stopPropagation();
-      try {
-        const docLine = view.state.doc.lineAt(line.from);
-        // Selecting the whole line text triggers the workshop's onSelectionText
-        // callback, which opens SelectionSuggestPopover with the line as input.
-        view.dispatch({ selection: { anchor: docLine.from, head: docLine.to } });
-      } catch { /* ignore */ }
-      return true;
-    },
-  },
-});
-
 // Strongest-line decoration — subtle gold accent for the best line in the poem.
 const setStrongestLine = StateEffect.define<DecorationSet>();
 const clearStrongestLine = StateEffect.define<void>();
@@ -673,7 +625,6 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       highlightSelectionMatches(),
       lineFlashField,
       strongestLineField,
-      aiChipGutter,
       issueHighlightField,
       persistentIssueDecosField,
       issueGutterField,

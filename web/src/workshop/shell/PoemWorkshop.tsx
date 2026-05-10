@@ -553,6 +553,18 @@ export function PoemWorkshop() {
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
   const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
 
+  // Safety net: when the sheet flips open, force-fire the analyze fn after a
+  // short delay if the autoTrigger path didn't catch it (e.g. AiAnalysis hadn't
+  // populated the ref yet at toggle time). Idempotent — handleAnalyze early-returns
+  // when status is already "loading".
+  useEffect(() => {
+    if (!mobileAiOpen) return;
+    const id = window.setTimeout(() => {
+      mobileSheetAnalyzeFn.current?.();
+    }, 200);
+    return () => window.clearTimeout(id);
+  }, [mobileAiOpen]);
+
   const openAiTab = useCallback((tab: "overview" | "issues" | "chat") => {
     if (window.innerWidth <= 899) {
       setMobileAiOpen(true);
@@ -570,8 +582,9 @@ export function PoemWorkshop() {
   const mobileSheetAutoTrigger = useRef(false);
   const mobileSheetAnalyzeFn = useRef<(() => void) | null>(null);
 
-  // Stable ref callback — stores the analyze fn and only auto-triggers once per "Analyse"
-  // tap, not on every handleAnalyze dep change (model/harshness changes).
+  // Stable ref callback — stores the analyze fn and auto-triggers when the
+  // sheet was just opened. Two paths to fire: (1) the autoTrigger flag set by
+  // the Analyse tap, (2) sheet flipped open and idle status (safety net).
   const mobileSheetAiRef = useCallback((fn: (() => void) | null) => {
     mobileSheetAnalyzeFn.current = fn;
     if (mobileSheetAutoTrigger.current && fn) {
@@ -1705,6 +1718,17 @@ export function PoemWorkshop() {
         >
           <div className="editor-print-hide">
             <div className="editor-stack">
+              {aiResult && (
+                <div className="ai-summary-titlebar">
+                  <AiSummaryPopover
+                    result={aiResult}
+                    scoringEnabled={aiScoringEnabled}
+                    onJumpToLine={m.goToLine}
+                    onOpenTab={openAiTab}
+                    visibleIssueCount={aiVisibleIssues.length}
+                  />
+                </div>
+              )}
               {/* Mobile collapsed header — tap to expand, × to hide entirely */}
               {!metaOpen && !metaHidden && (
                 <div className="editor-meta-bar">
@@ -1877,15 +1901,6 @@ export function PoemWorkshop() {
                       diffSnapshotBody={diffSnapshot?.body ?? null}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
-                    {aiResult && (
-                      <AiSummaryPopover
-                        result={aiResult}
-                        scoringEnabled={aiScoringEnabled}
-                        onJumpToLine={m.goToLine}
-                        onOpenTab={openAiTab}
-                        visibleIssueCount={aiVisibleIssues.length}
-                      />
-                    )}
                     {aiVisibleIssues.length > 0 && (
                       <AiLineRibbons
                         editorViewRef={m.editorViewRef}

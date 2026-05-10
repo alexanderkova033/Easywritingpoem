@@ -3921,12 +3921,24 @@
   }
 
   .mobile-ai-sheet-body {
-    flex: 1;
-    min-height: 200px; /* prevent collapsing to 0 when content is minimal */
+    flex: 1 1 auto;
+    min-height: 320px; /* prevent collapsing to 0 when content is minimal */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    display: flex;
+    flex-direction: column;
+  }
+  .mobile-ai-sheet-body > * { flex-shrink: 0; }
+  .mobile-ai-sheet-body .ai-analysis-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+  }
+  .mobile-ai-sheet-body .ai-analysis-body {
+    flex: 1 1 auto;
+    padding: 0.75rem 1.1rem 1.5rem;
   }
 
   /* Inside the sheet: hide the redundant collapsible AI Analysis toggle — the sheet

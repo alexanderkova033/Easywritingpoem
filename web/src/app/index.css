@@ -23,8 +23,8 @@
   --surface-2: #152016;
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
   --border: #283a28;
-  /* Word-style hairline for panel frames. */
-  --hairline: color-mix(in srgb, var(--border) 100%, transparent);
+  /* Visible hairline for panel frames — blends border with muted so it stands out. */
+  --hairline: color-mix(in srgb, var(--muted) 38%, var(--border));
   /* Softer than near-white for easier reading */
   --text: #dde5de;
   --muted: #98ae9a;
@@ -64,7 +64,7 @@
     --surface-2: #edf0eb;
     --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
     --border: #d8ddd9;
-    --hairline: color-mix(in srgb, var(--border) 100%, transparent);
+    --hairline: color-mix(in srgb, var(--muted) 30%, var(--border));
     /* Softer text — not quite black, easier on the eyes for long sessions */
     --text: #20291f;
     --muted: #5a6b60;

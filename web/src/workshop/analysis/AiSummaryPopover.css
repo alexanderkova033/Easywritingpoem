@@ -5,6 +5,23 @@
   z-index: 6;
 }
 
+/* Inline placement in the title area — overrides absolute positioning. */
+.ai-summary-titlebar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.3rem;
+}
+.ai-summary-titlebar .ai-pop-wrap {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: 1;
+}
+.ai-summary-titlebar .ai-pop-panel {
+  /* Anchor below the trigger toward the right edge so it stays in the panel. */
+  right: 0;
+}
+
 .ai-pop-trigger {
   display: inline-flex;
   align-items: center;

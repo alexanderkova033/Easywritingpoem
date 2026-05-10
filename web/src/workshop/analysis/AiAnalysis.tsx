@@ -811,10 +811,15 @@ function AnalysisResults({
   useEffect(() => { saveIdSet(LS_RESOLVED_PREFIX, poemId, resolvedIds); }, [poemId, resolvedIds]);
   useEffect(() => { saveIdSet(LS_IGNORED_PREFIX, poemId, ignoredIds); }, [poemId, ignoredIds]);
 
-  const visibleIssues = useMemo(
-    () => result.issues.filter((i) => !ignoredIds.has(i.id)),
-    [result.issues, ignoredIds],
-  );
+  const visibleIssues = useMemo(() => {
+    const strongestLineNo = result.strongest_line?.line;
+    return result.issues.filter((i) => {
+      if (ignoredIds.has(i.id)) return false;
+      // Don't critique a line that the same analysis flagged as strongest.
+      if (strongestLineNo != null && i.line_start === strongestLineNo && i.line_end === strongestLineNo) return false;
+      return true;
+    });
+  }, [result.issues, result.strongest_line, ignoredIds]);
 
   // Notify parent so editor highlights/gutter dots can drop ignored issues.
   useEffect(() => {

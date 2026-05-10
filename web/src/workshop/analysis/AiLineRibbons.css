@@ -46,6 +46,12 @@
   }
 }
 
+/* Hide ribbons entirely on phones — issues remain accessible via the AI panel
+   and the gutter dot click. Saves cramped horizontal space. */
+@media (max-width: 899px) {
+  .ai-ribbons-overlay { display: none; }
+}
+
 .ai-ribbon-sev-high   { border-color: color-mix(in srgb, var(--ai-score-low,  #d95f5f) 50%, var(--border)); }
 .ai-ribbon-sev-medium { border-color: color-mix(in srgb, var(--ai-score-mid,  #e6a817) 50%, var(--border)); }
 .ai-ribbon-sev-low    { border-color: var(--hairline, var(--border)); }
