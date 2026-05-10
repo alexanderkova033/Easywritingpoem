@@ -1,4 +1,4 @@
-import { StrictMode, Suspense, lazy, useState } from "react";
+import { StrictMode, Suspense, lazy, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -29,12 +29,29 @@ function readLandingDismissed(): boolean {
 function App() {
   const [showWorkshop, setShowWorkshop] = useState(readLandingDismissed);
 
+  // Push a history entry when entering the workshop so the browser Back button
+  // returns to the landing page instead of leaving the site.
+  useEffect(() => {
+    if (showWorkshop && window.history.state?.view !== "workshop") {
+      window.history.pushState({ view: "workshop" }, "");
+    }
+  }, [showWorkshop]);
+
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      setShowWorkshop(e.state?.view === "workshop");
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const enter = () => {
     try {
       localStorage.setItem(STORAGE_KEY_LANDING_DISMISSED, "1");
     } catch {
       // ignore
     }
+    window.history.pushState({ view: "workshop" }, "");
     setShowWorkshop(true);
   };
 
