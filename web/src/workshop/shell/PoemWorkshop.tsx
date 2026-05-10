@@ -57,6 +57,7 @@ import { WorkshopBanners } from "./WorkshopBanners";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
 import {
@@ -334,14 +335,26 @@ export function PoemWorkshop() {
   const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>(
     () => deriveAiHighlights(m.activePoemId).words,
   );
+  const rhymeIgnored = useIgnoredRhymes();
+
   const rhymeEndHighlights = useMemo(() => {
     if (m.toolTab !== "rhyme") return [] as Array<{ line: number; clusterIdx: number }>;
     const out: Array<{ line: number; clusterIdx: number }> = [];
-    m.rhymeClusters.forEach((c, idx) => {
-      for (const line of c.lineNumbers) out.push({ line, clusterIdx: idx });
-    });
+    let idx = 0;
+    for (const group of m.stanzaRhymeGroups) {
+      for (const c of group.clusters) {
+        const words = c.lineNumbers.map((n) => {
+          const ln = m.lines[n - 1] ?? "";
+          const mm = ln.match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
+          return mm ? mm[0] : "";
+        });
+        if (rhymeIgnored.isIgnored(words)) continue;
+        for (const line of c.lineNumbers) out.push({ line, clusterIdx: idx });
+        idx++;
+      }
+    }
     return out;
-  }, [m.toolTab, m.rhymeClusters]);
+  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
 
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
@@ -1905,6 +1918,7 @@ export function PoemWorkshop() {
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
+                      rhymeSchemeLabels={m.toolTab === "rhyme" ? m.rhymeScheme : null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
@@ -2228,6 +2242,7 @@ export function PoemWorkshop() {
             vowelTailClusters={m.vowelTailClusters}
             assonanceClusters={m.assonanceClusters}
             consonanceClusters={m.consonanceClusters}
+            stanzaRhymeGroups={m.stanzaRhymeGroups}
             repeated={m.repeated}
             spellHits={m.spellHits}
             wordlist={m.wordlist}

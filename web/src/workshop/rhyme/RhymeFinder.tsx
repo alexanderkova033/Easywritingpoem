@@ -1,6 +1,7 @@
 import "./RhymeFinder.css";
 import { useCallback, useRef, useState, type FormEvent } from "react";
 import { usePinnedRhymes, useRecentLookups } from "./rhyme-storage";
+import { datamuseFetch } from "./datamuse-cache";
 
 type RhymeStrength = "perfect" | "near" | "broad";
 
@@ -78,9 +79,7 @@ export function RhymeFinder({ onApplyWord }: RhymeFinderProps = {}) {
     setErrorMsg("");
     setResults(null);
     try {
-      const res = await fetch(datamuseUrl(w, str), { signal: ctrl.signal });
-      if (!res.ok) throw new Error(`Rhyme API error ${res.status}`);
-      const data = (await res.json()) as DatamuseWord[];
+      const data = (await datamuseFetch(datamuseUrl(w, str), ctrl.signal)) as DatamuseWord[];
       setResults(data);
       setStatus("idle");
       pushRecent(w);

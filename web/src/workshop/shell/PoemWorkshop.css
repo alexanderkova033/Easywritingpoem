@@ -1758,6 +1758,59 @@
   line-height: 1.35;
 }
 
+/* ── Per-stanza groups ─────────────────────────────────────────────────── */
+
+.rhyme-stanza-group {
+  margin-bottom: 0.85rem;
+}
+
+.rhyme-stanza-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.32rem;
+}
+
+.rhyme-stanza-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.rhyme-stanza-range {
+  margin: 0;
+}
+
+.rhyme-cluster-reject {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 0.35rem;
+  margin-left: 0.1rem;
+  cursor: pointer;
+  border-radius: 999px;
+  align-self: center;
+  opacity: 0.55;
+  transition: opacity 0.13s, color 0.13s, background 0.13s;
+}
+
+.rhyme-cluster-reject:hover {
+  opacity: 1;
+  color: var(--danger, #d95f5f);
+  background: color-mix(in srgb, var(--danger, #d95f5f) 12%, transparent);
+}
+
+.rhyme-cluster-reject:focus-visible {
+  outline: 2px solid var(--danger, #d95f5f);
+  outline-offset: 1px;
+  opacity: 1;
+}
+
 /* ── Category cards (icon + color) ──────────────────────────────────────── */
 
 .rhyme-cat {

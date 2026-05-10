@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 const PIN_KEY = "easy-poems:rhyme-pins";
 const RECENT_KEY = "easy-poems:rhyme-recent";
 const RECENT_MAX = 6;
+const IGNORE_KEY = "easy-poems:rhyme-ignored";
 
 function readList(key: string): string[] {
   try {
@@ -46,6 +47,44 @@ export function usePinnedRhymes() {
   }, []);
 
   return { pinned, togglePin, isPinned };
+}
+
+/**
+ * User-flagged "not actually a rhyme" word groups.
+ * Identifier is the alphabetised set of end-words in the cluster, joined with `+`.
+ * Survives line moves; resets only if user changes the words involved.
+ */
+export function makeIgnoreKey(words: string[]): string {
+  return [...new Set(words.map((w) => w.toLowerCase().trim()).filter(Boolean))]
+    .sort()
+    .join("+");
+}
+
+export function useIgnoredRhymes() {
+  const [ignored, setIgnored] = useState<string[]>(() => readList(IGNORE_KEY));
+
+  const ignoreCluster = useCallback((words: string[]) => {
+    const key = makeIgnoreKey(words);
+    if (!key) return;
+    setIgnored((prev) => {
+      if (prev.includes(key)) return prev;
+      const next = [...prev, key];
+      writeList(IGNORE_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const clearIgnored = useCallback(() => {
+    setIgnored([]);
+    writeList(IGNORE_KEY, []);
+  }, []);
+
+  const isIgnored = useCallback((words: string[]) => {
+    const key = makeIgnoreKey(words);
+    return ignored.includes(key);
+  }, [ignored]);
+
+  return { ignored, ignoreCluster, isIgnored, clearIgnored };
 }
 
 export function useRecentLookups() {

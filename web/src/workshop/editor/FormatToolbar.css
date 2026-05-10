@@ -687,6 +687,33 @@ button.primary:disabled {
   }
 }
 
+/* ---- Rhyme scheme letter gutter ---- */
+.cm-scheme-gutter {
+  min-width: 1.4rem;
+  padding: 0 0.15rem 0 0.25rem;
+  background: transparent;
+  border-right: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.cm-rhyme-scheme {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 0.18rem 0.32rem;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 1.05rem;
+}
+
+.cm-rhyme-scheme-0 { color: #5fba7d; background: color-mix(in srgb, #5fba7d 15%, transparent); }
+.cm-rhyme-scheme-1 { color: #5b9be0; background: color-mix(in srgb, #5b9be0 15%, transparent); }
+.cm-rhyme-scheme-2 { color: #e0995b; background: color-mix(in srgb, #e0995b 15%, transparent); }
+.cm-rhyme-scheme-3 { color: #b07be0; background: color-mix(in srgb, #b07be0 15%, transparent); }
+.cm-rhyme-scheme-4 { color: #d95f8f; background: color-mix(in srgb, #d95f8f 15%, transparent); }
+.cm-rhyme-scheme-5 { color: #5fbab0; background: color-mix(in srgb, #5fbab0 15%, transparent); }
+
 /* ---- Rhyme end-word highlights (active only on rhyme tab) ---- */
 .cm-rhyme-end {
   border-radius: 3px;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./RhymeFinder.css";
 import { usePinnedRhymes } from "./rhyme-storage";
+import { datamuseFetch } from "./datamuse-cache";
 
 const COLLAPSED_KEY = "easy-poems:rhyme-current-collapsed";
 
@@ -89,10 +90,9 @@ export function CurrentLineRhymes({ endWord, onApplyWord }: Props) {
       abortRef.current = ctrl;
       setStatus("loading");
       const url = `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(w)}&md=ds&max=24`;
-      fetch(url, { signal: ctrl.signal })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((data: DatamuseWord[]) => {
-          setResults(data);
+      datamuseFetch(url, ctrl.signal)
+        .then((data) => {
+          setResults(data as DatamuseWord[]);
           setStatus("idle");
         })
         .catch((err) => {

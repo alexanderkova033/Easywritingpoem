@@ -317,6 +317,52 @@ const issueGutterExtension = gutter({
   },
 });
 
+// ---- Rhyme scheme letter gutter (A/B/A/B per line) ---- //
+class SchemeLetterMarker extends GutterMarker {
+  constructor(readonly letter: string, readonly colorIdx: number) { super(); }
+  eq(other: SchemeLetterMarker) { return other.letter === this.letter && other.colorIdx === this.colorIdx; }
+  toDOM() {
+    const el = document.createElement("span");
+    el.className = `cm-rhyme-scheme cm-rhyme-scheme-${this.colorIdx % 6}`;
+    el.textContent = this.letter;
+    return el;
+  }
+}
+
+const setSchemeLetters = StateEffect.define<string[]>();
+const clearSchemeLetters = StateEffect.define<void>();
+
+const schemeLetterField = StateField.define<RangeSet<GutterMarker>>({
+  create() { return RangeSet.empty; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearSchemeLetters)) next = RangeSet.empty;
+      if (e.is(setSchemeLetters)) {
+        const builder = new RangeSetBuilder<GutterMarker>();
+        const labels = e.value;
+        const doc = tr.state.doc;
+        const colorMap = new Map<string, number>();
+        for (let i = 0; i < labels.length && i < doc.lines; i++) {
+          const label = labels[i];
+          if (!label) continue;
+          if (!colorMap.has(label)) colorMap.set(label, colorMap.size);
+          const line = doc.line(i + 1);
+          builder.add(line.from, line.from, new SchemeLetterMarker(label, colorMap.get(label)!));
+        }
+        next = builder.finish();
+      }
+    }
+    return next;
+  },
+});
+
+const schemeGutterExtension = gutter({
+  class: "cm-scheme-gutter",
+  markers: (view) => view.state.field(schemeLetterField),
+  initialSpacer: () => new SchemeLetterMarker("A", 0),
+});
+
 // ---- Rhyme end-word highlights (line → cluster index) ---- //
 const setRhymeEndDecos = StateEffect.define<Array<{ line: number; clusterIdx: number }>>();
 const clearRhymeEndDecos = StateEffect.define<void>();
@@ -436,6 +482,8 @@ export interface PoemBodyEditorProps {
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   /** Per-line rhyme end-word highlights — colors the last word in each listed line by cluster index. */
   rhymeEndHighlights?: Array<{ line: number; clusterIdx: number }>;
+  /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
+  rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */
   cursorLineGetterRef?: MutableRefObject<(() => number) | null>;
   /** When set, render an inline word-level diff against this snapshot body. Null/undefined disables. */
@@ -588,6 +636,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setRhymeEndDecos.of(rh) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.rhymeEndHighlights]);
 
+  // Rhyme scheme letters in gutter
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const labels = props.rhymeSchemeLabels;
+    if (!labels || labels.length === 0) {
+      try { view.dispatch({ effects: clearSchemeLetters.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setSchemeLetters.of(labels) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.rhymeSchemeLabels]);
+
   // Issue highlight: strong background on hovered/active AI issue lines + scroll into view
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -679,6 +739,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       persistentIssueDecosField,
       issueGutterField,
       issueGutterExtension,
+      schemeLetterField,
+      schemeGutterExtension,
       wordHighlightField,
       rhymeEndField,
       diffOverlayField,
