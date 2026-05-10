@@ -942,6 +942,50 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     setBodySyncNonce((n) => n + 1);
   }, []);
 
+  const insertTextAtCursor = useCallback((text: string) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    view.dispatch({
+      changes: { from: sel.from, to: sel.to, insert: text },
+      selection: { anchor: sel.from + text.length },
+      scrollIntoView: true,
+    });
+    view.focus();
+  }, []);
+
+  /** If the line at the cursor has any word, replace its last word with `text`.
+   * Otherwise insert `text` at the cursor. */
+  const replaceEndWordOrInsert = useCallback((text: string) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    const sel = view.state.selection.main;
+    const line = view.state.doc.lineAt(sel.from);
+    const lineText = line.text;
+    const re = /[a-zA-Z']+/g;
+    let last: { start: number; end: number } | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(lineText)) !== null) {
+      last = { start: m.index, end: m.index + m[0].length };
+    }
+    if (!last) {
+      view.dispatch({
+        changes: { from: sel.from, to: sel.to, insert: text },
+        selection: { anchor: sel.from + text.length },
+        scrollIntoView: true,
+      });
+    } else {
+      const from = line.from + last.start;
+      const to = line.from + last.end;
+      view.dispatch({
+        changes: { from, to, insert: text },
+        selection: { anchor: from + text.length },
+        scrollIntoView: true,
+      });
+    }
+    view.focus();
+  }, []);
+
   const insertTextAtEnd = useCallback((text: string) => {
     if (bodyToReactTimer.current) {
       clearTimeout(bodyToReactTimer.current);
@@ -1306,6 +1350,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     importInputRef,
     applyTemplate,
     applyLineRewrite,
+    insertTextAtCursor,
+    replaceEndWordOrInsert,
     insertTextAtEnd,
     lastAiScore,
     setLastAiScore,

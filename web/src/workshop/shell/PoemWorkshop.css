@@ -2515,10 +2515,10 @@
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
 }
 
-/* Editor frame: keep deliberately subtle so writing surface dominates */
+/* Editor outer frame: strong frame wraps whole panel (title + editor) */
 .editor-panel {
-  border: 1px solid color-mix(in srgb, var(--border) 32%, transparent);
-  box-shadow: 0 1px 6px color-mix(in srgb, #000 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 130%, transparent);
+  box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
 }
 
 .privacy-top-row {
@@ -2539,7 +2539,7 @@
   }
 
   .editor-panel {
-    box-shadow: 0 1px 4px color-mix(in srgb, #000 4%, transparent);
+    box-shadow: 0 4px 18px color-mix(in srgb, #000 12%, transparent);
   }
 }
 

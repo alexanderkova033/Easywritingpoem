@@ -109,8 +109,250 @@
   user-select: text;
 }
 
+.rhyme-chip-clickable {
+  appearance: none;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, transform 0.08s;
+}
+
+.rhyme-chip-clickable:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  border-color: var(--accent);
+}
+
+.rhyme-chip-clickable:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.rhyme-chip-clickable:disabled {
+  cursor: default;
+}
+
+.rhyme-chip-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .rhyme-finder-error,
 .rhyme-finder-empty {
   margin-top: 0.45rem;
+}
+
+/* ---- Current-line auto rhymes ---- */
+.current-line-rhymes {
+  margin-bottom: 0.85rem;
+  padding: 0.55rem 0.6rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.current-line-rhymes-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.current-line-rhymes-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.current-line-rhymes-word {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.current-line-rhymes-spinner {
+  color: var(--muted);
+  margin-left: auto;
+  animation: clr-spin 1s linear infinite;
+}
+
+@keyframes clr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.current-line-rhymes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.current-line-rhyme-chip {
+  appearance: none;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, transform 0.08s;
+}
+
+.current-line-rhyme-chip:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  border-color: var(--accent);
+}
+
+.current-line-rhyme-chip:active {
+  transform: translateY(1px);
+}
+
+.current-line-rhyme-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- Bucket headers (syllable groups) ---- */
+.rhyme-bucket-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rhyme-bucket-label {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.22rem;
+}
+
+/* ---- Chip + pin row (chip and star sit together) ---- */
+.rhyme-chip-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  background: transparent;
+}
+
+.rhyme-pin-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 0.18rem 0.28rem;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 0.13s, background 0.13s, transform 0.08s;
+}
+
+.rhyme-pin-btn:hover {
+  color: #e7b035;
+  background: color-mix(in srgb, #e7b035 14%, transparent);
+}
+
+.rhyme-pin-btn.is-pinned {
+  color: #e7b035;
+}
+
+.rhyme-pin-btn:active {
+  transform: scale(0.92);
+}
+
+.rhyme-pin-btn:focus-visible {
+  outline: 2px solid #e7b035;
+  outline-offset: 1px;
+}
+
+/* ---- Pinned strip (above auto-rhymes) ---- */
+.current-line-rhymes-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.85rem;
+}
+
+.rhyme-pinned-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, #e7b035 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, #e7b035 28%, var(--border));
+}
+
+.rhyme-pinned-label {
+  color: #e7b035;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.rhyme-pinned-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex: 1;
+}
+
+.rhyme-pinned-chip-row {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rhyme-pinned-chip {
+  border-color: color-mix(in srgb, #e7b035 45%, var(--border));
+  background: var(--bg);
+}
+
+.rhyme-pinned-chip:hover {
+  background: color-mix(in srgb, #e7b035 14%, var(--bg));
+  border-color: #e7b035;
+}
+
+/* ---- Recent lookups row ---- */
+.rhyme-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rhyme-recent-label {
+  flex-shrink: 0;
+}
+
+.rhyme-recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.rhyme-recent-chip {
+  appearance: none;
+  font: inherit;
+  font-size: 0.74rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.rhyme-recent-chip:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.rhyme-recent-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 

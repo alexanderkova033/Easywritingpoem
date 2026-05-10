@@ -317,6 +317,42 @@ const issueGutterExtension = gutter({
   },
 });
 
+// ---- Rhyme end-word highlights (line → cluster index) ---- //
+const setRhymeEndDecos = StateEffect.define<Array<{ line: number; clusterIdx: number }>>();
+const clearRhymeEndDecos = StateEffect.define<void>();
+
+const rhymeEndField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearRhymeEndDecos)) { next = Decoration.none; }
+      if (e.is(setRhymeEndDecos)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const { line, clusterIdx } of e.value) {
+          if (line < 1 || line > doc.lines) continue;
+          const docLine = doc.line(line);
+          const text = docLine.text;
+          const re = /[a-zA-Z']+/g;
+          let last: { start: number; end: number } | null = null;
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(text)) !== null) {
+            last = { start: m.index, end: m.index + m[0].length };
+          }
+          if (!last) continue;
+          const cls = `cm-rhyme-end cm-rhyme-end-${clusterIdx % 6}`;
+          decos.push(Decoration.mark({ class: cls }).range(docLine.from + last.start, docLine.from + last.end));
+        }
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // ---- Word-level problem highlights ---- //
 const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>();
 const clearWordHighlights = StateEffect.define<void>();
@@ -398,6 +434,8 @@ export interface PoemBodyEditorProps {
   onApplyRewriteAtCursor?: (line: number) => boolean;
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
+  /** Per-line rhyme end-word highlights — colors the last word in each listed line by cluster index. */
+  rhymeEndHighlights?: Array<{ line: number; clusterIdx: number }>;
   /** Receives a getter so callers can read the current cursor line synchronously. */
   cursorLineGetterRef?: MutableRefObject<(() => number) | null>;
   /** When set, render an inline word-level diff against this snapshot body. Null/undefined disables. */
@@ -538,6 +576,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setWordHighlights.of(wh) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.wordHighlights]);
 
+  // Rhyme end-word highlights
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const rh = props.rhymeEndHighlights;
+    if (!rh || rh.length === 0) {
+      try { view.dispatch({ effects: clearRhymeEndDecos.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setRhymeEndDecos.of(rh) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.rhymeEndHighlights]);
+
   // Issue highlight: strong background on hovered/active AI issue lines + scroll into view
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -630,6 +680,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       issueGutterField,
       issueGutterExtension,
       wordHighlightField,
+      rhymeEndField,
       diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,

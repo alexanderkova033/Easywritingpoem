@@ -1,5 +1,5 @@
 import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
@@ -25,6 +25,7 @@ import {
 } from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
 import { RhymeFinder } from "./RhymeFinder";
+import { CurrentLineRhymes } from "@/workshop/rhyme/CurrentLineRhymes";
 import { StuckHelper } from "./StuckHelper";
 import { IdeasNotebook } from "@/workshop/goals/IdeasNotebook";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
@@ -221,54 +222,6 @@ function endWordOfLine(line: string | undefined): string {
   return m ? m[0] : "";
 }
 
-const RHYME_CATEGORY_META: Record<
-  "end" | "eye" | "asson" | "cons",
-  { label: string; sub: string; cls: string; icon: ReactNode }
-> = {
-  end: {
-    label: "End rhyme",
-    sub: "Words that rhyme at the line end",
-    cls: "rhyme-cat-end",
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="9" />
-        <circle cx="12" cy="12" r="4" />
-      </svg>
-    ),
-  },
-  eye: {
-    label: "Eye rhyme",
-    sub: "Looks similar but may sound different",
-    cls: "rhyme-cat-eye",
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ),
-  },
-  asson: {
-    label: "Assonance",
-    sub: "Shared vowel sounds",
-    cls: "rhyme-cat-asson",
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 12c2 0 2-5 4-5s2 10 4 10 2-10 4-10 2 5 4 5" />
-      </svg>
-    ),
-  },
-  cons: {
-    label: "Consonance",
-    sub: "Shared consonant sounds",
-    cls: "rhyme-cat-cons",
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 8h16M4 12h10M4 16h16" />
-      </svg>
-    ),
-  },
-};
-
 function JumpLineList({
   lineNumbers,
   goToLine,
@@ -356,9 +309,11 @@ export interface WorkshopToolPanelsProps {
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
+  onInsertWord?: (text: string) => void;
   onReplaceLine?: (lineNum: number, text: string) => void;
   rhymeBreadth: RhymeBreadth;
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
+  cursorLine?: number;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -370,9 +325,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     goalEvaluation,
     publication,
     rhymeClusters,
-    vowelTailClusters,
-    assonanceClusters,
-    consonanceClusters,
     clicheHits,
     repeated,
     spellHits,
@@ -419,9 +371,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     poemTitle,
     poemLines,
     onInsertSuggestion,
+    onInsertWord,
     onReplaceLine,
     rhymeBreadth,
     onRhymeBreadthChange,
+    cursorLine,
   } = props;
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
@@ -433,7 +387,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
   const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
   const [meterOnlyHeuristic, setMeterOnlyHeuristic] = useState(false);
-  const [rhymeEndingFilter, setRhymeEndingFilter] = useState("");
   const [rhymeSettingsOpen, setRhymeSettingsOpen] = useState(false);
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
   const [goLineField, setGoLineField] = useState("");
@@ -444,13 +397,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
   useEffect(() => {
     setRhymeVisibleCap(10);
-  }, [
-    rhymeClusters,
-    vowelTailClusters,
-    assonanceClusters,
-    consonanceClusters,
-    rhymeEndingFilter,
-  ]);
+  }, [rhymeClusters]);
 
   useEffect(() => {
     setSpellListCap(50);
@@ -460,12 +407,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     () => listPersonalDictionaryWords(),
     [spellHits, spellBump],
   );
-
-  const filterEndingClusters = useCallback((clusters: RhymeCluster[]) => {
-    const t = rhymeEndingFilter.trim().toLowerCase();
-    if (!t) return clusters;
-    return clusters.filter((c) => c.ending.toLowerCase().includes(t));
-  }, [rhymeEndingFilter]);
 
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
@@ -495,15 +436,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     meterOnlyLowFit,
   ]);
 
-  const rhymeFilteredRhyme = filterEndingClusters(rhymeClusters);
-  const rhymeFilteredVowel = filterEndingClusters(vowelTailClusters);
-  const rhymeFilteredAsson = filterEndingClusters(assonanceClusters);
-  const rhymeFilteredCons = filterEndingClusters(consonanceClusters);
-  const rhymeAnyOverCap =
-    rhymeFilteredRhyme.length > rhymeVisibleCap ||
-    rhymeFilteredVowel.length > rhymeVisibleCap ||
-    rhymeFilteredAsson.length > rhymeVisibleCap ||
-    rhymeFilteredCons.length > rhymeVisibleCap;
+  const rhymeFilteredRhyme = rhymeClusters;
 
   const openChecklistItems = publication.items.filter((i) => !i.done);
   const issuesAllClear =
@@ -988,7 +921,13 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         >
           <LiveSectionTitle>Sound &amp; rhyme</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
-          <RhymeFinder />
+
+          <CurrentLineRhymes
+            endWord={endWordOfLine(poemLines[(cursorLine ?? 1) - 1])}
+            onApplyWord={onInsertWord}
+          />
+
+          <RhymeFinder onApplyWord={onInsertWord} />
 
           <div className="rhyme-live-section">
             <div className="rhyme-live-header">
@@ -999,8 +938,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                   className={`rhyme-live-settings-btn${rhymeSettingsOpen ? " is-open" : ""}`}
                   onClick={() => setRhymeSettingsOpen((v) => !v)}
                   aria-expanded={rhymeSettingsOpen}
-                  aria-label="Rhyme settings"
-                  title="Filter & strictness settings"
+                  aria-label="Rhyme strictness"
+                  title="Match strictness"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="3" />
@@ -1008,19 +947,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                   </svg>
                 </button>
               </div>
-              <p className="rhyme-live-sub muted small">Words at the end of different lines that already rhyme — click any to jump there.</p>
+              <p className="rhyme-live-sub muted small">Lines whose end-words rhyme — click a word to jump to it.</p>
             </div>
 
             {rhymeSettingsOpen ? (
               <div className="rhyme-controls-row">
-                <input
-                  type="search"
-                  className="rhyme-filter-input"
-                  value={rhymeEndingFilter}
-                  onChange={(e) => setRhymeEndingFilter(e.target.value)}
-                  placeholder="Filter endings…"
-                  aria-label="Filter rhyme clusters by ending"
-                />
                 <div className="rhyme-breadth-group" role="group" aria-label="Match strictness">
                   {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
                     <button
@@ -1046,64 +977,43 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               <p className="tools-stale-hint muted small" role="status" aria-live="polite">Updating…</p>
             ) : null}
 
-            {(
-              [
-                { key: "end",   clusters: rhymeFilteredRhyme, source: rhymeClusters },
-                { key: "eye",   clusters: rhymeFilteredVowel, source: vowelTailClusters },
-                { key: "asson", clusters: rhymeFilteredAsson, source: assonanceClusters },
-                { key: "cons",  clusters: rhymeFilteredCons,  source: consonanceClusters },
-              ] as { key: keyof typeof RHYME_CATEGORY_META; clusters: typeof rhymeFilteredRhyme; source: typeof rhymeClusters }[]
-            ).map(({ key, clusters, source }) => {
-              if (source.length === 0) return null;
-              const meta = RHYME_CATEGORY_META[key];
-              return (
-                <div key={key} className={`rhyme-cat ${meta.cls}`}>
-                  <div className="rhyme-cat-head">
-                    <span className="rhyme-cat-icon" aria-hidden>{meta.icon}</span>
-                    <div className="rhyme-cat-titles">
-                      <span className="rhyme-cat-label">{meta.label}</span>
-                      <span className="rhyme-cat-sub">{meta.sub}</span>
-                    </div>
-                    <span className="rhyme-cat-count" aria-hidden>{source.length}</span>
-                  </div>
-                  {clusters.length === 0 ? (
-                    <p className="muted small rhyme-section-empty">No matches for this filter.</p>
-                  ) : (
-                    <ul className="rhyme-cluster-list">
-                      {clusters.slice(0, rhymeVisibleCap).map((c) => (
-                        <li key={c.ending} className="rhyme-cluster">
-                          <div className="rhyme-cluster-chips">
-                            {c.lineNumbers.map((n) => {
-                              const word = endWordOfLine(poemLines[n - 1]) || `line ${n}`;
-                              return (
-                                <button
-                                  key={n}
-                                  type="button"
-                                  className="rhyme-word-chip"
-                                  onClick={() => goToLineEnd(n)}
-                                  title={`Line ${n} — jump to end word`}
-                                >
-                                  <span className="rhyme-word-chip-word">{word}</span>
-                                  <span className="rhyme-word-chip-line">{n}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-
-            {rhymeClusters.length === 0 && vowelTailClusters.length === 0 &&
-             assonanceClusters.length === 0 && consonanceClusters.length === 0 &&
-             docStats.nonEmptyLines > 0 ? (
-              <p className="muted small">Patterns appear once line endings repeat.</p>
+            {rhymeClusters.length === 0 && docStats.nonEmptyLines > 0 ? (
+              <p className="muted small">Rhymes appear once two line endings match.</p>
             ) : null}
 
-            {rhymeAnyOverCap ? (
+            {rhymeClusters.length > 0 ? (
+              <div className="rhyme-cat rhyme-cat-end">
+                {rhymeFilteredRhyme.length === 0 ? (
+                  <p className="muted small rhyme-section-empty">No matches.</p>
+                ) : (
+                  <ul className="rhyme-cluster-list">
+                    {rhymeFilteredRhyme.slice(0, rhymeVisibleCap).map((c) => (
+                      <li key={c.ending} className="rhyme-cluster">
+                        <div className="rhyme-cluster-chips">
+                          {c.lineNumbers.map((n) => {
+                            const word = endWordOfLine(poemLines[n - 1]) || `line ${n}`;
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                className="rhyme-word-chip"
+                                onClick={() => goToLineEnd(n)}
+                                title={`Line ${n} — jump to end word`}
+                              >
+                                <span className="rhyme-word-chip-word">{word}</span>
+                                <span className="rhyme-word-chip-line">{n}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : null}
+
+            {rhymeFilteredRhyme.length > rhymeVisibleCap ? (
               <p className="rhyme-show-more-wrap">
                 <button type="button" className="small-btn" onClick={() => setRhymeVisibleCap((c) => c + 10)}>
                   Show 10 more

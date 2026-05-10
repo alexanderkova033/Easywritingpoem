@@ -279,27 +279,19 @@
 }
 
 .poem-cm-wrap .cm-editor {
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface-2) 28%, var(--bg)) !important;
-  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent),
-    0 1px 0 color-mix(in srgb, var(--border) 40%, transparent) inset,
-    0 6px 18px color-mix(in srgb, #000 14%, transparent),
-    0 2px 4px color-mix(in srgb, #000 8%, transparent);
+  border-radius: 10px;
+  background: transparent !important;
+  border: 1px solid transparent;
+  box-shadow: none;
   padding: 4px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-  /* Prevent the editor from stretching its flex parent horizontally */
+  transition: border-color 0.18s ease;
   max-width: 100%;
 }
 
 .poem-cm-wrap .cm-editor.cm-focused,
 .poem-cm-wrap:focus-within .cm-editor {
-  border-color: color-mix(in srgb, var(--accent) 80%, var(--border));
-  box-shadow:
-    0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent),
-    0 8px 22px color-mix(in srgb, #000 18%, transparent),
-    0 2px 4px color-mix(in srgb, #000 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: none;
   outline: none;
 }
 
@@ -694,6 +686,22 @@ button.primary:disabled {
     padding: 0 0.25rem;
   }
 }
+
+/* ---- Rhyme end-word highlights (active only on rhyme tab) ---- */
+.cm-rhyme-end {
+  border-radius: 3px;
+  padding: 0 1px;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.cm-rhyme-end-0 { text-decoration-color: #5fba7d; background: color-mix(in srgb, #5fba7d 12%, transparent); }
+.cm-rhyme-end-1 { text-decoration-color: #5b9be0; background: color-mix(in srgb, #5b9be0 12%, transparent); }
+.cm-rhyme-end-2 { text-decoration-color: #e0995b; background: color-mix(in srgb, #e0995b 12%, transparent); }
+.cm-rhyme-end-3 { text-decoration-color: #b07be0; background: color-mix(in srgb, #b07be0 12%, transparent); }
+.cm-rhyme-end-4 { text-decoration-color: #d95f8f; background: color-mix(in srgb, #d95f8f 12%, transparent); }
+.cm-rhyme-end-5 { text-decoration-color: #5fbab0; background: color-mix(in srgb, #5fbab0 12%, transparent); }
 
 /* ---- Persistent (always-on) dim highlights after AI analysis ---- */
 .cm-line-issue-persistent {

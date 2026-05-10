@@ -4,9 +4,10 @@
 
 .ai-analysis-section {
   border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--accent-soft));
+  border: 1px solid color-mix(in srgb, var(--border) 130%, var(--accent-soft));
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));
   overflow: hidden;
+  box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
 }
 
 /* Collapsible toggle button */

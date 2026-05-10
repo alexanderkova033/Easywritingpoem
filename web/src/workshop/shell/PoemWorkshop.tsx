@@ -334,6 +334,15 @@ export function PoemWorkshop() {
   const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>(
     () => deriveAiHighlights(m.activePoemId).words,
   );
+  const rhymeEndHighlights = useMemo(() => {
+    if (m.toolTab !== "rhyme") return [] as Array<{ line: number; clusterIdx: number }>;
+    const out: Array<{ line: number; clusterIdx: number }> = [];
+    m.rhymeClusters.forEach((c, idx) => {
+      for (const line of c.lineNumbers) out.push({ line, clusterIdx: idx });
+    });
+    return out;
+  }, [m.toolTab, m.rhymeClusters]);
+
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -531,6 +540,7 @@ export function PoemWorkshop() {
   const openIssueAtLineRef = useRef<((line: number, scroll?: boolean) => void) | null>(null);
   const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
   const cursorLineGetterRef = useRef<(() => number) | null>(null);
+  const [cursorLine, setCursorLine] = useState<number>(1);
   const [peekLine, setPeekLine] = useState<number | null>(null);
   const [peekBump, setPeekBump] = useState(0);
 
@@ -1888,9 +1898,13 @@ export function PoemWorkshop() {
                       persistentIssueHighlights={persistentIssueHighlights}
                       issueGutterMarkers={persistentIssueHighlights}
                       onGutterDotClick={(line) => openIssueAtLineRef.current?.(line, true)}
-                      onCursorLineChange={(line) => openIssueAtLineRef.current?.(line, false)}
+                      onCursorLineChange={(line) => {
+                        setCursorLine(line);
+                        openIssueAtLineRef.current?.(line, false);
+                      }}
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
+                      rhymeEndHighlights={rhymeEndHighlights}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
@@ -2261,7 +2275,9 @@ export function PoemWorkshop() {
             poemTitle={m.title}
             poemLines={m.lines}
             onInsertSuggestion={m.insertTextAtEnd}
+            onInsertWord={m.replaceEndWordOrInsert}
             onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
+            cursorLine={cursorLine}
             rhymeBreadth={rhymeBreadth}
             onRhymeBreadthChange={setRhymeBreadth}
           />
