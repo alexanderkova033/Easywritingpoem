@@ -649,6 +649,12 @@ export function PoemWorkshop() {
     toolsPanelRef.current?.scrollTo({ top: 0 });
   }, [m.toolTab]);
 
+  // When rhyme tab opens, surface the rhyme scheme column at the top of the
+  // editor instead of showing labels inside the editor's left gutter.
+  useEffect(() => {
+    if (m.toolTab === "rhyme") setShowRhymeScheme(true);
+  }, [m.toolTab]);
+
 
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
@@ -1918,7 +1924,7 @@ export function PoemWorkshop() {
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
-                      rhymeSchemeLabels={m.toolTab === "rhyme" ? m.rhymeScheme : null}
+                      rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={lineFocusMode}
