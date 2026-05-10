@@ -11,6 +11,7 @@ import {
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
+import { computeVoiceFingerprint } from "@/workshop/analysis/voice-fingerprint";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 
@@ -775,6 +776,12 @@ function AnalysisResults({
   const [internalTab, setInternalTab] = useState<AnalysisTab>("overview");
   const [overallExpanded, setOverallExpanded] = useState(false);
   const [personalExpanded, setPersonalExpanded] = useState(false);
+  // Voice fingerprint — recomputed when this analysis result changes (cheap,
+  // local-only). Skipped if writer has fewer than 3 substantive poems.
+  const voiceFingerprint = useMemo(
+    () => computeVoiceFingerprint(),
+    [result.meta.analyzedAt],
+  );
   const [cmpToastDismissed, setCmpToastDismissed] = useState(false);
   const lastResultIdRef = useRef<string | null>(null);
   // Reset dismissal whenever a new compare result arrives.
@@ -997,13 +1004,10 @@ function AnalysisResults({
             />
           )}
 
-          {result.warm_reaction && (
-            <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
-          )}
-
-          <div className="ai-overview-grid">
+          {/* 1. Hero — score + verdict + sparkline + warm reaction */}
+          <div className="ai-hero">
             {scoringEnabled && (
-              <div className="ai-card ai-card-score">
+              <div className="ai-hero-score">
                 <div className="ai-score-wrap">
                   <ScoreRing score={result.overall_score} />
                   <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
@@ -1011,7 +1015,7 @@ function AnalysisResults({
                     <span className="ai-score-outof">/100</span>
                   </span>
                 </div>
-                <div className="ai-card-score-meta">
+                <div className="ai-hero-meta">
                   <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
                     {scoreLabel(result.overall_score)}
                   </span>
@@ -1021,62 +1025,74 @@ function AnalysisResults({
                 </div>
               </div>
             )}
-
-            {result.strongest_line && (
-              <div className="ai-card ai-card-strongest">
-                <span className="ai-card-label">
-                  <span className="ai-card-icon ai-card-icon-star" aria-hidden>★</span> Strongest line
-                </span>
-                {(onJump || onPeek) ? (
-                  <button type="button" className="ai-strongest-line-jump linkish"
-                    onClick={() => (onPeek ?? onJump)?.(result.strongest_line!.line)}
-                    title={`Show line ${result.strongest_line.line} in the editor`}>
-                    Line {result.strongest_line.line}
-                  </button>
-                ) : (
-                  <span className="ai-strongest-line-jump">Line {result.strongest_line.line}</span>
-                )}
-                {result.strongest_line.why && (
-                  <span className="ai-strongest-line-why muted small">{result.strongest_line.why}</span>
-                )}
-              </div>
+            {result.warm_reaction && (
+              <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
             )}
-
-            {(result.strengths?.length ?? 0) > 0 && (
-              <div className="ai-card ai-card-strengths">
-                <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>+</span> Strengths</span>
-                <ul className="ai-sw-list">
-                  {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {(result.weaknesses?.length ?? 0) > 0 && (
-              <div className="ai-card ai-card-weaknesses">
-                <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>−</span> Work on</span>
-                <ul className="ai-sw-list">
-                  {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-              </div>
+            {voiceFingerprint && (
+              <p
+                className="ai-voice-fingerprint muted small"
+                title={`Pattern detected across ${voiceFingerprint.poemCount} of your poems`}
+              >
+                Your voice often: {voiceFingerprint.tags.join(" · ")}
+              </p>
             )}
           </div>
 
-          {(result.overall_feedback || result.personal_feedback) && (
-            <div className="ai-feedback-blocks">
-              {result.overall_feedback && (
-                <div className={`ai-feedback-card ai-feedback-overall${overallExpanded ? " is-expanded" : ""}`}>
-                  <span className="ai-feedback-label">Overall</span>
-                  <p className={`ai-feedback-text${overallExpanded ? "" : " is-clamped"}`}>
-                    {result.overall_feedback}
-                  </p>
-                  {result.overall_feedback.length > 90 && (
-                    <button type="button" className="ai-feedback-toggle"
-                      onClick={() => setOverallExpanded((v) => !v)}>
-                      {overallExpanded ? "Show less" : "Read more"}
-                    </button>
-                  )}
+          {/* 2. Strengths + weaknesses */}
+          {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
+            <div className="ai-sw-pair">
+              {(result.strengths?.length ?? 0) > 0 && (
+                <div className="ai-card ai-card-strengths">
+                  <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>+</span> Strengths</span>
+                  <ul className="ai-sw-list">
+                    {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
                 </div>
               )}
+              {(result.weaknesses?.length ?? 0) > 0 && (
+                <div className="ai-card ai-card-weaknesses">
+                  <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>−</span> Work on</span>
+                  <ul className="ai-sw-list">
+                    {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 3. Strongest line — compact horizontal pill row */}
+          {result.strongest_line && (
+            <div className="ai-strongest-pill">
+              <span className="ai-strongest-pill-icon" aria-hidden>★</span>
+              <span className="ai-strongest-pill-label">Strongest line</span>
+              {(onJump || onPeek) ? (
+                <button type="button" className="ai-strongest-pill-jump linkish"
+                  onClick={() => (onPeek ?? onJump)?.(result.strongest_line!.line)}
+                  title={`Show line ${result.strongest_line.line} in the editor`}>
+                  Line {result.strongest_line.line}
+                </button>
+              ) : (
+                <span className="ai-strongest-pill-jump">Line {result.strongest_line.line}</span>
+              )}
+              {result.strongest_line.why && (
+                <span className="ai-strongest-pill-why muted small">— {result.strongest_line.why}</span>
+              )}
+            </div>
+          )}
+
+          {/* 4. Form coach (only when a form is detected) */}
+          {localAnalysis && localAnalysis.form !== "free" && poemLines && (
+            <FormCoach
+              form={localAnalysis.form}
+              syllablesPerLine={localAnalysis.syllablesPerLine}
+              lines={poemLines}
+              onPeek={onPeek ?? onJump}
+            />
+          )}
+
+          {/* 5. Mentor feedback — Personal first (more emotional), Overall second */}
+          {(result.personal_feedback || result.overall_feedback) && (
+            <div className="ai-feedback-blocks">
               {result.personal_feedback && (
                 <div className={`ai-feedback-card ai-feedback-personal${personalExpanded ? " is-expanded" : ""}`}>
                   <span className="ai-feedback-label">For you</span>
@@ -1091,20 +1107,27 @@ function AnalysisResults({
                   )}
                 </div>
               )}
+              {result.overall_feedback && (
+                <div className={`ai-feedback-card ai-feedback-overall${overallExpanded ? " is-expanded" : ""}`}>
+                  <span className="ai-feedback-label">Overall</span>
+                  <p className={`ai-feedback-text${overallExpanded ? "" : " is-clamped"}`}>
+                    {result.overall_feedback}
+                  </p>
+                  {result.overall_feedback.length > 90 && (
+                    <button type="button" className="ai-feedback-toggle"
+                      onClick={() => setOverallExpanded((v) => !v)}>
+                      {overallExpanded ? "Show less" : "Read more"}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {localAnalysis && localAnalysis.form !== "free" && poemLines && (
-            <FormCoach
-              form={localAnalysis.form}
-              syllablesPerLine={localAnalysis.syllablesPerLine}
-              lines={poemLines}
-              onPeek={onPeek ?? onJump}
-            />
-          )}
-
+          {/* 6. Comparison detail (still useful when toast is dismissed) */}
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
+          {/* 7. CTA — jump to issues */}
           {visibleIssues.length > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
               onClick={() => setTab("issues")}>
@@ -1337,7 +1360,6 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
-  const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
@@ -1409,7 +1431,9 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
   const canCompare = savedResult !== null && savedLines.length > 0;
   const hasPoem = lines.some((l) => l.trim().length > 0);
-  const effectiveMode = mode === "compare" && canCompare ? "compare" : "fresh";
+  // Auto-decide: first run = fresh analyze, every subsequent run = compare.
+  // No user-facing toggle — surfaced as a single "Refine" action.
+  const effectiveMode: "fresh" | "compare" = canCompare ? "compare" : "fresh";
 
   const handleAnalyze = useCallback(async () => {
     if (!hasPoem) return;
@@ -1427,22 +1451,23 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
 
     // Skip the API call when input + settings haven't changed since the last
-    // analysis — no point burning tokens on identical input.
+    // fresh analysis — no point burning tokens. Compare always re-runs because
+    // the diff itself is part of what the model evaluates.
     const inputHash = hashInput([
       lines.join("\n"),
       title,
       harshness,
       mainIdea ?? "",
-      mode === "compare" && canCompare ? "compare" : "fresh",
+      canCompare ? "compare" : "fresh",
     ].join("|"));
-    if (mode !== "compare" && result && loadLastHash(poemId) === inputHash) {
+    if (!canCompare && result && loadLastHash(poemId) === inputHash) {
       setStatus("done");
       return;
     }
 
     try {
       let res: PoemAnalysis | PoemComparison;
-      if (mode === "compare" && canCompare) {
+      if (canCompare) {
         res = await comparePoem(
           {
             title, lines, previousLines: savedLines,
@@ -1479,7 +1504,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, mode, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
 
 
   useEffect(() => {
@@ -1550,23 +1575,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           {/* Controls row */}
           <div className="ai-controls-row">
             <div className="ai-controls-left">
-              <div className="ai-mode-toggle" role="group" aria-label="Analysis mode">
-                <button type="button"
-                  className={`ai-mode-btn ${effectiveMode === "fresh" ? "is-active" : ""}`}
-                  onClick={() => setMode("fresh")}>
-                  Re-score
-                </button>
-                <button type="button"
-                  className={`ai-mode-btn ${effectiveMode === "compare" ? "is-active" : ""}`}
-                  onClick={() => setMode("compare")}
-                  disabled={!canCompare}
-                  title={canCompare
-                    ? "Compare to your previous analysis"
-                    : "Run a Re-score first to unlock comparison"}>
-                  Compare
-                </button>
-              </div>
-
               <button
                 type="button"
                 className={`ai-score-toggle${scoringEnabled ? " is-on" : " is-off"}`}
@@ -1624,10 +1632,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 disabled={!hasPoem || status === "loading"}
                 title={!hasPoem ? "Write some lines first" : undefined}>
                 {status === "loading"
-                  ? "Analyzing…"
+                  ? (effectiveMode === "compare" ? "Refining…" : "Reading…")
                   : effectiveMode === "compare"
-                    ? "Compare versions"
-                    : "Analyze poem"}
+                    ? "✦ Refine"
+                    : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (
                 <button type="button"
@@ -1663,8 +1671,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <p className="muted small">
                 Reads your poem and returns a warm reaction, strengths,
                 weaknesses, the strongest line, and line-level suggestions.
-                After the first run, <strong>Compare</strong> shows what
-                changed.
+                Each subsequent <strong>Refine</strong> compares with your
+                last draft and tracks what improved.
               </p>
             </div>
           )}
@@ -1678,7 +1686,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 <span className="ai-loading-dot" aria-hidden />
                 <span className="ai-loading-label">
                   {effectiveMode === "compare"
-                    ? "Comparing versions…"
+                    ? "Refining the read…"
                     : "Reading the poem…"}
                 </span>
               </div>
@@ -1729,7 +1737,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <button type="button"
                 className="small-btn ai-rerun-btn"
                 onClick={() => void handleAnalyze()}>
-                Analyze again
+                {effectiveMode === "compare" ? "Refine again" : "Read again"}
               </button>
             </>
           )}
@@ -1839,15 +1847,21 @@ function AiChat({
       </div>
 
       {messages.length === 0 && chatStatus !== "loading" && (
-        <div className="ai-chat-suggestions">
-          <span className="ai-chat-suggestions-label">Try asking:</span>
-          <div className="ai-chat-suggestions-chips">
-            {SUGGESTED_PROMPTS.map((p, i) => (
-              <button key={i} type="button" className="ai-chat-suggestion-chip"
-                onClick={() => void sendMessage(p)}>
-                {p}
-              </button>
-            ))}
+        <div className="ai-chat-empty">
+          <div className="ai-chat-empty-bubble" aria-hidden>✦</div>
+          <p className="ai-chat-empty-greeting">
+            Ask anything about your poem — voice, craft, a stuck line.
+          </p>
+          <div className="ai-chat-suggestions">
+            <span className="ai-chat-suggestions-label">Try asking</span>
+            <div className="ai-chat-suggestions-chips">
+              {SUGGESTED_PROMPTS.map((p, i) => (
+                <button key={i} type="button" className="ai-chat-suggestion-chip"
+                  onClick={() => void sendMessage(p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1897,14 +1911,26 @@ function AiChat({
         />
         <button
           type="button"
-          className="small-btn small-btn-primary ai-chat-send"
+          className="ai-chat-send-btn"
           onClick={() => void handleSend()}
           disabled={!input.trim() || chatStatus === "loading"}
+          aria-label="Send message"
+          title="Send (Enter)"
         >
-          {chatStatus === "loading" ? "…" : "Send"}
+          {chatStatus === "loading" ? (
+            <span className="ai-chat-send-spin" aria-hidden>
+              <span className="ai-chat-dot" /><span className="ai-chat-dot" /><span className="ai-chat-dot" />
+            </span>
+          ) : (
+            <svg className="ai-chat-send-icon" viewBox="0 0 20 20" aria-hidden width="18" height="18">
+              <path d="M2 10 L18 3 L11 18 L9 12 Z" fill="currentColor" />
+            </svg>
+          )}
         </button>
       </div>
-      <p className="ai-chat-enter-hint muted small">Enter to send · Shift+Enter for new line</p>
+      <p className="ai-chat-enter-hint muted small">
+        <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line
+      </p>
     </div>
   );
 }

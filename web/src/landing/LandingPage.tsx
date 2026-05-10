@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import "./LandingPage.css";
+import { getCurrentStreak, getDailyPrompt } from "@/workshop/shell/writing-streak";
 
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
+  const [streak] = useState(() => getCurrentStreak());
+  const [dailyPrompt] = useState(() => getDailyPrompt());
 
   useEffect(() => {
     const el = heroRef.current;
@@ -89,6 +92,23 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             </button>
           </div>
           <p className="landing-hero-reassurance">Free · Saves in your browser · No sign-up · Private</p>
+
+          {/* Subtle daily prompt + streak strip — only shown if user has used the app before */}
+          {(streak.count > 0 || dailyPrompt) && (
+            <div className="landing-daily-strip" aria-label="Today's writing nudge">
+              <span className="landing-daily-prompt">
+                <span className="landing-daily-label">Today</span>
+                <span className="landing-daily-text">{dailyPrompt}</span>
+              </span>
+              {streak.count > 0 && (
+                <span className="landing-streak" title={streak.best > streak.count ? `Best: ${streak.best} days` : "Keep going"}>
+                  <span className="landing-streak-icon" aria-hidden>·</span>
+                  <span className="landing-streak-count">{streak.count}</span>
+                  <span className="landing-streak-label">{streak.count === 1 ? "day" : "days"}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

@@ -29,6 +29,7 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
+import { recordWriteToday } from "@/workshop/shell/writing-streak";
 import { AiSummaryPopover } from "@/workshop/analysis/AiSummaryPopover";
 import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
@@ -96,6 +97,17 @@ export function PoemWorkshop() {
     bucketTabs,
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
+
+  // Record a writing streak once per mount when the poem body has substantive
+  // content. Idempotent within the calendar day — costs nothing if already
+  // recorded today. Local-only, no analytics.
+  const streakRecordedRef = useRef(false);
+  useEffect(() => {
+    if (streakRecordedRef.current) return;
+    if (m.body.trim().length < 15) return;
+    streakRecordedRef.current = true;
+    recordWriteToday();
+  }, [m.body]);
 
   const [mainIdea, setMainIdea] = useState(() => {
     try { return localStorage.getItem("easy-poems:main-idea") ?? ""; } catch { return ""; }
