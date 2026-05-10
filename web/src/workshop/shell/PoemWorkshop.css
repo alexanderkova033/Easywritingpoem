@@ -2730,6 +2730,10 @@
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
 }
 
 .compare-panel-head {
