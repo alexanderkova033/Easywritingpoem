@@ -3,7 +3,7 @@ import { vowelTailFromNormalized } from "./hints";
 
 export type RhymeBreadth = "strict" | "near" | "broad";
 
-function endingForBreadth(norm: string, breadth: RhymeBreadth): string | null {
+export function endingForBreadth(norm: string, breadth: RhymeBreadth): string | null {
   if (norm.length < 2) return null;
   switch (breadth) {
     case "strict":

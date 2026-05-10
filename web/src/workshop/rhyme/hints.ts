@@ -4,6 +4,8 @@ export interface RhymeCluster {
   /** Shared tail text (rough visual rhyme hint). */
   ending: string;
   lineNumbers: number[];
+  /** Editor scheme label (A/B/C…) when grouping was derived from `detectRhymeScheme`. */
+  label?: string;
 }
 
 export interface StanzaClusterGroup {
@@ -199,6 +201,63 @@ export function endRhymeClustersByStanza(
     const prev = byKey.get(key) ?? [];
     prev.push(i + 1);
     byKey.set(key, prev);
+  }
+  flush(lines.length - 1);
+
+  return groups;
+}
+
+/**
+ * Build per-stanza rhyme clusters from an editor-scheme label array
+ * (output of `detectRhymeScheme`). Guarantees the panel and the editor
+ * gutter agree about which end-words rhyme.
+ */
+export function stanzaGroupsFromScheme(
+  lines: string[],
+  schemeLabels: string[],
+): StanzaClusterGroup[] {
+  const groups: StanzaClusterGroup[] = [];
+  let stanzaIdx = 0;
+  let stanzaStart = -1;
+  let byLabel = new Map<string, number[]>();
+
+  const flush = (endLine: number) => {
+    if (stanzaStart < 0) return;
+    const clusters: RhymeCluster[] = [];
+    for (const [label, lineNumbers] of byLabel) {
+      if (lineNumbers.length >= 2) {
+        clusters.push({
+          ending: label,
+          label,
+          lineNumbers: [...new Set(lineNumbers)].sort((a, b) => a - b),
+        });
+      }
+    }
+    clusters.sort((a, b) => b.lineNumbers.length - a.lineNumbers.length);
+    if (clusters.length > 0) {
+      groups.push({
+        stanza: stanzaIdx + 1,
+        lineRange: [stanzaStart + 1, endLine + 1],
+        clusters,
+      });
+    }
+    stanzaIdx++;
+    stanzaStart = -1;
+    byLabel = new Map();
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] ?? "";
+    if (!raw.trim()) {
+      flush(i - 1);
+      continue;
+    }
+    if (stanzaStart < 0) stanzaStart = i;
+    const label = schemeLabels[i];
+    if (!label) continue;
+    const prev = byLabel.get(label) ?? [];
+    prev.push(i + 1);
+    byLabel.set(label, prev);
   }
   flush(lines.length - 1);
 

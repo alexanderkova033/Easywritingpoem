@@ -26,7 +26,6 @@ import {
 } from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
 import { RhymeFinder } from "./RhymeFinder";
-import { CurrentLineRhymes } from "@/workshop/rhyme/CurrentLineRhymes";
 import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { StuckHelper } from "./StuckHelper";
 import { IdeasNotebook } from "@/workshop/goals/IdeasNotebook";
@@ -317,6 +316,8 @@ export interface WorkshopToolPanelsProps {
   rhymeBreadth: RhymeBreadth;
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
   cursorLine?: number;
+  rhymeFinderQuery?: { word: string; bump: number };
+  onRhymeSuggestionHover?: (word: string | null) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -378,7 +379,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     onReplaceLine,
     rhymeBreadth,
     onRhymeBreadthChange,
-    cursorLine,
+    rhymeFinderQuery,
+    onRhymeSuggestionHover,
   } = props;
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
@@ -920,12 +922,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           <LiveSectionTitle>Sound &amp; rhyme</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
 
-          <CurrentLineRhymes
-            endWord={endWordOfLine(poemLines[(cursorLine ?? 1) - 1])}
+          <RhymeFinder
             onApplyWord={onInsertWord}
+            externalQuery={rhymeFinderQuery}
+            onHoverWord={onRhymeSuggestionHover}
           />
-
-          <RhymeFinder onApplyWord={onInsertWord} />
 
           <div className="rhyme-live-section">
             <div className="rhyme-live-header">
@@ -997,6 +998,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     <ul className="rhyme-cluster-list">
                       {visibleClusters.map((c) => {
                         const words = c.lineNumbers.map((n) => endWordOfLine(poemLines[n - 1]));
+                        const labelClass = c.label
+                          ? ` rhyme-label-${c.label.charAt(0).toLowerCase()}`
+                          : "";
                         return (
                           <li key={c.ending} className="rhyme-cluster">
                             <div className="rhyme-cluster-chips">
@@ -1006,7 +1010,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                                   <button
                                     key={n}
                                     type="button"
-                                    className="rhyme-word-chip"
+                                    className={`rhyme-word-chip${labelClass}`}
                                     onClick={() => goToLineEnd(n)}
                                     title={`Line ${n} — jump to end word`}
                                   >

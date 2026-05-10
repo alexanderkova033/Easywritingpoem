@@ -4223,6 +4223,21 @@
 .rhyme-label-m { background: color-mix(in srgb, #7c4dff 28%, var(--bg)); color: color-mix(in srgb, #7c4dff 95%, var(--text)); }
 .rhyme-label-n { background: color-mix(in srgb, #26c6da 28%, var(--bg)); color: color-mix(in srgb, #26c6da 95%, var(--text)); }
 
+.rhyme-word-chip.rhyme-label-a { --cat-color: #4c8eff; }
+.rhyme-word-chip.rhyme-label-b { --cat-color: #27ae60; }
+.rhyme-word-chip.rhyme-label-c { --cat-color: #e67e22; }
+.rhyme-word-chip.rhyme-label-d { --cat-color: #9b59b6; }
+.rhyme-word-chip.rhyme-label-e { --cat-color: #e74c3c; }
+.rhyme-word-chip.rhyme-label-f { --cat-color: #1abc9c; }
+.rhyme-word-chip.rhyme-label-g { --cat-color: #f39c12; }
+.rhyme-word-chip.rhyme-label-h { --cat-color: #5d8ecc; }
+.rhyme-word-chip.rhyme-label-i { --cat-color: #e056a0; }
+.rhyme-word-chip.rhyme-label-j { --cat-color: #00bcd4; }
+.rhyme-word-chip.rhyme-label-k { --cat-color: #8bc34a; }
+.rhyme-word-chip.rhyme-label-l { --cat-color: #ff7043; }
+.rhyme-word-chip.rhyme-label-m { --cat-color: #7c4dff; }
+.rhyme-word-chip.rhyme-label-n { --cat-color: #26c6da; }
+
 /* cliche jump button */
 .cliche-line-btn {
   font-size: 0.78em;

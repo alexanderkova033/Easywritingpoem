@@ -1,5 +1,5 @@
 import "./RhymeFinder.css";
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { usePinnedRhymes, useRecentLookups } from "./rhyme-storage";
 import { datamuseFetch } from "./datamuse-cache";
 
@@ -57,16 +57,22 @@ function bucketBySyllables(words: DatamuseWord[]): Array<{ key: string; label: s
 
 interface RhymeFinderProps {
   onApplyWord?: (word: string) => void;
+  /** When this changes, query is replaced with `word` and search runs. Bump
+   *  triggers re-apply for the same word (e.g. clicking the same end-word twice). */
+  externalQuery?: { word: string; bump: number };
+  /** Hover-highlight callback — pass the hovered suggestion to highlight matching
+   *  end-words in the editor. Called with null when hover ends. */
+  onHoverWord?: (word: string | null) => void;
 }
 
-export function RhymeFinder({ onApplyWord }: RhymeFinderProps = {}) {
+export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFinderProps = {}) {
   const [query, setQuery] = useState("");
   const [strength, setStrength] = useState<RhymeStrength>("perfect");
   const [results, setResults] = useState<DatamuseWord[] | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const abortRef = useRef<AbortController | null>(null);
-  const { togglePin, isPinned } = usePinnedRhymes();
+  const { pinned, togglePin, isPinned } = usePinnedRhymes();
   const { recent, pushRecent } = useRecentLookups();
 
   const search = useCallback(async (word: string, str: RhymeStrength) => {
@@ -95,6 +101,19 @@ export function RhymeFinder({ onApplyWord }: RhymeFinderProps = {}) {
     void search(query, strength);
   };
 
+  // External-driven query (cursor-line end word, click in editor, etc.).
+  const lastExternalKey = useRef<string>("");
+  useEffect(() => {
+    if (!externalQuery) return;
+    const w = externalQuery.word.trim();
+    if (!w) return;
+    const key = `${w}:${externalQuery.bump}`;
+    if (key === lastExternalKey.current) return;
+    lastExternalKey.current = key;
+    setQuery(w);
+    void search(w, strength);
+  }, [externalQuery, search, strength]);
+
   const handleStrengthChange = (str: RhymeStrength) => {
     setStrength(str);
     if (query.trim() && results !== null) {
@@ -111,6 +130,38 @@ export function RhymeFinder({ onApplyWord }: RhymeFinderProps = {}) {
 
   return (
     <div className="rhyme-finder rhyme-lookup-card">
+      {pinned.length > 0 ? (
+        <div className="rhyme-pinned-strip">
+          <span className="rhyme-pinned-label" aria-hidden>★</span>
+          <div className="rhyme-pinned-chips">
+            {pinned.map((w) => (
+              <span key={w} className="rhyme-pinned-chip-row">
+                <button
+                  type="button"
+                  className="current-line-rhyme-chip rhyme-pinned-chip"
+                  onClick={() => onApplyWord?.(w)}
+                  onMouseEnter={() => onHoverWord?.(w)}
+                  onMouseLeave={() => onHoverWord?.(null)}
+                  onFocus={() => onHoverWord?.(w)}
+                  onBlur={() => onHoverWord?.(null)}
+                  title={`Use "${w}" — replaces line's last word`}
+                >
+                  {w}
+                </button>
+                <button
+                  type="button"
+                  className="rhyme-pin-btn is-pinned"
+                  onClick={() => togglePin(w)}
+                  aria-label={`Unpin ${w}`}
+                  title="Unpin"
+                >
+                  ★
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <form className="rhyme-finder-form" onSubmit={handleSubmit}>
         <div className="rhyme-finder-input-row">
           <span className="rhyme-finder-input-icon" aria-hidden>
@@ -200,6 +251,10 @@ export function RhymeFinder({ onApplyWord }: RhymeFinderProps = {}) {
                           type="button"
                           className="rhyme-chip rhyme-chip-clickable"
                           onClick={() => onApplyWord?.(r.word)}
+                          onMouseEnter={() => onHoverWord?.(r.word)}
+                          onMouseLeave={() => onHoverWord?.(null)}
+                          onFocus={() => onHoverWord?.(r.word)}
+                          onBlur={() => onHoverWord?.(null)}
                           title={def ? `${r.word} — ${def}` : `Use "${r.word}"`}
                           disabled={!onApplyWord}
                         >

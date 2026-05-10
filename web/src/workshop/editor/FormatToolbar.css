@@ -394,10 +394,6 @@
   margin-top: 0.25rem;
 }
 
-.toolbar-saved {
-  min-height: 2.25rem;
-}
-
 button.primary {
   border: none;
   border-radius: 8px;

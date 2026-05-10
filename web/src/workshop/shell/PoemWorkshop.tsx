@@ -56,7 +56,7 @@ import { WorkshopModals } from "./WorkshopModals";
 import { WorkshopBanners } from "./WorkshopBanners";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
-import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { endingForBreadth, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -66,6 +66,12 @@ import {
 } from "@/workshop/hints/HoverHintsContext";
 import "./PoemWorkshop.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
+
+function endWordOfLineRaw(line: string | undefined): string {
+  if (!line) return "";
+  const m = line.match(/[A-Za-z'’]+(?=[^A-Za-z'’]*$)/);
+  return m ? m[0] : "";
+}
 
 function deriveAiHighlights(poemId: string | undefined): {
   lines: Array<[number, number, string?]>;
@@ -336,8 +342,12 @@ export function PoemWorkshop() {
     () => deriveAiHighlights(m.activePoemId).words,
   );
   const rhymeIgnored = useIgnoredRhymes();
+  const [cursorLine, setCursorLine] = useState<number>(1);
+  const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number } | undefined>(undefined);
+  const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
+  const rhymeBumpRef = useRef(0);
 
-  const rhymeEndHighlights = useMemo(() => {
+  const baseRhymeEndHighlights = useMemo(() => {
     if (m.toolTab !== "rhyme") return [] as Array<{ line: number; clusterIdx: number }>;
     const out: Array<{ line: number; clusterIdx: number }> = [];
     let idx = 0;
@@ -355,6 +365,56 @@ export function PoemWorkshop() {
     }
     return out;
   }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
+
+  // Auto-fill the Rhyme Finder when the cursor parks on a different line or
+  // the user opens the rhyme tab. Avoids refiring on every keystroke.
+  const rhymeLinesRef = useRef(m.lines);
+  rhymeLinesRef.current = m.lines;
+  useEffect(() => {
+    if (m.toolTab !== "rhyme") return;
+    const word = endWordOfLineRaw(rhymeLinesRef.current[(cursorLine ?? 1) - 1]);
+    if (!word) return;
+    rhymeBumpRef.current += 1;
+    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
+  }, [m.toolTab, cursorLine]);
+
+  // Click delegation: when in the rhyme tab, clicking any highlighted
+  // end-word in the editor refills the Rhyme Finder with that word.
+  const handleEditorClickForRhyme = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (m.toolTab !== "rhyme") return;
+    const target = event.target as HTMLElement | null;
+    const hit = target?.closest(".cm-rhyme-end") as HTMLElement | null;
+    if (!hit) return;
+    const word = (hit.textContent || "").trim();
+    if (!word) return;
+    rhymeBumpRef.current += 1;
+    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
+  }, [m.toolTab]);
+
+  // Add transient highlights for end-words that rhyme with the currently
+  // hovered Datamuse suggestion. Uses the same breadth as the editor scheme.
+  const rhymeEndHighlights = useMemo(() => {
+    if (m.toolTab !== "rhyme" || !hoveredRhymeWord) return baseRhymeEndHighlights;
+    const norm = hoveredRhymeWord.toLowerCase().replace(/[^a-z']/g, "");
+    if (norm.length < 2) return baseRhymeEndHighlights;
+    const targetKey = endingForBreadth(norm, rhymeBreadth);
+    if (!targetKey) return baseRhymeEndHighlights;
+    const existing = new Set(baseRhymeEndHighlights.map((h) => h.line));
+    const hoverIdx = baseRhymeEndHighlights.length > 0
+      ? Math.max(...baseRhymeEndHighlights.map((h) => h.clusterIdx)) + 1
+      : 0;
+    const extra: Array<{ line: number; clusterIdx: number }> = [];
+    for (let i = 0; i < m.lines.length; i++) {
+      if (existing.has(i + 1)) continue;
+      const mm = (m.lines[i] ?? "").match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
+      if (!mm) continue;
+      const wn = mm[0].toLowerCase().replace(/[^a-z']/g, "");
+      if (wn.length < 2) continue;
+      const k = endingForBreadth(wn, rhymeBreadth);
+      if (k && k === targetKey) extra.push({ line: i + 1, clusterIdx: hoverIdx });
+    }
+    return [...baseRhymeEndHighlights, ...extra];
+  }, [baseRhymeEndHighlights, hoveredRhymeWord, m.toolTab, m.lines, rhymeBreadth]);
 
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
@@ -553,7 +613,6 @@ export function PoemWorkshop() {
   const openIssueAtLineRef = useRef<((line: number, scroll?: boolean) => void) | null>(null);
   const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
   const cursorLineGetterRef = useRef<(() => number) | null>(null);
-  const [cursorLine, setCursorLine] = useState<number>(1);
   const [peekLine, setPeekLine] = useState<number | null>(null);
   const [peekBump, setPeekBump] = useState(0);
 
@@ -1897,7 +1956,7 @@ export function PoemWorkshop() {
                         >Exit diff</button>
                       </div>
                     )}
-                    <div className="poem-editor-body-wrap" style={{ position: "relative" }}>
+                    <div className="poem-editor-body-wrap" style={{ position: "relative" }} onClick={handleEditorClickForRhyme}>
                     <PoemBodyEditor
                       id="poem-body"
                       aria-describedby="poem-body-hint"
@@ -2019,10 +2078,6 @@ export function PoemWorkshop() {
                     </span>
                   </div>
                 </div>
-                <p id="poem-body-hint" className="field-hint">
-                  Browser underlines off—only the workshop wavy mark for unknown
-                  words.
-                </p>
               </div>
               {(m.goals.targetLines != null || m.goals.targetStanzas != null || m.goals.targetLinesPerStanza != null) && (
                 <div className="editor-goal-strip" aria-label="Goal progress">
@@ -2046,9 +2101,6 @@ export function PoemWorkshop() {
                   )}
                 </div>
               )}
-              <div className="toolbar toolbar-saved">
-                <span className="save-hint" aria-hidden />
-              </div>
             </div>
           </div>
           <pre className="poem-print-fallback" aria-hidden="true">
@@ -2301,6 +2353,8 @@ export function PoemWorkshop() {
             cursorLine={cursorLine}
             rhymeBreadth={rhymeBreadth}
             onRhymeBreadthChange={setRhymeBreadth}
+            rhymeFinderQuery={rhymeFinderQuery}
+            onRhymeSuggestionHover={setHoveredRhymeWord}
           />
           </Suspense>
 

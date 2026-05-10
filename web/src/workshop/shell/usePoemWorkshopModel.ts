@@ -84,7 +84,7 @@ import {
   lightVowelTailClusters,
   roughRhymeClusters,
 } from "@/workshop/analysis/rhyme-hints";
-import { endRhymeClustersByStanza } from "@/workshop/rhyme/hints";
+import { stanzaGroupsFromScheme } from "@/workshop/rhyme/hints";
 import { scanCliches } from "@/workshop/analysis/cliche-scan";
 import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import {
@@ -429,13 +429,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     () => roughRhymeClusters(heavyLines),
     [heavyLines],
   );
+  const heavyRhymeScheme = useMemo(
+    () => detectRhymeScheme(heavyLines, rhymeBreadth),
+    [heavyLines, rhymeBreadth],
+  );
   const stanzaRhymeGroups = useMemo(
-    () => endRhymeClustersByStanza(
-      heavyLines,
-      rhymeBreadth === "broad" ? "loose" : rhymeBreadth,
-      stressLexicon,
-    ),
-    [heavyLines, rhymeBreadth, stressLexicon],
+    () => stanzaGroupsFromScheme(heavyLines, heavyRhymeScheme),
+    [heavyLines, heavyRhymeScheme],
   );
   const vowelTailClusters = useMemo(
     () => lightVowelTailClusters(heavyLines),
