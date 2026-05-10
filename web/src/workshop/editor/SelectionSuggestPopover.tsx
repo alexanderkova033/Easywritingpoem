@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
@@ -226,14 +226,73 @@ export function SelectionSuggestPopover({
     );
   }, []);
 
+  const [placement, setPlacement] = useState<{
+    top: number;
+    left: number;
+    flipped: boolean;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = popoverRef.current;
+    if (!el) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      const popH = rect.height || el.offsetHeight || 0;
+      const popW = rect.width || el.offsetWidth || 300;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const margin = 8;
+
+      const spaceAbove = anchorRect.top - margin;
+      const spaceBelow = vh - anchorRect.bottom - margin;
+      const fitsAbove = popH <= spaceAbove;
+      const flipped = !fitsAbove && spaceBelow > spaceAbove;
+
+      let top: number;
+      if (flipped) {
+        top = Math.min(vh - popH - margin, anchorRect.bottom + margin);
+        top = Math.max(margin, top);
+      } else {
+        top = Math.max(margin, anchorRect.top - margin - popH);
+      }
+
+      const desiredLeft = anchorRect.left + anchorRect.width / 2 - popW / 2;
+      const left = Math.max(margin, Math.min(vw - popW - margin, desiredLeft));
+
+      setPlacement((prev) => {
+        if (
+          prev &&
+          prev.top === top &&
+          prev.left === left &&
+          prev.flipped === flipped
+        ) {
+          return prev;
+        }
+        return { top, left, flipped };
+      });
+    };
+    measure();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [anchorRect, mode, rewritePhase, definePhase, suggestions.length, definition]);
+
   const style: React.CSSProperties = {
     position: "fixed",
-    top: Math.max(8, anchorRect.top - 8),
-    left: Math.min(
-      window.innerWidth - 300,
-      Math.max(8, anchorRect.left + anchorRect.width / 2 - 150),
-    ),
-    transform: "translateY(-100%)",
+    top: placement?.top ?? Math.max(8, anchorRect.top - 8),
+    left:
+      placement?.left ??
+      Math.min(
+        window.innerWidth - 300,
+        Math.max(8, anchorRect.left + anchorRect.width / 2 - 150),
+      ),
+    visibility: placement ? "visible" : "hidden",
+    maxHeight: `calc(100vh - 16px)`,
+    overflowY: "auto",
   };
 
   return createPortal(
