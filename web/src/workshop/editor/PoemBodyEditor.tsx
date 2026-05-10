@@ -740,7 +740,6 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       issueGutterField,
       issueGutterExtension,
       schemeLetterField,
-      schemeGutterExtension,
       wordHighlightField,
       rhymeEndField,
       diffOverlayField,
