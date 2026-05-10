@@ -138,31 +138,13 @@
   width: 100%;
 }
 
-/* Copy button: hidden until editor is hovered or focused */
-.poem-editor-shell .poem-editor-copy-box {
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.18s ease,
-    width var(--quick-copy-duration, 0.48s) var(--quick-copy-ease, cubic-bezier(0.33,1,0.32,1)),
-    box-shadow 0.4s ease;
-}
-
-.poem-editor-shell:hover .poem-editor-copy-box,
-.poem-editor-shell:focus-within .poem-editor-copy-box,
-.poem-editor-shell .poem-editor-copy-box.is-copied {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Floating box bottom-right of editor; smooth crossfade icon → Copied */
+/* Copy button: now sits in flow below the editor (right-aligned),
+   always visible, smooth crossfade icon → Copied */
 .poem-editor-copy-box {
   --quick-copy-ease: cubic-bezier(0.33, 1, 0.32, 1);
   --quick-copy-duration: 0.48s;
-  position: absolute;
-  right: 0.5rem;
-  bottom: 0.5rem;
-  z-index: 4;
+  align-self: flex-end;
+  margin-top: 0.55rem;
   height: 2.65rem;
   width: 2.65rem;
   border-radius: 12px;
@@ -170,10 +152,8 @@
   border: 1px solid color-mix(in srgb, var(--border) 78%, var(--accent));
   background: color-mix(in srgb, var(--surface) 94%, var(--bg));
   box-shadow:
-    0 4px 18px color-mix(in srgb, #000 16%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
-  backdrop-filter: blur(10px) saturate(1.05);
-  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+    0 2px 10px color-mix(in srgb, #000 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
   transition:
     width var(--quick-copy-duration) var(--quick-copy-ease),
     box-shadow 0.4s ease;

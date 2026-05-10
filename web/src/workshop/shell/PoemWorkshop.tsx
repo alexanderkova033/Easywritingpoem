@@ -1933,43 +1933,6 @@ export function PoemWorkshop() {
                         onClose={() => { setSelectionText(null); setSelectionRect(null); }}
                       />
                     )}
-                    <div
-                      className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
-                    >
-                      <div className="poem-editor-copy-slot-inner">
-                        <button
-                          type="button"
-                          className="quick-copy-face quick-copy-face-icon"
-                          onClick={() => void m.onQuickCopyPlain()}
-                          {...hint("Copy poem body as plain text (no title or form)")}
-                          aria-label="Copy poem body as plain text"
-                          tabIndex={m.quickCopyFlash ? -1 : 0}
-                          aria-hidden={m.quickCopyFlash}
-                        >
-                          <svg
-                            className="quick-copy-svg"
-                            viewBox="0 0 24 24"
-                            aria-hidden
-                          >
-                            <path
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.75"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                            />
-                          </svg>
-                        </button>
-                        <span
-                          className="quick-copy-face quick-copy-face-done"
-                          aria-live="polite"
-                          aria-hidden={!m.quickCopyFlash}
-                        >
-                          Copied
-                        </span>
-                      </div>
-                    </div>
                   </div>
                   {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
                     <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
@@ -1984,6 +1947,43 @@ export function PoemWorkshop() {
                       )}
                     </div>
                   ) : null}
+                </div>
+                <div
+                  className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
+                >
+                  <div className="poem-editor-copy-slot-inner">
+                    <button
+                      type="button"
+                      className="quick-copy-face quick-copy-face-icon"
+                      onClick={() => void m.onQuickCopyPlain()}
+                      {...hint("Copy poem body as plain text (no title or form)")}
+                      aria-label="Copy poem body as plain text"
+                      tabIndex={m.quickCopyFlash ? -1 : 0}
+                      aria-hidden={m.quickCopyFlash}
+                    >
+                      <svg
+                        className="quick-copy-svg"
+                        viewBox="0 0 24 24"
+                        aria-hidden
+                      >
+                        <path
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                    </button>
+                    <span
+                      className="quick-copy-face quick-copy-face-done"
+                      aria-live="polite"
+                      aria-hidden={!m.quickCopyFlash}
+                    >
+                      Copied
+                    </span>
+                  </div>
                 </div>
                 <p id="poem-body-hint" className="field-hint">
                   Browser underlines off—only the workshop wavy mark for unknown
