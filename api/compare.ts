@@ -13,9 +13,9 @@ overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (
 overall_feedback (string, 2-3 full sentences, holistic read of the current draft as a whole — voice, mood, what it accomplishes, where it lands).
 personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc — what improved, what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not rubric).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
-  rationale (2-3 full sentences — name the specific craft problem, explain WHY it weakens the line in this poem's context, and reference concrete words/sounds/rhythm where relevant. Speak about THIS line, not generalities.),
-  improvements[] (1-3 short concrete moves), rewrite?, confidence? ("low" only).
-Prefer single-line issues. Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity. Headline + improvements stay terse; rationale, overall_feedback, personal_feedback get full sentences. Use local analysis hints if provided. 1-based line numbers.`;
+  rationale (3-5 full sentences — (1) name the specific craft problem, (2) explain WHY it weakens the line in this poem's context with concrete words/sounds/rhythm, (3) describe how it lands on the reader (sensory or emotional effect, what gets blurred), (4) when useful, contrast with what a sharper move would do. Speak about THIS line, not generalities.),
+  improvements[] (2-4 concrete moves, each ≤14 words, naming a specific technique or word swap), rewrite?, confidence? ("low" only).
+Prefer single-line issues. Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity. Headline stays terse; rationale gets paragraph-length detail; improvements stay punchy but specific. Use local analysis hints if provided. 1-based line numbers.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
