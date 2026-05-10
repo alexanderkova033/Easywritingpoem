@@ -66,26 +66,20 @@ export function RhymeFinder() {
 
   return (
     <div className="rhyme-finder rhyme-lookup-card">
-      <div className="rhyme-lookup-header">
-        <span className="rhyme-lookup-icon" aria-hidden>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </span>
-        <div className="rhyme-lookup-titles">
-          <h4 className="tool-subheading rhyme-finder-heading">Look up a word</h4>
-          <p className="rhyme-lookup-sub muted small">Find words that rhyme with anything — even words not in your poem.</p>
-        </div>
-      </div>
       <form className="rhyme-finder-form" onSubmit={handleSubmit}>
         <div className="rhyme-finder-input-row">
+          <span className="rhyme-finder-input-icon" aria-hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </span>
           <input
             type="text"
             className="rhyme-finder-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a word…"
+            placeholder="Look up rhymes for a word…"
             aria-label="Word to rhyme"
             autoComplete="off"
             spellCheck="false"

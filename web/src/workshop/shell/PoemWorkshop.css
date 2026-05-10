@@ -1714,8 +1714,43 @@
   border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
 }
 
+.rhyme-live-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.15rem;
+}
+
 .rhyme-live-title {
-  margin: 0.5rem 0 0.1rem;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.rhyme-live-settings-btn {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s, border-color 0.13s;
+}
+
+.rhyme-live-settings-btn:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.rhyme-live-settings-btn.is-open {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .rhyme-live-sub {

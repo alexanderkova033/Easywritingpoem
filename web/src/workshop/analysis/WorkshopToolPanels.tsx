@@ -434,6 +434,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
   const [meterOnlyHeuristic, setMeterOnlyHeuristic] = useState(false);
   const [rhymeEndingFilter, setRhymeEndingFilter] = useState("");
+  const [rhymeSettingsOpen, setRhymeSettingsOpen] = useState(false);
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
   const [goLineField, setGoLineField] = useState("");
 
@@ -991,38 +992,55 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
           <div className="rhyme-live-section">
             <div className="rhyme-live-header">
-              <h4 className="tool-subheading rhyme-live-title">In your poem</h4>
-              <p className="rhyme-live-sub muted small">Patterns picked up from your line endings. Click a word to jump to it.</p>
+              <div className="rhyme-live-header-row">
+                <h4 className="tool-subheading rhyme-live-title">Rhymes already in your poem</h4>
+                <button
+                  type="button"
+                  className={`rhyme-live-settings-btn${rhymeSettingsOpen ? " is-open" : ""}`}
+                  onClick={() => setRhymeSettingsOpen((v) => !v)}
+                  aria-expanded={rhymeSettingsOpen}
+                  aria-label="Rhyme settings"
+                  title="Filter & strictness settings"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+                  </svg>
+                </button>
+              </div>
+              <p className="rhyme-live-sub muted small">Words at the end of different lines that already rhyme — click any to jump there.</p>
             </div>
 
-            <div className="rhyme-controls-row">
-              <input
-                type="search"
-                className="rhyme-filter-input"
-                value={rhymeEndingFilter}
-                onChange={(e) => setRhymeEndingFilter(e.target.value)}
-                placeholder="Filter endings…"
-                aria-label="Filter rhyme clusters by ending"
-              />
-              <div className="rhyme-breadth-group" role="group" aria-label="Match strictness">
-                {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    className={`rhyme-breadth-chip${rhymeBreadth === b ? " is-active" : ""}`}
-                    aria-pressed={rhymeBreadth === b}
-                    onClick={() => onRhymeBreadthChange(b)}
-                    title={
-                      b === "strict" ? "Strict: last 4 letters must match" :
-                      b === "near"   ? "Near: vowel-tail match (default)" :
-                                       "Loose: last 2 letters"
-                    }
-                  >
-                    {b === "strict" ? "Strict" : b === "near" ? "Near" : "Loose"}
-                  </button>
-                ))}
+            {rhymeSettingsOpen ? (
+              <div className="rhyme-controls-row">
+                <input
+                  type="search"
+                  className="rhyme-filter-input"
+                  value={rhymeEndingFilter}
+                  onChange={(e) => setRhymeEndingFilter(e.target.value)}
+                  placeholder="Filter endings…"
+                  aria-label="Filter rhyme clusters by ending"
+                />
+                <div className="rhyme-breadth-group" role="group" aria-label="Match strictness">
+                  {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      className={`rhyme-breadth-chip${rhymeBreadth === b ? " is-active" : ""}`}
+                      aria-pressed={rhymeBreadth === b}
+                      onClick={() => onRhymeBreadthChange(b)}
+                      title={
+                        b === "strict" ? "Strict: last 4 letters must match" :
+                        b === "near"   ? "Near: vowel-tail match (default)" :
+                                         "Loose: last 2 letters"
+                      }
+                    >
+                      {b === "strict" ? "Strict" : b === "near" ? "Near" : "Loose"}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
 
             {heavyToolsStale ? (
               <p className="tools-stale-hint muted small" role="status" aria-live="polite">Updating…</p>
