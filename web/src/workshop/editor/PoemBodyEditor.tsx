@@ -210,8 +210,8 @@ const issueHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-// ---- Inline "✦ AI" chip on the active cursor line ---- //
-class AiChipWidget extends WidgetType {
+// ---- Left-gutter "✦ AI" chip on the active cursor line ---- //
+class AiChipMarker extends GutterMarker {
   toDOM() {
     const el = document.createElement("button");
     el.type = "button";
@@ -221,47 +221,42 @@ class AiChipWidget extends WidgetType {
     el.textContent = "✦";
     return el;
   }
-  ignoreEvent() { return false; }
 }
 
-const aiChipPlugin = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet = Decoration.none;
-    constructor(view: EditorView) { this.compute(view); }
-    update(u: ViewUpdate) {
-      if (u.selectionSet || u.docChanged || u.viewportChanged) this.compute(u.view);
-    }
-    compute(view: EditorView) {
-      const sel = view.state.selection.main;
-      if (!sel.empty) { this.decorations = Decoration.none; return; }
-      try {
-        const line = view.state.doc.lineAt(sel.from);
-        if (!line.text.trim()) { this.decorations = Decoration.none; return; }
-        const w = Decoration.widget({ widget: new AiChipWidget(), side: 2 }).range(line.to);
-        this.decorations = Decoration.set([w]);
-      } catch { this.decorations = Decoration.none; }
-    }
+const aiChipMarker = new AiChipMarker();
+
+const aiChipGutter = gutter({
+  class: "cm-ai-chip-gutter",
+  lineMarker(view, line) {
+    const sel = view.state.selection.main;
+    if (!sel.empty) return null;
+    try {
+      const cursorLine = view.state.doc.lineAt(sel.from);
+      if (cursorLine.from !== line.from) return null;
+      if (!cursorLine.text.trim()) return null;
+    } catch { return null; }
+    return aiChipMarker;
   },
-  {
-    decorations: (v) => v.decorations,
-    eventHandlers: {
-      mousedown(e, view) {
-        const target = e.target as HTMLElement;
-        if (!target.closest(".cm-ai-chip")) return false;
-        e.preventDefault();
-        e.stopPropagation();
-        const sel = view.state.selection.main;
-        try {
-          const line = view.state.doc.lineAt(sel.from);
-          // Selecting the whole line text triggers the workshop's onSelectionText
-          // callback, which opens SelectionSuggestPopover with the line as input.
-          view.dispatch({ selection: { anchor: line.from, head: line.to } });
-        } catch { /* ignore */ }
-        return true;
-      },
+  lineMarkerChange(update) {
+    return update.selectionSet || update.docChanged;
+  },
+  initialSpacer: () => aiChipMarker,
+  domEventHandlers: {
+    mousedown(view, line, event) {
+      const target = (event as MouseEvent).target as HTMLElement;
+      if (!target.closest(".cm-ai-chip")) return false;
+      event.preventDefault();
+      event.stopPropagation();
+      try {
+        const docLine = view.state.doc.lineAt(line.from);
+        // Selecting the whole line text triggers the workshop's onSelectionText
+        // callback, which opens SelectionSuggestPopover with the line as input.
+        view.dispatch({ selection: { anchor: docLine.from, head: docLine.to } });
+      } catch { /* ignore */ }
+      return true;
     },
   },
-);
+});
 
 // Strongest-line decoration — subtle gold accent for the best line in the poem.
 const setStrongestLine = StateEffect.define<DecorationSet>();
@@ -666,7 +661,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       highlightSelectionMatches(),
       lineFlashField,
       strongestLineField,
-      aiChipPlugin,
+      aiChipGutter,
       issueHighlightField,
       persistentIssueDecosField,
       issueGutterField,
