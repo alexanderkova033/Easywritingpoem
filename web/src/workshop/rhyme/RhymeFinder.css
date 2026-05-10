@@ -1,12 +1,48 @@
 /* ---- Rhyme Finder ---- */
 .rhyme-finder {
-  margin-bottom: 1.1rem;
-  padding-bottom: 1.1rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  margin-bottom: 1.2rem;
+}
+
+.rhyme-lookup-card {
+  border: 1.5px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 12px;
+  padding: 0.75rem 0.85rem 0.85rem;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  box-shadow: 0 1px 3px color-mix(in srgb, #000 6%, transparent);
+}
+
+.rhyme-lookup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.rhyme-lookup-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  color: var(--accent);
+}
+
+.rhyme-lookup-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .rhyme-finder-heading {
-  margin-bottom: 0.55rem;
+  margin: 0;
+}
+
+.rhyme-lookup-sub {
+  margin: 0;
+  line-height: 1.35;
 }
 
 .rhyme-finder-form {

@@ -1656,14 +1656,14 @@
 
 .rhyme-breadth-chip {
   appearance: none;
-  width: 2rem;
   height: 2rem;
+  padding: 0 0.6rem;
   border-radius: 7px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--muted);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   display: grid;
@@ -1700,6 +1700,164 @@
 
 .rhyme-section-empty {
   margin: 0.1rem 0 0;
+}
+
+/* ── Live rhyme section: header ──────────────────────────────────────────── */
+
+.rhyme-live-section {
+  margin-top: 0.4rem;
+}
+
+.rhyme-live-header {
+  margin-bottom: 0.55rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.rhyme-live-title {
+  margin: 0.5rem 0 0.1rem;
+}
+
+.rhyme-live-sub {
+  margin: 0 0 0.3rem;
+  line-height: 1.35;
+}
+
+/* ── Category cards (icon + color) ──────────────────────────────────────── */
+
+.rhyme-cat {
+  --cat-color: var(--accent);
+  margin-bottom: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--cat-color) 28%, var(--border));
+  border-left: 3px solid var(--cat-color);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem 0.6rem;
+  background: color-mix(in srgb, var(--cat-color) 5%, var(--surface));
+}
+
+.rhyme-cat-end   { --cat-color: #5fba7d; }
+.rhyme-cat-eye   { --cat-color: #5b9be0; }
+.rhyme-cat-asson { --cat-color: #e0995b; }
+.rhyme-cat-cons  { --cat-color: #b07be0; }
+
+.rhyme-cat-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.rhyme-cat-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--cat-color) 22%, var(--bg));
+  color: var(--cat-color);
+}
+
+.rhyme-cat-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+  flex: 1;
+}
+
+.rhyme-cat-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rhyme-cat-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.rhyme-cat-count {
+  flex-shrink: 0;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cat-color) 22%, var(--bg));
+  color: var(--cat-color);
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* ── Cluster chips ──────────────────────────────────────────────────────── */
+
+.rhyme-cluster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.rhyme-cluster {
+  margin: 0;
+}
+
+.rhyme-cluster + .rhyme-cluster {
+  padding-top: 0.35rem;
+  border-top: 1px dashed color-mix(in srgb, var(--cat-color) 22%, transparent);
+}
+
+.rhyme-cluster-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.rhyme-word-chip {
+  appearance: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.22rem 0.5rem 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--cat-color) 38%, var(--border));
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+}
+
+.rhyme-word-chip:hover {
+  background: color-mix(in srgb, var(--cat-color) 14%, var(--bg));
+  border-color: var(--cat-color);
+}
+
+.rhyme-word-chip:active {
+  transform: translateY(1px);
+}
+
+.rhyme-word-chip:focus-visible {
+  outline: 2px solid var(--cat-color);
+  outline-offset: 1px;
+}
+
+.rhyme-word-chip-word {
+  font-weight: 600;
+}
+
+.rhyme-word-chip-line {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--cat-color);
+  background: color-mix(in srgb, var(--cat-color) 14%, transparent);
+  border-radius: 999px;
+  padding: 0.04rem 0.38rem;
 }
 
 /* ── Legacy breadth row (kept for safety, hidden) ─────────────────────────── */

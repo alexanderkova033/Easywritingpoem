@@ -2221,6 +2221,7 @@ export function PoemWorkshop() {
             spellMode={m.spellMode}
             onSpellModeChange={m.setSpellMode}
             goToLine={m.goToLine}
+            goToLineEnd={m.goToLineEnd}
             goToSpellHitAt={m.goToSpellHitAt}
             cycleSpellHit={m.cycleSpellHit}
             spellNavIndex={m.spellNavIndex}

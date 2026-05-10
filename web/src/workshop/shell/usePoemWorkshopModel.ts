@@ -88,6 +88,7 @@ import { scanCliches } from "@/workshop/analysis/cliche-scan";
 import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import {
   focusCharacterRangeInEditor,
+  focusLastWordInLine,
   focusLineInEditor,
 } from "@/workshop/editor/focus-line-in-editor";
 import { isTypingInField } from "@/workshop/hints/keyboard-field-target";
@@ -526,6 +527,14 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     setJumpLine(line1Based);
     setJumpBump((n) => n + 1);
     focusLineInEditor(view, line1Based);
+  }, []);
+
+  const goToLineEnd = useCallback((line1Based: number) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    setJumpLine(line1Based);
+    setJumpBump((n) => n + 1);
+    focusLastWordInLine(view, line1Based);
   }, []);
 
   const goToSpellHit = useCallback((hit: SpellHit) => {
@@ -1263,6 +1272,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     goalEvaluation,
     publication,
     goToLine,
+    goToLineEnd,
     goToSpellHit,
     goToSpellHitAt,
     cycleSpellHit,

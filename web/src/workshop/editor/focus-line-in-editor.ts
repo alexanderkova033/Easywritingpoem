@@ -31,3 +31,35 @@ export function focusCharacterRangeInEditor(
   });
   view.focus();
 }
+
+/** Select only the last word on a line (1-based). Falls back to the full line if the line has no word characters. */
+export function focusLastWordInLine(
+  view: EditorView,
+  line1Based: number,
+): void {
+  const doc = view.state.doc;
+  const n = Math.max(1, Math.min(line1Based, doc.lines));
+  const line = doc.line(n);
+  const text = line.text;
+  const re = /[a-zA-Z']+/g;
+  let last: { start: number; end: number } | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    last = { start: m.index, end: m.index + m[0].length };
+  }
+  if (!last) {
+    view.dispatch({
+      selection: { anchor: line.from, head: line.to },
+      scrollIntoView: true,
+    });
+  } else {
+    view.dispatch({
+      selection: {
+        anchor: line.from + last.start,
+        head: line.from + last.end,
+      },
+      scrollIntoView: true,
+    });
+  }
+  view.focus();
+}
