@@ -19,6 +19,7 @@ export const STORAGE_KEY_SPELL_IGNORE_SESSION = "easy-poems:spell:ignore-session
 
 // Workshop metadata
 export const STORAGE_KEY_GOALS = "easy-poems:goals:v1";
+export const STORAGE_KEY_IDEAS_NOTEBOOK = "easy-poems:ideas-notebook:v1";
 export const STORAGE_KEY_LIBRARY_META = "easy-poems:libraryMeta:v1";
 export const STORAGE_KEY_APPEARANCE = "easy-poems:appearance:v1";
 export const STORAGE_KEY_FIRST_HINT_DISMISSED = "easy-poems:first-hint-dismissed";

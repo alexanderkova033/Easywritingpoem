@@ -3296,6 +3296,162 @@
   line-height: 1.4;
 }
 
+/* ── Ideas notebook ───────────────────────────────────────────────────────── */
+
+.ideas-notebook {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hairline, var(--border));
+}
+
+.ideas-notebook-hint {
+  margin: 0.15rem 0 0.6rem;
+}
+
+.ideas-notebook-add {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+}
+
+.ideas-notebook-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.ideas-notebook-input:focus {
+  border-color: var(--accent);
+}
+
+.ideas-notebook-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.55rem 0 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ideas-notebook-toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ideas-notebook-count {
+  margin-left: auto;
+}
+
+.ideas-notebook-clear {
+  font-size: 0.74rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.ideas-notebook-clear:hover {
+  color: var(--danger);
+}
+
+.ideas-notebook-empty {
+  margin: 0.6rem 0 0;
+}
+
+.ideas-notebook-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ideas-notebook-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ideas-notebook-item:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-color: var(--hairline, var(--border));
+}
+
+.ideas-notebook-check {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ideas-notebook-text {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  cursor: text;
+  word-break: break-word;
+}
+
+.ideas-notebook-text:hover {
+  color: var(--accent);
+}
+
+.ideas-notebook-item--done .ideas-notebook-text {
+  text-decoration: line-through;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.ideas-notebook-edit {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
+}
+
+.ideas-notebook-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: 0 0.3rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.ideas-notebook-item:hover .ideas-notebook-del,
+.ideas-notebook-del:focus-visible {
+  opacity: 0.7;
+}
+
+.ideas-notebook-del:hover {
+  color: var(--danger);
+  opacity: 1;
+}
+
 /* ── Editor goal strip ────────────────────────────────────────────────────── */
 
 .editor-goal-strip {

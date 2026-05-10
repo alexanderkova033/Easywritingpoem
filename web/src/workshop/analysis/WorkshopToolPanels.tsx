@@ -26,6 +26,7 @@ import {
 import { LiveSectionTitle } from "./ToolTabBar";
 import { RhymeFinder } from "./RhymeFinder";
 import { StuckHelper } from "./StuckHelper";
+import { IdeasNotebook } from "@/workshop/goals/IdeasNotebook";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
 import {
   RevisionCompareSection,
@@ -719,6 +720,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           Object.values(goals).some((v) => v != null) ? (
             <p className="goal-on-target">✓ All goals met</p>
           ) : null}
+
+          <IdeasNotebook />
         </div>
       ) : null}
 
