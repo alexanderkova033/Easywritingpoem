@@ -157,6 +157,11 @@
   display: none;
 }
 
+.poem-workshop.is-focus-mode .tools-resize-gutter,
+.poem-workshop.is-focus-mode .rail-resize-gutter {
+  display: none !important;
+}
+
 @media (max-width: 899px) {
   /*
    * Mobile layout: bottom-sheet for tools.
