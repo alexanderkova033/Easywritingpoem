@@ -357,12 +357,6 @@ const schemeLetterField = StateField.define<RangeSet<GutterMarker>>({
   },
 });
 
-const schemeGutterExtension = gutter({
-  class: "cm-scheme-gutter",
-  markers: (view) => view.state.field(schemeLetterField),
-  initialSpacer: () => new SchemeLetterMarker("A", 0),
-});
-
 // ---- Rhyme end-word highlights (line → cluster index) ---- //
 const setRhymeEndDecos = StateEffect.define<Array<{ line: number; clusterIdx: number }>>();
 const clearRhymeEndDecos = StateEffect.define<void>();
