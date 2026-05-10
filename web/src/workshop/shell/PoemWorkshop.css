@@ -4554,3 +4554,21 @@
   color: color-mix(in srgb, var(--muted) 50%, transparent);
   font-size: 0.8rem;
 }
+
+/* ======================================================
+   Hero-style accent frame — applied to outer panels
+   (editor, tools, left rail, AI analysis) to match the
+   accent-tinted frame used by .ai-hero.
+   ====================================================== */
+.editor-panel,
+.tools-panel,
+.workshop-rail,
+.ai-analysis-section {
+  border: 1px solid color-mix(in srgb, var(--accent, #5fba7d) 22%, var(--border));
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent, #5fba7d) 6%, var(--surface)) 0%,
+      var(--surface) 100%
+    );
+}
