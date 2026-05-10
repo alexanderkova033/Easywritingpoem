@@ -126,8 +126,9 @@
     top: 1.15rem;
     align-self: start;
     border-radius: 10px;
-    border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 120%, transparent);
     background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+    box-shadow: 0 4px 16px color-mix(in srgb, #000 12%, transparent);
     overflow: hidden;
     padding: 4px 0.2rem 0;
   }
@@ -389,9 +390,9 @@
     gap: 0.55rem;
     padding: 0.65rem 0.5rem;
     border-radius: 14px;
-    border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 130%, transparent);
     background: color-mix(in srgb, var(--surface) 82%, var(--bg));
-    box-shadow: 0 2px 10px color-mix(in srgb, #000 6%, transparent);
+    box-shadow: 0 4px 18px color-mix(in srgb, #000 13%, transparent);
     backdrop-filter: saturate(1.02) blur(8px);
     -webkit-backdrop-filter: saturate(1.02) blur(8px);
     position: sticky;
