@@ -458,6 +458,15 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+.ssp-ant-chip {
+  border-style: dashed;
+  color: color-mix(in srgb, var(--text) 75%, transparent);
+}
+.ssp-ant-chip:hover {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 10%, var(--surface));
+  border-color: var(--ai-score-mid, #e6a817);
+  color: var(--ai-score-mid, #e6a817);
+}
 
 /* ---- AI issue feedback (problem-word match) ---- */
 .ssp-issue {

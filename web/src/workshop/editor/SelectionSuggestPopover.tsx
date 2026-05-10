@@ -14,6 +14,7 @@ interface DefineResult {
   pos: string;
   defs: string[];
   syns: string[];
+  ants: string[];
 }
 
 async function fetchLineSuggestions(
@@ -35,22 +36,25 @@ async function fetchLineSuggestions(
 
 async function fetchDefinition(word: string, signal: AbortSignal): Promise<DefineResult> {
   const clean = word.replace(/[^a-zA-Z'-]/g, "").toLowerCase();
-  const [dictRes, dmRes] = await Promise.all([
+  const [dictRes, dmRes, dmAntRes] = await Promise.all([
     fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(clean)}`, { signal }),
     fetch(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(clean)}&max=14`, { signal }),
+    fetch(`https://api.datamuse.com/words?rel_ant=${encodeURIComponent(clean)}&max=8`, { signal }),
   ]);
 
   let pos = "";
   let defs: string[] = [];
   let syns: string[] = [];
+  let ants: string[] = [];
 
   if (dictRes.ok) {
-    const data = (await dictRes.json()) as Array<{ meanings?: Array<{ partOfSpeech: string; definitions: Array<{ definition: string }>; synonyms?: string[] }> }>;
+    const data = (await dictRes.json()) as Array<{ meanings?: Array<{ partOfSpeech: string; definitions: Array<{ definition: string }>; synonyms?: string[]; antonyms?: string[] }> }>;
     const meaning = data[0]?.meanings?.[0];
     if (meaning) {
       pos = meaning.partOfSpeech ?? "";
       defs = meaning.definitions.slice(0, 3).map((d) => d.definition);
       syns = meaning.synonyms?.slice(0, 8) ?? [];
+      ants = meaning.antonyms?.slice(0, 4) ?? [];
     }
   }
 
@@ -65,7 +69,18 @@ async function fetchDefinition(word: string, signal: AbortSignal): Promise<Defin
     }
   }
 
-  return { word: clean, pos, defs, syns };
+  if (dmAntRes.ok) {
+    const dmAntData = (await dmAntRes.json()) as Array<{ word?: string }>;
+    const seenAnt = new Set(ants.map((a) => a.toLowerCase()));
+    for (const row of dmAntData) {
+      if (row.word && !seenAnt.has(row.word.toLowerCase()) && ants.length < 6) {
+        ants.push(row.word);
+        seenAnt.add(row.word.toLowerCase());
+      }
+    }
+  }
+
+  return { word: clean, pos, defs, syns, ants };
 }
 
 export interface SelectionSuggestPopoverProps {
@@ -436,6 +451,24 @@ export function SelectionSuggestPopover({
                         onClick={() => { onApply(s); onClose(); }}
                       >
                         {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {definition.ants.length > 0 && (
+                <div className="ssp-define-syns ssp-define-ants">
+                  <span className="ssp-define-syns-label">Antonyms</span>
+                  <div className="ssp-define-chips">
+                    {definition.ants.map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        className="ssp-syn-chip ssp-ant-chip"
+                        title={`Replace with "${a}"`}
+                        onClick={() => { onApply(a); onClose(); }}
+                      >
+                        {a}
                       </button>
                     ))}
                   </div>
