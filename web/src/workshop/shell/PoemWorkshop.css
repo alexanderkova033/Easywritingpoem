@@ -488,6 +488,8 @@
     bottom: 0;
     width: calc(1rem + 16px);
     cursor: col-resize;
+    /* Block browser scroll/zoom while dragging on touch devices. */
+    touch-action: none;
     z-index: 50;
   }
 

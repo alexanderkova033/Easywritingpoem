@@ -217,15 +217,17 @@ export function PoemWorkshop() {
   const MIN_EDITOR_W = 240; // minimum editor column width (px)
   const GAP_PX = Math.round(1.55 * parseFloat(getComputedStyle(document.documentElement).fontSize || "16"));
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+  const handleResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
+    const target = e.currentTarget;
+    const pointerId = e.pointerId;
+    try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
     const startX = e.clientX;
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
-    const onMove = (ev: MouseEvent) => {
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
       const raw = startW - (ev.clientX - startX); // drag left → wider
       const currentRail = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
-      // Cap against both current rail width AND against 0 so collapsing the rail later
-      // never pushes the editor below MIN_EDITOR_W.
       const maxW = Math.min(
         window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2,
         window.innerWidth - MIN_EDITOR_W - GAP_PX * 2,
@@ -233,33 +235,45 @@ export function PoemWorkshop() {
       const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
       applyToolsW(next);
     };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
+      try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
       saveToolsW(parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10));
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
   }, [applyToolsW, saveToolsW]);
 
-  const handleRailResizeStart = useCallback((e: React.MouseEvent) => {
+  const handleRailResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
+    const target = e.currentTarget;
+    const pointerId = e.pointerId;
+    try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
     const startX = e.clientX;
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
-    const onMove = (ev: MouseEvent) => {
+    const onMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
       const raw = startW + (ev.clientX - startX); // drag right → wider
       const currentTools = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
       const maxW = window.innerWidth - currentTools - MIN_EDITOR_W - GAP_PX * 2;
       const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
       applyRailW(next);
     };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+    const onUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
+      try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
       saveRailW(parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10));
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
   }, [applyRailW, saveRailW]);
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
@@ -1929,7 +1943,7 @@ export function PoemWorkshop() {
         {!isReadingMode && (
           <div
             className="rail-resize-gutter"
-            onMouseDown={handleRailResizeStart}
+            onPointerDown={handleRailResizeStart}
             onDoubleClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}
             aria-hidden
             title="Drag to resize · double-click to reset"
@@ -1940,7 +1954,7 @@ export function PoemWorkshop() {
         {!isReadingMode && (
           <div
             className="tools-resize-gutter"
-            onMouseDown={handleResizeStart}
+            onPointerDown={handleResizeStart}
             onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
             aria-hidden
             title="Drag to resize · double-click to reset"
