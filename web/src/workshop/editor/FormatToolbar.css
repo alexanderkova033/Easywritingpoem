@@ -281,17 +281,17 @@
 .poem-cm-wrap .cm-editor {
   border-radius: 10px;
   background: transparent !important;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 130%, transparent);
   box-shadow: none;
   padding: 4px;
-  transition: border-color 0.18s ease;
+  transition: border-color 0.18s ease, border-width 0.18s ease, box-shadow 0.18s ease;
   max-width: 100%;
 }
 
 .poem-cm-wrap .cm-editor.cm-focused,
 .poem-cm-wrap:focus-within .cm-editor {
-  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
-  box-shadow: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
   outline: none;
 }
 

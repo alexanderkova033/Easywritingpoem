@@ -4565,10 +4565,4 @@
 .workshop-rail,
 .ai-analysis-section {
   border: 1px solid color-mix(in srgb, var(--accent, #5fba7d) 22%, var(--border));
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--accent, #5fba7d) 6%, var(--surface)) 0%,
-      var(--surface) 100%
-    );
 }
