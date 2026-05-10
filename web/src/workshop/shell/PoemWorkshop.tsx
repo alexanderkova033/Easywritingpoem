@@ -57,7 +57,7 @@ import { WorkshopBanners } from "./WorkshopBanners";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
-import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
+import { useIgnoredRhymes, useManualRhymeLinks } from "@/workshop/rhyme/rhyme-storage";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
 import {
@@ -98,7 +98,8 @@ export function PoemWorkshop() {
     return "near";
   });
 
-  const m = usePoemWorkshopModel(rhymeBreadth);
+  const manualRhymeLinks = useManualRhymeLinks();
+  const m = usePoemWorkshopModel(rhymeBreadth, manualRhymeLinks.links);
   const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
@@ -2355,6 +2356,9 @@ export function PoemWorkshop() {
             onRhymeBreadthChange={setRhymeBreadth}
             rhymeFinderQuery={rhymeFinderQuery}
             onRhymeSuggestionHover={setHoveredRhymeWord}
+            manualRhymeLinks={manualRhymeLinks.links}
+            onAddManualRhymeLink={manualRhymeLinks.addLink}
+            onRemoveManualRhymeLink={manualRhymeLinks.removeLink}
           />
           </Suspense>
 

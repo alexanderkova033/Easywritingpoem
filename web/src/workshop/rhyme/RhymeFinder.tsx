@@ -65,15 +65,32 @@ interface RhymeFinderProps {
   onHoverWord?: (word: string | null) => void;
 }
 
+const COLLAPSED_KEY = "easy-poems:rhyme-finder-collapsed";
+function readCollapsed(): boolean {
+  try { return localStorage.getItem(COLLAPSED_KEY) !== "0"; } catch { return true; }
+}
+function writeCollapsed(v: boolean): void {
+  try { localStorage.setItem(COLLAPSED_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+}
+
 export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFinderProps = {}) {
   const [query, setQuery] = useState("");
   const [strength, setStrength] = useState<RhymeStrength>("perfect");
   const [results, setResults] = useState<DatamuseWord[] | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [collapsed, setCollapsed] = useState<boolean>(() => readCollapsed());
   const abortRef = useRef<AbortController | null>(null);
   const { pinned, togglePin, isPinned } = usePinnedRhymes();
   const { recent, pushRecent } = useRecentLookups();
+
+  const toggleCollapsed = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      writeCollapsed(next);
+      return next;
+    });
+  };
 
   const search = useCallback(async (word: string, str: RhymeStrength) => {
     const w = word.trim();
@@ -111,8 +128,12 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
     if (key === lastExternalKey.current) return;
     lastExternalKey.current = key;
     setQuery(w);
+    if (collapsed) {
+      setCollapsed(false);
+      writeCollapsed(false);
+    }
     void search(w, strength);
-  }, [externalQuery, search, strength]);
+  }, [externalQuery, search, strength, collapsed]);
 
   const handleStrengthChange = (str: RhymeStrength) => {
     setStrength(str);
@@ -129,35 +150,47 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
   const buckets = results ? bucketBySyllables(results) : [];
 
   return (
-    <div className="rhyme-finder rhyme-lookup-card">
+    <div className={`rhyme-finder rhyme-lookup-card${collapsed ? " is-collapsed" : ""}`}>
+      <button
+        type="button"
+        className="rhyme-finder-toggle"
+        onClick={toggleCollapsed}
+        aria-expanded={!collapsed}
+        title={collapsed ? "Open rhyme finder" : "Close rhyme finder"}
+      >
+        <span className={`rhyme-finder-chevron${collapsed ? "" : " is-open"}`} aria-hidden>▸</span>
+        <span className="rhyme-finder-toggle-label">Find a rhyme</span>
+        {query ? <span className="rhyme-finder-toggle-word">{query}</span> : null}
+        {pinned.length > 0 ? <span className="rhyme-finder-pin-count" title={`${pinned.length} pinned`}>★ {pinned.length}</span> : null}
+      </button>
+      {collapsed ? null : (
+      <>
       {pinned.length > 0 ? (
-        <div className="rhyme-pinned-strip">
+        <div className="rhyme-pinned-strip rhyme-pinned-strip-compact">
           <span className="rhyme-pinned-label" aria-hidden>★</span>
           <div className="rhyme-pinned-chips">
             {pinned.map((w) => (
-              <span key={w} className="rhyme-pinned-chip-row">
-                <button
-                  type="button"
-                  className="current-line-rhyme-chip rhyme-pinned-chip"
-                  onClick={() => onApplyWord?.(w)}
-                  onMouseEnter={() => onHoverWord?.(w)}
-                  onMouseLeave={() => onHoverWord?.(null)}
-                  onFocus={() => onHoverWord?.(w)}
-                  onBlur={() => onHoverWord?.(null)}
-                  title={`Use "${w}" — replaces line's last word`}
-                >
-                  {w}
-                </button>
-                <button
-                  type="button"
-                  className="rhyme-pin-btn is-pinned"
-                  onClick={() => togglePin(w)}
+              <button
+                key={w}
+                type="button"
+                className="rhyme-pinned-chip-compact"
+                onClick={() => onApplyWord?.(w)}
+                onMouseEnter={() => onHoverWord?.(w)}
+                onMouseLeave={() => onHoverWord?.(null)}
+                onFocus={() => onHoverWord?.(w)}
+                onBlur={() => onHoverWord?.(null)}
+                title={`Use "${w}" — click × to unpin`}
+              >
+                <span className="rhyme-pinned-chip-word">{w}</span>
+                <span
+                  className="rhyme-pinned-chip-unpin"
+                  role="button"
                   aria-label={`Unpin ${w}`}
-                  title="Unpin"
+                  onClick={(e) => { e.stopPropagation(); togglePin(w); }}
                 >
-                  ★
-                </button>
-              </span>
+                  ×
+                </span>
+              </button>
             ))}
           </div>
         </div>
@@ -232,7 +265,9 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
         </p>
       )}
 
-      {results !== null && results.length > 0 && (
+      </>
+      )}
+      {!collapsed && results !== null && results.length > 0 && (
         <div className="rhyme-finder-results">
           <p className="rhyme-finder-results-label muted small">
             {results.length} {strength} rhyme{results.length !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
