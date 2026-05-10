@@ -24,6 +24,10 @@ export interface RevisionCompareSectionProps {
   snapshotFlash?: boolean;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
+  /** Open inline word-level diff in the editor against this snapshot. */
+  onDiffSnapshot?: (snap: RevisionSnapshot) => void;
+  /** Snapshot id currently active as inline diff, or null. */
+  activeDiffSnapshotId?: string | null;
   compareLeftId: string;
   compareRightId: string;
   onCompareLeftChange: (id: string) => void;
@@ -46,6 +50,8 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     snapshotFlash = false,
     onRestoreRevision,
     onDeleteRevision,
+    onDiffSnapshot,
+    activeDiffSnapshotId,
     compareLeftId,
     compareRightId,
     onCompareLeftChange,
@@ -132,6 +138,18 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
                   >
                     Diff
                   </button>
+                  {onDiffSnapshot && (
+                    <button
+                      type="button"
+                      className={`small-btn revision-diff-inline-btn${activeDiffSnapshotId === s.id ? " is-active" : ""}`}
+                      title={activeDiffSnapshotId === s.id
+                        ? "Currently shown as inline diff in the editor — click to exit"
+                        : "Show word-level diff inline in the editor"}
+                      onClick={() => onDiffSnapshot(s)}
+                    >
+                      {activeDiffSnapshotId === s.id ? "Exit diff" : "In editor"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="linkish"

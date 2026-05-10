@@ -40,10 +40,12 @@ import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopov
 import { checkShareHash } from "@/workshop/sharing/sharing";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
+import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
   TOOL_BUCKET_LABEL,
   TOOL_BUCKET_ORDER,
   defaultTabForBucket,
+  formatRelativeSnapshotWhen,
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
@@ -152,7 +154,13 @@ export function PoemWorkshop() {
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileTab, setMobileTab] = useState<"write" | "tools" | "library">("write");
   const mobileToolsExpanded = mobileTab === "tools";
-  const setMobileToolsExpanded = (v: boolean) => setMobileTab(v ? "tools" : "write");
+  // Bottom-sheet snap point on mobile when tools tab is active. Reset to "half" each time it opens.
+  const [mobileSheetSnap, setMobileSheetSnap] = useState<"half" | "full">("half");
+  const setMobileToolsExpanded = (v: boolean) => {
+    if (v) setMobileSheetSnap("half");
+    setMobileTab(v ? "tools" : "write");
+  };
+  const sheetDragRef = useRef<{ pointerId: number; startY: number; startSnap: "half" | "full"; currentY: number } | null>(null);
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
   const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
@@ -285,6 +293,12 @@ export function PoemWorkshop() {
 
   // Swipe gesture state
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  const [diffSnapshot, setDiffSnapshot] = useState<RevisionSnapshot | null>(null);
+  const handleDiffSnapshot = useCallback((snap: RevisionSnapshot) => {
+    setDiffSnapshot((cur) => (cur?.id === snap.id ? null : snap));
+  }, []);
+  const exitDiffSnapshot = useCallback(() => setDiffSnapshot(null), []);
 
   const [aiResult, setAiResult] = useState<PoemAnalysis | PoemComparison | null>(null);
   const [aiVisibleIssues, setAiVisibleIssues] = useState<AnalysisIssue[]>([]);
@@ -460,6 +474,55 @@ export function PoemWorkshop() {
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
+
+  const handleSheetDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (window.innerWidth > 899) return;
+    e.preventDefault();
+    const target = e.currentTarget;
+    try { target.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+    sheetDragRef.current = {
+      pointerId: e.pointerId,
+      startY: e.clientY,
+      startSnap: mobileSheetSnap,
+      currentY: e.clientY,
+    };
+    target.classList.add("is-dragging");
+  }, [mobileSheetSnap]);
+
+  const handleSheetDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = sheetDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    drag.currentY = e.clientY;
+    const dy = e.clientY - drag.startY;
+    const panel = toolsPanelRef.current;
+    if (!panel) return;
+    const vh = window.innerHeight;
+    const baseTop = drag.startSnap === "full" ? vh * 0.08 : vh * 0.50;
+    const liveTop = Math.max(vh * 0.05, Math.min(vh, baseTop + dy));
+    panel.style.setProperty("--sheet-top", `${liveTop}px`);
+  }, []);
+
+  const handleSheetDragEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = sheetDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const target = e.currentTarget;
+    try { target.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    target.classList.remove("is-dragging");
+    sheetDragRef.current = null;
+    const dy = drag.currentY - drag.startY;
+    const vh = window.innerHeight;
+    const baseTop = drag.startSnap === "full" ? vh * 0.08 : vh * 0.50;
+    const finalTop = baseTop + dy;
+    const panel = toolsPanelRef.current;
+    if (panel) panel.style.removeProperty("--sheet-top");
+    if (finalTop > vh * 0.78) {
+      setMobileToolsExpanded(false);
+    } else if (finalTop < vh * 0.25) {
+      setMobileSheetSnap("full");
+    } else {
+      setMobileSheetSnap("half");
+    }
+  }, []);
   const editorPanelRef = useRef<HTMLElement | null>(null);
   // Saved scroll positions so switching tabs doesn't reset where you were.
   const editorScrollPos = useRef(0);
@@ -1419,12 +1482,22 @@ export function PoemWorkshop() {
         />
       )}
 
+      {/* Mobile bottom-sheet scrim — only visible at full snap */}
+      {mobileToolsExpanded && (
+        <div
+          className={`mobile-sheet-scrim mobile-sheet-scrim-${mobileSheetSnap}`}
+          aria-hidden
+          onClick={() => setMobileSheetSnap("half")}
+        />
+      )}
+
       <main
         id="workshop-main"
         className="workshop-grid"
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
+        data-mobile-sheet={mobileToolsExpanded ? mobileSheetSnap : "closed"}
         aria-label="Poetry workshop"
         onTouchStart={(e) => {
           const t = e.touches[0];
@@ -1755,6 +1828,22 @@ export function PoemWorkshop() {
                 </div>
                 <div className="poem-editor-with-scheme">
                   <div className="poem-editor-shell" style={{ display: "flex", flexDirection: "column" }}>
+                    {diffSnapshot && (
+                      <div className="poem-diff-bar" role="status" aria-live="polite">
+                        <span className="poem-diff-bar-label">
+                          Diff vs.&nbsp;
+                          <span className="poem-diff-bar-snapshot">
+                            {diffSnapshot.label || formatRelativeSnapshotWhen(diffSnapshot.createdAt)}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          className="poem-diff-bar-exit"
+                          onClick={exitDiffSnapshot}
+                          title="Exit diff overlay"
+                        >Exit diff</button>
+                      </div>
+                    )}
                     <div className="poem-editor-body-wrap" style={{ position: "relative" }}>
                     <PoemBodyEditor
                       id="poem-body"
@@ -1785,6 +1874,7 @@ export function PoemWorkshop() {
                         setSelectionText(text);
                         setSelectionRect(rect);
                       }}
+                      diffSnapshotBody={diffSnapshot?.body ?? null}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
                     {aiResult && (
@@ -1970,7 +2060,22 @@ export function PoemWorkshop() {
         >
           <div className="tools-scroll-body">
           <div className="tools-sticky-head">
-            <div className="tools-swipe-handle" aria-hidden />
+            <div
+              className="tools-swipe-handle"
+              role="slider"
+              aria-label="Drag to resize tools sheet"
+              aria-valuemin={0}
+              aria-valuemax={2}
+              aria-valuenow={mobileSheetSnap === "full" ? 2 : 1}
+              onPointerDown={handleSheetDragStart}
+              onPointerMove={handleSheetDragMove}
+              onPointerUp={handleSheetDragEnd}
+              onPointerCancel={handleSheetDragEnd}
+              onClick={() => {
+                if (window.innerWidth > 899) return;
+                setMobileSheetSnap((s) => (s === "half" ? "full" : "half"));
+              }}
+            />
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
               <button
@@ -2119,6 +2224,8 @@ export function PoemWorkshop() {
             snapshotFlash={m.snapshotFlash}
             onRestoreRevision={m.restoreRevision}
             onDeleteRevision={m.deleteRevision}
+            onDiffSnapshot={handleDiffSnapshot}
+            activeDiffSnapshotId={diffSnapshot?.id ?? null}
             compareLeftId={m.compareLeftId}
             compareRightId={m.compareRightId}
             onCompareLeftChange={m.setCompareLeftId}

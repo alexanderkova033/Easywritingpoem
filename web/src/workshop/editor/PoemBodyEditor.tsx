@@ -2,6 +2,8 @@ import { EditorView, ViewPlugin, WidgetType, keymap, placeholder, gutter, Gutter
 import { StateEffect, StateField, EditorState, Transaction, RangeSet, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
+import { diffOverlayField, setDiffSnapshot } from "@/workshop/editor/diff-overlay";
+import "@/workshop/editor/diff-overlay.css";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
 import type { MutableRefObject } from "react";
@@ -446,6 +448,8 @@ export interface PoemBodyEditorProps {
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   /** Receives a getter so callers can read the current cursor line synchronously. */
   cursorLineGetterRef?: MutableRefObject<(() => number) | null>;
+  /** When set, render an inline word-level diff against this snapshot body. Null/undefined disables. */
+  diffSnapshotBody?: string | null;
   id?: string;
   "aria-describedby"?: string;
 }
@@ -619,6 +623,14 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setLineFocusEnabled.of(props.lineFocusMode ?? false) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.lineFocusMode]);
 
+  // Sync diff overlay: dispatch new snapshot body or clear when null/undefined.
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const body = props.diffSnapshotBody ?? null;
+    try { view.dispatch({ effects: setDiffSnapshot.of(body) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.diffSnapshotBody]);
+
   // Forward latest gutter-dot click callback to the module-level extension.
   useEffect(() => {
     gutterDotClickHandler.fn = props.onGutterDotClick ?? null;
@@ -667,6 +679,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       issueGutterField,
       issueGutterExtension,
       wordHighlightField,
+      diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,
       placeholder("Start writing…"),
@@ -690,7 +703,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   const lastCursorLineRef = useRef<number>(-1);
 
   return (
-    <div className="poem-cm-wrap" id={props.id}>
+    <div className={`poem-cm-wrap${props.diffSnapshotBody ? " is-diff-mode" : ""}`} id={props.id}>
       <CodeMirror
         aria-describedby={props["aria-describedby"]}
         value={localValue}

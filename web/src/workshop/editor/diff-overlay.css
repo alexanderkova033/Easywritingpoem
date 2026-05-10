@@ -1,0 +1,95 @@
+/* Inline diff overlay styling — applied via Decoration.mark / WidgetType. */
+
+.cm-diff-add {
+  background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 18%, transparent);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--ai-score-high, #5fba7d) 70%, transparent);
+  border-radius: 2px;
+  padding: 0 0.05rem;
+}
+
+.cm-diff-removed {
+  display: inline;
+  color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 70%, var(--muted));
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 10%, transparent);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  border-radius: 2px;
+  padding: 0 0.1rem;
+  margin: 0 0.05rem;
+  font-style: italic;
+  white-space: pre-wrap;
+  user-select: none;
+  cursor: help;
+  opacity: 0.78;
+}
+
+.cm-diff-removed:hover {
+  opacity: 1;
+}
+
+/* Subtle background tint on the editor while diff overlay is active. */
+.poem-cm-wrap.is-diff-mode .cm-content {
+  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+}
+
+/* Diff status pill — sits above editor when in diff mode. */
+.poem-diff-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.7rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid var(--hairline, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+  font-size: 0.78rem;
+}
+
+.poem-diff-bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.poem-diff-bar-label::before {
+  content: "↶";
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.poem-diff-bar-snapshot {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.poem-diff-bar-stats {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.55rem;
+  font-family: var(--font-metric);
+  font-size: 0.72rem;
+}
+
+.poem-diff-bar-stat-add  { color: var(--ai-score-high, #5fba7d); }
+.poem-diff-bar-stat-rem  { color: var(--ai-score-low,  #d95f5f); }
+
+.poem-diff-bar-exit {
+  appearance: none;
+  border: 1px solid var(--hairline, var(--border));
+  background: var(--surface);
+  color: var(--text);
+  padding: 0.25rem 0.65rem;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.poem-diff-bar-exit:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}

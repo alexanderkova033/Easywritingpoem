@@ -673,19 +673,10 @@
 }
 
 /* Mobile swipe affordance pill — only visible on narrow screens */
+/* .tools-swipe-handle — full mobile drag-handle styling lives in WorkshopLayout.css.
+   Hidden by default on desktop. */
 .tools-swipe-handle {
   display: none;
-  width: 2.4rem;
-  height: 0.28rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--border) 90%, var(--muted));
-  margin: 0.55rem auto 0;
-}
-
-@media (max-width: 899px) {
-  .tools-swipe-handle {
-    display: block;
-  }
 }
 
 .tools-sticky-head {

@@ -278,6 +278,10 @@ export interface WorkshopToolPanelsProps {
   snapshotFlash: boolean;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
+  /** Open inline word-level diff in the editor against this snapshot. */
+  onDiffSnapshot?: (snap: RevisionSnapshot) => void;
+  /** ID of snapshot currently shown as inline diff, or null. */
+  activeDiffSnapshotId?: string | null;
   compareLeftId: string;
   compareRightId: string;
   onCompareLeftChange: (id: string) => void;
@@ -338,6 +342,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     snapshotFlash,
     onRestoreRevision,
     onDeleteRevision,
+    onDiffSnapshot,
+    activeDiffSnapshotId,
     compareLeftId,
     compareRightId,
     onCompareLeftChange,
@@ -1346,6 +1352,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             snapshotFlash={snapshotFlash}
             onRestoreRevision={onRestoreRevision}
             onDeleteRevision={onDeleteRevision}
+            onDiffSnapshot={onDiffSnapshot}
+            activeDiffSnapshotId={activeDiffSnapshotId}
             compareLeftId={compareLeftId}
             compareRightId={compareRightId}
             onCompareLeftChange={onCompareLeftChange}

@@ -159,9 +159,9 @@
 
 @media (max-width: 899px) {
   /*
-   * Mobile layout: the poem-workshop fills the viewport (height: 100%, overflow: hidden).
-   * The workshop-grid fills the remaining height below the topbar via flex: 1 1 0.
-   * Two panels slide horizontally — only the active panel scrolls; the page never does.
+   * Mobile layout: bottom-sheet for tools.
+   * Editor stays full-viewport. Tools panel is fixed at bottom and snaps
+   * between closed (off-screen), half (~50vh), and full (~92vh) heights.
    */
   .workshop-grid {
     flex: 1 1 0;
@@ -171,24 +171,18 @@
     position: relative;
   }
 
-  /* Slide container — two panels at 100vw each, side by side */
   .workshop-grid .workshop-rail {
-    display: none; /* rail hidden on mobile; actions are in the bottom bar */
+    display: none;
   }
 
-  .editor-panel,
-  .tools-panel {
+  .editor-panel {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    /* Both panels are always position:absolute — no position switching during
-       transitions, so slides are pure GPU transform with zero layout reflow. */
     position: absolute;
     top: 0;
     left: 0;
     padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
-    will-change: transform;
-    transition: transform 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -196,16 +190,90 @@
     isolation: isolate;
   }
 
-  /* Default positions */
-  .editor-panel { transform: translateX(0); }
-  .tools-panel  { transform: translateX(100%); }
+  /* Tools panel as bottom sheet — fixed, full width, height snaps via top offset. */
+  .tools-panel {
+    width: 100%;
+    box-sizing: border-box;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Default closed — slid below viewport */
+    top: 100vh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    isolation: isolate;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 38px color-mix(in srgb, #000 26%, transparent);
+    transition: top 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 62;
+    will-change: top;
+  }
 
-  /* State-driven — only transforms change, never position */
-  .workshop-grid[data-mobile-view="editor"] .editor-panel { transform: translateX(0); }
-  .workshop-grid[data-mobile-view="editor"] .tools-panel  { transform: translateX(100%); }
+  /* Live drag — disable transition while finger is down. */
+  .tools-panel.is-dragging,
+  .tools-swipe-handle.is-dragging ~ .tools-scroll-body,
+  .tools-panel:has(.tools-swipe-handle.is-dragging) {
+    transition: none;
+  }
 
-  .workshop-grid[data-mobile-view="tools"] .editor-panel { transform: translateX(-100%); }
-  .workshop-grid[data-mobile-view="tools"] .tools-panel  { transform: translateX(0); }
+  /* Snap states (top of sheet from viewport top). */
+  .workshop-grid[data-mobile-sheet="closed"] .tools-panel { top: 100vh; }
+  .workshop-grid[data-mobile-sheet="half"]   .tools-panel { top: 50vh; }
+  .workshop-grid[data-mobile-sheet="full"]   .tools-panel { top: 8vh; }
+
+  /* While dragging, JS sets --sheet-top inline; honor it over snap state. */
+  .tools-panel[style*="--sheet-top"] { top: var(--sheet-top) !important; transition: none; }
+
+  /* Drag handle — wide hit target, visible pill. */
+  .tools-swipe-handle {
+    display: block;
+    width: 100%;
+    height: 1.4rem;
+    margin: 0;
+    padding-top: 0.55rem;
+    cursor: grab;
+    touch-action: none;
+    background: none;
+    position: relative;
+  }
+  .tools-swipe-handle::before {
+    content: "";
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2.6rem;
+    height: 0.32rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--border) 90%, var(--muted));
+    transition: background 0.18s ease, width 0.18s ease;
+  }
+  .tools-swipe-handle:hover::before { background: var(--muted); width: 3rem; }
+  .tools-swipe-handle.is-dragging { cursor: grabbing; }
+  .tools-swipe-handle.is-dragging::before { background: var(--accent); }
+
+  /* Mobile bottom-sheet scrim — only fades in at full snap. */
+  .mobile-sheet-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 61;
+    background: color-mix(in srgb, #000 0%, transparent);
+    pointer-events: none;
+    transition: background 0.28s ease;
+  }
+  .mobile-sheet-scrim-full {
+    background: color-mix(in srgb, #000 36%, transparent);
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tools-panel { transition: none; }
+    .mobile-sheet-scrim { transition: none; }
+  }
 
   /* The toggle button becomes a tab switcher in the tools head */
   .mobile-tools-panel-toggle {
@@ -243,18 +311,8 @@
     outline-offset: 2px;
   }
 
-  /* When tools are shown, hide collapsed state — always show content */
-  .tools-panel.is-mobile-collapsed .tool-bucket-row,
-  .tools-panel.is-mobile-collapsed .tools-overview-wrap,
-  .tools-panel.is-mobile-collapsed .tools-overview-strip,
-  .tools-panel.is-mobile-collapsed .tool-tabs,
-  .tools-panel.is-mobile-collapsed .tool-tab-panel {
-    display: none !important;
-  }
-
-  .tools-panel.is-mobile-collapsed {
-    max-height: none;
-  }
+  /* Bottom-sheet keeps content rendered — visibility is controlled by off-screen `top`. */
+  .tools-panel.is-mobile-collapsed { max-height: none; }
 
   /* Stagger-fade tool panel content as it slides into view */
   @keyframes tools-panel-fade-in {
