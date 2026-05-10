@@ -125,23 +125,39 @@
 }
 
 .rhyme-strength-row {
-  display: flex;
-  gap: 0.22rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  align-self: flex-start;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  padding: 2px;
+  font-size: 0.68rem;
+}
+
+.rhyme-strength-row::before {
+  content: "Match:";
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0 0.45rem 0 0.55rem;
+  align-self: center;
 }
 
 .rhyme-strength-btn {
   appearance: none;
-  flex: 1;
-  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--muted);
   font: inherit;
   font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.2rem 0.3rem;
+  padding: 0.18rem 0.55rem;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.12s, color 0.12s;
   text-align: center;
 }
 
@@ -152,8 +168,8 @@
 
 .rhyme-strength-btn.active {
   color: var(--text);
-  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--border)) inset;
 }
 
 .rhyme-strength-btn:focus-visible {
@@ -163,6 +179,19 @@
 
 .rhyme-finder-results-label {
   margin: 0.45rem 0 0.35rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.rhyme-finder-results-count {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.rhyme-finder-results-target {
+  font-weight: 700;
+  color: var(--accent);
 }
 
 .rhyme-finder-chips {

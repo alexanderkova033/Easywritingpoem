@@ -57,7 +57,7 @@ import { WorkshopBanners } from "./WorkshopBanners";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
-import { useIgnoredRhymes, useManualRhymeLinks } from "@/workshop/rhyme/rhyme-storage";
+import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
 import {
@@ -99,7 +99,8 @@ export function PoemWorkshop() {
   });
 
   const manualRhymeLinks = useManualRhymeLinks();
-  const m = usePoemWorkshopModel(rhymeBreadth, manualRhymeLinks.links);
+  const manualRhymeUnlinks = useManualRhymeUnlinks();
+  const m = usePoemWorkshopModel(rhymeBreadth, manualRhymeLinks.links, manualRhymeUnlinks.unlinks);
   const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
@@ -344,7 +345,7 @@ export function PoemWorkshop() {
   );
   const rhymeIgnored = useIgnoredRhymes();
   const [cursorLine, setCursorLine] = useState<number>(1);
-  const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number } | undefined>(undefined);
+  const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
   const rhymeBumpRef = useRef(0);
 
@@ -376,6 +377,7 @@ export function PoemWorkshop() {
     const word = endWordOfLineRaw(rhymeLinesRef.current[(cursorLine ?? 1) - 1]);
     if (!word) return;
     rhymeBumpRef.current += 1;
+    // Passive cursor parking — fill query but don't pop a collapsed panel open.
     setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
   }, [m.toolTab, cursorLine]);
 
@@ -389,7 +391,8 @@ export function PoemWorkshop() {
     const word = (hit.textContent || "").trim();
     if (!word) return;
     rhymeBumpRef.current += 1;
-    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
+    // Explicit click on a highlighted end-word — open the panel if collapsed.
+    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current, expand: true });
   }, [m.toolTab]);
 
   // Add transient highlights for end-words that rhyme with the currently
@@ -2359,6 +2362,9 @@ export function PoemWorkshop() {
             manualRhymeLinks={manualRhymeLinks.links}
             onAddManualRhymeLink={manualRhymeLinks.addLink}
             onRemoveManualRhymeLink={manualRhymeLinks.removeLink}
+            manualRhymeUnlinks={manualRhymeUnlinks.unlinks}
+            onAddManualRhymeUnlink={manualRhymeUnlinks.addUnlink}
+            onRemoveManualRhymeUnlink={manualRhymeUnlinks.removeUnlink}
           />
           </Suspense>
 

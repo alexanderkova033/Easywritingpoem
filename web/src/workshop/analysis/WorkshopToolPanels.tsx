@@ -316,11 +316,14 @@ export interface WorkshopToolPanelsProps {
   rhymeBreadth: RhymeBreadth;
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
   cursorLine?: number;
-  rhymeFinderQuery?: { word: string; bump: number };
+  rhymeFinderQuery?: { word: string; bump: number; expand?: boolean };
   onRhymeSuggestionHover?: (word: string | null) => void;
   manualRhymeLinks?: string[];
   onAddManualRhymeLink?: (a: string, b: string) => void;
   onRemoveManualRhymeLink?: (key: string) => void;
+  manualRhymeUnlinks?: string[];
+  onAddManualRhymeUnlink?: (a: string, b: string) => void;
+  onRemoveManualRhymeUnlink?: (key: string) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -387,6 +390,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     manualRhymeLinks = [],
     onAddManualRhymeLink,
     onRemoveManualRhymeLink,
+    manualRhymeUnlinks = [],
+    onAddManualRhymeUnlink,
+    onRemoveManualRhymeUnlink,
   } = props;
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
@@ -399,24 +405,28 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [meterOnlyHeuristic, setMeterOnlyHeuristic] = useState(false);
   const [rhymeSettingsOpen, setRhymeSettingsOpen] = useState(false);
   const [rhymeEditMode, setRhymeEditMode] = useState(false);
-  const [rhymeLinkSelection, setRhymeLinkSelection] = useState<Array<{ word: string; line: number }>>([]);
+  const [rhymeLinkSelection, setRhymeLinkSelection] = useState<Array<{ word: string; line: number; label: string | null }>>([]);
   const { ignoreCluster, isIgnored } = useIgnoredRhymes();
 
-  // Auto-link when two distinct end-words have been selected.
+  // Auto-resolve when two end-words are selected:
+  //   • different clusters (or one loose) → link them as a rhyme
+  //   • same cluster → split them apart (unlink)
   useEffect(() => {
     if (rhymeLinkSelection.length < 2) return;
     const [a, b] = rhymeLinkSelection;
     if (a && b && a.word.toLowerCase() !== b.word.toLowerCase()) {
-      onAddManualRhymeLink?.(a.word, b.word);
+      const sameCluster = a.label !== null && a.label === b.label;
+      if (sameCluster) onAddManualRhymeUnlink?.(a.word, b.word);
+      else onAddManualRhymeLink?.(a.word, b.word);
     }
     setRhymeLinkSelection([]);
-  }, [rhymeLinkSelection, onAddManualRhymeLink]);
+  }, [rhymeLinkSelection, onAddManualRhymeLink, onAddManualRhymeUnlink]);
 
-  const toggleRhymeSelection = (word: string, line: number) => {
+  const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
     setRhymeLinkSelection((prev) => {
       const i = prev.findIndex((p) => p.line === line);
       if (i >= 0) return prev.filter((_, idx) => idx !== i);
-      return [...prev, { word, line }].slice(-2);
+      return [...prev, { word, line, label }].slice(-2);
     });
   };
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
@@ -960,16 +970,18 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 <h4 className="tool-subheading rhyme-live-title">Rhymes already in your poem</h4>
                 <button
                   type="button"
-                  className={`rhyme-live-settings-btn${rhymeEditMode ? " is-open" : ""}`}
+                  className={`rhyme-edit-toggle${rhymeEditMode ? " is-active" : ""}`}
                   onClick={() => { setRhymeEditMode((v) => !v); setRhymeLinkSelection([]); }}
                   aria-pressed={rhymeEditMode}
-                  aria-label={rhymeEditMode ? "Exit rhyme editor" : "Edit rhymes manually"}
-                  title={rhymeEditMode ? "Done editing" : "Manually link rhymes the detector misses"}
+                  title={rhymeEditMode
+                    ? "Done editing — back to normal view"
+                    : "Manually link or split rhymes the detector got wrong"}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M10 13a5 5 0 0 0 7.07 0l1.42-1.42a5 5 0 1 0-7.07-7.07L10 6" />
+                    <path d="M14 11a5 5 0 0 0-7.07 0l-1.42 1.42a5 5 0 1 0 7.07 7.07L14 18" />
                   </svg>
+                  <span>{rhymeEditMode ? "Done" : "Fix rhymes"}</span>
                 </button>
                 <button
                   type="button"
@@ -987,7 +999,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </div>
               <p className="rhyme-live-sub muted small">
                 {rhymeEditMode
-                  ? "Pick two end-words to link as a rhyme. Click a chip again to deselect."
+                  ? "Pick two end-words: same group splits them apart, different groups (or unlinked) links them as a rhyme."
                   : "Lines whose end-words rhyme — click a word to jump to it."}
               </p>
             </div>
@@ -1069,9 +1081,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                                   key={n}
                                   type="button"
                                   className={`rhyme-word-chip${labelClass}${selected ? " is-selected" : ""}`}
-                                  onClick={() => rhymeEditMode ? toggleRhymeSelection(word, n) : goToLineEnd(n)}
+                                  onClick={() => rhymeEditMode ? toggleRhymeSelection(word, n, c.label ?? null) : goToLineEnd(n)}
                                   title={rhymeEditMode
-                                    ? (selected ? "Click to deselect" : "Click to select for linking")
+                                    ? (selected ? "Click to deselect" : "Pick another to link or split")
                                     : `Line ${n} — jump to end word`}
                                 >
                                   <span className="rhyme-word-chip-word">{word}</span>
@@ -1103,8 +1115,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                                 key={line}
                                 type="button"
                                 className={`rhyme-word-chip rhyme-word-chip-loose${selected ? " is-selected" : ""}`}
-                                onClick={() => toggleRhymeSelection(word, line)}
-                                title={selected ? "Click to deselect" : "Click to select for linking"}
+                                onClick={() => toggleRhymeSelection(word, line, null)}
+                                title={selected ? "Click to deselect" : "Pick another to link as a rhyme"}
                               >
                                 <span className="rhyme-word-chip-word">{word}</span>
                                 <span className="rhyme-word-chip-line">{line}</span>
@@ -1122,7 +1134,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             {manualRhymeLinks.length > 0 ? (
               <div className="rhyme-manual-links">
                 <div className="rhyme-manual-links-head">
-                  <span className="rhyme-stanza-label">Your rhyme links</span>
+                  <span className="rhyme-stanza-label">Linked as rhymes</span>
                   <span className="muted small">{manualRhymeLinks.length} pair{manualRhymeLinks.length === 1 ? "" : "s"}</span>
                 </div>
                 <ul className="rhyme-manual-links-list">
@@ -1142,6 +1154,39 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                           onClick={() => onRemoveManualRhymeLink?.(key)}
                           title="Remove rhyme link"
                           aria-label={`Remove rhyme link ${parts[0]} ↔ ${parts[1]}`}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+
+            {manualRhymeUnlinks.length > 0 ? (
+              <div className="rhyme-manual-links rhyme-manual-unlinks">
+                <div className="rhyme-manual-links-head">
+                  <span className="rhyme-stanza-label">Split apart</span>
+                  <span className="muted small">{manualRhymeUnlinks.length} pair{manualRhymeUnlinks.length === 1 ? "" : "s"}</span>
+                </div>
+                <ul className="rhyme-manual-links-list">
+                  {manualRhymeUnlinks.map((key) => {
+                    const parts = key.split("+");
+                    if (parts.length !== 2) return null;
+                    return (
+                      <li key={key} className="rhyme-manual-link-row">
+                        <span className="rhyme-manual-link-pair">
+                          <span className="rhyme-manual-link-word">{parts[0]}</span>
+                          <span className="rhyme-manual-link-arrow" aria-hidden>⊘</span>
+                          <span className="rhyme-manual-link-word">{parts[1]}</span>
+                        </span>
+                        <button
+                          type="button"
+                          className="rhyme-cluster-reject"
+                          onClick={() => onRemoveManualRhymeUnlink?.(key)}
+                          title="Remove split"
+                          aria-label={`Remove split ${parts[0]} ⊘ ${parts[1]}`}
                         >
                           ×
                         </button>

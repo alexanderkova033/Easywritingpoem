@@ -28,6 +28,7 @@ export function detectRhymeScheme(
   lines: string[],
   breadth: RhymeBreadth = "near",
   manualLinks: string[] = [],
+  manualUnlinks: string[] = [],
 ): string[] {
   const labels: string[] = new Array(lines.length).fill("");
   const endingToLabel = new Map<string, string>();
@@ -99,6 +100,45 @@ export function detectRhymeScheme(
     // Rewrite labels to representatives.
     for (let i = 0; i < labels.length; i++) {
       if (labels[i]) labels[i] = find(labels[i]!);
+    }
+  }
+
+  // Apply manual unlink pairs: for each (a,b), if any line whose end-word
+  // matches `a` shares a label with any line whose end-word matches `b`,
+  // shift all `b` lines onto a fresh label so the cluster splits.
+  if (manualUnlinks.length > 0) {
+    const letterFor = (n: number): string => {
+      const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if (n < 26) return base[n]!;
+      return base[Math.floor(n / 26) - 1]! + base[n % 26]!;
+    };
+    const usedLabels = new Set(labels.filter(Boolean));
+    let nextFresh = nextCode;
+    const freshLabel = () => {
+      let label = letterFor(nextFresh++);
+      while (usedLabels.has(label)) label = letterFor(nextFresh++);
+      usedLabels.add(label);
+      return label;
+    };
+
+    for (const key of manualUnlinks) {
+      const parts = key.split("+");
+      if (parts.length !== 2) continue;
+      const [a, b] = parts as [string, string];
+      const aLines: number[] = [];
+      const bLines: number[] = [];
+      for (let i = 0; i < lines.length; i++) {
+        const w = endNorms[i];
+        if (!w || !labels[i]) continue;
+        if (w === a) aLines.push(i);
+        else if (w === b) bLines.push(i);
+      }
+      if (aLines.length === 0 || bLines.length === 0) continue;
+      const aLabels = new Set(aLines.map((i) => labels[i]!));
+      const conflict = bLines.some((i) => aLabels.has(labels[i]!));
+      if (!conflict) continue;
+      const newLabel = freshLabel();
+      for (const i of bLines) labels[i] = newLabel;
     }
   }
 

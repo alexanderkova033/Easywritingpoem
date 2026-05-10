@@ -5,6 +5,7 @@ const RECENT_KEY = "easy-poems:rhyme-recent";
 const RECENT_MAX = 6;
 const IGNORE_KEY = "easy-poems:rhyme-ignored";
 const MANUAL_LINK_KEY = "easy-poems:rhyme-manual-links";
+const MANUAL_UNLINK_KEY = "easy-poems:rhyme-manual-unlinks";
 
 function readList(key: string): string[] {
   try {
@@ -142,6 +143,49 @@ export function useManualRhymeLinks() {
   }, []);
 
   return { links, addLink, removeLink, clearLinks };
+}
+
+/**
+ * Manual rhyme un-links — user-declared "these two end-words do NOT rhyme"
+ * pairs. Used to split apart false positives the heuristic groups together.
+ * Same alphabetised "wordA+wordB" key shape as manual links.
+ */
+export function useManualRhymeUnlinks() {
+  const [unlinks, setUnlinks] = useState<string[]>(() => readList(MANUAL_UNLINK_KEY));
+
+  const addUnlink = useCallback((wordA: string, wordB: string) => {
+    const key = makeLinkKey(wordA, wordB);
+    if (!key) return;
+    setUnlinks((prev) => {
+      if (prev.includes(key)) return prev;
+      const next = [...prev, key];
+      writeList(MANUAL_UNLINK_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const removeUnlink = useCallback((key: string) => {
+    setUnlinks((prev) => {
+      const next = prev.filter((k) => k !== key);
+      writeList(MANUAL_UNLINK_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const clearUnlinks = useCallback(() => {
+    setUnlinks([]);
+    writeList(MANUAL_UNLINK_KEY, []);
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === MANUAL_UNLINK_KEY) setUnlinks(readList(MANUAL_UNLINK_KEY));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  return { unlinks, addUnlink, removeUnlink, clearUnlinks };
 }
 
 export function useRecentLookups() {

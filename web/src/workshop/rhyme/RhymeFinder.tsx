@@ -58,8 +58,11 @@ function bucketBySyllables(words: DatamuseWord[]): Array<{ key: string; label: s
 interface RhymeFinderProps {
   onApplyWord?: (word: string) => void;
   /** When this changes, query is replaced with `word` and search runs. Bump
-   *  triggers re-apply for the same word (e.g. clicking the same end-word twice). */
-  externalQuery?: { word: string; bump: number };
+   *  triggers re-apply for the same word (e.g. clicking the same end-word twice).
+   *  `expand: true` also pops the collapsed panel open (use for explicit user
+   *  actions like clicking a highlighted end-word; omit for passive cursor
+   *  parking so the panel doesn't uncollapse on its own). */
+  externalQuery?: { word: string; bump: number; expand?: boolean };
   /** Hover-highlight callback — pass the hovered suggestion to highlight matching
    *  end-words in the editor. Called with null when hover ends. */
   onHoverWord?: (word: string | null) => void;
@@ -128,11 +131,13 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
     if (key === lastExternalKey.current) return;
     lastExternalKey.current = key;
     setQuery(w);
-    if (collapsed) {
+    if (externalQuery.expand && collapsed) {
       setCollapsed(false);
       writeCollapsed(false);
     }
-    void search(w, strength);
+    if (!collapsed || externalQuery.expand) {
+      void search(w, strength);
+    }
   }, [externalQuery, search, strength, collapsed]);
 
   const handleStrengthChange = (str: RhymeStrength) => {
@@ -270,7 +275,9 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
       {!collapsed && results !== null && results.length > 0 && (
         <div className="rhyme-finder-results">
           <p className="rhyme-finder-results-label muted small">
-            {results.length} {strength} rhyme{results.length !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
+            <span className="rhyme-finder-results-count">{results.length}</span>
+            <span>{strength} rhyme{results.length !== 1 ? "s" : ""} for</span>
+            <span className="rhyme-finder-results-target">{query}</span>
           </p>
           <div className="rhyme-bucket-stack">
             {buckets.map((b) => (

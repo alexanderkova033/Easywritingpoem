@@ -180,7 +180,7 @@ const SNAPSHOT_SAVE_MSG =
 const SNAPSHOT_DELETE_MSG =
   "Could not update snapshots in browser storage.";
 
-export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manualRhymeLinks: string[] = []) {
+export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manualRhymeLinks: string[] = [], manualRhymeUnlinks: string[] = []) {
   const [library, setLibrary] = useState<DraftLibrary>(() => {
     migrateLegacyDraftIfNeeded();
     return loadOrCreateLibrary();
@@ -430,8 +430,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     [heavyLines],
   );
   const heavyRhymeScheme = useMemo(
-    () => detectRhymeScheme(heavyLines, rhymeBreadth, manualRhymeLinks),
-    [heavyLines, rhymeBreadth, manualRhymeLinks],
+    () => detectRhymeScheme(heavyLines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks),
+    [heavyLines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks],
   );
   const stanzaRhymeGroups = useMemo(
     () => stanzaGroupsFromScheme(heavyLines, heavyRhymeScheme),
@@ -451,7 +451,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   );
   const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
-  const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks), [lines, rhymeBreadth, manualRhymeLinks]);
+  const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks), [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks]);
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),
