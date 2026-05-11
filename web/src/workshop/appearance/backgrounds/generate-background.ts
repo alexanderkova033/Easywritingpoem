@@ -1,4 +1,5 @@
 import type { CustomBackgroundTheme } from "./presets";
+import { parseAiErrorAndNotify } from "../../ai-cost/aiBudgetBus";
 
 /**
  * Calls POST /api/generate-background with a description or poem text and
@@ -16,14 +17,8 @@ export async function generateBackground(
   });
 
   if (!response.ok) {
-    let msg = `HTTP ${response.status}`;
-    try {
-      const body = (await response.json()) as { error?: string };
-      if (body?.error) msg = body.error;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(msg);
+    const { message } = await parseAiErrorAndNotify(response, "generate-background");
+    throw new Error(message);
   }
 
   return response.json() as Promise<CustomBackgroundTheme>;

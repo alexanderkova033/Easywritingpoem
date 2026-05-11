@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
+import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
 
@@ -53,6 +54,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: "Too many requests — please wait a moment." });
   }
 
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "suggest",
+    cooldownMs: cooldownFor("suggest"),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -76,11 +87,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const title = typeof body.title === "string" ? body.title : "";
   const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
-  const context = typeof body.context === "string" ? body.context : "";
-  const targetLine = typeof body.targetLine === "string" ? body.targetLine : undefined;
+  const context = typeof body.context === "string" ? body.context.slice(0, 1000) : "";
+  const targetLine = typeof body.targetLine === "string" ? body.targetLine.slice(0, 500) : undefined;
   const syllableTarget = typeof body.syllableTarget === "number" && body.syllableTarget > 0 ? body.syllableTarget : undefined;
   const syllableTolerance = typeof body.syllableTolerance === "number" && body.syllableTolerance >= 0 ? Math.min(10, Math.round(body.syllableTolerance)) : undefined;
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+
+  const totalChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
+  if (totalChars > 20_000) {
+    return res.status(400).json({ error: "Poem too long (max 20000 characters)." });
+  }
+  if (lines.length > 500) {
+    return res.status(400).json({ error: "Too many lines (max 500)." });
+  }
 
   const result = await callOpenAI(
     apiKey,
@@ -98,6 +117,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
 
   if (!result) return;
+
+  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
 
   let parsed: unknown;
   try {

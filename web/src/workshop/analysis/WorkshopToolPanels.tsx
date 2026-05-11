@@ -6,7 +6,6 @@ import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import {
   ALL_GOAL_KEYS,
-  canonicaliseRhymeScheme,
   hasAnyGoalSet,
 } from "@/workshop/goals/types";
 import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
@@ -22,7 +21,6 @@ import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type {
   LineMeterHint,
-  LineStressSource,
 } from "@/workshop/analysis/meter-hints";
 import { downloadTextFile } from "@/workshop/library/export-poem";
 import {
@@ -44,895 +42,31 @@ import {
 } from "./RevisionCompareSection";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import {
+  LINES_TABLE_MAX,
+  METER_TABLE_MAX,
+  checklistJumpLabel,
+  endWordOfLine,
+  meterStressSourceHint,
+  meterStressSourceMark,
+} from "@/workshop/analysis/tools/helpers";
+import {
+  EmptyState,
+  JumpLineList,
+  NoLinesYetHint,
+} from "@/workshop/analysis/tools/shared";
+import {
+  MetricGoalCard,
+  RhymeSchemeCard,
+  SyllableCapCard,
+} from "@/workshop/analysis/tools/GoalCards";
+import {
+  EdgeRepeatCard,
+  PhraseRepeatCard,
+  RepeatedWordCard,
+  RepetitionSummary,
+} from "@/workshop/analysis/tools/RepetitionCards";
 
-const LINES_TABLE_MAX = 400;
-const METER_TABLE_MAX = 400;
-
-function meterStressSourceMark(s: LineStressSource): string {
-  if (s === "lexicon") return "✓";
-  if (s === "mixed") return "~";
-  return "—";
-}
-
-function meterStressSourceHint(s: LineStressSource): string {
-  if (s === "lexicon") return "Stress from CMU dictionary for this line";
-  if (s === "mixed") return "Mixed dictionary + heuristic stress";
-  return "Heuristic stress (word not in CMU list or invented)";
-}
-
-function NoLinesYetHint() {
-  return (
-    <p className="tool-no-lines-hint muted small" role="status">
-      Add a line with text in the poem body to see live stats and pattern tools
-      here. Blank-only lines don&apos;t count.
-    </p>
-  );
-}
-
-function EmptyState({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="tool-empty" role="status" aria-live="polite">
-      <p className="tool-empty-title">{title}</p>
-      <div className="tool-empty-body">{children}</div>
-    </div>
-  );
-}
-
-function SoftPill({
-  soft,
-  onToggle,
-  label,
-}: {
-  soft: boolean;
-  onToggle: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      className={`goal-card-soft-pill${soft ? " goal-card-soft-pill--soft" : ""}`}
-      onClick={onToggle}
-      title={
-        soft
-          ? "Stretch goal — won't trigger issues. Click to make required."
-          : "Required — counts as an issue when unmet. Click to make a stretch goal."
-      }
-      aria-label={`${label}: ${soft ? "stretch goal" : "required"}`}
-    >
-      {soft ? "Stretch" : "Required"}
-    </button>
-  );
-}
-
-function NumberInput({
-  value,
-  onCommit,
-  ariaLabel,
-  placeholder,
-  withSteppers = false,
-}: {
-  value: number | undefined;
-  onCommit: (v: number | undefined) => void;
-  ariaLabel: string;
-  placeholder?: string;
-  withSteppers?: boolean;
-}) {
-  const [text, setText] = useState(value != null ? String(value) : "");
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    setText(value != null ? String(value) : "");
-  }, [value]);
-
-  function commit(raw: string) {
-    const trimmed = raw.trim();
-    if (trimmed === "") {
-      onCommit(undefined);
-      return;
-    }
-    const n = parseInt(trimmed, 10);
-    if (!Number.isFinite(n) || n < 1) {
-      setText(value != null ? String(value) : "");
-      return;
-    }
-    onCommit(n);
-  }
-
-  function step(delta: number) {
-    const base = value ?? 1;
-    onCommit(Math.max(1, base + delta));
-  }
-
-  const input = (
-    <input
-      ref={ref}
-      type="number"
-      className="goal-card-input"
-      min={1}
-      inputMode="numeric"
-      value={text}
-      placeholder={placeholder ?? "—"}
-      onChange={(e) => setText(e.target.value)}
-      onBlur={(e) => commit(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          commit(text);
-          ref.current?.blur();
-        }
-      }}
-      aria-label={ariaLabel}
-    />
-  );
-
-  if (!withSteppers) return input;
-
-  return (
-    <div className="goal-card-stepper">
-      <button
-        type="button"
-        className="goal-card-step"
-        onClick={() => step(-1)}
-        disabled={value != null && value <= 1}
-        aria-label={`Decrease ${ariaLabel}`}
-      >
-        −
-      </button>
-      {input}
-      <button
-        type="button"
-        className="goal-card-step"
-        onClick={() => step(1)}
-        aria-label={`Increase ${ariaLabel}`}
-      >
-        +
-      </button>
-    </div>
-  );
-}
-
-function MetricGoalCard({
-  label,
-  current,
-  hint,
-  isSoft,
-  onToggleSoft,
-  targetValue,
-  rangeMin,
-  rangeMax,
-  onSetTarget,
-  onSetRange,
-}: {
-  label: string;
-  current: number;
-  hint?: string;
-  isSoft: boolean;
-  onToggleSoft: () => void;
-  targetValue: number | undefined;
-  rangeMin: number | undefined;
-  rangeMax: number | undefined;
-  onSetTarget: (v: number | undefined) => void;
-  onSetRange: (min: number | undefined, max: number | undefined) => void;
-}) {
-  const hasTarget = targetValue != null;
-  const hasRange = rangeMin != null || rangeMax != null;
-  const hasGoal = hasTarget || hasRange;
-
-  const [mode, setMode] = useState<"exact" | "range">(
-    hasRange && !hasTarget ? "range" : "exact",
-  );
-  useEffect(() => {
-    if (hasRange && !hasTarget) setMode("range");
-    else if (hasTarget) setMode("exact");
-  }, [hasRange, hasTarget]);
-
-  const met = hasTarget
-    ? current === targetValue
-    : hasRange
-      ? (rangeMin == null || current >= rangeMin) &&
-        (rangeMax == null || current <= rangeMax)
-      : false;
-  const over = hasTarget
-    ? current > (targetValue as number)
-    : rangeMax != null && current > rangeMax;
-  const under = hasTarget
-    ? current < (targetValue as number)
-    : rangeMin != null && current < rangeMin;
-
-  const statusClass = !hasGoal
-    ? "goal-card--unset"
-    : met
-      ? "goal-card--met"
-      : over
-        ? "goal-card--over"
-        : under
-          ? "goal-card--under"
-          : "";
-
-  // Progress: exact mode = current/target; range mode = current/max (or min if only min set).
-  let pct: number | null = null;
-  if (hasTarget && (targetValue as number) > 0) {
-    pct = Math.min(1, current / (targetValue as number));
-  } else if (hasRange) {
-    const ref = rangeMax ?? rangeMin;
-    if (ref && ref > 0) pct = Math.min(1, current / ref);
-  }
-
-  const toggleMode = () => {
-    if (mode === "exact") {
-      // Move to range: seed min/max from target if present.
-      if (hasTarget) {
-        onSetRange(targetValue, targetValue);
-        onSetTarget(undefined);
-      }
-      setMode("range");
-    } else {
-      // Move to exact: seed from range min (or max).
-      const seed = rangeMin ?? rangeMax;
-      if (seed != null) onSetTarget(seed);
-      onSetRange(undefined, undefined);
-      setMode("exact");
-    }
-  };
-
-  const clearGoal = () => {
-    onSetTarget(undefined);
-    onSetRange(undefined, undefined);
-  };
-
-  return (
-    <div className={`goal-card ${statusClass}`} title={hint}>
-      <div className="goal-card-header">
-        <span className="goal-card-label">{label}</span>
-        {hasGoal ? (
-          <button
-            type="button"
-            className="goal-card-clear"
-            onClick={clearGoal}
-            aria-label={`Clear ${label} goal`}
-            title="Clear"
-          >
-            ×
-          </button>
-        ) : null}
-      </div>
-
-      <div className="goal-card-value-row">
-        <span className="goal-card-current">{current}</span>
-        {hasTarget ? (
-          <span
-            className={`goal-card-of${met ? " goal-card-of--met" : over ? " goal-card-of--over" : ""}`}
-          >
-            / {targetValue}
-          </span>
-        ) : hasRange ? (
-          <span className={`goal-card-of${met ? " goal-card-of--met" : ""}`}>
-            in {rangeMin ?? "·"}–{rangeMax ?? "·"}
-          </span>
-        ) : (
-          <span className="goal-card-of goal-card-of--unset">no goal</span>
-        )}
-      </div>
-
-      {mode === "exact" ? (
-        <NumberInput
-          value={targetValue}
-          onCommit={onSetTarget}
-          ariaLabel={`${label} target`}
-          withSteppers
-        />
-      ) : (
-        <div className="goal-card-range">
-          <NumberInput
-            value={rangeMin}
-            onCommit={(v) => onSetRange(v, rangeMax)}
-            ariaLabel={`${label} minimum`}
-            placeholder="min"
-          />
-          <span className="goal-card-range-sep" aria-hidden>
-            –
-          </span>
-          <NumberInput
-            value={rangeMax}
-            onCommit={(v) => onSetRange(rangeMin, v)}
-            ariaLabel={`${label} maximum`}
-            placeholder="max"
-          />
-        </div>
-      )}
-
-      <div className="goal-card-footer">
-        <div className="goal-card-mode" role="group" aria-label="Goal mode">
-          <button
-            type="button"
-            className={`goal-card-mode-btn${mode === "exact" ? " is-active" : ""}`}
-            onClick={() => mode !== "exact" && toggleMode()}
-            aria-pressed={mode === "exact"}
-          >
-            Exact
-          </button>
-          <button
-            type="button"
-            className={`goal-card-mode-btn${mode === "range" ? " is-active" : ""}`}
-            onClick={() => mode !== "range" && toggleMode()}
-            aria-pressed={mode === "range"}
-          >
-            Range
-          </button>
-        </div>
-        {hasGoal ? (
-          <SoftPill soft={isSoft} onToggle={onToggleSoft} label={label} />
-        ) : null}
-      </div>
-
-      {pct !== null ? (
-        <div className="goal-card-bar" aria-hidden>
-          <div
-            className={`goal-card-bar-fill${met ? " goal-card-bar--met" : over ? " goal-card-bar--over" : ""}`}
-            style={{ width: `${Math.round(pct * 100)}%` }}
-          />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function SyllableCapCard({
-  cap,
-  overLines,
-  goToLine,
-  isSoft,
-  onToggleSoft,
-  onSet,
-}: {
-  cap: number | undefined;
-  overLines: number[];
-  goToLine: (n: number) => void;
-  isSoft: boolean;
-  onToggleSoft: () => void;
-  onSet: (v: number | undefined) => void;
-}) {
-  const hasGoal = cap != null;
-  const overCount = overLines.length;
-  const met = hasGoal && overCount === 0;
-  const over = hasGoal && overCount > 0;
-  const statusClass = !hasGoal
-    ? "goal-card--unset"
-    : met
-      ? "goal-card--met"
-      : over
-        ? "goal-card--over"
-        : "";
-
-  return (
-    <div
-      className={`goal-card goal-card--cap ${statusClass}`}
-      title="Flag lines whose estimated syllable count exceeds this"
-    >
-      <div className="goal-card-header">
-        <span className="goal-card-label">Syllable cap</span>
-        {hasGoal ? (
-          <button
-            type="button"
-            className="goal-card-clear"
-            onClick={() => onSet(undefined)}
-            aria-label="Clear syllable cap goal"
-            title="Clear"
-          >
-            ×
-          </button>
-        ) : null}
-      </div>
-
-      <div className="goal-card-value-row">
-        <span className="goal-card-current">{cap ?? "—"}</span>
-        <span className="goal-card-of goal-card-of--cap">
-          max syllables/line
-        </span>
-      </div>
-
-      <NumberInput
-        value={cap}
-        onCommit={onSet}
-        ariaLabel="Syllable cap"
-        withSteppers
-      />
-
-      <div className="goal-card-footer">
-        <span className="goal-card-footer-spacer" />
-        {hasGoal ? (
-          <SoftPill soft={isSoft} onToggle={onToggleSoft} label="syllable cap" />
-        ) : null}
-      </div>
-
-      {hasGoal && overCount > 0 ? (
-        <p className="goal-card-extra">
-          {overCount} line{overCount === 1 ? "" : "s"} over cap:{" "}
-          <JumpLineList lineNumbers={overLines} goToLine={goToLine} />
-        </p>
-      ) : hasGoal ? (
-        <p className="goal-card-extra goal-card-extra--ok">
-          ✓ No lines over cap
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-interface RhymeSchemePreset {
-  label: string;
-  value: string;
-  hint: string;
-  perStanza?: boolean;
-}
-
-const RHYME_SCHEME_PRESETS: RhymeSchemePreset[] = [
-  { label: "None", value: "", hint: "No rhyme-scheme goal" },
-  { label: "AABB", value: "AABB", hint: "Couplets (per stanza)", perStanza: true },
-  { label: "ABAB", value: "ABAB", hint: "Alternating quatrain (per stanza)", perStanza: true },
-  { label: "ABBA", value: "ABBA", hint: "Enclosed rhyme (per stanza)", perStanza: true },
-  { label: "AABBA", value: "AABBA", hint: "Limerick" },
-  { label: "Ballad", value: "ABCB", hint: "Ballad stanza (per stanza)", perStanza: true },
-  {
-    label: "Sonnet",
-    value: "ABABCDCDEFEFGG",
-    hint: "Shakespearean sonnet (full)",
-  },
-];
-
-function RhymeSchemeCard({
-  target,
-  perStanza,
-  matches,
-  schemePerLine,
-  onSet,
-  onSetPerStanza,
-  isSoft,
-  onToggleSoft,
-}: {
-  target: string;
-  perStanza: boolean;
-  matches: boolean | null;
-  schemePerLine: import("@/workshop/goals/metrics").SchemeLineCompare[];
-  onSet: (scheme: string | undefined) => void;
-  onSetPerStanza: (v: boolean) => void;
-  isSoft: boolean;
-  onToggleSoft: () => void;
-}) {
-  const [custom, setCustom] = useState(target);
-  useEffect(() => {
-    setCustom(target);
-  }, [target]);
-
-  const canonCustom = canonicaliseRhymeScheme(custom);
-
-  const commitCustom = () => {
-    const canon = canonicaliseRhymeScheme(custom);
-    onSet(canon || undefined);
-  };
-
-  const hasGoal = target.length > 0;
-  const statusClass = !hasGoal
-    ? "goal-card--unset"
-    : matches === true
-      ? "goal-card--met"
-      : matches === false
-        ? "goal-card--over"
-        : "";
-
-  return (
-    <div className={`goal-card goal-card--scheme ${statusClass}`}>
-      <div className="goal-card-header">
-        <span className="goal-card-label">Rhyme scheme</span>
-        {hasGoal ? (
-          <button
-            type="button"
-            className="goal-card-clear"
-            onClick={() => onSet(undefined)}
-            aria-label="Clear rhyme scheme goal"
-            title="Clear"
-          >
-            ×
-          </button>
-        ) : null}
-      </div>
-
-      <div className="goal-scheme-chips" role="group" aria-label="Rhyme scheme presets">
-        {RHYME_SCHEME_PRESETS.map((p) => {
-          const active =
-            target === p.value && (!!p.perStanza === perStanza || p.value === "");
-          return (
-            <button
-              key={p.label}
-              type="button"
-              className={`goal-scheme-chip${active ? " is-active" : ""}`}
-              title={p.hint}
-              onClick={() => {
-                if (!p.value) {
-                  onSet(undefined);
-                  onSetPerStanza(false);
-                  return;
-                }
-                onSet(p.value);
-                onSetPerStanza(!!p.perStanza);
-              }}
-            >
-              {p.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="goal-scheme-custom">
-        <input
-          type="text"
-          className="goal-scheme-input"
-          value={custom}
-          placeholder="Custom pattern (e.g. ABBA)"
-          spellCheck={false}
-          onChange={(e) => setCustom(e.target.value.toUpperCase())}
-          onBlur={commitCustom}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commitCustom();
-            }
-          }}
-          aria-label="Custom rhyme scheme"
-        />
-        {canonCustom && canonCustom !== target ? (
-          <button
-            type="button"
-            className="linkish goal-scheme-apply"
-            onClick={commitCustom}
-          >
-            Apply
-          </button>
-        ) : null}
-      </div>
-
-      {hasGoal ? (
-        <label className="goal-scheme-perstanza" title="Repeat pattern within each stanza independently">
-          <input
-            type="checkbox"
-            checked={perStanza}
-            onChange={(e) => onSetPerStanza(e.target.checked)}
-          />
-          <span>Apply per stanza</span>
-        </label>
-      ) : null}
-
-      {hasGoal && schemePerLine.length > 0 ? (
-        <ul className="goal-scheme-lines" aria-label="Line-by-line rhyme comparison">
-          {schemePerLine.map((row) => (
-            <li
-              key={row.line}
-              className={`goal-scheme-line${row.matches ? " is-match" : " is-miss"}`}
-            >
-              <span className="goal-scheme-line-num">{row.line}</span>
-              <span className="goal-scheme-line-detected">
-                {row.detected || "·"}
-              </span>
-              <span className="goal-scheme-line-arrow" aria-hidden>
-                →
-              </span>
-              <span className="goal-scheme-line-expected">
-                {row.expected || "·"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : hasGoal ? (
-        <p className="muted small goal-scheme-empty">
-          Write a few lines to see how they line up against {target}.
-        </p>
-      ) : null}
-
-      <div className="goal-card-footer">
-        <span className="goal-card-footer-spacer" />
-        {hasGoal ? (
-          <SoftPill
-            soft={isSoft}
-            onToggle={onToggleSoft}
-            label="rhyme scheme"
-          />
-        ) : null}
-      </div>
-
-      {hasGoal && matches === true ? (
-        <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
-      ) : null}
-    </div>
-  );
-}
-
-function checklistJumpLabel(item: ChecklistItem): string {
-  if (item.focusTitleField) return "Focus title";
-  switch (item.openToolTab) {
-    case "lines":
-      return "Lines";
-    case "spell":
-      return "Spelling";
-    case "goals":
-      return "Goals";
-    default:
-      return "Open";
-  }
-}
-
-function endWordOfLine(line: string | undefined): string {
-  if (!line) return "";
-  const m = line.match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
-  return m ? m[0] : "";
-}
-
-function RepetitionSummary({
-  counts,
-}: {
-  counts: { words: number; phrases: number; patterns: number };
-}) {
-  const total = counts.words + counts.phrases + counts.patterns;
-  return (
-    <div className="rep-summary" role="status" aria-live="polite">
-      <div className="rep-summary-stat">
-        <span className="rep-summary-value">{total}</span>
-        <span className="rep-summary-label">repeats</span>
-      </div>
-      {counts.patterns > 0 ? (
-        <div className="rep-summary-stat rep-summary-craft">
-          <span className="rep-summary-value">{counts.patterns}</span>
-          <span className="rep-summary-label">pattern{counts.patterns === 1 ? "" : "s"}</span>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
-}
-
-function buildPhraseRegexSource(phrase: string): string {
-  const words = phrase.split(/\s+/).filter(Boolean).map(escapeRegex);
-  if (words.length === 0) return "(?!)";
-  return words.join("[^A-Za-z']+");
-}
-
-function buildPhraseRegex(phrase: string): RegExp {
-  return new RegExp(buildPhraseRegexSource(phrase), "gi");
-}
-
-function highlightInLine(
-  lineText: string,
-  match: string | RegExp,
-): ReactNode[] {
-  const out: ReactNode[] = [];
-  const source = typeof match === "string" ? escapeRegex(match) : match.source;
-  const flags = typeof match === "string" ? "gi" : (match.flags.includes("g") ? match.flags : match.flags + "g");
-  const re = new RegExp(source, flags);
-  let lastIndex = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(lineText)) !== null) {
-    if (m.index > lastIndex) {
-      out.push(lineText.slice(lastIndex, m.index));
-    }
-    out.push(
-      <mark key={`${m.index}-${m[0]}`} className="rep-highlight">
-        {m[0]}
-      </mark>,
-    );
-    lastIndex = m.index + m[0].length;
-    if (m[0].length === 0) re.lastIndex++;
-  }
-  if (lastIndex < lineText.length) {
-    out.push(lineText.slice(lastIndex));
-  }
-  return out;
-}
-
-function RepeatedWordCard({
-  item,
-  goToLine,
-}: {
-  item: RepeatedWord;
-  goToLine: (line1Based: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const variantList =
-    item.variants.length > 1 ? item.variants.join(", ") : null;
-  const wordRe = useMemo(() => {
-    const escaped = escapeRegex(item.word);
-    if (item.variants.length > 1) {
-      const stem = escaped.replace(/(ing|ed|es|s|y)$/i, "");
-      return new RegExp(`\\b${stem}\\w*\\b`, "gi");
-    }
-    return new RegExp(`\\b${escaped}\\b`, "gi");
-  }, [item.word, item.variants]);
-  const previewOccurrences = open ? item.occurrences : item.occurrences.slice(0, 2);
-  return (
-    <li className="rep-card">
-      <div className="rep-card-header">
-        <span className="rep-card-title">{item.display}</span>
-        <span className="rep-card-count">×{item.count}</span>
-        {variantList ? (
-          <span className="rep-card-variants" title={`Variants: ${variantList}`}>
-            {item.variants.length} forms
-          </span>
-        ) : null}
-        <span className="rep-card-gap muted small">
-          {item.minGap === Number.POSITIVE_INFINITY
-            ? ""
-            : item.minGap <= 0
-              ? "same line"
-              : item.minGap === 1
-                ? "adjacent lines"
-                : `${item.minGap} lines apart`}
-        </span>
-      </div>
-      <ul className="rep-snippets">
-        {previewOccurrences.map((o, i) => (
-          <li key={`${o.line}-${o.start}-${i}`} className="rep-snippet">
-            <button
-              type="button"
-              className="rep-line-jump linkish"
-              onClick={() => goToLine(o.line)}
-              aria-label={`Go to line ${o.line}`}
-            >
-              L{o.line}
-            </button>
-            <span className="rep-snippet-text">
-              {highlightInLine(o.lineText, wordRe)}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {item.occurrences.length > 2 ? (
-        <button
-          type="button"
-          className="rep-show-more linkish small"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? "Show less" : `Show ${item.occurrences.length - 2} more`}
-        </button>
-      ) : null}
-    </li>
-  );
-}
-
-function PhraseRepeatCard({
-  item,
-  goToLine,
-}: {
-  item: import("@/workshop/analysis/repeated-words").PhraseRepeat;
-  goToLine: (line1Based: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
-  const phraseRe = useMemo(() => buildPhraseRegex(item.phrase), [item.phrase]);
-  return (
-    <li className="rep-card">
-      <div className="rep-card-header">
-        <span className="rep-card-title">"{item.display}"</span>
-        <span className="rep-card-count">×{item.count}</span>
-        <span className="rep-card-meta muted small">{item.n}-word</span>
-      </div>
-      <ul className="rep-snippets">
-        {previewSnippets.map((s, i) => (
-          <li key={`${s.line}-${i}`} className="rep-snippet">
-            <button
-              type="button"
-              className="rep-line-jump linkish"
-              onClick={() => goToLine(s.line)}
-              aria-label={`Go to line ${s.line}`}
-            >
-              L{s.line}
-            </button>
-            <span className="rep-snippet-text">
-              {highlightInLine(s.text, phraseRe)}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {item.snippets.length > 2 ? (
-        <button
-          type="button"
-          className="rep-show-more linkish small"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? "Show less" : `Show ${item.snippets.length - 2} more`}
-        </button>
-      ) : null}
-    </li>
-  );
-}
-
-function EdgeRepeatCard({
-  group,
-  edge,
-  goToLine,
-}: {
-  group: import("@/workshop/analysis/repeated-words").AnaphoraGroup;
-  edge: "start" | "end";
-  goToLine: (line1Based: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const previewSnippets = open ? group.snippets : group.snippets.slice(0, 3);
-  const matchRe = useMemo(() => {
-    const body = buildPhraseRegexSource(group.prefix);
-    return edge === "start"
-      ? new RegExp(`^[^A-Za-z']*${body}`, "gi")
-      : new RegExp(`${body}[^A-Za-z']*$`, "gi");
-  }, [group.prefix, edge]);
-  return (
-    <li className="rep-card rep-card-pattern">
-      <div className="rep-card-header">
-        <span className="rep-pattern-icon" aria-hidden="true">
-          {edge === "start" ? "↦" : "↤"}
-        </span>
-        <span className="rep-card-title">"{group.display}"</span>
-        <span className="rep-card-count">×{group.lines.length}</span>
-        <span className="rep-card-meta muted small">
-          {edge === "start" ? "line-start" : "line-end"}
-        </span>
-      </div>
-      <ul className="rep-snippets">
-        {previewSnippets.map((s, i) => (
-          <li key={`${s.line}-${i}`} className="rep-snippet">
-            <button
-              type="button"
-              className="rep-line-jump linkish"
-              onClick={() => goToLine(s.line)}
-              aria-label={`Go to line ${s.line}`}
-            >
-              L{s.line}
-            </button>
-            <span className="rep-snippet-text">
-              {highlightInLine(s.text, matchRe)}
-            </span>
-          </li>
-        ))}
-      </ul>
-      {group.snippets.length > 3 ? (
-        <button
-          type="button"
-          className="rep-show-more linkish small"
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? "Show less" : `Show ${group.snippets.length - 3} more`}
-        </button>
-      ) : null}
-    </li>
-  );
-}
-
-function JumpLineList({
-  lineNumbers,
-  goToLine,
-}: {
-  lineNumbers: number[];
-  goToLine: (line1Based: number) => void;
-}) {
-  return (
-    <>
-      {lineNumbers.map((n, i) => (
-        <span key={`${n}-${i}`}>
-          {i > 0 ? ", " : null}
-          <button
-            type="button"
-            className="linkish line-jump-inline"
-            onClick={() => goToLine(n)}
-          >
-            {n}
-          </button>
-        </span>
-      ))}
-    </>
-  );
-}
 
 export interface WorkshopToolPanelsProps {
   toolTab: ToolTab;
@@ -1104,6 +238,26 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [rhymeSettingsOpen, setRhymeSettingsOpen] = useState(false);
   const [rhymeEditMode, setRhymeEditMode] = useState(false);
   const [rhymeLinkSelection, setRhymeLinkSelection] = useState<Array<{ word: string; line: number; label: string | null }>>([]);
+  const [manualLinksCollapsed, setManualLinksCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("easy-poems:rhyme-manual-links-collapsed") !== "0"; } catch { return true; }
+  });
+  const [manualUnlinksCollapsed, setManualUnlinksCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("easy-poems:rhyme-manual-unlinks-collapsed") !== "0"; } catch { return true; }
+  });
+  const toggleManualLinksCollapsed = () => {
+    setManualLinksCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem("easy-poems:rhyme-manual-links-collapsed", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const toggleManualUnlinksCollapsed = () => {
+    setManualUnlinksCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem("easy-poems:rhyme-manual-unlinks-collapsed", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
   const { ignoreCluster, isIgnored } = useIgnoredRhymes();
 
   const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
@@ -2166,11 +1320,19 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             })}
 
             {manualRhymeLinks.length > 0 ? (
-              <div className="rhyme-manual-links">
-                <div className="rhyme-manual-links-head">
+              <div className={`rhyme-manual-links${manualLinksCollapsed ? " is-collapsed" : ""}`}>
+                <button
+                  type="button"
+                  className="rhyme-manual-links-head rhyme-manual-links-toggle"
+                  onClick={toggleManualLinksCollapsed}
+                  aria-expanded={!manualLinksCollapsed}
+                  title={manualLinksCollapsed ? "Show linked rhymes" : "Hide linked rhymes"}
+                >
+                  <span className={`current-line-rhymes-chevron${manualLinksCollapsed ? "" : " is-open"}`} aria-hidden>▸</span>
                   <span className="rhyme-stanza-label">Linked as rhymes</span>
                   <span className="muted small">{manualRhymeLinks.length} pair{manualRhymeLinks.length === 1 ? "" : "s"}</span>
-                </div>
+                </button>
+                {manualLinksCollapsed ? null : (
                 <ul className="rhyme-manual-links-list">
                   {manualRhymeLinks.map((key) => {
                     const parts = key.split("+");
@@ -2223,15 +1385,24 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     );
                   })}
                 </ul>
+                )}
               </div>
             ) : null}
 
             {manualRhymeUnlinks.length > 0 ? (
-              <div className="rhyme-manual-links rhyme-manual-unlinks">
-                <div className="rhyme-manual-links-head">
+              <div className={`rhyme-manual-links rhyme-manual-unlinks${manualUnlinksCollapsed ? " is-collapsed" : ""}`}>
+                <button
+                  type="button"
+                  className="rhyme-manual-links-head rhyme-manual-links-toggle"
+                  onClick={toggleManualUnlinksCollapsed}
+                  aria-expanded={!manualUnlinksCollapsed}
+                  title={manualUnlinksCollapsed ? "Show split pairs" : "Hide split pairs"}
+                >
+                  <span className={`current-line-rhymes-chevron${manualUnlinksCollapsed ? "" : " is-open"}`} aria-hidden>▸</span>
                   <span className="rhyme-stanza-label">Split apart</span>
                   <span className="muted small">{manualRhymeUnlinks.length} pair{manualRhymeUnlinks.length === 1 ? "" : "s"}</span>
-                </div>
+                </button>
+                {manualUnlinksCollapsed ? null : (
                 <ul className="rhyme-manual-links-list">
                   {manualRhymeUnlinks.map((key) => {
                     const parts = key.split("+");
@@ -2256,6 +1427,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     );
                   })}
                 </ul>
+                )}
               </div>
             ) : null}
           </div>

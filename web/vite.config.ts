@@ -52,13 +52,14 @@ export default defineConfig({
           if (id.includes("node_modules/docx")) {
             return "vendor-docx";
           }
-          // All tool-panel components are lazy-loaded at runtime; bundle them
-          // together so they're cached as one unit after first use.
+          // Tool-panel analysis code is part of the initial workshop bundle
+          // (the panels render immediately). voice/ stays grouped here too.
+          // reading/, sharing/, and appearance/ are lazy-loaded via React.lazy
+          // — Vite splits each into its own dynamic chunk, so do NOT include
+          // them here. Listing them would defeat the code-split.
           if (
             id.includes("/src/workshop/analysis/") ||
-            id.includes("/src/workshop/voice/") ||
-            id.includes("/src/workshop/reading/") ||
-            id.includes("/src/workshop/sharing/")
+            id.includes("/src/workshop/voice/")
           ) {
             return "workshop-tools";
           }

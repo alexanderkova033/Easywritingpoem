@@ -14,6 +14,7 @@ import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { computeVoiceFingerprint } from "@/workshop/analysis/voice-fingerprint";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
+import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-5-nano";
@@ -384,8 +385,8 @@ function IssueThread({
         }),
       });
       if (!res.ok) {
-        const d = (await res.json()) as { error?: string };
-        throw new Error(d.error ?? `HTTP ${res.status}`);
+        const { message } = await parseAiErrorAndNotify(res, "chat");
+        throw new Error(message);
       }
       const d = (await res.json()) as { reply?: string };
       setMessages((prev) => [...prev, { role: "assistant", text: d.reply ?? "No response." }]);
@@ -1836,8 +1837,8 @@ function AiChat({
         body: JSON.stringify({ title, lines, message: text, analysisContext, history: priorHistory, model }),
       });
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
-        throw new Error(data.error ?? `HTTP ${res.status}`);
+        const { message } = await parseAiErrorAndNotify(res, "chat");
+        throw new Error(message);
       }
       const data = (await res.json()) as { reply?: string };
       const reply = data.reply ?? "No response.";

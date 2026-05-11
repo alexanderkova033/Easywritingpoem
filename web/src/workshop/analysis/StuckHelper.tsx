@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import "./StuckHelper.css";
 
 type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
@@ -35,8 +36,8 @@ async function fetchSuggestions(
     body: JSON.stringify({ title, lines, type, context, targetLine }),
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error ?? `HTTP ${res.status}`);
+    const { message } = await parseAiErrorAndNotify(res, "suggest");
+    throw new Error(message);
   }
   return res.json() as Promise<SuggestResult>;
 }

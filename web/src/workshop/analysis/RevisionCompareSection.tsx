@@ -94,6 +94,43 @@ function datePillFor(iso: string): {
   return { label, tone: "older" };
 }
 
+type BucketKey = "today" | "yesterday" | "week" | "older";
+
+const BUCKET_LABELS: Record<BucketKey, string> = {
+  today: "Today",
+  yesterday: "Yesterday",
+  week: "Earlier this week",
+  older: "Before",
+};
+
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function startOfWeek(d: Date): Date {
+  const x = startOfDay(d);
+  const dow = x.getDay();
+  const diff = (dow + 6) % 7;
+  x.setDate(x.getDate() - diff);
+  return x;
+}
+
+function bucketFor(iso: string, now: Date): BucketKey {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "older";
+  const today = startOfDay(now);
+  const yest = new Date(today);
+  yest.setDate(yest.getDate() - 1);
+  const weekStart = startOfWeek(now);
+  const t = d.getTime();
+  if (t >= today.getTime()) return "today";
+  if (t >= yest.getTime()) return "yesterday";
+  if (t >= weekStart.getTime()) return "week";
+  return "older";
+}
+
 function fmtSignedCount(n: number, singular: string, plural: string): string {
   const sign = n > 0 ? "+" : "−";
   const abs = Math.abs(n);
@@ -180,6 +217,25 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     });
   }, [revisions]);
 
+  const groupedRows = useMemo<
+    Array<{ key: BucketKey; rows: RowMeta[] }>
+  >(() => {
+    const now = new Date();
+    const buckets: Record<BucketKey, RowMeta[]> = {
+      today: [],
+      yesterday: [],
+      week: [],
+      older: [],
+    };
+    for (const r of rowsMeta) {
+      buckets[bucketFor(r.snap.createdAt, now)].push(r);
+    }
+    const order: BucketKey[] = ["today", "yesterday", "week", "older"];
+    return order
+      .filter((k) => buckets[k].length > 0)
+      .map((k) => ({ key: k, rows: buckets[k] }));
+  }, [rowsMeta]);
+
   const flashStatus =
     snapshotFlash === true || snapshotFlash === "saved"
       ? "saved"
@@ -215,21 +271,21 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     const isFrom = compareLeftId === snap.id;
     const isTo = compareRightId === snap.id;
     return (
-      <div className="revision-pick-row">
+      <div className="snap-pick" role="group" aria-label="Pick for compare">
         <button
           type="button"
-          className={`revision-pick-chip${isFrom ? " is-active" : ""}`}
+          className={`snap-pick-chip snap-pick-from${isFrom ? " is-active" : ""}`}
           aria-pressed={isFrom}
-          title={isFrom ? "Currently the From version" : "Use as From"}
+          title={isFrom ? "Currently the From snapshot" : "Use as From"}
           onClick={() => pickAs(snap.id, "from")}
         >
           From
         </button>
         <button
           type="button"
-          className={`revision-pick-chip${isTo ? " is-active" : ""}`}
+          className={`snap-pick-chip snap-pick-to${isTo ? " is-active" : ""}`}
           aria-pressed={isTo}
-          title={isTo ? "Currently the To version" : "Use as To"}
+          title={isTo ? "Currently the To snapshot" : "Use as To"}
           onClick={() => pickAs(snap.id, "to")}
         >
           To
@@ -248,88 +304,88 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
           ? "neg"
           : "zero";
     const isDuplicate = duplicateIds.has(s.id);
+    const isDiffActive = activeDiffSnapshotId === s.id;
     return (
       <li
         key={s.id}
-        className={`revision-list-item revision-list-item-compact${isDuplicate ? " is-duplicate" : ""}`}
+        className={`snap-card${isDuplicate ? " is-duplicate" : ""}${isDiffActive ? " is-diff-active" : ""}`}
       >
-        <div className="revision-row-main">
-          {renderRowControls(s)}
-          {row.datePill ? (
+        <div className="snap-card-body">
+          <p className="snap-snippet" title={s.body || "(empty)"}>
+            {row.snippet}
+          </p>
+          <div className="snap-meta">
             <span
-              className={`revision-date-pill revision-date-pill-${row.dateTone}`}
+              className="snap-meta-time"
               title={formatSnapshotWhen(s.createdAt)}
             >
-              {row.datePill}
+              {formatRelativeSnapshotWhen(s.createdAt)}
             </span>
-          ) : null}
-          <span
-            className="revision-when"
-            title={formatSnapshotWhen(s.createdAt)}
-          >
-            {formatRelativeSnapshotWhen(s.createdAt)}
-          </span>
-          {s.label ? (
-            <span className="revision-label">{s.label}</span>
-          ) : null}
-          <span
-            className="revision-snippet revision-snippet-inline"
-            title={s.body || "(empty)"}
-          >
-            {row.snippet}
-          </span>
-          {phrase ? (
-            <span
-              className={`revision-change-note revision-change-${netSign}`}
-              title="Change since previous snapshot"
-            >
-              {phrase}
-            </span>
-          ) : null}
-          {isDuplicate ? (
-            <span
-              className="revision-dupe-tag"
-              title="Same text as a newer snapshot"
-            >
-              duplicate
-            </span>
-          ) : null}
+            {phrase ? (
+              <span
+                className={`snap-meta-delta snap-meta-delta-${netSign}`}
+                title="Change since previous snapshot"
+              >
+                {phrase}
+              </span>
+            ) : null}
+            {s.label ? (
+              <span className="snap-meta-label" title={s.label}>
+                {s.label}
+              </span>
+            ) : null}
+            {isDuplicate ? (
+              <span
+                className="snap-meta-dupe"
+                title="Same text as a newer snapshot"
+              >
+                duplicate
+              </span>
+            ) : null}
+          </div>
         </div>
-        <div className="revision-actions revision-actions-compact">
-          {onDiffSnapshot && (
+        <div className="snap-card-side">
+          {renderRowControls(s)}
+          <div className="snap-actions">
+            {onDiffSnapshot && (
+              <button
+                type="button"
+                className={`snap-action-btn${isDiffActive ? " is-active" : ""}`}
+                title={
+                  isDiffActive
+                    ? "Exit inline diff in editor"
+                    : "Show word-level diff inline in editor"
+                }
+                aria-label={isDiffActive ? "Exit editor diff" : "Show in editor"}
+                onClick={() => onDiffSnapshot(s)}
+              >
+                {isDiffActive ? "Exit" : "Editor"}
+              </button>
+            )}
             <button
               type="button"
-              className={`linkish revision-diff-inline-link${activeDiffSnapshotId === s.id ? " is-active" : ""}`}
-              title={
-                activeDiffSnapshotId === s.id
-                  ? "Currently shown as inline diff in the editor — click to exit"
-                  : "Show word-level diff inline in the editor"
-              }
-              onClick={() => onDiffSnapshot(s)}
+              className="snap-action-btn"
+              title="Replace current draft with this snapshot"
+              onClick={() => {
+                setPendingDeleteId(null);
+                setPendingRestore((cur) => (cur?.id === s.id ? null : s));
+              }}
             >
-              {activeDiffSnapshotId === s.id ? "Exit diff" : "Editor"}
+              Restore
             </button>
-          )}
-          <button
-            type="button"
-            className="linkish"
-            onClick={() => {
-              setPendingDeleteId(null);
-              setPendingRestore((cur) => (cur?.id === s.id ? null : s));
-            }}
-          >
-            Restore
-          </button>
-          <button
-            type="button"
-            className="linkish danger-link"
-            onClick={() => {
-              setPendingRestore(null);
-              setPendingDeleteId((cur) => (cur === s.id ? null : s.id));
-            }}
-          >
-            Delete
-          </button>
+            <button
+              type="button"
+              className="snap-action-btn snap-action-danger"
+              title="Delete this snapshot"
+              aria-label="Delete snapshot"
+              onClick={() => {
+                setPendingRestore(null);
+                setPendingDeleteId((cur) => (cur === s.id ? null : s.id));
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
         {pendingRestore?.id === s.id ? (
           <div
@@ -420,64 +476,85 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
 
   return (
     <div
-      className="revision-section"
-      aria-label="Revision history"
+      className="snap-section"
+      aria-label="Snapshots"
       id="revision-compare"
     >
-      <h3
-        className={embedInTools ? "sr-only" : "revision-section-title"}
-      >
-        Snapshots
-      </h3>
-      <p className="muted small">This device only · {revisions.length}/50</p>
-      <div className="snapshot-save-row">
+      <header className="snap-section-header">
+        <div className="snap-section-title">
+          <h3 className={embedInTools ? "sr-only" : "snap-section-h"}>
+            Snapshots
+          </h3>
+          <span className="snap-section-count" title="This device only">
+            {revisions.length}
+            <span className="snap-section-count-max">/50</span>
+          </span>
+        </div>
+        <p className="snap-section-hint muted small">Stored on this device</p>
+      </header>
+
+      <div className="snap-save-bar">
         <input
           type="text"
-          className="snapshot-label-input"
+          className="snap-save-input"
           value={snapshotLabel}
           onChange={(e) => onSnapshotLabelChange(e.target.value)}
-          placeholder="Label (optional)"
+          placeholder="Label this snapshot (optional)"
           autoComplete="off"
           aria-label="Snapshot label"
           spellCheck={false}
         />
-        <button type="button" className="small-btn" onClick={onSaveSnapshot}>
-          Save snapshot
+        <button
+          type="button"
+          className="snap-save-btn"
+          onClick={onSaveSnapshot}
+          title="Save current draft as a snapshot"
+        >
+          <span aria-hidden="true" className="snap-save-btn-icon">＋</span>
+          Save
         </button>
       </div>
       {flashStatus === "saved" ? (
-        <p className="snapshot-saved-flash" role="status" aria-live="polite">
-          Snapshot saved
+        <p
+          className="snap-flash snap-flash-saved"
+          role="status"
+          aria-live="polite"
+        >
+          ✓ Snapshot saved
         </p>
       ) : flashStatus === "duplicate" ? (
-        <p className="snapshot-saved-flash snapshot-saved-flash-duplicate" role="status" aria-live="polite">
-          No changes since last snapshot — nothing new to save
+        <p
+          className="snap-flash snap-flash-duplicate"
+          role="status"
+          aria-live="polite"
+        >
+          No changes since last snapshot
         </p>
       ) : null}
 
       {onDeleteDuplicates && duplicateCount > 0 ? (
         pendingDeleteDupes ? (
           <div
-            className="revision-inline-confirm revision-inline-confirm-danger"
+            className="snap-dupes-strip snap-dupes-strip-confirm"
             role="group"
             aria-label="Confirm delete duplicate snapshots"
           >
-            <p className="revision-inline-confirm-text">
+            <span className="snap-dupes-text">
               Delete {duplicateCount} duplicate{" "}
-              {duplicateCount === 1 ? "snapshot" : "snapshots"}? Newest copy of
-              each version is kept.
-            </p>
-            <div className="revision-inline-confirm-actions">
+              {duplicateCount === 1 ? "snapshot" : "snapshots"}? Newest of each
+              is kept.
+            </span>
+            <div className="snap-dupes-actions">
               <button
                 type="button"
-                className="small-btn"
+                className="snap-action-btn"
                 onClick={() => setPendingDeleteDupes(false)}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                className="small-btn danger-btn"
+                className="snap-action-btn snap-action-danger snap-action-solid"
                 onClick={() => {
                   onDeleteDuplicates();
                   setPendingDeleteDupes(false);
@@ -488,65 +565,91 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
             </div>
           </div>
         ) : (
-          <div className="revision-dupes-strip">
-            <span className="muted small">
-              {duplicateCount} duplicate{duplicateCount === 1 ? "" : "s"} found
+          <button
+            type="button"
+            className="snap-dupes-strip"
+            onClick={() => setPendingDeleteDupes(true)}
+            title="Remove snapshots that match a newer one"
+          >
+            <span className="snap-dupes-badge" aria-hidden="true">
+              {duplicateCount}
             </span>
-            <button
-              type="button"
-              className="linkish danger-link"
-              onClick={() => setPendingDeleteDupes(true)}
-            >
-              Delete duplicates
-            </button>
-          </div>
+            <span className="snap-dupes-text">
+              duplicate{duplicateCount === 1 ? "" : "s"} found
+            </span>
+            <span className="snap-dupes-cta">Clean up →</span>
+          </button>
         )
       ) : null}
 
-      <div className="revision-draft-row">
-        <div className="revision-draft-row-label">
-          <span className="revision-when">Current draft</span>
-          <span className="revision-label revision-label-live">live</span>
+      <div className="snap-card snap-card-live">
+        <div className="snap-card-body">
+          <p className="snap-snippet snap-snippet-live">
+            <span className="snap-live-dot" aria-hidden="true" />
+            Current draft
+          </p>
+          <div className="snap-meta">
+            <span className="snap-meta-time">Editing now</span>
+            <span className="snap-meta-live">LIVE</span>
+          </div>
         </div>
-        <div className="revision-pick-row">
-          <button
-            type="button"
-            className={`revision-pick-chip${isDraftFrom ? " is-active" : ""}`}
-            aria-pressed={isDraftFrom}
-            onClick={() => {
-              if (isDraftFrom) return;
-              onCompareLeftChange(COMPARE_CURRENT_ID);
-              if (compareRightId === COMPARE_CURRENT_ID) {
-                const first = revisions[0];
-                onCompareRightChange(first ? first.id : COMPARE_CURRENT_ID);
-              }
-            }}
-          >
-            From
-          </button>
-          <button
-            type="button"
-            className={`revision-pick-chip${isDraftTo ? " is-active" : ""}`}
-            aria-pressed={isDraftTo}
-            onClick={() => {
-              if (isDraftTo) return;
-              onCompareRightChange(COMPARE_CURRENT_ID);
-              if (compareLeftId === COMPARE_CURRENT_ID) {
-                const first = revisions[0];
-                onCompareLeftChange(first ? first.id : COMPARE_CURRENT_ID);
-              }
-            }}
-          >
-            To
-          </button>
+        <div className="snap-card-side">
+          <div className="snap-pick" role="group" aria-label="Pick current draft for compare">
+            <button
+              type="button"
+              className={`snap-pick-chip snap-pick-from${isDraftFrom ? " is-active" : ""}`}
+              aria-pressed={isDraftFrom}
+              onClick={() => {
+                if (isDraftFrom) return;
+                onCompareLeftChange(COMPARE_CURRENT_ID);
+                if (compareRightId === COMPARE_CURRENT_ID) {
+                  const first = revisions[0];
+                  onCompareRightChange(first ? first.id : COMPARE_CURRENT_ID);
+                }
+              }}
+            >
+              From
+            </button>
+            <button
+              type="button"
+              className={`snap-pick-chip snap-pick-to${isDraftTo ? " is-active" : ""}`}
+              aria-pressed={isDraftTo}
+              onClick={() => {
+                if (isDraftTo) return;
+                onCompareRightChange(COMPARE_CURRENT_ID);
+                if (compareLeftId === COMPARE_CURRENT_ID) {
+                  const first = revisions[0];
+                  onCompareLeftChange(first ? first.id : COMPARE_CURRENT_ID);
+                }
+              }}
+            >
+              To
+            </button>
+          </div>
         </div>
       </div>
 
       {revisions.length === 0 ? (
-        <p className="muted small">No snapshots yet.</p>
+        <div className="snap-empty">
+          <span className="snap-empty-icon" aria-hidden="true">⌛</span>
+          <p className="snap-empty-text">
+            No snapshots yet. Save one to preserve this draft.
+          </p>
+        </div>
       ) : (
-        <div className="revision-list-scroll">
-          <ul className="revision-list">{rowsMeta.map(renderSnapItem)}</ul>
+        <div className="snap-list-scroll">
+          {groupedRows.map((group) => (
+            <section key={group.key} className="snap-group">
+              <h4 className="snap-group-heading">
+                <span className="snap-group-bar" aria-hidden="true" />
+                <span className="snap-group-label">
+                  {BUCKET_LABELS[group.key]}
+                </span>
+                <span className="snap-group-count">{group.rows.length}</span>
+              </h4>
+              <ul className="snap-list">{group.rows.map(renderSnapItem)}</ul>
+            </section>
+          ))}
         </div>
       )}
 

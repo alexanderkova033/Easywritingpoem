@@ -81,7 +81,7 @@ import {
   meterHintsForBody,
   summarizeMeterCoverage,
 } from "@/workshop/analysis/meter-hints";
-import { analyzeRepetition } from "@/workshop/analysis/repeated-words";
+import { useHeavyAnalysis } from "@/workshop/analysis/use-heavy-analysis";
 import { buildPublicationChecklist } from "@/workshop/analysis/publication-checklist";
 import {
   lightAssonanceClusters,
@@ -457,7 +457,10 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     () => lightConsonanceClusters(heavyLines),
     [heavyLines],
   );
-  const repetition = useMemo(() => analyzeRepetition(heavyLines), [heavyLines]);
+  // Repetition analysis runs off-main-thread via a Web Worker (the heaviest
+  // single per-keystroke analysis). The hook handles race-protection and
+  // falls back to synchronous main-thread execution when Worker is missing.
+  const { repetition } = useHeavyAnalysis(heavyLines);
   const repeated = repetition.words;
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
   const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks), [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks]);

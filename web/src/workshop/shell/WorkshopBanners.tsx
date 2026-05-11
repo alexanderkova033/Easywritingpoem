@@ -1,10 +1,12 @@
 import type { usePoemWorkshopModel } from "./usePoemWorkshopModel";
+import { AiBudgetBanner } from "@/workshop/ai-cost/AiBudgetBanner";
 
 type Model = ReturnType<typeof usePoemWorkshopModel>;
 
 export function WorkshopBanners({ m }: { m: Model }) {
   return (
     <>
+      <AiBudgetBanner />
       {m.persistenceError ? (
         <div
           className="persistence-banner"

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } fr
 import { createPortal } from "react-dom";
 import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
+import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -29,7 +30,10 @@ async function fetchLineSuggestions(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, lines, type: "line", targetLine, syllableTarget, syllableTolerance }),
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const { message } = await parseAiErrorAndNotify(res, "suggest");
+    throw new Error(message);
+  }
   const data = (await res.json()) as { suggestions?: string[] };
   return Array.isArray(data.suggestions) ? data.suggestions : [];
 }

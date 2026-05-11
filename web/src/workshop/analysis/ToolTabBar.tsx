@@ -144,7 +144,7 @@ export const TOOL_TABS: {
   { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
   { id: "repeat",    label: "Repeats",   desc: "Words that appear more than once",                             Icon: IconTabRepeat },
   { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
-  { id: "snapshots", label: "Versions",  desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
+  { id: "snapshots", label: "Snapshots", desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
   { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
 ];
 

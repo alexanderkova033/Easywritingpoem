@@ -1,7 +1,19 @@
+import { lazy, Suspense } from "react";
 import { TemplatesModal } from "./TemplatesModal";
-import { ReadingModeModal } from "@/workshop/reading/ReadingModeModal";
-import { ShareModal, ViewSharedPoem } from "@/workshop/sharing/ShareModal";
 import type { SharedPoem } from "@/workshop/sharing/sharing";
+
+// Heavy modals are lazy — first paint of the workshop doesn't need them.
+// Each opens infrequently and ships its own CSS, so deferring them keeps
+// the initial JS payload smaller and improves first-load over slow links.
+const ReadingModeModal = lazy(() =>
+  import("@/workshop/reading/ReadingModeModal").then((m) => ({ default: m.ReadingModeModal })),
+);
+const ShareModal = lazy(() =>
+  import("@/workshop/sharing/ShareModal").then((m) => ({ default: m.ShareModal })),
+);
+const ViewSharedPoem = lazy(() =>
+  import("@/workshop/sharing/ShareModal").then((m) => ({ default: m.ViewSharedPoem })),
+);
 
 interface WorkshopModalsProps {
   // Templates
@@ -39,27 +51,33 @@ export function WorkshopModals({
       )}
 
       {isReadingMode && (
-        <ReadingModeModal
-          title={title}
-          formNote={formNote}
-          body={body}
-          onClose={onCloseReadingMode}
-        />
+        <Suspense fallback={null}>
+          <ReadingModeModal
+            title={title}
+            formNote={formNote}
+            body={body}
+            onClose={onCloseReadingMode}
+          />
+        </Suspense>
       )}
 
       {isShareOpen && (
-        <ShareModal
-          poem={{ title, body }}
-          onClose={onCloseShare}
-        />
+        <Suspense fallback={null}>
+          <ShareModal
+            poem={{ title, body }}
+            onClose={onCloseShare}
+          />
+        </Suspense>
       )}
 
       {sharedPoemView && (
-        <ViewSharedPoem
-          poem={sharedPoemView}
-          onDismiss={onDismissSharedPoem}
-          onAddToDrafts={() => onAddSharedPoemToDrafts(sharedPoemView)}
-        />
+        <Suspense fallback={null}>
+          <ViewSharedPoem
+            poem={sharedPoemView}
+            onDismiss={onDismissSharedPoem}
+            onAddToDrafts={() => onAddSharedPoemToDrafts(sharedPoemView)}
+          />
+        </Suspense>
       )}
     </>
   );

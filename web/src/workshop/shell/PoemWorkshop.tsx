@@ -10,7 +10,12 @@ import {
 } from "@/workshop/appearance/appearance";
 import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields";
 import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
-import { BackgroundPicker } from "@/workshop/appearance/BackgroundPicker";
+// BackgroundPicker pulls in the full AI theme generator + ColorEditor; only
+// rendered when the user opens the Page Background modal. Lazy keeps it off
+// the initial workshop bundle.
+const BackgroundPicker = lazy(() =>
+  import("@/workshop/appearance/BackgroundPicker").then((m) => ({ default: m.BackgroundPicker })),
+);
 import { FirstVisitHint } from "./FirstVisitHint";
 import { SamplePoemBanner } from "./SamplePoemBanner";
 import { RhymeTooltip } from "./RhymeTooltip";
@@ -224,21 +229,33 @@ export function PoemWorkshop() {
     return DEFAULT_RAIL_W;
   });
 
-  const applyToolsW = useCallback((w: number) => {
+  // Cheap path used during pointermove drags — touches only the DOM, never
+  // React state. Avoids re-rendering the whole workshop tree on every frame.
+  // The collapsed class is toggled here so the FAB CSS still flips at w === 0
+  // without going through React; React state catches up on pointerup.
+  const applyToolsWLive = useCallback((w: number) => {
     const el = workshopGridRef.current;
     if (!el) return;
     el.style.setProperty("--tools-col", `${w}px`);
     el.classList.toggle("tools-collapsed", w === 0);
-    setToolsPanelWidth(w);
   }, []);
 
-  const applyRailW = useCallback((w: number) => {
+  const applyRailWLive = useCallback((w: number) => {
     const el = workshopGridRef.current;
     if (!el) return;
     el.style.setProperty("--rail-col", `${w}px`);
     el.classList.toggle("rail-collapsed", w === 0);
-    setRailWidth(w);
   }, []);
+
+  const applyToolsW = useCallback((w: number) => {
+    applyToolsWLive(w);
+    setToolsPanelWidth(w);
+  }, [applyToolsWLive]);
+
+  const applyRailW = useCallback((w: number) => {
+    applyRailWLive(w);
+    setRailWidth(w);
+  }, [applyRailWLive]);
 
   const saveToolsW = useCallback((w: number) => {
     try { localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(w)); } catch { /* ignore */ }
@@ -265,6 +282,8 @@ export function PoemWorkshop() {
     try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
     const startX = e.clientX;
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
+    let rafId = 0;
+    let pendingW = startW;
     const onMove = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       const raw = startW - (ev.clientX - startX); // drag left → wider
@@ -273,8 +292,12 @@ export function PoemWorkshop() {
         window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2,
         window.innerWidth - MIN_EDITOR_W - GAP_PX * 2,
       );
-      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
-      applyToolsW(next);
+      pendingW = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        applyToolsWLive(pendingW);
+      });
     };
     const onUp = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
@@ -282,12 +305,17 @@ export function PoemWorkshop() {
       target.removeEventListener("pointerup", onUp);
       target.removeEventListener("pointercancel", onUp);
       try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
-      saveToolsW(parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10));
+      if (rafId) cancelAnimationFrame(rafId);
+      // Commit final width to React state + persist. State update once per drag,
+      // not once per pointermove.
+      const finalW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10);
+      setToolsPanelWidth(finalW);
+      saveToolsW(finalW);
     };
     target.addEventListener("pointermove", onMove);
     target.addEventListener("pointerup", onUp);
     target.addEventListener("pointercancel", onUp);
-  }, [applyToolsW, saveToolsW]);
+  }, [applyToolsWLive, saveToolsW]);
 
   const handleRailResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -296,13 +324,19 @@ export function PoemWorkshop() {
     try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
     const startX = e.clientX;
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
+    let rafId = 0;
+    let pendingW = startW;
     const onMove = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
       const raw = startW + (ev.clientX - startX); // drag right → wider
       const currentTools = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
       const maxW = window.innerWidth - currentTools - MIN_EDITOR_W - GAP_PX * 2;
-      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
-      applyRailW(next);
+      pendingW = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        applyRailWLive(pendingW);
+      });
     };
     const onUp = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
@@ -310,12 +344,15 @@ export function PoemWorkshop() {
       target.removeEventListener("pointerup", onUp);
       target.removeEventListener("pointercancel", onUp);
       try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
-      saveRailW(parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10));
+      if (rafId) cancelAnimationFrame(rafId);
+      const finalW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10);
+      setRailWidth(finalW);
+      saveRailW(finalW);
     };
     target.addEventListener("pointermove", onMove);
     target.addEventListener("pointerup", onUp);
     target.addEventListener("pointercancel", onUp);
-  }, [applyRailW, saveRailW]);
+  }, [applyRailWLive, saveRailW]);
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
   // Fully hide the title bar to maximise writing space
@@ -1704,11 +1741,13 @@ export function PoemWorkshop() {
                 Close
               </button>
             </div>
-            <BackgroundPicker
-              appearance={appearance}
-              background={appearance.background}
-              onChange={setAppearance}
-            />
+            <Suspense fallback={<p className="muted small" style={{ padding: "1rem" }}>Loading…</p>}>
+              <BackgroundPicker
+                appearance={appearance}
+                background={appearance.background}
+                onChange={setAppearance}
+              />
+            </Suspense>
             <div className="modal-note">
               <strong>Background settings</strong> (strength + motion + low‑power)
             </div>

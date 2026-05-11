@@ -2310,6 +2310,31 @@
   margin-bottom: 0.35rem;
 }
 
+.rhyme-manual-links-toggle {
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  align-items: center;
+}
+
+.rhyme-manual-links-toggle:hover .rhyme-stanza-label {
+  text-decoration: underline;
+}
+
+.rhyme-manual-links.is-collapsed {
+  padding-bottom: 0.4rem;
+}
+
+.rhyme-manual-links.is-collapsed .rhyme-manual-links-toggle {
+  margin-bottom: 0;
+}
+
 .rhyme-manual-links-list {
   list-style: none;
   margin: 0;
@@ -4148,6 +4173,50 @@
 .snapshot-saved-flash-duplicate {
   color: var(--muted);
   font-style: italic;
+}
+
+.revision-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+
+.revision-group:last-child {
+  margin-bottom: 0;
+}
+
+.revision-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0;
+  padding: 0 0.1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: sticky;
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--bg) 0%,
+    var(--bg) 70%,
+    color-mix(in srgb, var(--bg) 0%, transparent) 100%
+  );
+  z-index: 1;
+  padding-bottom: 0.2rem;
+}
+
+.revision-group-count {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
 }
 
 .revision-list-item-compact {
@@ -6794,4 +6863,604 @@
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+}
+
+/* ============================================================
+   Snapshots panel — clean visual rework
+   ============================================================ */
+
+.snap-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  scroll-margin-top: 1.15rem;
+}
+
+.tool-block-snapshots .snap-section {
+  margin: 0;
+  padding: 0;
+}
+
+.snap-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.15rem;
+}
+
+.snap-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.snap-section-h {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0.005em;
+}
+
+.snap-section-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--text) 70%, var(--muted));
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.snap-section-count-max {
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 0.05rem;
+}
+
+.snap-section-hint {
+  margin: 0;
+  font-size: 0.72rem;
+}
+
+/* ---- Save bar ---- */
+.snap-save-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.snap-save-bar:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.snap-save-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+}
+
+.snap-save-input::placeholder {
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+}
+
+.snap-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: none;
+  border-left: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+  padding: 0 0.95rem;
+  font-size: 0.83rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.snap-save-btn:hover {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: var(--text);
+}
+
+.snap-save-btn:active {
+  background: color-mix(in srgb, var(--accent) 36%, transparent);
+}
+
+.snap-save-btn-icon {
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* ---- Flash banner ---- */
+.snap-flash {
+  margin: -0.2rem 0 0;
+  padding: 0.32rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  animation: snap-flash-fade 0.25s ease;
+}
+
+.snap-flash-saved {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+}
+
+.snap-flash-duplicate {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--muted);
+  font-style: italic;
+}
+
+@keyframes snap-flash-fade {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Duplicates strip ---- */
+.snap-dupes-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--danger) 38%, var(--border));
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+button.snap-dupes-strip:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+
+.snap-dupes-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--danger) 80%, var(--text));
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.snap-dupes-text {
+  flex: 1 1 auto;
+}
+
+.snap-dupes-cta {
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: color-mix(in srgb, var(--danger) 75%, var(--text));
+}
+
+.snap-dupes-strip-confirm {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  cursor: default;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.snap-dupes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+/* ---- Card ---- */
+.snap-list-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 36%, transparent) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.snap-list-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.snap-list-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+  border-radius: 999px;
+}
+
+.snap-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.snap-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.18rem 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.snap-group-bar {
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 60%, var(--muted));
+  flex-shrink: 0;
+}
+
+.snap-group-label {
+  flex-shrink: 0;
+}
+
+.snap-group-count {
+  margin-left: auto;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: color-mix(in srgb, var(--text) 65%, var(--muted));
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
+}
+
+.snap-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.snap-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.snap-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.snap-card.is-diff-active {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.snap-card.is-duplicate {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.snap-card.is-duplicate:hover {
+  opacity: 1;
+}
+
+.snap-card-live {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 7%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 3%, transparent) 100%
+  );
+}
+
+.snap-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.snap-snippet {
+  margin: 0;
+  font-family: var(--font-poem), Georgia, serif;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.snap-snippet-live {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-style: italic;
+  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+}
+
+.snap-live-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 80%, var(--text));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  animation: snap-live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes snap-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+  50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 8%, transparent); }
+}
+
+.snap-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.snap-meta-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.snap-meta-delta {
+  font-variant-numeric: tabular-nums;
+  padding: 0.02rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+
+.snap-meta-delta-pos {
+  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.snap-meta-delta-neg {
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.snap-meta-label {
+  font-weight: 650;
+  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snap-meta-label::before {
+  content: "“";
+  margin-right: 0.05rem;
+  color: var(--muted);
+}
+
+.snap-meta-label::after {
+  content: "”";
+  margin-left: 0.05rem;
+  color: var(--muted);
+}
+
+.snap-meta-dupe {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.06rem 0.42rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: var(--muted);
+}
+
+.snap-meta-live {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+}
+
+/* ---- Card side: pick + actions ---- */
+.snap-card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.snap-pick {
+  display: inline-flex;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 8%, transparent);
+  padding: 2px;
+  gap: 2px;
+}
+
+.snap-pick-chip {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.snap-pick-chip:hover {
+  color: var(--text);
+}
+
+.snap-pick-chip.is-active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.snap-pick-from.is-active {
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+}
+
+.snap-pick-to.is-active {
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+}
+
+.snap-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.snap-card:hover .snap-actions,
+.snap-card:focus-within .snap-actions,
+.snap-card.is-diff-active .snap-actions {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+@media (hover: none) {
+  .snap-actions {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+.snap-action-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.22rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.snap-action-btn:hover {
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  color: var(--text);
+}
+
+.snap-action-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.snap-action-danger {
+  color: color-mix(in srgb, var(--danger) 70%, var(--muted));
+}
+
+.snap-action-danger:hover {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
+}
+
+.snap-action-solid {
+  background: var(--danger);
+  color: white;
+}
+
+.snap-action-solid:hover {
+  background: color-mix(in srgb, var(--danger) 85%, black);
+  color: white;
+}
+
+/* ---- Empty state ---- */
+.snap-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 1.3rem 0.6rem;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--muted) 4%, transparent);
+}
+
+.snap-empty-icon {
+  font-size: 1.4rem;
+  opacity: 0.55;
+}
+
+.snap-empty-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  max-width: 22rem;
+}
+
+/* Inline confirm dialogs inside snap-card */
+.snap-card .revision-inline-confirm {
+  grid-column: 1 / -1;
+  margin-top: 0.45rem;
 }

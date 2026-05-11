@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
+import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Return JSON only (no fences). Keys:
 overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (4-8 — comment on most non-trivial lines), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
@@ -109,6 +110,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "compare",
+    cooldownMs: cooldownFor("compare"),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -133,9 +144,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Missing `changesText` describing the diff from the previous draft." });
   }
 
+  const MAX_LINES = 500;
+  if ((body.lines as unknown[]).length > MAX_LINES) {
+    return res.status(400).json({ error: `Too many lines (max ${MAX_LINES}).` });
+  }
+
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
-  const changesText = (body.changesText as string).slice(0, 12_000);
+  const totalChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
+  if (totalChars > 20_000) {
+    return res.status(400).json({ error: "Poem too long (max 20000 characters)." });
+  }
+  const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
@@ -170,5 +190,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
   if (!result) return;
 
+  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
   sendParsedResponse(res, result.content, result.model);
 }

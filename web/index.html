@@ -30,9 +30,16 @@
       content="A private poetry workshop for serious writers. Meter, rhyme, syllables, spelling, and AI analysis — no account required."
     />
 
+    <!-- Network hints: warm DNS/TLS for the third-party origins we hit first. -->
     <!-- Google Fonts — display=swap is already set so text renders with system fallbacks while fonts load -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Datamuse + dictionaryapi.dev are called the first time the user opens a rhyme/definition popover. -->
+    <link rel="dns-prefetch" href="https://api.datamuse.com" />
+    <link rel="dns-prefetch" href="https://api.dictionaryapi.dev" />
+    <!-- Vercel analytics / speed insights endpoints. -->
+    <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
+    <link rel="dns-prefetch" href="https://vitals.vercel-insights.com" />
     <!-- Preload the two fonts most users see immediately (default poem + UI font).
          The stylesheet href below loads ALL variants; these preloads just give the
          two critical ones a head-start so the first-paint swap is imperceptible. -->

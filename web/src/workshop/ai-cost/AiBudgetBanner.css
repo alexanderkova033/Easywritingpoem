@@ -1,0 +1,55 @@
+.ai-budget-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  flex-shrink: 0;
+}
+
+.ai-budget-banner.is-hard-cap {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
+
+.ai-budget-banner.is-warn {
+  border-color: color-mix(in srgb, var(--warning, #e8a000) 50%, var(--border));
+  background: color-mix(in srgb, var(--warning, #e8a000) 10%, var(--surface));
+}
+
+.ai-budget-banner-body {
+  flex: 1 1 16rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ai-budget-banner-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.ai-budget-banner-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+  opacity: 0.92;
+}
+
+.ai-budget-banner-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.ai-budget-banner-dismiss {
+  flex-shrink: 0;
+}

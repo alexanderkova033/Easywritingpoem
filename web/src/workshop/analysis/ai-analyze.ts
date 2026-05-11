@@ -3,6 +3,8 @@
  * The OpenAI key lives on the server — the browser never touches it.
  */
 
+import { parseAiErrorAndNotify } from "../ai-cost/aiBudgetBus";
+
 export interface AnalysisMeta {
   model: string;
   analyzedAt: string;
@@ -304,14 +306,8 @@ export async function comparePoem(
   });
 
   if (!response.ok) {
-    let msg = `HTTP ${response.status}`;
-    let retryAfterSec: number | undefined;
-    try {
-      const body = (await response.json()) as { error?: string; retryAfterSec?: number };
-      if (body?.error) msg = body.error;
-      if (typeof body.retryAfterSec === "number") retryAfterSec = body.retryAfterSec;
-    } catch { /* ignore */ }
-    const e = new Error(msg) as Error & { retryAfterSec?: number };
+    const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "compare");
+    const e = new Error(message) as Error & { retryAfterSec?: number };
     if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
     throw e;
   }
@@ -349,16 +345,8 @@ export async function analyzePoem(
   });
 
   if (!response.ok) {
-    let msg = `HTTP ${response.status}`;
-    let retryAfterSec: number | undefined;
-    try {
-      const body = (await response.json()) as { error?: string; retryAfterSec?: number };
-      if (body?.error) msg = body.error;
-      if (typeof body.retryAfterSec === "number") retryAfterSec = body.retryAfterSec;
-    } catch {
-      /* ignore */
-    }
-    const e = new Error(msg) as Error & { retryAfterSec?: number };
+    const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "analyze");
+    const e = new Error(message) as Error & { retryAfterSec?: number };
     if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
     throw e;
   }

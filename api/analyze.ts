@@ -8,6 +8,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
+import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 const HARSHNESS_PERSONAS: Record<string, string> = {
   baby:    "a kind, encouraging reader who celebrates effort and only mentions one very obvious improvement gently",
@@ -127,6 +128,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "analyze",
+    cooldownMs: cooldownFor("analyze"),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -159,6 +170,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Too many lines (max ${MAX_LINES}).` });
   }
 
+  const MAX_TOTAL_CHARS = 20_000;
+  const totalChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
+  if (totalChars > MAX_TOTAL_CHARS) {
+    return res.status(400).json({ error: `Poem too long (max ${MAX_TOTAL_CHARS} characters).` });
+  }
+
   const result = await callOpenAI(
     apiKey,
     {
@@ -175,5 +192,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
   if (!result) return;
 
+  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
   sendParsedResponse(res, result.content, result.model);
 }

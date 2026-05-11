@@ -7,6 +7,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
+import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 const SYSTEM_PROMPT = `You are a thoughtful poetry editor and writing coach. The user has just written a poem and received AI feedback on it. They want to have a conversation with you about their poem — asking questions, getting clarification on feedback, brainstorming ideas, or exploring craft.
 
@@ -24,6 +25,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: "Too many requests — please wait a moment.",
       retryAfterSec,
     });
+  }
+
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "chat",
+    cooldownMs: cooldownFor("chat"),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -59,6 +70,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "No message provided." });
   }
 
+  if (message.length > 2000) {
+    return res.status(400).json({ error: "Message too long (max 2000 characters)." });
+  }
+  const totalPoemChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
+  if (totalPoemChars > 20_000) {
+    return res.status(400).json({ error: "Poem too long (max 20000 characters)." });
+  }
+
   // First turn carries the poem in the system message; subsequent turns rely
   // on the chat history to reference it. Saves the full poem on every reply
   // after the first.
@@ -92,5 +111,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!result) return;
 
+  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
   return res.status(200).json({ reply: result.content });
 }

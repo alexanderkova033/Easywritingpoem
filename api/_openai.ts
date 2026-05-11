@@ -11,10 +11,16 @@ export interface OpenAIMessage {
   content: string;
 }
 
+export interface OpenAIUsage {
+  promptTokens: number;
+  completionTokens: number;
+}
+
 export interface OpenAICallResult {
   ok: true;
   content: string;
   model: string;
+  usage: OpenAIUsage;
 }
 
 async function fetchWithRetry(
@@ -132,6 +138,7 @@ export async function callOpenAI(
   const data = (await upstream.json()) as {
     choices?: { message?: { content?: string } }[];
     model?: string;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
 
   const content = data.choices?.[0]?.message?.content ?? "";
@@ -150,6 +157,10 @@ export async function callOpenAI(
     ok: true,
     content,
     model: data.model ?? opts.model,
+    usage: {
+      promptTokens:     data.usage?.prompt_tokens     ?? 0,
+      completionTokens: data.usage?.completion_tokens ?? 0,
+    },
   };
 }
 

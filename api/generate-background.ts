@@ -8,6 +8,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
+import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 const SYSTEM_PROMPT = `You are a visual designer creating CSS colour themes for a poetry writing app. Given a description or poem, generate a cohesive colour palette that captures its mood and atmosphere.
 
@@ -86,6 +87,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: "Too many requests — please wait a moment." });
   }
 
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "generate-background",
+    cooldownMs: cooldownFor("generate-background"),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -96,7 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Missing or empty `prompt` in request body." });
   }
 
-  const prompt = body.prompt.trim().slice(0, 2000);
+  const prompt = body.prompt.trim().slice(0, 1000);
 
   const result = await callOpenAI(
     apiKey,
@@ -113,6 +124,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res,
   );
   if (!result) return;
+
+  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
 
   let parsed: Record<string, unknown>;
   try {
