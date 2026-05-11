@@ -318,13 +318,16 @@
 }
 
 .cm-spell-error {
-  text-decoration: underline dotted color-mix(in srgb, var(--danger) 35%, transparent);
-  text-decoration-thickness: 1px;
+  text-decoration: underline wavy color-mix(in srgb, var(--danger) 78%, transparent);
+  text-decoration-thickness: 1.5px;
   text-underline-offset: 3px;
+  text-decoration-skip-ink: none;
 }
 
 .cm-spell-error:hover {
-  text-decoration-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  text-decoration-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 7%, transparent);
+  border-radius: 2px;
 }
 
 .cm-line-flash {

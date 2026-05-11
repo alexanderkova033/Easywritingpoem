@@ -589,12 +589,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 if (items.length === 0) return null;
                 const label =
                   sev === "now" ? "Now" : sev === "soon" ? "Soon" : "Optional";
-                const subtitle =
-                  sev === "now"
-                    ? "Hard goal violations — fix first."
-                    : sev === "soon"
-                      ? "Publication blockers and spelling flags."
-                      : "Polish — clichés and other softer notes.";
                 return (
                   <section
                     key={sev}
@@ -606,7 +600,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                         {label}
                         <span className="queue-bucket-count">{items.length}</span>
                       </h4>
-                      <span className="queue-bucket-sub muted small">{subtitle}</span>
                     </header>
                     <ul className="queue-list" aria-label={`${label} issues`}>
                       {items.map((it) => (

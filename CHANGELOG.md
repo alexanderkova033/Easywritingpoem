@@ -15,7 +15,8 @@ Versioning follows [Semantic Versioning](https://semver.org/) once a first tagge
 - Tightened Vite `manualChunks` so lazy-loaded modules don't get re-merged into the eager `workshop-tools` chunk.
 
 ### Off-main-thread
-- New Web Worker (`workshop/analysis/heavy-analysis-worker.ts`) + `useHeavyAnalysis` hook. Repetition analysis (heaviest per-keystroke pass) now runs off the main thread. Race protection via request ids; synchronous main-thread fallback when `Worker` isn't available.
+- New Web Worker (`workshop/analysis/heavy-analysis-worker.ts`) + `useHeavyAnalysis` hook. All heavyLines-derived analyses now run off the main thread, bundled into a single round-trip per heavyBody change: repetition, cliché scan, rough rhyme clusters, vowel-tail / assonance / consonance clusters, full rhyme scheme, stanza groups, internal rhymes. Race protection via monotonic request ids; synchronous main-thread fallback when `Worker` isn't available.
+- Editor-visible rhyme scheme (gutter letters + ribbons) stays on the main thread off `lines` for low-latency feedback while typing.
 
 ### Refactor
 - Extracted helpers, leaf components, goal cards, and repetition cards from `WorkshopToolPanels.tsx` (2728 → 1908 lines) into:

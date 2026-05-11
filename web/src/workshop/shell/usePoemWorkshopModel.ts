@@ -83,15 +83,6 @@ import {
 } from "@/workshop/analysis/meter-hints";
 import { useHeavyAnalysis } from "@/workshop/analysis/use-heavy-analysis";
 import { buildPublicationChecklist } from "@/workshop/analysis/publication-checklist";
-import {
-  lightAssonanceClusters,
-  lightConsonanceClusters,
-  lightVowelTailClusters,
-  roughRhymeClusters,
-} from "@/workshop/analysis/rhyme-hints";
-import { stanzaGroupsFromScheme } from "@/workshop/rhyme/hints";
-import { detectInternalRhymes } from "@/workshop/rhyme/internal-rhymes";
-import { scanCliches } from "@/workshop/analysis/cliche-scan";
 import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import {
   focusCharacterRangeInEditor,
@@ -433,38 +424,31 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     () => meterHintsForBody(heavyBody, stressLexicon),
     [heavyBody, stressLexicon],
   );
-  const rhymeClusters = useMemo(
-    () => roughRhymeClusters(heavyLines),
-    [heavyLines],
+  // All heavyLines-derived analyses run off-main-thread via a Web Worker.
+  // Bundled into one request so the worker round-trips once per heavyBody
+  // change instead of N times. Hook handles race protection.
+  const heavy = useHeavyAnalysis(
+    heavyLines,
+    rhymeBreadth,
+    manualRhymeLinks,
+    manualRhymeUnlinks,
   );
-  const heavyRhymeScheme = useMemo(
-    () => detectRhymeScheme(heavyLines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks),
-    [heavyLines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks],
-  );
-  const stanzaRhymeGroups = useMemo(
-    () => stanzaGroupsFromScheme(heavyLines, heavyRhymeScheme),
-    [heavyLines, heavyRhymeScheme],
-  );
-  const vowelTailClusters = useMemo(
-    () => lightVowelTailClusters(heavyLines),
-    [heavyLines],
-  );
-  const assonanceClusters = useMemo(
-    () => lightAssonanceClusters(heavyLines),
-    [heavyLines],
-  );
-  const consonanceClusters = useMemo(
-    () => lightConsonanceClusters(heavyLines),
-    [heavyLines],
-  );
-  // Repetition analysis runs off-main-thread via a Web Worker (the heaviest
-  // single per-keystroke analysis). The hook handles race-protection and
-  // falls back to synchronous main-thread execution when Worker is missing.
-  const { repetition } = useHeavyAnalysis(heavyLines);
+  const rhymeClusters = heavy.rhymeClusters;
+  const stanzaRhymeGroups = heavy.stanzaRhymeGroups;
+  const vowelTailClusters = heavy.vowelTailClusters;
+  const assonanceClusters = heavy.assonanceClusters;
+  const consonanceClusters = heavy.consonanceClusters;
+  const repetition = heavy.repetition;
   const repeated = repetition.words;
-  const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
-  const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks), [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks]);
-  const internalRhymes = useMemo(() => detectInternalRhymes(heavyLines, rhymeBreadth), [heavyLines, rhymeBreadth]);
+  const clicheHits = heavy.clicheHits;
+  const internalRhymes = heavy.internalRhymes;
+  // Fast path: rhyme scheme on the non-debounced `lines` so the editor's
+  // rhyme ribbons + scheme letters update with low latency. Stays on the
+  // main thread — same input rate as the editor itself.
+  const rhymeScheme = useMemo(
+    () => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks),
+    [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks],
+  );
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),

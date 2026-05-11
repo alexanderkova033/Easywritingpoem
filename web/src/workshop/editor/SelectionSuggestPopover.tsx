@@ -249,8 +249,11 @@ export function SelectionSuggestPopover({
 
       const spaceAbove = anchorRect.top - margin;
       const spaceBelow = vh - anchorRect.bottom - margin;
-      const fitsAbove = popH <= spaceAbove;
-      const flipped = !fitsAbove && spaceBelow > spaceAbove;
+      // Prefer placing below the selection — feels anchored to the word rather
+      // than floating above the line being read. Fall back to above only when
+      // below truly doesn't fit and above has more room.
+      const fitsBelow = popH <= spaceBelow;
+      const flipped = fitsBelow || spaceBelow >= spaceAbove;
 
       let top: number;
       if (flipped) {

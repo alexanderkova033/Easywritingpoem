@@ -5,13 +5,15 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 8px 28px color-mix(in srgb, #000 22%, transparent);
-  overflow: hidden;
+  /* overflow-x only — vertical scroll comes from inline overflowY:auto so the
+     popup can shrink to fit the viewport when content is tall. */
+  overflow-x: hidden;
   animation: ssp-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes ssp-in {
-  from { opacity: 0; transform: translateY(calc(-100% + 8px)) scale(0.97); }
-  to   { opacity: 1; transform: translateY(-100%) scale(1); }
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .ssp-header {

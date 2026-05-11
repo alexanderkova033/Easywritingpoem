@@ -9,6 +9,11 @@
   padding: 0.55rem 0.65rem 0.62rem;
   min-width: 200px;
   max-width: min(300px, calc(100vw - 1.25rem));
+  /* Cap height so a long synonym/antonym list scrolls inside the popup
+     instead of overflowing the viewport. */
+  max-height: calc(100vh - 1.25rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   pointer-events: all;
 }
 

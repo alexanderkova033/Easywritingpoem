@@ -179,6 +179,19 @@
   background-color: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
+/* Native dropdown options inherit the parent's white text; force explicit
+   surface/text so the popup stays readable on dark themes (Chrome/Edge). */
+.topbar-draft-inline .draft-library-select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.topbar-draft-inline .draft-library-select option:checked,
+.topbar-draft-inline .draft-library-select option:hover {
+  background-color: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  color: var(--text);
+}
+
 /* Icon buttons (+ / library) inside the pill — flush, no own border */
 .topbar-draft-inline .topbar-draft-icon-btn {
   width: 1.55rem;

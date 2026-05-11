@@ -8,34 +8,88 @@
  * Falls back to a synchronous analysis on the main thread if Worker isn't
  * supported (older browsers, SSR, test environments).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { analyzeRepetition } from "@/workshop/analysis/repeated-words";
 import type { RepetitionAnalysis } from "@/workshop/analysis/repeated-words";
+import { scanCliches } from "@/workshop/analysis/cliche-scan";
+import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
+import {
+  lightAssonanceClusters,
+  lightConsonanceClusters,
+  lightVowelTailClusters,
+  roughRhymeClusters,
+  stanzaGroupsFromScheme,
+} from "@/workshop/rhyme/hints";
+import type { RhymeCluster, StanzaClusterGroup } from "@/workshop/rhyme/hints";
+import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { detectInternalRhymes } from "@/workshop/rhyme/internal-rhymes";
+import type { InternalRhymeMark } from "@/workshop/rhyme/internal-rhymes";
 import type {
   HeavyAnalysisRequest,
   HeavyAnalysisResult,
 } from "@/workshop/analysis/heavy-analysis-worker";
 
-const EMPTY_REPETITION: RepetitionAnalysis = {
-  words: [],
-  phrases: [],
-  anaphora: [],
-  epistrophe: [],
-};
-
 export interface HeavyAnalysisOutput {
   repetition: RepetitionAnalysis;
+  clicheHits: ClicheHit[];
+  rhymeClusters: RhymeCluster[];
+  vowelTailClusters: RhymeCluster[];
+  assonanceClusters: RhymeCluster[];
+  consonanceClusters: RhymeCluster[];
+  heavyRhymeScheme: string[];
+  stanzaRhymeGroups: StanzaClusterGroup[];
+  internalRhymes: InternalRhymeMark[];
+}
+
+const EMPTY: HeavyAnalysisOutput = {
+  repetition: { words: [], phrases: [], anaphora: [], epistrophe: [] },
+  clicheHits: [],
+  rhymeClusters: [],
+  vowelTailClusters: [],
+  assonanceClusters: [],
+  consonanceClusters: [],
+  heavyRhymeScheme: [],
+  stanzaRhymeGroups: [],
+  internalRhymes: [],
+};
+
+function computeSync(
+  heavyLines: string[],
+  rhymeBreadth: RhymeBreadth,
+  manualRhymeLinks: string[],
+  manualRhymeUnlinks: string[],
+): HeavyAnalysisOutput {
+  const heavyRhymeScheme = detectRhymeScheme(
+    heavyLines,
+    rhymeBreadth,
+    manualRhymeLinks,
+    manualRhymeUnlinks,
+  );
+  return {
+    repetition: analyzeRepetition(heavyLines),
+    clicheHits: scanCliches(heavyLines),
+    rhymeClusters: roughRhymeClusters(heavyLines),
+    vowelTailClusters: lightVowelTailClusters(heavyLines),
+    assonanceClusters: lightAssonanceClusters(heavyLines),
+    consonanceClusters: lightConsonanceClusters(heavyLines),
+    heavyRhymeScheme,
+    stanzaRhymeGroups: stanzaGroupsFromScheme(heavyLines, heavyRhymeScheme),
+    internalRhymes: detectInternalRhymes(heavyLines, rhymeBreadth),
+  };
 }
 
 const WORKER_SUPPORTED = typeof Worker !== "undefined";
 
-export function useHeavyAnalysis(heavyLines: string[]): HeavyAnalysisOutput {
+export function useHeavyAnalysis(
+  heavyLines: string[],
+  rhymeBreadth: RhymeBreadth,
+  manualRhymeLinks: string[],
+  manualRhymeUnlinks: string[],
+): HeavyAnalysisOutput {
   const workerRef = useRef<Worker | null>(null);
   const reqIdRef = useRef(0);
   const lastSeenIdRef = useRef(-1);
-  const [output, setOutput] = useState<HeavyAnalysisOutput>({
-    repetition: EMPTY_REPETITION,
-  });
+  const [output, setOutput] = useState<HeavyAnalysisOutput>(EMPTY);
 
   // Lazily create the worker once on mount; tear it down on unmount.
   useEffect(() => {
@@ -46,11 +100,11 @@ export function useHeavyAnalysis(heavyLines: string[]): HeavyAnalysisOutput {
     );
     workerRef.current = worker;
     const onMessage = (e: MessageEvent<HeavyAnalysisResult>) => {
-      const { id, repetition } = e.data;
       // Drop stale results — only commit the most recent request.
-      if (id < lastSeenIdRef.current) return;
-      lastSeenIdRef.current = id;
-      setOutput({ repetition });
+      if (e.data.id < lastSeenIdRef.current) return;
+      lastSeenIdRef.current = e.data.id;
+      const { id: _id, ...rest } = e.data;
+      setOutput(rest);
     };
     worker.addEventListener("message", onMessage);
     return () => {
@@ -60,19 +114,32 @@ export function useHeavyAnalysis(heavyLines: string[]): HeavyAnalysisOutput {
     };
   }, []);
 
-  // Fire a new request whenever the input lines change. The worker handles
-  // the work in the background; the hook commits the latest result.
+  // Stable key for the manual-rhyme arrays so identity churn (parent passes
+  // a new array literal each render) doesn't refire the worker uselessly.
+  const linksKey = useMemo(() => manualRhymeLinks.join("|"), [manualRhymeLinks]);
+  const unlinksKey = useMemo(() => manualRhymeUnlinks.join("|"), [manualRhymeUnlinks]);
+
+  // Fire a new request whenever inputs change. Worker handles the work in the
+  // background; the hook commits the latest result via the message handler.
   useEffect(() => {
     if (!WORKER_SUPPORTED || !workerRef.current) {
-      // Fallback: run synchronously on the main thread. Same behavior as
-      // before the worker existed; covers older browsers and test envs.
-      setOutput({ repetition: analyzeRepetition(heavyLines) });
+      // Fallback for environments without Worker (tests, old browsers).
+      setOutput(computeSync(heavyLines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks));
       return;
     }
     const id = ++reqIdRef.current;
-    const req: HeavyAnalysisRequest = { id, heavyLines };
+    const req: HeavyAnalysisRequest = {
+      id,
+      heavyLines,
+      rhymeBreadth,
+      manualRhymeLinks,
+      manualRhymeUnlinks,
+    };
     workerRef.current.postMessage(req);
-  }, [heavyLines]);
+    // linksKey / unlinksKey are the value-stable dependency proxies for the
+    // array props — they ensure we don't fire when only identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heavyLines, rhymeBreadth, linksKey, unlinksKey]);
 
   return output;
 }
