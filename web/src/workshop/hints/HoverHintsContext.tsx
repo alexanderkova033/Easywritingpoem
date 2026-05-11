@@ -234,10 +234,11 @@ export function HoverHintsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!tip) return;
     const hide = () => disarmImmediate();
-    window.addEventListener("scroll", hide, true);
-    window.addEventListener("resize", hide);
+    const scrollOpts: AddEventListenerOptions = { passive: true, capture: true };
+    window.addEventListener("scroll", hide, scrollOpts);
+    window.addEventListener("resize", hide, { passive: true });
     return () => {
-      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("scroll", hide, scrollOpts);
       window.removeEventListener("resize", hide);
     };
   }, [tip, disarmImmediate]);

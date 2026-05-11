@@ -1,91 +1,59 @@
 # easywriting-poem
 
-**For poets who want real analysis tools — private, local, no account.**
+**A quiet place to write poetry.** Private. Local. No account.
 
-A poem writing workshop that runs entirely in your browser. Write a draft on the left; meter, rhyme, syllables, and spelling analysis update live on the right. Nothing is uploaded, nothing is tracked, nothing requires a sign-up.
+Browser-based poetry workshop. Draft on the left; syllables, meter, rhyme, repeats, and spelling update beside you. Optional AI critique on demand. Nothing leaves your browser unless you ask it to.
 
-**Live site:** [easywritingpoem.org](https://www.easywritingpoem.org/)
-
----
-
-## Who it is for
-
-- **Hobbyist and serious poets** who want structured feedback without sending their drafts to a cloud service
-- **Writers who value privacy** — every keystroke stays in your browser's local storage until you choose to export
-- **People tired of paying for or signing up to writing tools** — the workshop is free to use with no account
-- **Students and educators** working with poetry who need syllable counts, meter patterns, and rhyme schemes on demand
+**Live:** [easywritingpoem.org](https://www.easywritingpoem.org/)
 
 ---
 
-## What it does
+## Highlights
 
-| Tool | What it shows |
-|------|---------------|
-| **Overview** | Word count, line count, syllables, stanzas, read-aloud time |
-| **Lines** | Per-line syllable counts, meter pattern, iambic fit percentage |
-| **Meter** | Stress pattern from a CMU pronouncing dictionary + heuristic fallback |
-| **Rhyme** | End-rhyme scheme labels (A, B, C…) shown beside the editor as you write |
-| **Repeats** | Repeated and near-repeated words flagged with line numbers |
-| **Spell** | Poetry-aware spelling with a personal dictionary and ignore list |
-| **Goals** | Word count targets and custom writing goals |
-| **Ready** | Publication checklist — title set, no open spelling flags, etc. |
-| **Snapshots** | Save named revision points and compare any two side-by-side |
-| **AI Analysis** | Optional: scores imagery, musicality, originality, and clarity via OpenAI (requires the companion server) |
+- **Local-first** — drafts, snapshots, goals, and personal dictionary live in `localStorage`. Works offline after first load.
+- **Poetry-specific tools** — syllables, meter (CMU dictionary + heuristics), rhyme (strict/near/broad), repetition, poetry-aware spelling.
+- **Optional AI** — critique with selectable harshness, line rewrites, idea sparks, theme generation. Project-owned key, no user signup.
+- **Calm UI** — no popups, no nags. Tools speak when asked.
+
+Full tool list: [docs/FEATURES.md](docs/FEATURES.md).
 
 ---
 
-## Why choose it
+## Quick start
 
-**Everything is local.** Drafts, snapshots, goals, and your personal spelling dictionary are stored in `localStorage` in your browser. No server sees them during normal editing. If you close the tab and return a week later, your work is still there.
+```sh
+cd web
+npm install      # postinstall syncs the word list
+npm run dev      # Vite dev server on localhost:5173
+```
 
-**The tools are built for poetry specifically.** Syllable counts use a CMU pronouncing dictionary. The spell checker understands that made-up words and neologisms are normal. The rhyme panel groups end sounds rather than checking for perfect rhyme. These are not generic writing tools bolted onto an editor.
+Build, test, AI dev setup, and conventions: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-**Nothing demands your attention.** Analysis runs silently in the background. You are never interrupted by suggestions while writing — the panel is there when you want it and invisible when you don't.
+---
 
-**One URL, works offline.** After the first load the app runs without a network connection. No installs, no app store, no updates to manage.
+## Docs
+
+| Doc | Purpose |
+|-----|---------|
+| [docs/FEATURES.md](docs/FEATURES.md) | Full feature list grouped by tool bucket |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design decisions and rationale |
+| [docs/AI_INTEGRATION.md](docs/AI_INTEGRATION.md) | OpenAI endpoint contracts and prompt design |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | Product requirements |
+| [docs/PRIORITIES.md](docs/PRIORITIES.md) | Roadmap and priorities |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Vercel build, env vars, CSP |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, commit conventions, PR flow |
+| [SECURITY.md](SECURITY.md) | Privacy posture, AI key handling, reporting issues |
+| [CHANGELOG.md](CHANGELOG.md) | Release history |
+| [design/DESIGN.md](design/DESIGN.md) | UX principles, IA, design tokens |
 
 ---
 
 ## Tech stack
 
-| Layer | Technology |
-|-------|-----------|
-| UI framework | React 18 + TypeScript |
-| Build | Vite |
-| Editor | CodeMirror 6 (`@uiw/react-codemirror`) |
-| Stress dictionary | CMU Pronouncing Dictionary (bundled subset) |
-| Spell checking | Custom engine + word-list |
-| Export | `docx` library for Word files |
-| Storage | Browser `localStorage` only |
-| Server (optional) | Node/Express proxy for AI analysis via OpenAI |
-
----
-
-## Project layout
-
-```
-easywriting-poem/
-├── web/                    # Frontend (Vite + React)
-│   ├── src/
-│   │   ├── app/            # Root component, global CSS, entry point
-│   │   ├── poem-workshop/  # Main workshop UI (editor, tools, modals)
-│   │   ├── poem-editor/    # CodeMirror extensions
-│   │   ├── writing-tools/  # Pure analysis functions (meter, rhyme, syllables…)
-│   │   ├── spellcheck/     # Spell engine + personal dictionary
-│   │   └── draft-library/  # Local storage, snapshots, export
-│   └── public/
-├── server/                 # Optional Express proxy for AI analysis
-└── docs/                   # Product requirements and priority docs
-```
-
----
-
-## Privacy
-
-All poem data lives in `localStorage` in the browser that created it. No analytics, no telemetry, no external requests are made by the app itself. Exporting a file or using AI analysis sends data only where you explicitly direct it.
+React 18 · TypeScript (strict) · Vite 6 · CodeMirror 6 · Vercel serverless · OpenAI · `localStorage` (no DB).
 
 ---
 
 ## License
 
-See [LICENSE](LICENSE) if present, or contact the maintainers.
+See [LICENSE](LICENSE).

@@ -108,14 +108,14 @@
 }
 
 .topbar-draft-inline:hover {
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
-  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 2.5%, var(--surface));
 }
 
 .topbar-draft-inline:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 9%, transparent);
 }
 
 /* Draft selector — refined pill look in topbar (scoped so BackgroundPicker's identical class names stay untouched) */
@@ -149,10 +149,11 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  min-width: 7.5rem;
-  max-width: 14rem;
+  min-width: 5.5rem;
+  max-width: 11rem;
+  width: auto;
   height: 1.7rem;
-  padding: 0 1.45rem 0 1.65rem;
+  padding: 0 1.3rem 0 1.55rem;
   border-radius: 6px;
   border: none;
   background-color: transparent;
@@ -170,12 +171,12 @@
 }
 
 .topbar-draft-inline .draft-library-select:hover {
-  background-color: color-mix(in srgb, var(--accent) 10%, transparent);
+  background-color: color-mix(in srgb, var(--accent) 5%, transparent);
 }
 
 .topbar-draft-inline .draft-library-select:focus-visible {
   outline: none;
-  background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  background-color: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
 /* Icon buttons (+ / library) inside the pill — flush, no own border */
@@ -188,7 +189,7 @@
 
 .topbar-draft-inline .topbar-draft-icon-btn:hover {
   border-color: transparent;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   color: var(--text);
 }
 
@@ -918,31 +919,6 @@
 
 .topbar-scene-label {
   white-space: nowrap;
-}
-
-.topbar-title {
-  font-family: var(--font-poem);
-  font-weight: 650;
-  letter-spacing: -0.015em;
-  max-width: 22rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
-  opacity: 0.92;
-}
-
-@media (max-width: 919px) {
-  .topbar-title {
-    display: none;
-  }
-}
-
-@media (min-width: 920px) {
-  /* Avoid duplicating the title field; keep the header about status + navigation. */
-  .topbar-title {
-    display: none;
-  }
 }
 
 .topbar-stats {

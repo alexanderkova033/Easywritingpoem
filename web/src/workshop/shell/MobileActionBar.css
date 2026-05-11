@@ -14,9 +14,7 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left: 0.25rem;
     padding-right: 0.25rem;
-    background: color-mix(in srgb, var(--surface) 96%, transparent);
-    backdrop-filter: blur(20px) saturate(1.2);
-    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    background: var(--surface);
     border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   }
 }

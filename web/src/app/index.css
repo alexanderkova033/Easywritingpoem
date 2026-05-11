@@ -222,6 +222,19 @@ html.theme-switching body::after {
   }
 }
 
+/* Touch-device perf: kill always-on background animations and the fullscreen
+   saturate/brightness filter. Both force continuous GPU recomposite/repaint
+   on iPad and mid-range phones. Static backdrop, same theme colors. */
+@media (hover: none) and (pointer: coarse) {
+  body::before {
+    filter: none;
+    animation: none !important;
+  }
+  body::after {
+    animation: none !important;
+  }
+}
+
 /* Zenith glow — opacity-only animation is already compositable. */
 body::after {
   will-change: opacity;

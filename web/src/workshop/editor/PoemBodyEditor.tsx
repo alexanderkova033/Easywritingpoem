@@ -23,6 +23,14 @@ import {
 } from "@/workshop/editor/format-marks";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 
+// Touch devices (iOS Safari, Android Chrome, iPad) struggle with the heaviest
+// live-update decoration plugins. Detect once at module load; matchMedia result
+// is stable for the session and avoids recomputing extensions per render.
+const IS_TOUCH_DEVICE: boolean =
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 // ---- Per-line font scaling: shrink long lines to fit without wrapping ----
 // We use CM line decorations (not direct DOM mutation) so CM owns the style
 // and its MutationObserver won't fight us and reset the font back.
@@ -150,7 +158,14 @@ const syllableCountPlugin = ViewPlugin.fromClass(
     decorations: DecorationSet;
     constructor(view: EditorView) { this.decorations = this.build(view); }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.selectionSet || update.focusChanged) {
+      // Touch: skip selectionSet/focusChanged — they fire on every tap and the
+      // only side effect is hiding the active-line widget. Worth the trade-off
+      // to keep typing fluid on iPad. Doc changes still rebuild.
+      if (IS_TOUCH_DEVICE) {
+        if (update.docChanged) {
+          this.decorations = this.build(update.view);
+        }
+      } else if (update.docChanged || update.selectionSet || update.focusChanged) {
         this.decorations = this.build(update.view);
       }
     }
@@ -790,8 +805,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       EditorState.transactionExtender.of((tr) =>
         tr.annotation(ExternalChange) ? { annotations: Transaction.addToHistory.of(false) } : null
       ),
-      lineFontScaleField,
-      lineFontScalePlugin,
+      // lineFontScale measures every .cm-line via getClientRects on each doc
+      // change. Skipped on touch — mobile viewports are narrow and wrap anyway,
+      // so the auto-shrink rarely fires, and the measurement cost is the single
+      // biggest source of typing lag on iPad.
+      ...(IS_TOUCH_DEVICE ? [] : [lineFontScaleField, lineFontScalePlugin]),
       EditorView.contentAttributes.of({ spellcheck: "true" }),
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
       search({ top: true }),

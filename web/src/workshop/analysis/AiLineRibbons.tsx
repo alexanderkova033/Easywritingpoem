@@ -84,12 +84,10 @@ export function AiLineRibbons({
       ro = new ResizeObserver(onScrollOrResize);
       ro.observe(wrapEl);
     }
-    const id = window.setInterval(recompute, 500);
     return () => {
       scrollEl.removeEventListener("scroll", onScrollOrResize);
       window.removeEventListener("resize", onScrollOrResize);
       ro?.disconnect();
-      window.clearInterval(id);
     };
   }, [editorViewRef, recompute]);
 

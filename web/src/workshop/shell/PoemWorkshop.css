@@ -97,7 +97,8 @@
   .tools-panel,
   .tools-sticky-head,
   .tools-reopen-fab,
-  .draggable-handle {
+  .draggable-handle,
+  .privacy {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
