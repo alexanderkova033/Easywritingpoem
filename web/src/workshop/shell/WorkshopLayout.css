@@ -199,7 +199,8 @@
 .poem-workshop.is-focus-mode .cm-spell-error,
 .poem-workshop.is-focus-mode .cm-line-issue-highlight,
 .poem-workshop.is-focus-mode .cm-line-strongest,
-.poem-workshop.is-focus-mode .cm-rhyme-end {
+.poem-workshop.is-focus-mode .cm-rhyme-end,
+.poem-workshop.is-focus-mode .cm-rhyme-internal {
   background: none !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -227,15 +228,22 @@
   height: 0;
 }
 
-/* ── Focus mode: rhyme scheme stays present but dimmed (reference, not focus) */
+/* ── Focus mode: rhyme scheme stays present but dimmed (reference, not focus)
+ * 50% bright while user is active, drops to 25% when idle, brightens to ~85%
+ * on hover for quick glances. */
 .poem-workshop.is-focus-mode .rhyme-panel,
 .poem-workshop.is-focus-mode .editor-rhyme-scheme {
-  opacity: 0.32;
-  transition: opacity 0.4s ease;
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
 }
 .poem-workshop.is-focus-mode .rhyme-panel:hover,
 .poem-workshop.is-focus-mode .editor-rhyme-scheme:hover {
   opacity: 0.85;
+}
+:root[data-focus-idle] .poem-workshop.is-focus-mode .rhyme-panel,
+:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-rhyme-scheme {
+  opacity: 0.25;
+  transition: opacity 1.1s ease;
 }
 
 /* ── Fade-on-idle: drift chrome, AI analysis, and the mouse cursor away
@@ -244,7 +252,9 @@
 .poem-workshop.is-focus-mode .topbar,
 .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
 .poem-workshop.is-focus-mode .toolbar,
-.poem-workshop.is-focus-mode .ai-analysis-section {
+.poem-workshop.is-focus-mode .ai-analysis-section,
+.poem-workshop.is-focus-mode .editor-meta-grid,
+.poem-workshop.is-focus-mode .editor-title-collapsed-line {
   transition: opacity 0.5s ease;
 }
 
@@ -260,7 +270,9 @@
   opacity: 0.06;
   transition: opacity 1.1s ease;
 }
-:root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section {
+:root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section,
+:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-meta-grid,
+:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-title-collapsed-line {
   opacity: 0;
   pointer-events: none;
   transition: opacity 1.4s ease;
@@ -271,12 +283,18 @@
   .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
   .poem-workshop.is-focus-mode .toolbar,
   .poem-workshop.is-focus-mode .ai-analysis-section,
+  .poem-workshop.is-focus-mode .editor-meta-grid,
+  .poem-workshop.is-focus-mode .editor-title-collapsed-line,
   .poem-workshop.is-focus-mode .rhyme-panel,
   .poem-workshop.is-focus-mode .editor-rhyme-scheme,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .topbar,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .toolbar,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section {
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section,
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-meta-grid,
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-title-collapsed-line,
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .rhyme-panel,
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-rhyme-scheme {
     transition: none;
   }
 }

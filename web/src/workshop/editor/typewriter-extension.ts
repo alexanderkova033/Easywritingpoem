@@ -37,9 +37,14 @@ const typewriterPlugin = ViewPlugin.fromClass(
 
     constructor(_view: EditorView) {}
 
-    update(update: { docChanged: boolean; selectionSet: boolean; state: EditorView["state"]; view: EditorView }) {
+    update(update: { docChanged: boolean; selectionSet: boolean; state: EditorView["state"]; startState: EditorView["state"]; transactions: readonly { effects: readonly { is: (e: typeof setTypewriterEnabled) => boolean; value: boolean }[] }[]; view: EditorView }) {
       if (!update.state.field(typewriterEnabled, false)) return;
-      if (!update.docChanged && !update.selectionSet) return;
+      // Re-center on enable so the caret lands at viewport center immediately
+      // (not just after the next keystroke).
+      const justEnabled = update.transactions.some((tr) =>
+        tr.effects.some((e) => e.is(setTypewriterEnabled) && e.value === true),
+      );
+      if (!update.docChanged && !update.selectionSet && !justEnabled) return;
       this.schedule(update.view);
     }
 

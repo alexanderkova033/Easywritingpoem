@@ -733,13 +733,25 @@ button.primary:disabled {
 .cm-rhyme-end-4 { text-decoration-color: #d95f8f; background: color-mix(in srgb, #d95f8f 12%, transparent); }
 .cm-rhyme-end-5 { text-decoration-color: #5fbab0; background: color-mix(in srgb, #5fbab0 12%, transparent); }
 
-/* ---- Internal rhyme: subtle dotted underline on mid-line rhyming words ---- */
+/* ---- Internal rhyme: subtle dotted underline on mid-line rhyming words ----
+   Drawn via background-image so it stacks correctly when the same word is
+   also an end-rhyme (which uses text-decoration). */
 .cm-rhyme-internal {
-  text-decoration: underline dotted;
-  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  text-decoration-thickness: 1.4px;
-  text-underline-offset: 3px;
-  text-decoration-skip-ink: none;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 78%, transparent) 45%,
+    transparent 46%
+  );
+  background-size: 3.5px 2.2px;
+  background-position: 0 100%;
+  background-repeat: repeat-x;
+  padding-bottom: 1px;
+}
+
+/* When also an end-rhyme word, push the dotted line below the solid one. */
+.cm-rhyme-end.cm-rhyme-internal {
+  padding-bottom: 4px;
+  background-position: 0 calc(100% - 0px);
 }
 
 /* ---- Persistent (always-on) dim highlights after AI analysis ---- */
