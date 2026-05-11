@@ -115,6 +115,34 @@ function parseStrongestLine(v: unknown): StrongestLine | undefined {
   return { line: Math.round(line), excerpt, why };
 }
 
+/** Cap total issues at MAX_ISSUES and roughly balance high/medium/low buckets.
+ * Round-robin pick from each severity bucket (high → medium → low) preserving
+ * original order within each bucket. Issues with no severity fall into "low". */
+const MAX_ISSUES = 5;
+function balanceAndCapIssues<T extends { severity?: "high" | "medium" | "low" }>(issues: T[]): T[] {
+  if (issues.length <= MAX_ISSUES) return issues;
+  const high: T[] = [];
+  const medium: T[] = [];
+  const low: T[] = [];
+  for (const iss of issues) {
+    if (iss.severity === "high") high.push(iss);
+    else if (iss.severity === "medium") medium.push(iss);
+    else low.push(iss);
+  }
+  const out: T[] = [];
+  const buckets = [high, medium, low];
+  while (out.length < MAX_ISSUES) {
+    let drew = false;
+    for (const b of buckets) {
+      if (out.length >= MAX_ISSUES) break;
+      const next = b.shift();
+      if (next) { out.push(next); drew = true; }
+    }
+    if (!drew) break;
+  }
+  return out;
+}
+
 function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
@@ -139,7 +167,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
       ? obj.personal_feedback.trim() : undefined,
     clarifying_question: typeof obj.clarifying_question === "string" && obj.clarifying_question.trim()
       ? obj.clarifying_question.trim() : undefined,
-    issues: issuesRaw
+    issues: balanceAndCapIssues(issuesRaw
       .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
       .map((iss, idx) => ({
         id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
@@ -162,7 +190,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
               .slice(0, 3)
           : [],
         rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
-      })),
+      }))),
   };
 }
 

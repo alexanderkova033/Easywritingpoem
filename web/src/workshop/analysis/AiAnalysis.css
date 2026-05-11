@@ -996,6 +996,15 @@
   color: var(--text);
 }
 
+.ai-rationale-mark {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 14%, transparent);
+  color: inherit;
+  padding: 0 0.18em;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 .ai-issue-improvements {
   margin: 0.1rem 0 0;
   padding-left: 0;

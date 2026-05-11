@@ -211,11 +211,24 @@ export function endRhymeClustersByStanza(
  * Build per-stanza rhyme clusters from an editor-scheme label array
  * (output of `detectRhymeScheme`). Guarantees the panel and the editor
  * gutter agree about which end-words rhyme.
+ *
+ * A label is emitted in a stanza if it appears ≥2 lines within the stanza,
+ * OR if the same label also appears in another stanza (cross-stanza rhyme).
+ * The latter keeps singletons visible so the panel can show them sharing
+ * a colour with their cross-stanza partner.
  */
 export function stanzaGroupsFromScheme(
   lines: string[],
   schemeLabels: string[],
 ): StanzaClusterGroup[] {
+  const globalCount = new Map<string, number>();
+  for (let i = 0; i < lines.length; i++) {
+    if (!(lines[i] ?? "").trim()) continue;
+    const lbl = schemeLabels[i];
+    if (!lbl) continue;
+    globalCount.set(lbl, (globalCount.get(lbl) ?? 0) + 1);
+  }
+
   const groups: StanzaClusterGroup[] = [];
   let stanzaIdx = 0;
   let stanzaStart = -1;
@@ -225,7 +238,9 @@ export function stanzaGroupsFromScheme(
     if (stanzaStart < 0) return;
     const clusters: RhymeCluster[] = [];
     for (const [label, lineNumbers] of byLabel) {
-      if (lineNumbers.length >= 2) {
+      const localCount = lineNumbers.length;
+      const total = globalCount.get(label) ?? localCount;
+      if (localCount >= 2 || total >= 2) {
         clusters.push({
           ending: label,
           label,

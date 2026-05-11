@@ -22,6 +22,7 @@ export const UI_FONT_OPTIONS = [
 ] as const;
 
 export const POEM_SIZE_OPTIONS = [
+  { id: "xs", label: "Extra Small" },
   { id: "sm", label: "Small" },
   { id: "md", label: "Medium" },
   { id: "lg", label: "Large" },

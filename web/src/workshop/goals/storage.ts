@@ -38,6 +38,9 @@ export function loadWorkshopGoals(): WorkshopGoals {
       const canon = canonicaliseRhymeScheme(o.targetRhymeScheme);
       if (canon) out.targetRhymeScheme = canon;
     }
+    if (o.targetRhymeSchemePerStanza === true) {
+      out.targetRhymeSchemePerStanza = true;
+    }
     if (typeof o.preset === "string") out.preset = o.preset;
     const soft = readOptionalStringArray(o.softGoals);
     if (soft) out.softGoals = soft;
@@ -57,6 +60,9 @@ export function saveWorkshopGoals(goals: WorkshopGoals): boolean {
     if (typeof v === "number") payload[k] = v;
   }
   if (goals.targetRhymeScheme) payload.targetRhymeScheme = goals.targetRhymeScheme;
+  if (goals.targetRhymeSchemePerStanza) {
+    (payload as Record<string, unknown>).targetRhymeSchemePerStanza = true;
+  }
   if (goals.softGoals && goals.softGoals.length > 0) payload.softGoals = goals.softGoals;
   if (goals.preset != null) payload.preset = goals.preset;
   if (goals.targetLinesPerStanza != null) payload.targetLinesPerStanza = goals.targetLinesPerStanza;

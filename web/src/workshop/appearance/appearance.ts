@@ -180,10 +180,11 @@ export function saveAppearance(s: AppearanceSettings): boolean {
 }
 
 const POEM_SIZE_VAR: Record<PoemSizeId, string> = {
-  sm: "0.95rem",
-  md: "1.075rem",
-  lg: "1.2rem",
-  xl: "1.38rem",
+  xs: "0.95rem",
+  sm: "1.075rem",
+  md: "1.2rem",
+  lg: "1.35rem",
+  xl: "1.55rem",
 };
 
 const POEM_WEIGHT_VAR: Record<PoemWeightId, string> = {

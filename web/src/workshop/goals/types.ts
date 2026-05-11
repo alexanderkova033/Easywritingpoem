@@ -24,6 +24,12 @@ export interface WorkshopGoals {
    * letter relabelling, so the user's letter choice doesn't matter.
    */
   targetRhymeScheme?: string;
+  /**
+   * When true, `targetRhymeScheme` is one stanza's pattern. Each stanza is
+   * compared independently against the pattern. When false/undefined,
+   * `targetRhymeScheme` is the full-poem pattern.
+   */
+  targetRhymeSchemePerStanza?: boolean;
 
   /** Keys of goals that are soft/aspirational (no issues-panel warnings). Default: all goals are required. */
   softGoals?: string[];

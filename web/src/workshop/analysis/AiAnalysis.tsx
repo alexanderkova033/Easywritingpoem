@@ -1,5 +1,5 @@
 import "./AiAnalysis.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   analyzePoem,
   comparePoem,
@@ -31,6 +31,29 @@ const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
 const LS_CHAT_PREFIX = "easy-poems:ai-chat:";
 const LS_SNAPSHOTS_PREFIX = "easy-poems:ai-snapshots:";
 const MAX_SNAPSHOTS = 3;
+
+/** Wrap occurrences of the issue's problem_words inside rationale text in a
+ * lightly-tinted <mark>. Word-boundary matched, case-insensitive. */
+function renderRationaleWithMarks(text: string, problemWords?: string[]): ReactNode {
+  if (!problemWords || problemWords.length === 0) return text;
+  const escaped = problemWords
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (escaped.length === 0) return text;
+  const re = new RegExp(`\\b(${escaped.join("|")})\\b`, "gi");
+  const parts: ReactNode[] = [];
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(<mark key={key++} className="ai-rationale-mark">{m[0]}</mark>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
 
 function hashInput(input: string): string {
   // 53-bit cyrb53 — collision-resistant enough for "did the input change".
@@ -555,7 +578,9 @@ function IssueCard({
             </div>
           )}
           {issue.rationale && (
-            <p className="ai-issue-rationale">{issue.rationale}</p>
+            <p className="ai-issue-rationale">
+              {renderRationaleWithMarks(issue.rationale, issue.problem_words)}
+            </p>
           )}
           {issue.rewrite && (
             <div className={`ai-issue-rewrite ai-issue-rewrite-compact${showRewrite ? " is-expanded" : ""}`}>

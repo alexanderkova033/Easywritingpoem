@@ -2,7 +2,7 @@
 .reading-mode-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(8, 5, 2, 0.84);
+  background: rgba(8, 5, 2, 0.78);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 9000;
@@ -12,92 +12,120 @@
   padding: 3rem 2rem;
   box-sizing: border-box;
   overflow-y: auto;
+  transition: background 0.25s ease;
 }
 
-/* ── Paper modal ─────────────────────────────────────────────── */
-.reading-mode-modal {
-  color-scheme: light;
-  --rp-bg:      #d4a85e;
-  --rp-bg2:     #a56c1e;
-  --rp-ink:     #170a01;
-  --rp-muted:   rgba(23, 10, 1, 0.45);
-  --rp-rule:    rgba(80, 44, 6, 0.24);
-  --rp-accent:  rgba(100, 54, 8, 0.68);
+/* Theme tokens — applied to overlay so backdrop can react too */
+.reading-mode-overlay[data-reading-theme="parchment"] {
+  --rm-page-bg:
+    radial-gradient(ellipse 32% 20% at 5% 7%, rgba(95, 52, 6, 0.16) 0%, transparent 100%),
+    radial-gradient(ellipse 14% 9% at 86% 11%, rgba(105, 62, 10, 0.13) 20%, rgba(105, 62, 10, 0.04) 50%, transparent 100%),
+    radial-gradient(ellipse 20% 12% at 68% 82%, rgba(80, 42, 5, 0.10) 0%, transparent 100%),
+    radial-gradient(ellipse 60% 50% at 0%   0%,   rgba(18, 6, 1, 0.40) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 0%,   rgba(18, 6, 1, 0.32) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 0%   100%, rgba(18, 6, 1, 0.34) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(18, 6, 1, 0.42) 0%, transparent 70%),
+    linear-gradient(to bottom, rgba(15, 5, 1, 0.16) 0%, transparent 7%),
+    linear-gradient(to top,    rgba(12, 4, 1, 0.14) 0%, transparent 5%),
+    radial-gradient(ellipse 78% 82% at 50% 42%, #e5c882 0%, #cb9a40 52%, #9c6612 100%);
+  --rm-ink: #170a01;
+  --rm-muted: rgba(23, 10, 1, 0.45);
+  --rm-rule: rgba(80, 44, 6, 0.24);
+  --rm-accent: rgba(100, 54, 8, 0.68);
+  --rm-color-scheme: light;
+  --rm-edge-vignette:
+    radial-gradient(ellipse 78% 82% at 50% 40%, transparent 35%,
+      rgba(32, 12, 2, 0.22) 75%, rgba(18, 5, 1, 0.40) 100%);
+}
 
-  max-width: 40rem;
+.reading-mode-overlay[data-reading-theme="light"] {
+  --rm-page-bg: #fbfaf6;
+  --rm-ink: #1a1814;
+  --rm-muted: rgba(26, 24, 20, 0.50);
+  --rm-rule: rgba(26, 24, 20, 0.14);
+  --rm-accent: rgba(116, 76, 18, 0.72);
+  --rm-color-scheme: light;
+  --rm-edge-vignette: none;
+}
+
+.reading-mode-overlay[data-reading-theme="sepia"] {
+  --rm-page-bg: #f5ecd9;
+  --rm-ink: #3a2a16;
+  --rm-muted: rgba(58, 42, 22, 0.52);
+  --rm-rule: rgba(58, 42, 22, 0.18);
+  --rm-accent: rgba(126, 78, 22, 0.78);
+  --rm-color-scheme: light;
+  --rm-edge-vignette: none;
+}
+
+.reading-mode-overlay[data-reading-theme="dark"] {
+  --rm-page-bg: #16161a;
+  --rm-ink: #ece7dc;
+  --rm-muted: rgba(236, 231, 220, 0.50);
+  --rm-rule: rgba(236, 231, 220, 0.14);
+  --rm-accent: rgba(220, 184, 122, 0.80);
+  --rm-color-scheme: dark;
+  --rm-edge-vignette: none;
+}
+
+.reading-mode-overlay[data-reading-theme="dark"] {
+  background: rgba(0, 0, 0, 0.84);
+}
+.reading-mode-overlay[data-reading-theme="light"] {
+  background: rgba(20, 20, 22, 0.62);
+}
+
+/* Fullscreen mode — modal fills viewport, no padding around */
+.reading-mode-overlay.is-fullscreen {
+  padding: 0;
+  align-items: stretch;
+}
+
+/* ── Page (modal) ─────────────────────────────────────────────── */
+.reading-mode-modal {
+  color-scheme: var(--rm-color-scheme);
+  max-width: 42rem;
   width: 100%;
   margin: 0 auto;
-  background:
-    /* Fine grain */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.13'/%3E%3C/svg%3E"),
-    /* Coarser paper-fiber layer */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.28' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23m)' opacity='.055'/%3E%3C/svg%3E"),
-    /* Amber stain — top-left */
-    radial-gradient(ellipse 32% 20% at 5% 7%, rgba(95, 52, 6, 0.16) 0%, transparent 100%),
-    /* Tea-ring stain — upper right */
-    radial-gradient(ellipse 14% 9% at 86% 11%, rgba(105, 62, 10, 0.13) 20%, rgba(105, 62, 10, 0.04) 50%, transparent 100%),
-    /* Faint blotch — lower centre-right */
-    radial-gradient(ellipse 20% 12% at 68% 82%, rgba(80, 42, 5, 0.10) 0%, transparent 100%),
-    /* Heavy corner burns */
-    radial-gradient(ellipse 60% 50% at 0%   0%,   rgba(18, 6, 1, 0.50) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 100% 0%,   rgba(18, 6, 1, 0.42) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 0%   100%, rgba(18, 6, 1, 0.44) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(18, 6, 1, 0.52) 0%, transparent 70%),
-    /* Top-edge scorching */
-    linear-gradient(to bottom, rgba(15, 5, 1, 0.22) 0%, transparent 7%),
-    /* Bottom-edge darkening */
-    linear-gradient(to top,    rgba(12, 4, 1, 0.18) 0%, transparent 5%),
-    /* Core page: warm honey centre → burnt amber edges */
-    radial-gradient(ellipse 78% 82% at 50% 42%, #e2c47a 0%, #c89438 52%, #986010 100%);
-
-  border-radius: 2px 5px 3px 4px / 4px 2px 5px 3px;
+  background: var(--rm-page-bg);
+  border-radius: 4px;
   box-shadow:
-    0 2px 0  rgba(255, 220, 140, 0.20) inset,
-    0 -2px 0 rgba(0, 0, 0, 0.18) inset,
-    2px 0 10px rgba(0, 0, 0, 0.10) inset,
-    0 50px 120px rgba(0, 0, 0, 0.55),
-    0 14px 40px  rgba(0, 0, 0, 0.36),
-    0 4px  12px  rgba(0, 0, 0, 0.26),
-    4px 8px 0    rgba(80, 40, 5, 0.06);
+    0 50px 120px rgba(0, 0, 0, 0.45),
+    0 14px 40px  rgba(0, 0, 0, 0.30),
+    0 4px  12px  rgba(0, 0, 0, 0.20);
   padding: 0;
   position: relative;
-  filter: url(#rp-rough);
+  transition: max-width 0.25s ease, border-radius 0.25s ease;
 }
 
-/* Fold corner — bottom-right dog-ear */
-.reading-mode-modal::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 2.6rem;
-  height: 2.6rem;
-  background: linear-gradient(
-    225deg,
-    var(--rp-bg2) 46%,
-    rgba(0, 0, 0, 0.20) 50%,
-    transparent 52%
-  );
-  pointer-events: none;
+.reading-mode-overlay[data-reading-theme="parchment"] .reading-mode-modal {
+  border-radius: 2px 5px 3px 4px / 4px 2px 5px 3px;
+  box-shadow:
+    0 2px 0  rgba(255, 220, 140, 0.18) inset,
+    0 -2px 0 rgba(0, 0, 0, 0.16) inset,
+    2px 0 10px rgba(0, 0, 0, 0.08) inset,
+    0 50px 120px rgba(0, 0, 0, 0.50),
+    0 14px 40px  rgba(0, 0, 0, 0.32),
+    0 4px  12px  rgba(0, 0, 0, 0.22);
 }
 
-/* Edge vignette — scorched / oxidised borders */
+/* Edge vignette — only when defined */
 .reading-mode-modal::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    ellipse 78% 82% at 50% 40%,
-    transparent 35%,
-    rgba(32, 12, 2, 0.28) 75%,
-    rgba(18, 5, 1, 0.50) 100%
-  );
+  background: var(--rm-edge-vignette, none);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Ensure content sits above the pseudo-element vignette */
+.reading-mode-overlay.is-fullscreen .reading-mode-modal {
+  max-width: 100%;
+  min-height: 100dvh;
+  border-radius: 0;
+}
+
 .reading-mode-controls,
 .reading-mode-poem,
 .reading-mode-close {
@@ -111,9 +139,23 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.65rem 1rem 0.6rem;
-  border-bottom: 1px solid var(--rp-rule);
-  background: rgba(14, 5, 1, 0.06);
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--rm-rule);
+  background: rgba(14, 5, 1, 0.04);
+  flex-wrap: wrap;
+  transition: opacity 0.35s ease;
+}
+
+.reading-mode-overlay[data-reading-theme="dark"] .reading-mode-controls {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.reading-mode-modal.controls-hidden .reading-mode-controls {
+  opacity: 0.18;
+}
+.reading-mode-modal.controls-hidden .reading-mode-controls:hover,
+.reading-mode-modal.controls-hidden .reading-mode-controls:focus-within {
+  opacity: 1;
 }
 
 .reading-mode-controls-left,
@@ -121,6 +163,7 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
+  flex-wrap: wrap;
 }
 
 .reading-mode-icon-btn {
@@ -129,12 +172,12 @@
   gap: 0.28rem;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--rp-muted);
+  border-radius: 4px;
+  color: var(--rm-muted);
   font-size: 0.76rem;
   font-family: system-ui, sans-serif;
   cursor: pointer;
-  padding: 0.2rem 0.45rem;
+  padding: 0.25rem 0.5rem;
   line-height: 1;
   transition: color 0.13s, border-color 0.13s, background 0.13s;
   white-space: nowrap;
@@ -142,35 +185,57 @@
 }
 
 .reading-mode-icon-btn:hover {
-  color: var(--rp-ink);
-  border-color: var(--rp-rule);
-  background: rgba(80, 42, 5, 0.10);
+  color: var(--rm-ink);
+  border-color: var(--rm-rule);
+  background: rgba(120, 80, 20, 0.08);
+}
+
+.reading-mode-overlay[data-reading-theme="dark"] .reading-mode-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.reading-mode-icon-btn.is-active {
+  color: var(--rm-ink);
+  border-color: var(--rm-rule);
+  background: rgba(120, 80, 20, 0.12);
+}
+
+.reading-mode-overlay[data-reading-theme="dark"] .reading-mode-icon-btn.is-active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .reading-mode-icon-btn svg {
-  width: 0.82rem;
-  height: 0.82rem;
+  width: 0.85rem;
+  height: 0.85rem;
   flex-shrink: 0;
+}
+
+.reading-mode-dropcap-icon {
+  font-family: "EB Garamond", Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 0.7;
+  margin-right: 0.05rem;
 }
 
 .reading-mode-font-size-group {
   display: flex;
   align-items: center;
   gap: 0;
-  border: 1px solid var(--rp-rule);
-  border-radius: 3px;
+  border: 1px solid var(--rm-rule);
+  border-radius: 4px;
   overflow: hidden;
 }
 
 .reading-mode-font-btn {
   background: transparent;
   border: none;
-  border-right: 1px solid var(--rp-rule);
-  color: var(--rp-muted);
+  border-right: 1px solid var(--rm-rule);
+  color: var(--rm-muted);
   font-size: 0.84rem;
   font-family: system-ui, sans-serif;
   cursor: pointer;
-  padding: 0.16rem 0.5rem 0.2rem;
+  padding: 0.22rem 0.55rem;
   line-height: 1;
   transition: color 0.12s, background 0.12s;
 }
@@ -180,8 +245,11 @@
 }
 
 .reading-mode-font-btn:hover:not(:disabled) {
-  color: var(--rp-ink);
-  background: rgba(80, 42, 5, 0.10);
+  color: var(--rm-ink);
+  background: rgba(120, 80, 20, 0.10);
+}
+.reading-mode-overlay[data-reading-theme="dark"] .reading-mode-font-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .reading-mode-font-btn:disabled {
@@ -191,7 +259,7 @@
 
 .reading-mode-copy-feedback {
   font-size: 0.72rem;
-  color: var(--rp-accent);
+  color: var(--rm-accent);
   opacity: 0;
   transition: opacity 0.2s;
   pointer-events: none;
@@ -206,14 +274,15 @@
 /* ── Poem content ─────────────────────────────────────────────── */
 .reading-mode-poem {
   padding: 2.6rem 3.4rem 3.2rem;
+  color: var(--rm-ink);
 }
 
 /* ── Title ───────────────────────────────────────────────────── */
 .reading-mode-title {
-  font-size: 1.72rem;
+  font-size: 1.78em;
   font-weight: 700;
   margin: 0 0 0.2rem;
-  color: var(--rp-ink);
+  color: var(--rm-ink);
   font-family: "EB Garamond", "Crimson Pro", Georgia, serif;
   font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
   letter-spacing: 0.035em;
@@ -223,8 +292,8 @@
 }
 
 .reading-mode-form {
-  font-size: 0.82rem;
-  color: var(--rp-muted);
+  font-size: 0.86em;
+  color: var(--rm-muted);
   font-style: italic;
   margin: 0;
   text-align: center;
@@ -249,16 +318,16 @@
   background: linear-gradient(
     to right,
     transparent,
-    var(--rp-rule) 20%,
-    var(--rp-rule) 80%,
+    var(--rm-rule) 20%,
+    var(--rm-rule) 80%,
     transparent
   );
 }
 
 .reading-mode-divider-ornament {
-  font-size: 0.68rem;
-  color: var(--rp-accent);
-  opacity: 0.65;
+  font-size: 0.72em;
+  color: var(--rm-accent);
+  opacity: 0.72;
   flex-shrink: 0;
   letter-spacing: 0.24em;
 }
@@ -266,20 +335,53 @@
 /* ── Body text ───────────────────────────────────────────────── */
 .reading-mode-body {
   font-family: "EB Garamond", "Crimson Pro", Georgia, serif;
-  line-height: 1.9;
-  color: var(--rp-ink);
+  line-height: 1.85;
+  color: var(--rm-ink);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   font-kerning: normal;
   font-weight: 400;
   font-feature-settings: "kern" 1, "liga" 1, "onum" 1, "calt" 1;
   font-variant-ligatures: common-ligatures;
-  letter-spacing: 0.014em;
+  letter-spacing: 0.012em;
+  position: relative;
 }
 
 .reading-mode-line {
   display: block;
   margin: 0;
+  position: relative;
+}
+
+/* Line numbers via data attribute — no DOM clutter */
+.reading-mode-poem.with-line-numbers .reading-mode-line[data-line-number]::before {
+  content: attr(data-line-number);
+  position: absolute;
+  left: -2.6rem;
+  top: 0.15em;
+  width: 2rem;
+  text-align: right;
+  font-size: 0.62em;
+  font-family: "Source Sans 3", system-ui, sans-serif;
+  color: var(--rm-muted);
+  opacity: 0.6;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Drop cap on first content line */
+.reading-mode-poem.with-drop-cap .reading-mode-line.is-first::first-letter {
+  font-size: 3.1em;
+  float: left;
+  line-height: 0.88;
+  padding: 0.08em 0.12em 0 0;
+  margin-top: 0.05em;
+  font-weight: 600;
+  color: var(--rm-accent);
+  font-family: "EB Garamond", Georgia, serif;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
 .reading-mode-stanza-break {
@@ -289,12 +391,13 @@
 
 .reading-mode-fin {
   text-align: center;
-  font-size: 0.95rem;
-  color: var(--rp-muted);
+  font-size: 0.95em;
+  color: var(--rm-muted);
   margin-top: 2.2rem;
-  opacity: 0.38;
+  opacity: 0.42;
   letter-spacing: 0.3em;
   font-family: "EB Garamond", Georgia, serif;
+  clear: both;
 }
 
 /* ── Close button ────────────────────────────────────────────── */
@@ -303,26 +406,40 @@
   top: -0.85rem;
   right: -0.85rem;
   z-index: 3;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 1.9rem;
+  height: 1.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #c9944a;
-  border: 1px solid rgba(0, 0, 0, 0.22);
+  background: var(--rm-page-bg-button, #c9944a);
+  border: 1px solid rgba(0, 0, 0, 0.20);
   border-radius: 50%;
-  font-size: 0.95rem;
-  color: rgba(23, 10, 1, 0.55);
+  font-size: 1rem;
+  color: var(--rm-ink);
   cursor: pointer;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
-  transition: color 0.13s, background 0.13s, border-color 0.13s;
+  transition: color 0.13s, background 0.13s, border-color 0.13s, transform 0.13s;
+}
+.reading-mode-overlay[data-reading-theme="light"] .reading-mode-close,
+.reading-mode-overlay[data-reading-theme="sepia"] .reading-mode-close {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.16);
+}
+.reading-mode-overlay[data-reading-theme="dark"] .reading-mode-close {
+  background: #2a2a30;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--rm-ink);
 }
 
 .reading-mode-close:hover {
-  color: var(--rp-ink);
-  background: #d9a85a;
-  border-color: rgba(0, 0, 0, 0.30);
+  transform: scale(1.08);
+}
+
+.reading-mode-overlay.is-fullscreen .reading-mode-close {
+  top: 0.6rem;
+  right: 0.75rem;
+  position: fixed;
 }
 
 /* ── Print ───────────────────────────────────────────────────── */
@@ -340,11 +457,14 @@
     box-shadow: none;
     max-width: 100%;
     border-radius: 0;
-    filter: none;
-    background: white;
-    --rp-ink: #000;
-    --rp-muted: rgba(0,0,0,0.5);
+    background: white !important;
+    --rm-ink: #000;
+    --rm-muted: rgba(0,0,0,0.5);
+    --rm-rule: rgba(0,0,0,0.18);
+    --rm-accent: rgba(0,0,0,0.6);
   }
+
+  .reading-mode-modal::before { display: none; }
 
   .reading-mode-controls,
   .reading-mode-close {
@@ -353,6 +473,10 @@
 
   .reading-mode-poem {
     padding: 1rem 0;
+  }
+
+  .reading-mode-poem.with-line-numbers .reading-mode-line[data-line-number]::before {
+    color: rgba(0,0,0,0.55);
   }
 }
 
@@ -382,10 +506,24 @@
   }
 
   .reading-mode-poem {
-    padding: 1.6rem 1.4rem 2.5rem;
+    padding: 1.6rem 1.5rem 2.5rem;
+  }
+
+  .reading-mode-poem.with-line-numbers {
+    padding-left: 3.2rem;
   }
 
   .reading-mode-title {
-    font-size: 1.36rem;
+    font-size: 1.45em;
+  }
+
+  .reading-mode-controls {
+    padding: 0.5rem 0.6rem;
+  }
+}
+
+@media (min-width: 521px) {
+  .reading-mode-poem.with-line-numbers {
+    padding-left: 5rem;
   }
 }

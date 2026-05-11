@@ -107,16 +107,18 @@ function SoftPill({
   );
 }
 
-function NumberStepperInput({
+function NumberInput({
   value,
   onCommit,
   ariaLabel,
-  placeholder = "—",
+  placeholder,
+  withSteppers = false,
 }: {
   value: number | undefined;
   onCommit: (v: number | undefined) => void;
   ariaLabel: string;
   placeholder?: string;
+  withSteppers?: boolean;
 }) {
   const [text, setText] = useState(value != null ? String(value) : "");
   const ref = useRef<HTMLInputElement>(null);
@@ -132,7 +134,6 @@ function NumberStepperInput({
     }
     const n = parseInt(trimmed, 10);
     if (!Number.isFinite(n) || n < 1) {
-      // Reject 0/negatives/garbage — restore previous value.
       setText(value != null ? String(value) : "");
       return;
     }
@@ -143,6 +144,29 @@ function NumberStepperInput({
     const base = value ?? 1;
     onCommit(Math.max(1, base + delta));
   }
+
+  const input = (
+    <input
+      ref={ref}
+      type="number"
+      className="goal-card-input"
+      min={1}
+      inputMode="numeric"
+      value={text}
+      placeholder={placeholder ?? "—"}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={(e) => commit(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          commit(text);
+          ref.current?.blur();
+        }
+      }}
+      aria-label={ariaLabel}
+    />
+  );
+
+  if (!withSteppers) return input;
 
   return (
     <div className="goal-card-stepper">
@@ -155,24 +179,7 @@ function NumberStepperInput({
       >
         −
       </button>
-      <input
-        ref={ref}
-        type="number"
-        className="goal-card-input"
-        min={1}
-        inputMode="numeric"
-        value={text}
-        placeholder={placeholder}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={(e) => commit(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            commit(text);
-            ref.current?.blur();
-          }
-        }}
-        aria-label={ariaLabel}
-      />
+      {input}
       <button
         type="button"
         className="goal-card-step"
@@ -278,22 +285,17 @@ function MetricGoalCard({
     <div className={`goal-card ${statusClass}`} title={hint}>
       <div className="goal-card-header">
         <span className="goal-card-label">{label}</span>
-        <div className="goal-card-actions">
-          {hasGoal ? (
-            <SoftPill soft={isSoft} onToggle={onToggleSoft} label={label} />
-          ) : null}
-          {hasGoal ? (
-            <button
-              type="button"
-              className="goal-card-clear"
-              onClick={clearGoal}
-              aria-label={`Clear ${label} goal`}
-              title="Clear"
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
+        {hasGoal ? (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={clearGoal}
+            aria-label={`Clear ${label} goal`}
+            title="Clear"
+          >
+            ×
+          </button>
+        ) : null}
       </div>
 
       <div className="goal-card-value-row">
@@ -305,10 +307,7 @@ function MetricGoalCard({
             / {targetValue}
           </span>
         ) : hasRange ? (
-          <span
-            className={`goal-card-of${met ? " goal-card-of--met" : ""}`}
-          >
-            {" "}
+          <span className={`goal-card-of${met ? " goal-card-of--met" : ""}`}>
             in {rangeMin ?? "·"}–{rangeMax ?? "·"}
           </span>
         ) : (
@@ -317,14 +316,15 @@ function MetricGoalCard({
       </div>
 
       {mode === "exact" ? (
-        <NumberStepperInput
+        <NumberInput
           value={targetValue}
           onCommit={onSetTarget}
           ariaLabel={`${label} target`}
+          withSteppers
         />
       ) : (
         <div className="goal-card-range">
-          <NumberStepperInput
+          <NumberInput
             value={rangeMin}
             onCommit={(v) => onSetRange(v, rangeMax)}
             ariaLabel={`${label} minimum`}
@@ -333,7 +333,7 @@ function MetricGoalCard({
           <span className="goal-card-range-sep" aria-hidden>
             –
           </span>
-          <NumberStepperInput
+          <NumberInput
             value={rangeMax}
             onCommit={(v) => onSetRange(rangeMin, v)}
             ariaLabel={`${label} maximum`}
@@ -342,13 +342,29 @@ function MetricGoalCard({
         </div>
       )}
 
-      <button
-        type="button"
-        className="goal-card-mode-toggle linkish"
-        onClick={toggleMode}
-      >
-        {mode === "exact" ? "Use range" : "Use exact"}
-      </button>
+      <div className="goal-card-footer">
+        <div className="goal-card-mode" role="group" aria-label="Goal mode">
+          <button
+            type="button"
+            className={`goal-card-mode-btn${mode === "exact" ? " is-active" : ""}`}
+            onClick={() => mode !== "exact" && toggleMode()}
+            aria-pressed={mode === "exact"}
+          >
+            Exact
+          </button>
+          <button
+            type="button"
+            className={`goal-card-mode-btn${mode === "range" ? " is-active" : ""}`}
+            onClick={() => mode !== "range" && toggleMode()}
+            aria-pressed={mode === "range"}
+          >
+            Range
+          </button>
+        </div>
+        {hasGoal ? (
+          <SoftPill soft={isSoft} onToggle={onToggleSoft} label={label} />
+        ) : null}
+      </div>
 
       {pct !== null ? (
         <div className="goal-card-bar" aria-hidden>
@@ -396,26 +412,17 @@ function SyllableCapCard({
     >
       <div className="goal-card-header">
         <span className="goal-card-label">Syllable cap</span>
-        <div className="goal-card-actions">
-          {hasGoal ? (
-            <SoftPill
-              soft={isSoft}
-              onToggle={onToggleSoft}
-              label="syllable cap"
-            />
-          ) : null}
-          {hasGoal ? (
-            <button
-              type="button"
-              className="goal-card-clear"
-              onClick={() => onSet(undefined)}
-              aria-label="Clear syllable cap goal"
-              title="Clear"
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
+        {hasGoal ? (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={() => onSet(undefined)}
+            aria-label="Clear syllable cap goal"
+            title="Clear"
+          >
+            ×
+          </button>
+        ) : null}
       </div>
 
       <div className="goal-card-value-row">
@@ -425,11 +432,19 @@ function SyllableCapCard({
         </span>
       </div>
 
-      <NumberStepperInput
+      <NumberInput
         value={cap}
         onCommit={onSet}
         ariaLabel="Syllable cap"
+        withSteppers
       />
+
+      <div className="goal-card-footer">
+        <span className="goal-card-footer-spacer" />
+        {hasGoal ? (
+          <SoftPill soft={isSoft} onToggle={onToggleSoft} label="syllable cap" />
+        ) : null}
+      </div>
 
       {hasGoal && overCount > 0 ? (
         <p className="goal-card-extra">
@@ -445,31 +460,43 @@ function SyllableCapCard({
   );
 }
 
-const RHYME_SCHEME_PRESETS: Array<{ label: string; value: string; hint: string }> = [
+interface RhymeSchemePreset {
+  label: string;
+  value: string;
+  hint: string;
+  perStanza?: boolean;
+}
+
+const RHYME_SCHEME_PRESETS: RhymeSchemePreset[] = [
   { label: "None", value: "", hint: "No rhyme-scheme goal" },
-  { label: "AABB", value: "AABB", hint: "Couplets" },
-  { label: "ABAB", value: "ABAB", hint: "Alternating quatrain" },
+  { label: "AABB", value: "AABB", hint: "Couplets (per stanza)", perStanza: true },
+  { label: "ABAB", value: "ABAB", hint: "Alternating quatrain (per stanza)", perStanza: true },
+  { label: "ABBA", value: "ABBA", hint: "Enclosed rhyme (per stanza)", perStanza: true },
   { label: "AABBA", value: "AABBA", hint: "Limerick" },
-  { label: "ABBA", value: "ABBA", hint: "Enclosed rhyme" },
+  { label: "Ballad", value: "ABCB", hint: "Ballad stanza (per stanza)", perStanza: true },
   {
     label: "Sonnet",
     value: "ABABCDCDEFEFGG",
-    hint: "Shakespearean sonnet",
+    hint: "Shakespearean sonnet (full)",
   },
 ];
 
 function RhymeSchemeCard({
   target,
-  detected,
+  perStanza,
   matches,
+  schemePerLine,
   onSet,
+  onSetPerStanza,
   isSoft,
   onToggleSoft,
 }: {
   target: string;
-  detected: string;
+  perStanza: boolean;
   matches: boolean | null;
+  schemePerLine: import("@/workshop/goals/metrics").SchemeLineCompare[];
   onSet: (scheme: string | undefined) => void;
+  onSetPerStanza: (v: boolean) => void;
   isSoft: boolean;
   onToggleSoft: () => void;
 }) {
@@ -479,9 +506,6 @@ function RhymeSchemeCard({
   }, [target]);
 
   const canonCustom = canonicaliseRhymeScheme(custom);
-  const matchesAnyPreset = RHYME_SCHEME_PRESETS.some(
-    (p) => p.value === target,
-  );
 
   const commitCustom = () => {
     const canon = canonicaliseRhymeScheme(custom);
@@ -501,63 +525,63 @@ function RhymeSchemeCard({
     <div className={`goal-card goal-card--scheme ${statusClass}`}>
       <div className="goal-card-header">
         <span className="goal-card-label">Rhyme scheme</span>
-        <div className="goal-card-actions">
-          {hasGoal ? (
-            <SoftPill
-              soft={isSoft}
-              onToggle={onToggleSoft}
-              label="rhyme scheme"
-            />
-          ) : null}
-          {hasGoal ? (
-            <button
-              type="button"
-              className="goal-card-clear"
-              onClick={() => onSet(undefined)}
-              aria-label="Clear rhyme scheme goal"
-              title="Clear"
-            >
-              ×
-            </button>
-          ) : null}
-        </div>
+        {hasGoal ? (
+          <button
+            type="button"
+            className="goal-card-clear"
+            onClick={() => onSet(undefined)}
+            aria-label="Clear rhyme scheme goal"
+            title="Clear"
+          >
+            ×
+          </button>
+        ) : null}
       </div>
 
       <div className="goal-scheme-chips" role="group" aria-label="Rhyme scheme presets">
-        {RHYME_SCHEME_PRESETS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            className={`goal-scheme-chip${target === p.value ? " is-active" : ""}`}
-            title={p.hint}
-            onClick={() => onSet(p.value || undefined)}
-          >
-            {p.label}
-          </button>
-        ))}
+        {RHYME_SCHEME_PRESETS.map((p) => {
+          const active =
+            target === p.value && (!!p.perStanza === perStanza || p.value === "");
+          return (
+            <button
+              key={p.label}
+              type="button"
+              className={`goal-scheme-chip${active ? " is-active" : ""}`}
+              title={p.hint}
+              onClick={() => {
+                if (!p.value) {
+                  onSet(undefined);
+                  onSetPerStanza(false);
+                  return;
+                }
+                onSet(p.value);
+                onSetPerStanza(!!p.perStanza);
+              }}
+            >
+              {p.label}
+            </button>
+          );
+        })}
       </div>
 
       <div className="goal-scheme-custom">
-        <label className="muted small">
-          Custom
-          <input
-            type="text"
-            className="goal-scheme-input"
-            value={custom}
-            placeholder="e.g. ABBA"
-            spellCheck={false}
-            onChange={(e) => setCustom(e.target.value.toUpperCase())}
-            onBlur={commitCustom}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                commitCustom();
-              }
-            }}
-            aria-label="Custom rhyme scheme"
-          />
-        </label>
-        {!matchesAnyPreset && canonCustom && canonCustom !== target ? (
+        <input
+          type="text"
+          className="goal-scheme-input"
+          value={custom}
+          placeholder="Custom pattern (e.g. ABBA)"
+          spellCheck={false}
+          onChange={(e) => setCustom(e.target.value.toUpperCase())}
+          onBlur={commitCustom}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitCustom();
+            }
+          }}
+          aria-label="Custom rhyme scheme"
+        />
+        {canonCustom && canonCustom !== target ? (
           <button
             type="button"
             className="linkish goal-scheme-apply"
@@ -568,23 +592,57 @@ function RhymeSchemeCard({
         ) : null}
       </div>
 
-      <div className="goal-scheme-comparison">
-        <div className="goal-scheme-row">
-          <span className="muted small">Target</span>
-          <code className="goal-scheme-code">{target || "—"}</code>
-        </div>
-        <div className="goal-scheme-row">
-          <span className="muted small">Detected</span>
-          <code
-            className={`goal-scheme-code${matches === true ? " goal-scheme-code--met" : matches === false ? " goal-scheme-code--off" : ""}`}
-          >
-            {detected || "—"}
-          </code>
-        </div>
-        {hasGoal && matches === true ? (
-          <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
+      {hasGoal ? (
+        <label className="goal-scheme-perstanza" title="Repeat pattern within each stanza independently">
+          <input
+            type="checkbox"
+            checked={perStanza}
+            onChange={(e) => onSetPerStanza(e.target.checked)}
+          />
+          <span>Apply per stanza</span>
+        </label>
+      ) : null}
+
+      {hasGoal && schemePerLine.length > 0 ? (
+        <ul className="goal-scheme-lines" aria-label="Line-by-line rhyme comparison">
+          {schemePerLine.map((row) => (
+            <li
+              key={row.line}
+              className={`goal-scheme-line${row.matches ? " is-match" : " is-miss"}`}
+            >
+              <span className="goal-scheme-line-num">{row.line}</span>
+              <span className="goal-scheme-line-detected">
+                {row.detected || "·"}
+              </span>
+              <span className="goal-scheme-line-arrow" aria-hidden>
+                →
+              </span>
+              <span className="goal-scheme-line-expected">
+                {row.expected || "·"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : hasGoal ? (
+        <p className="muted small goal-scheme-empty">
+          Write a few lines to see how they line up against {target}.
+        </p>
+      ) : null}
+
+      <div className="goal-card-footer">
+        <span className="goal-card-footer-spacer" />
+        {hasGoal ? (
+          <SoftPill
+            soft={isSoft}
+            onToggle={onToggleSoft}
+            label="rhyme scheme"
+          />
         ) : null}
       </div>
+
+      {hasGoal && matches === true ? (
+        <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
+      ) : null}
     </div>
   );
 }
@@ -667,6 +725,7 @@ export interface WorkshopToolPanelsProps {
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   setGoalValue: (key: keyof WorkshopGoals, value: number | undefined) => void;
   setRhymeSchemeGoal: (scheme: string | undefined) => void;
+  setRhymeSchemePerStanza: (perStanza: boolean) => void;
   resetGoals: () => void;
   toggleGoalSoft: (key: string) => void;
   applyGoalPreset: (presetKey: string | null) => void;
@@ -741,6 +800,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     onSpellPersistenceError,
     setGoalValue,
     setRhymeSchemeGoal,
+    setRhymeSchemePerStanza,
     resetGoals,
     toggleGoalSoft,
     applyGoalPreset,
@@ -1173,9 +1233,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             />
             <RhymeSchemeCard
               target={goals.targetRhymeScheme ?? ""}
-              detected={goalEvaluation.detectedSchemeCanonical}
+              perStanza={!!goals.targetRhymeSchemePerStanza}
               matches={goalEvaluation.rhymeSchemeMatches}
+              schemePerLine={goalEvaluation.schemePerLine}
               onSet={setRhymeSchemeGoal}
+              onSetPerStanza={setRhymeSchemePerStanza}
               isSoft={!!goals.softGoals?.includes("targetRhymeScheme")}
               onToggleSoft={() => toggleGoalSoft("targetRhymeScheme")}
             />
@@ -1561,9 +1623,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
               // Assign synthetic letters to any clusters left without one (rare —
               // happens when a manual link involves words whose original
-              // ending didn't match anything in the scheme).
+              // ending didn't match anything in the scheme). Pick fresh letters
+              // *after* any auto labels already in use so Fix-rhymes additions
+              // visually stand apart from the heuristic groupings.
               const usedLabels = new Set(working.map((c) => c.label).filter(Boolean) as string[]);
-              const cycle = "ABCDEFGHIJKLMN";
+              const cycle = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
               let nextIdx = 0;
               for (const c of working) {
                 if (c.label) continue;

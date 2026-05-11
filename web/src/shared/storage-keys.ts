@@ -35,6 +35,9 @@ export const STORAGE_KEY_UI_HOVER_HINTS = "easy-poems:uiHoverHints";
 
 // Reading mode
 export const STORAGE_KEY_READING_FONT_SIZE = "easy-poems:readingFontSize";
+export const STORAGE_KEY_READING_THEME = "easy-poems:readingTheme";
+export const STORAGE_KEY_READING_LINE_NUMBERS = "easy-poems:readingLineNumbers";
+export const STORAGE_KEY_READING_DROP_CAP = "easy-poems:readingDropCap";
 export const STORAGE_KEY_WORD_LOOKUP_ENABLED = "easy-poems:wordLookupEnabled";
 
 // AI settings

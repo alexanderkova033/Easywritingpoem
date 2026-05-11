@@ -1209,6 +1209,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     setGoals((g) => ({ ...g, targetRhymeScheme: scheme }));
   }, []);
 
+  const setRhymeSchemePerStanza = useCallback((perStanza: boolean) => {
+    setGoals((g) => ({
+      ...g,
+      targetRhymeSchemePerStanza: perStanza ? true : undefined,
+    }));
+  }, []);
+
   const resetGoals = useCallback(() => {
     setGoals({});
   }, []);
@@ -1415,6 +1422,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     updateGoal,
     setGoalValue,
     setRhymeSchemeGoal,
+    setRhymeSchemePerStanza,
     resetGoals,
     setSyllablePattern,
     toggleGoalSoft,

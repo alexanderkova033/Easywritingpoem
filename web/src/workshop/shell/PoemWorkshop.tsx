@@ -1282,6 +1282,19 @@ export function PoemWorkshop() {
 
   return (
     <div className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}>
+      {isFocusMode && (
+        <button
+          type="button"
+          className="focus-back-btn"
+          onClick={() => setIsFocusMode(false)}
+          aria-label="Exit focus mode"
+          title="Exit focus mode"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden focusable="false">
+            <path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
       <CommandPalette
         open={isCmdkOpen}
         onClose={() => setIsCmdkOpen(false)}
@@ -2489,6 +2502,7 @@ export function PoemWorkshop() {
             updateGoal={m.updateGoal}
             setGoalValue={m.setGoalValue}
             setRhymeSchemeGoal={m.setRhymeSchemeGoal}
+            setRhymeSchemePerStanza={m.setRhymeSchemePerStanza}
             resetGoals={m.resetGoals}
             toggleGoalSoft={m.toggleGoalSoft}
             applyGoalPreset={m.applyGoalPreset}
