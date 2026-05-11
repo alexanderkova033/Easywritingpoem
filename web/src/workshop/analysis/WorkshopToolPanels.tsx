@@ -1037,8 +1037,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     goToLine,
     goToLineEnd,
     goToSpellHitAt,
-    cycleSpellHit,
-    spellNavIndex,
     applySpellSuggestion,
     applySpellSuggestionAll,
     spellBump,
@@ -2428,15 +2426,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         >
           <LiveSectionTitle>Spelling</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
-          {heavyToolsStale ? (
-            <p
-              className="tools-stale-hint muted small"
-              role="status"
-              aria-live="polite"
-            >
-              Updating…
-            </p>
-          ) : null}
           <div
             className="spell-strategy-toggle"
             role="group"
@@ -2446,19 +2435,19 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               type="button"
               className={`segment-btn spell-strategy-btn ${spellMode === "permissive" ? "active" : ""}`}
               aria-pressed={spellMode === "permissive"}
+              title="Fewer flags — poetry-friendly"
               onClick={() => onSpellModeChange("permissive")}
             >
-              <span className="spell-strategy-title">Poetry-friendly</span>
-              <span className="spell-strategy-sub">Fewer flags</span>
+              Poetry-friendly
             </button>
             <button
               type="button"
               className={`segment-btn spell-strategy-btn ${spellMode === "strict" ? "active" : ""}`}
               aria-pressed={spellMode === "strict"}
+              title="More flags — strict"
               onClick={() => onSpellModeChange("strict")}
             >
-              <span className="spell-strategy-title">Strict</span>
-              <span className="spell-strategy-sub">More flags</span>
+              Strict
             </button>
           </div>
           {wordlistErr ? (
@@ -2466,27 +2455,145 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               {wordlistErr}
             </p>
           ) : !wordlist ? (
-            <div
-              className="spell-loading-skeleton"
-              aria-busy="true"
-              aria-label="Loading dictionary"
-            >
-              <div className="spell-skeleton-line spell-skeleton-line-long" />
-              <div className="spell-skeleton-line spell-skeleton-line-mid" />
-              <div className="spell-skeleton-line spell-skeleton-line-short" />
-            </div>
+            <p className="muted small" aria-busy="true">
+              Loading dictionary…
+            </p>
           ) : (
             <>
+              {spellHits.length === 0 ? (
+                <EmptyState title="No spelling flags">
+                  <p className="muted small">
+                    Looks clean under your current mode.
+                  </p>
+                </EmptyState>
+              ) : (
+                <>
+                  {spellReplaceErr ? (
+                    <p className="error compact" role="alert">
+                      {spellReplaceErr}
+                    </p>
+                  ) : null}
+                <ul className="spell-hits spell-hits-draft">
+                  {spellHitGroups.slice(0, spellListCap).map((g) => {
+                    const count = g.hits.length;
+                    const first = g.hits[0]!;
+                    return (
+                      <li key={g.normalized} className="spell-hit-group">
+                        <div className="spell-hit-head">
+                          <span className="mono spell-hit-word">{g.display}</span>
+                          <span className="spell-hit-lines">
+                            {g.hits.slice(0, 6).map((h, i) => (
+                              <button
+                                key={`${h.docFrom}-${h.docTo}`}
+                                type="button"
+                                className="linkish spell-hit-line-link"
+                                onClick={() => goToSpellHitAt(h)}
+                                title={`Jump to line ${h.lineNumber}`}
+                              >
+                                L{h.lineNumber}
+                                {i < Math.min(g.hits.length, 6) - 1 ? "," : ""}
+                              </button>
+                            ))}
+                            {g.hits.length > 6 ? (
+                              <span className="muted small">
+                                +{g.hits.length - 6}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                        {g.suggestions.length > 0 ? (
+                          <div className="spell-suggestion-actions">
+                            {g.suggestions.slice(0, 2).map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                className="small-btn"
+                                disabled={heavyToolsStale}
+                                title={
+                                  heavyToolsStale
+                                    ? "Pause typing so the list matches the editor"
+                                    : count > 1
+                                      ? `Replace all ${count} with “${sug}”`
+                                      : `Replace with “${sug}”`
+                                }
+                                onClick={() => {
+                                  setSpellReplaceErr(null);
+                                  const ok =
+                                    count > 1
+                                      ? applySpellSuggestionAll(g.normalized, sug)
+                                      : applySpellSuggestion(first, sug);
+                                  if (!ok) {
+                                    setSpellReplaceErr(
+                                      "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                    );
+                                    return;
+                                  }
+                                  refreshSpell();
+                                }}
+                              >
+                                {sug}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="spell-row-aux">
+                          <button
+                            type="button"
+                            className="linkish spell-aux-link"
+                            onClick={() => {
+                              if (!addToPersonalDictionary(g.normalized)) {
+                                onSpellPersistenceError(
+                                  "Could not save that word to your dictionary (browser storage blocked or full).",
+                                );
+                                return;
+                              }
+                              refreshSpell();
+                            }}
+                          >
+                            Add to dictionary
+                          </button>
+                          <span className="spell-aux-sep" aria-hidden="true">·</span>
+                          <button
+                            type="button"
+                            className="linkish spell-aux-link"
+                            onClick={() => {
+                              if (!ignoreWordForSession(g.normalized)) {
+                                onSpellPersistenceError(
+                                  "Could not update session spelling skips.",
+                                );
+                                return;
+                              }
+                              refreshSpell();
+                            }}
+                          >
+                            Skip
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {spellHitGroups.length > spellListCap ? (
+                  <p className="spell-show-more-wrap">
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() => setSpellListCap((c) => c + 50)}
+                    >
+                      Show 50 more
+                    </button>
+                  </p>
+                ) : null}
+                </>
+              )}
               <details className="tool-hint-details personal-dict-details">
                 <summary className="tool-hint-summary">
                   Personal dictionary ({personalWords.length})
                 </summary>
-                <p className="muted small tool-hint-body">
-                  Words you add with <strong>Add word</strong> are saved in this
-                  browser only.
-                </p>
                 {personalWords.length === 0 ? (
-                  <p className="muted small">No words yet.</p>
+                  <p className="muted small tool-hint-body">
+                    No words yet. Use <strong>Add to dictionary</strong> on any flag above.
+                  </p>
                 ) : (
                   <ul className="personal-dict-wordlist">
                     {personalWords.map((w) => (
@@ -2523,7 +2630,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                         )
                       }
                     >
-                      Export JSON
+                      Export
                     </button>
                   ) : null}
                   <input
@@ -2558,174 +2665,10 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     className="small-btn"
                     onClick={() => dictImportInputRef.current?.click()}
                   >
-                    Import JSON
+                    Import
                   </button>
                 </div>
               </details>
-              {spellHits.length === 0 ? (
-                <EmptyState title="No spelling flags">
-                  <p className="muted small">
-                    Looks clean under your current mode. Switch modes if you want a
-                    stricter scan.
-                  </p>
-                </EmptyState>
-              ) : (
-                <>
-                  <div className="spell-hit-nav" role="group" aria-label="Step through spelling flags">
-                    <button
-                      type="button"
-                      className="small-btn"
-                      onClick={() => cycleSpellHit(-1)}
-                    >
-                      ← Previous
-                    </button>
-                    <span className="spell-hit-nav-pos" aria-live="polite">
-                      {spellNavIndex + 1} / {spellHits.length}
-                    </span>
-                    <button
-                      type="button"
-                      className="small-btn"
-                      onClick={() => cycleSpellHit(1)}
-                    >
-                      Next →
-                    </button>
-                  </div>
-                  <p className="muted small spell-hotkey-hint">
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">Alt</kbd> +{" "}
-                    <kbd className="kbd-hint">,</kbd> /{" "}
-                    <kbd className="kbd-hint">.</kbd> cycles flags whenever there
-                    are any (not while typing in the poem or another field).
-                  </p>
-                  {spellReplaceErr ? (
-                    <p className="error compact" role="alert">
-                      {spellReplaceErr}
-                    </p>
-                  ) : null}
-                <ul className="spell-hits spell-hits-draft">
-                  {spellHitGroups.slice(0, spellListCap).map((g) => {
-                    const count = g.hits.length;
-                    const first = g.hits[0]!;
-                    return (
-                      <li key={g.normalized} className="spell-hit-group">
-                        <div className="spell-hit-head">
-                          <span className="mono spell-hit-word">{g.display}</span>
-                          {count > 1 ? (
-                            <span
-                              className="spell-hit-count"
-                              title={`${count} occurrences`}
-                              aria-label={`${count} occurrences`}
-                            >
-                              ×{count}
-                            </span>
-                          ) : null}
-                          <span className="spell-hit-lines">
-                            {g.hits.slice(0, 6).map((h, i) => (
-                              <button
-                                key={`${h.docFrom}-${h.docTo}`}
-                                type="button"
-                                className="linkish spell-hit-line-link"
-                                onClick={() => goToSpellHitAt(h)}
-                                title={`Jump to line ${h.lineNumber}`}
-                              >
-                                L{h.lineNumber}
-                                {i < Math.min(g.hits.length, 6) - 1 ? "," : ""}
-                              </button>
-                            ))}
-                            {g.hits.length > 6 ? (
-                              <span className="muted small">
-                                +{g.hits.length - 6}
-                              </span>
-                            ) : null}
-                          </span>
-                        </div>
-                        {g.suggestions.length > 0 ? (
-                          <div className="spell-suggestion-actions">
-                            {g.suggestions.slice(0, 3).map((sug) => (
-                              <button
-                                key={sug}
-                                type="button"
-                                className="small-btn"
-                                disabled={heavyToolsStale}
-                                title={
-                                  heavyToolsStale
-                                    ? "Pause typing so the list matches the editor"
-                                    : count > 1
-                                      ? `Replace all ${count} with “${sug}”`
-                                      : `Replace with “${sug}”`
-                                }
-                                onClick={() => {
-                                  setSpellReplaceErr(null);
-                                  const ok =
-                                    count > 1
-                                      ? applySpellSuggestionAll(g.normalized, sug)
-                                      : applySpellSuggestion(first, sug);
-                                  if (!ok) {
-                                    setSpellReplaceErr(
-                                      "Could not replace — wait until tools match your draft (pause typing), then try again.",
-                                    );
-                                    return;
-                                  }
-                                  refreshSpell();
-                                }}
-                              >
-                                {count > 1 ? `Replace all → “${sug}”` : `Use “${sug}”`}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                        <details className="spell-more-details">
-                          <summary className="spell-more-summary">More</summary>
-                          <div className="spell-actions">
-                            <button
-                              type="button"
-                              className="small-btn"
-                              onClick={() => {
-                                if (!addToPersonalDictionary(g.normalized)) {
-                                  onSpellPersistenceError(
-                                    "Could not save that word to your dictionary (browser storage blocked or full).",
-                                  );
-                                  return;
-                                }
-                                refreshSpell();
-                              }}
-                            >
-                              Add word
-                            </button>
-                            <button
-                              type="button"
-                              className="small-btn"
-                              onClick={() => {
-                                if (!ignoreWordForSession(g.normalized)) {
-                                  onSpellPersistenceError(
-                                    "Could not update session spelling skips.",
-                                  );
-                                  return;
-                                }
-                                refreshSpell();
-                              }}
-                            >
-                              Skip (session)
-                            </button>
-                          </div>
-                        </details>
-                      </li>
-                    );
-                  })}
-                </ul>
-                {spellHitGroups.length > spellListCap ? (
-                  <p className="spell-show-more-wrap">
-                    <button
-                      type="button"
-                      className="small-btn"
-                      onClick={() => setSpellListCap((c) => c + 50)}
-                    >
-                      Show 50 more
-                    </button>
-                  </p>
-                ) : null}
-                </>
-              )}
             </>
           )}
         </div>

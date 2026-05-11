@@ -746,25 +746,6 @@
   line-height: 1;
 }
 
-/* ── Issue count badge on Queue tab ── */
-.tool-tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 0.22rem;
-  border-radius: 999px;
-  background: var(--danger);
-  color: #fff;
-  font-size: 0.58rem;
-  font-weight: 800;
-  font-family: var(--font-metric);
-  line-height: 1;
-  margin-left: 0.1rem;
-  flex-shrink: 0;
-}
-
 /* ── Analyse button in tools panel header ── */
 .tools-analyse-btn {
   appearance: none;

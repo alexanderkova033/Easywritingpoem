@@ -1440,8 +1440,7 @@
   margin: 0.5rem 0 0;
 }
 
-.spell-sync-note,
-.spell-hotkey-hint {
+.spell-sync-note {
   margin: 0 0 0.5rem;
 }
 
@@ -1470,26 +1469,6 @@
 
 .tool-block-meter .live-badge {
   flex-shrink: 0;
-}
-
-.spell-hit-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem 0.65rem;
-  margin: 0 0 0.55rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: 10px;
-  border: 1px solid color-mix(in srgb, var(--border) 90%, var(--accent));
-  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
-}
-
-.spell-hit-nav-pos {
-  font-family: var(--font-metric);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .stat-chip-jump-wrap {
@@ -2939,16 +2918,6 @@
   color: var(--text);
 }
 
-.spell-hit-count {
-  font-size: 0.72rem;
-  font-weight: 620;
-  padding: 0.08rem 0.42rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--danger) 16%, transparent);
-  color: color-mix(in srgb, var(--danger) 80%, var(--text));
-  letter-spacing: 0.02em;
-}
-
 .spell-hit-lines {
   display: inline-flex;
   flex-wrap: wrap;
@@ -2963,47 +2932,28 @@
   padding: 0;
 }
 
-.spell-more-details {
-  margin-top: 0.4rem;
-}
-
-.spell-more-summary {
+.spell-row-aux {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
   font-size: 0.78rem;
   color: var(--muted);
-  cursor: pointer;
-  list-style: none;
-  padding: 0.15rem 0.1rem;
-  user-select: none;
 }
 
-.spell-more-summary::-webkit-details-marker {
-  display: none;
+.spell-aux-link {
+  font-size: 0.78rem;
+  padding: 0;
 }
 
-.spell-more-summary::before {
-  content: "▸ ";
-  font-size: 0.7rem;
-  opacity: 0.65;
-}
-
-.spell-more-details[open] .spell-more-summary::before {
-  content: "▾ ";
-}
-
-.spell-more-details[open] .spell-actions {
-  margin-top: 0.35rem;
+.spell-aux-sep {
+  opacity: 0.55;
 }
 
 .suggestions {
   margin: 0.2rem 0 0.35rem;
   font-size: 0.78rem;
   color: var(--muted);
-}
-
-.spell-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
 }
 
 .small-btn {
@@ -4422,28 +4372,14 @@
 .spell-strategy-btn {
   flex: 1 1 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.12rem;
-  min-height: 3.1rem;
-  padding: 0.45rem 0.5rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
   text-align: center;
+  font-size: 0.84rem;
+  font-weight: 600;
   line-height: 1.2;
-}
-
-.spell-strategy-title {
-  display: block;
-  font-size: 0.86rem;
-  font-weight: 700;
-  color: inherit;
-}
-
-.spell-strategy-sub {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 500;
-  opacity: 0.82;
 }
 
 .tool-heading-static {
@@ -5738,49 +5674,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-}
-
-/* ---- Spell tab loading skeleton ---- */
-@keyframes spell-skel-pulse {
-  50% {
-    opacity: 0.52;
-  }
-}
-
-.spell-loading-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin-top: 0.35rem;
-  padding: 0.15rem 0;
-}
-
-.spell-skeleton-line {
-  height: 0.52rem;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--muted) 28%, var(--border));
-  animation: spell-skel-pulse 1.15s ease-in-out infinite;
-}
-
-.spell-skeleton-line-long {
-  width: 92%;
-}
-
-.spell-skeleton-line-mid {
-  width: 68%;
-  animation-delay: 0.12s;
-}
-
-.spell-skeleton-line-short {
-  width: 44%;
-  animation-delay: 0.24s;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spell-skeleton-line {
-    animation: none;
-    opacity: 0.62;
-  }
 }
 
 /* ---- Print: poem only ---- */

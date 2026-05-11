@@ -2439,9 +2439,7 @@ export function PoemWorkshop() {
                           <span className="goal-tab-dot" aria-label="issues in queue" />
                         )}
                         {id === "spell" && m.wordlist && m.spellHits.length > 0 && (
-                          <span className="tool-tab-badge" aria-label={`${m.spellHits.length} spelling flags`}>
-                            {m.spellHits.length > 9 ? "9+" : m.spellHits.length}
-                          </span>
+                          <span className="goal-tab-dot" aria-label={`${m.spellHits.length} spelling flags`} />
                         )}
                         {id === "goals" && m.goalEvaluation.warnings.length > 0 && (
                           <span className="goal-tab-dot" aria-label="goals not met" />
