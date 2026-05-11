@@ -206,59 +206,63 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     const dLines = fmtDelta(row.deltaLines);
     const dWords = fmtDelta(row.deltaWords);
     return (
-      <li key={s.id} className="revision-list-item">
-        <div className="revision-list-item-top">
-          <div className="revision-meta">
-            <span
-              className="revision-when"
-              title={formatSnapshotWhen(s.createdAt)}
-            >
-              {formatRelativeSnapshotWhen(s.createdAt)}
-            </span>
-            {s.label ? (
-              <span className="revision-label">{s.label}</span>
-            ) : null}
-            {dLines || dWords ? (
-              <span className="revision-delta" aria-label="Change since previous snapshot">
-                {dLines ? (
-                  <span
-                    className={`revision-delta-chunk${
-                      (row.deltaLines ?? 0) > 0
-                        ? " is-pos"
-                        : (row.deltaLines ?? 0) < 0
-                          ? " is-neg"
-                          : ""
-                    }`}
-                  >
-                    {dLines}L
-                  </span>
-                ) : null}
-                {dWords ? (
-                  <span
-                    className={`revision-delta-chunk${
-                      (row.deltaWords ?? 0) > 0
-                        ? " is-pos"
-                        : (row.deltaWords ?? 0) < 0
-                          ? " is-neg"
-                          : ""
-                    }`}
-                  >
-                    {dWords}w
-                  </span>
-                ) : null}
-              </span>
-            ) : null}
-          </div>
+      <li key={s.id} className="revision-list-item revision-list-item-compact">
+        <div className="revision-row-main">
           {renderRowControls(s)}
+          <span
+            className="revision-when"
+            title={formatSnapshotWhen(s.createdAt)}
+          >
+            {formatRelativeSnapshotWhen(s.createdAt)}
+          </span>
+          {s.label ? (
+            <span className="revision-label">{s.label}</span>
+          ) : null}
+          <span
+            className="revision-snippet revision-snippet-inline"
+            title={s.body || "(empty)"}
+          >
+            {row.snippet}
+          </span>
+          {dLines || dWords ? (
+            <span
+              className="revision-delta"
+              aria-label="Change since previous snapshot"
+            >
+              {dLines ? (
+                <span
+                  className={`revision-delta-chunk${
+                    (row.deltaLines ?? 0) > 0
+                      ? " is-pos"
+                      : (row.deltaLines ?? 0) < 0
+                        ? " is-neg"
+                        : ""
+                  }`}
+                >
+                  {dLines}L
+                </span>
+              ) : null}
+              {dWords ? (
+                <span
+                  className={`revision-delta-chunk${
+                    (row.deltaWords ?? 0) > 0
+                      ? " is-pos"
+                      : (row.deltaWords ?? 0) < 0
+                        ? " is-neg"
+                        : ""
+                  }`}
+                >
+                  {dWords}w
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </div>
-        <p className="revision-snippet" title={s.body || "(empty)"}>
-          {row.snippet}
-        </p>
-        <div className="revision-actions">
+        <div className="revision-actions revision-actions-compact">
           {onDiffSnapshot && (
             <button
               type="button"
-              className={`small-btn revision-diff-inline-btn${activeDiffSnapshotId === s.id ? " is-active" : ""}`}
+              className={`linkish revision-diff-inline-link${activeDiffSnapshotId === s.id ? " is-active" : ""}`}
               title={
                 activeDiffSnapshotId === s.id
                   ? "Currently shown as inline diff in the editor — click to exit"
@@ -266,7 +270,7 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
               }
               onClick={() => onDiffSnapshot(s)}
             >
-              {activeDiffSnapshotId === s.id ? "Exit diff" : "In editor"}
+              {activeDiffSnapshotId === s.id ? "Exit diff" : "Editor"}
             </button>
           )}
           <button
@@ -479,21 +483,23 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         </div>
       )}
 
-      <h4 className="tool-subheading">Compare</h4>
-      {revisions.length === 0 ? (
-        <p className="muted small">
-          Save a snapshot to diff against the draft.
-        </p>
-      ) : sameSelection ? (
-        <p className="muted small">
-          Pick two different versions using the <strong>From</strong> /{" "}
-          <strong>To</strong> chips above.
-        </p>
-      ) : (
-        <>
-          <p className="revision-compare-summary muted small">
-            <strong>{fromLabel}</strong> → <strong>{toLabel}</strong>
-          </p>
+      <details className="revision-compare-details" open={!sameSelection && revisions.length > 0}>
+        <summary className="revision-compare-summary-row">
+          <span className="revision-compare-summary-label">Compare</span>
+          {revisions.length > 0 && !sameSelection ? (
+            <span className="revision-compare-summary-pair muted small">
+              <strong>{fromLabel}</strong> → <strong>{toLabel}</strong>
+            </span>
+          ) : (
+            <span className="muted small">
+              {revisions.length === 0
+                ? "Save a snapshot first."
+                : "Pick From / To above."}
+            </span>
+          )}
+        </summary>
+        {revisions.length === 0 || sameSelection ? null : (
+          <>
           <div
             className="compare-mode-toggle"
             role="group"
@@ -585,8 +591,9 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
               </table>
             </div>
           )}
-        </>
-      )}
+          </>
+        )}
+      </details>
     </div>
   );
 }

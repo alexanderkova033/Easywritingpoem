@@ -2733,6 +2733,33 @@
 
 .line-table-draft {
   font-size: 0.91rem;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.line-table-draft th:nth-child(1),
+.line-table-draft td:nth-child(1) {
+  width: 2.6rem;
+}
+
+.line-table-draft th:nth-child(2),
+.line-table-draft td:nth-child(2) {
+  width: auto;
+}
+
+.line-table-draft th:nth-child(3),
+.line-table-draft td:nth-child(3) {
+  width: 4.2rem;
+}
+
+.line-table-draft th:nth-child(4),
+.line-table-draft td:nth-child(4) {
+  width: 3rem;
+}
+
+.line-table-draft th:nth-child(5),
+.line-table-draft td:nth-child(5) {
+  width: 3.4rem;
 }
 
 .mono {
@@ -4030,6 +4057,94 @@
 .snapshot-saved-flash-duplicate {
   color: var(--muted);
   font-style: italic;
+}
+
+.revision-list-item-compact {
+  gap: 0.2rem;
+  padding: 0.3rem 0.45rem;
+}
+
+.revision-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  min-width: 0;
+}
+
+.revision-row-main .revision-when {
+  flex-shrink: 0;
+}
+
+.revision-snippet-inline {
+  flex: 1 1 6rem;
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.revision-actions-compact {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  font-size: 0.74rem;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+  padding-left: 3.7rem;
+}
+
+.revision-list-item-compact:hover .revision-actions-compact,
+.revision-list-item-compact:focus-within .revision-actions-compact {
+  opacity: 1;
+}
+
+.revision-diff-inline-link.is-active {
+  font-weight: 700;
+  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+}
+
+.revision-compare-details {
+  margin-top: 0.6rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding-top: 0.4rem;
+}
+
+.revision-compare-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.25rem 0;
+  user-select: none;
+}
+
+.revision-compare-summary-row::-webkit-details-marker {
+  display: none;
+}
+
+.revision-compare-summary-row::before {
+  content: "▸";
+  font-size: 0.72rem;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.revision-compare-details[open] .revision-compare-summary-row::before {
+  content: "▾";
+}
+
+.revision-compare-summary-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.revision-compare-summary-pair {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .danger-link {
