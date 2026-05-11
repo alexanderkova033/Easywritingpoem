@@ -960,6 +960,7 @@ export interface WorkshopToolPanelsProps {
   cycleSpellHit: (delta: number) => void;
   spellNavIndex: number;
   applySpellSuggestion: (hit: SpellHit, replacement: string) => boolean;
+  applySpellSuggestionAll: (normalized: string, replacement: string) => boolean;
   spellBump: number;
   refreshSpell: () => void;
   onSpellPersistenceError: (message: string) => void;
@@ -976,7 +977,7 @@ export interface WorkshopToolPanelsProps {
   snapshotLabel: string;
   onSnapshotLabelChange: (v: string) => void;
   onSaveSnapshot: () => void;
-  snapshotFlash: boolean;
+  snapshotFlash: "saved" | "duplicate" | null;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
   /** Open inline word-level diff in the editor against this snapshot. */
@@ -1039,6 +1040,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     cycleSpellHit,
     spellNavIndex,
     applySpellSuggestion,
+    applySpellSuggestionAll,
     spellBump,
     refreshSpell,
     onSpellPersistenceError,
@@ -1170,6 +1172,27 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     [spellHits, spellBump],
   );
 
+  const spellHitGroups = useMemo(() => {
+    const map = new Map<
+      string,
+      { normalized: string; display: string; hits: SpellHit[]; suggestions: string[] }
+    >();
+    for (const h of spellHits) {
+      const existing = map.get(h.normalized);
+      if (existing) {
+        existing.hits.push(h);
+      } else {
+        map.set(h.normalized, {
+          normalized: h.normalized,
+          display: h.word,
+          hits: [h],
+          suggestions: h.suggestions,
+        });
+      }
+    }
+    return Array.from(map.values());
+  }, [spellHits]);
+
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
     if (!t) return repeated;
@@ -1200,6 +1223,43 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     return docStats.lines.filter((r) => r.text.trim().length > 0);
   }, [docStats.lines, hideEmptyLines]);
 
+  const lineStanzaMap = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const s of docStats.stanzaStats) {
+      for (let ln = s.startLine; ln <= s.endLine; ln++) {
+        m.set(ln, s.stanzaIndex);
+      }
+    }
+    return m;
+  }, [docStats.stanzaStats]);
+
+  const maxLineSyllables = useMemo(() => {
+    let max = 0;
+    for (const r of displayedLineRows) {
+      if (r.syllables > max) max = r.syllables;
+    }
+    return max || 1;
+  }, [displayedLineRows]);
+
+  const syllOutlierBounds = useMemo(() => {
+    const nums = docStats.lines
+      .filter((r) => r.text.trim().length > 0)
+      .map((r) => r.syllables)
+      .sort((a, b) => a - b);
+    if (nums.length < 4) return null;
+    const q = (p: number) => {
+      const i = (nums.length - 1) * p;
+      const lo = Math.floor(i);
+      const hi = Math.ceil(i);
+      return nums[lo]! + (nums[hi]! - nums[lo]!) * (i - lo);
+    };
+    const q1 = q(0.25);
+    const q3 = q(0.75);
+    const iqr = q3 - q1;
+    if (iqr < 1) return null;
+    return { lo: q1 - 1.5 * iqr, hi: q3 + 1.5 * iqr };
+  }, [docStats.lines]);
+
   const displayedMeterHints = useMemo(() => {
     const rows = meterHints.slice(0, METER_TABLE_MAX);
     return rows.filter((r) => {
@@ -1219,11 +1279,130 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
 
   const openChecklistItems = publication.items.filter((i) => !i.done);
-  const issuesAllClear =
-    openChecklistItems.length === 0 &&
-    goalEvaluation.warnings.length === 0 &&
-    (!wordlist || spellHits.length === 0) &&
-    clicheHits.length === 0;
+
+  type QueueSeverity = "now" | "soon" | "optional";
+  interface QueueIssue {
+    id: string;
+    severity: QueueSeverity;
+    category: "spell" | "checklist" | "goal" | "cliche";
+    categoryLabel: string;
+    title: string;
+    detail?: string;
+    line?: number;
+    onJump?: () => void;
+    primary?: { label: string; onClick: () => void; disabled?: boolean };
+  }
+
+  const queueIssues = useMemo<QueueIssue[]>(() => {
+    const list: QueueIssue[] = [];
+    for (const w of goalEvaluation.warnings) {
+      list.push({
+        id: `goal:${w}`,
+        severity: "now",
+        category: "goal",
+        categoryLabel: "Goal",
+        title: w,
+        primary: {
+          label: "Open Goals",
+          onClick: () => onOpenToolTab("goals"),
+        },
+      });
+    }
+    for (const item of openChecklistItems) {
+      if (item.icon === "spell" || item.icon === "goals") continue;
+      list.push({
+        id: `chk:${item.text}`,
+        severity: "soon",
+        category: "checklist",
+        categoryLabel: "Checklist",
+        title: item.text,
+        detail: item.detail,
+        primary:
+          item.focusTitleField
+            ? { label: "Add title", onClick: () => focusPoemTitle() }
+            : item.openToolTab
+              ? {
+                  label: checklistJumpLabel(item),
+                  onClick: () => onOpenToolTab(item.openToolTab!),
+                }
+              : undefined,
+      });
+    }
+    const groupMap = new Map<string, SpellHit[]>();
+    for (const h of spellHits) {
+      const arr = groupMap.get(h.normalized);
+      if (arr) arr.push(h);
+      else groupMap.set(h.normalized, [h]);
+    }
+    for (const [normalized, hits] of groupMap) {
+      const first = hits[0]!;
+      const count = hits.length;
+      const top = first.suggestions[0];
+      list.push({
+        id: `spell:${normalized}`,
+        severity: "soon",
+        category: "spell",
+        categoryLabel: "Spelling",
+        title: `“${first.word}”${count > 1 ? ` ×${count}` : ""}`,
+        detail:
+          first.suggestions.length > 0
+            ? `Try: ${first.suggestions.slice(0, 3).join(", ")}`
+            : undefined,
+        line: first.lineNumber,
+        onJump: () => goToSpellHitAt(first),
+        primary: top
+          ? {
+              label: count > 1 ? `Replace all → “${top}”` : `Use “${top}”`,
+              disabled: heavyToolsStale,
+              onClick: () => {
+                const ok =
+                  count > 1
+                    ? applySpellSuggestionAll(normalized, top)
+                    : applySpellSuggestion(first, top);
+                if (ok) refreshSpell();
+              },
+            }
+          : { label: "Jump", onClick: () => goToSpellHitAt(first) },
+      });
+    }
+    for (let i = 0; i < clicheHits.length; i++) {
+      const h = clicheHits[i]!;
+      list.push({
+        id: `cliche:${i}:${h.lineNumber}:${h.phrase}`,
+        severity: "optional",
+        category: "cliche",
+        categoryLabel: "Cliché",
+        title: `“${h.phrase}”`,
+        line: h.lineNumber,
+        onJump: () => goToLine(h.lineNumber),
+        primary: { label: "Jump", onClick: () => goToLine(h.lineNumber) },
+      });
+    }
+    return list;
+  }, [
+    goalEvaluation.warnings,
+    openChecklistItems,
+    spellHits,
+    clicheHits,
+    heavyToolsStale,
+    onOpenToolTab,
+    focusPoemTitle,
+    goToLine,
+    goToSpellHitAt,
+    applySpellSuggestion,
+    applySpellSuggestionAll,
+    refreshSpell,
+  ]);
+
+  const queueBuckets = useMemo(() => {
+    const buckets: Record<QueueSeverity, QueueIssue[]> = {
+      now: [],
+      soon: [],
+      optional: [],
+    };
+    for (const it of queueIssues) buckets[it.severity].push(it);
+    return buckets;
+  }, [queueIssues]);
 
   return (
     <div className="tool-tab-panel" key={toolTab}>
@@ -1235,163 +1414,102 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-issues"
         >
           <LiveSectionTitle>Revision queue</LiveSectionTitle>
-          {issuesAllClear ? (
+          {!wordlist ? (
+            <p className="muted small" aria-busy="true">
+              Dictionary loading — spelling flags appear here when ready.
+            </p>
+          ) : null}
+          {queueIssues.length === 0 ? (
             <EmptyState title="All clear — keep writing.">
               <p className="muted small">
-                Checklist, goals, and spelling are all satisfied. Issues appear
-                here as you draft.
+                Checklist, goals, spelling, and clichés all satisfied. Issues
+                appear here as you draft.
               </p>
             </EmptyState>
           ) : (
-            <>
-              {openChecklistItems.length > 0 ? (
-                <>
-                  <h4 className="tool-subheading">Publication checklist</h4>
-                  <ul
-                    className="checklist checklist-draft"
-                    aria-label="Open checklist items"
+            <div className="queue-buckets">
+              {(["now", "soon", "optional"] as QueueSeverity[]).map((sev) => {
+                const items = queueBuckets[sev];
+                if (items.length === 0) return null;
+                const label =
+                  sev === "now" ? "Now" : sev === "soon" ? "Soon" : "Optional";
+                const subtitle =
+                  sev === "now"
+                    ? "Hard goal violations — fix first."
+                    : sev === "soon"
+                      ? "Publication blockers and spelling flags."
+                      : "Polish — clichés and other softer notes.";
+                return (
+                  <section
+                    key={sev}
+                    className={`queue-bucket queue-bucket-${sev}`}
                   >
-                    {openChecklistItems.map((item) => (
-                      <li
-                        key={item.text}
-                        className="checklist-item open checklist-item-needs-attn"
-                      >
-                        <span className="checklist-mark" aria-hidden>
-                          ○
-                        </span>
-                        <span className="checklist-text">
-                          {item.text}
-                          {item.detail ? (
-                            <span className="checklist-detail">
-                              {" "}
-                              — {item.detail}
-                            </span>
-                          ) : null}
-                        </span>
-                        {item.focusTitleField || item.openToolTab ? (
-                          <button
-                            type="button"
-                            className="small-btn checklist-jump-btn"
-                            onClick={() =>
-                              item.focusTitleField
-                                ? focusPoemTitle()
-                                : onOpenToolTab(item.openToolTab!)
-                            }
-                          >
-                            {checklistJumpLabel(item)}
-                          </button>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-              {goalEvaluation.warnings.length > 0 ? (
-                <>
-                  <h4 className="tool-subheading">Goals</h4>
-                  <ul className="goal-warnings">
-                    {goalEvaluation.warnings.map((w) => (
-                      <li key={w}>{w}</li>
-                    ))}
-                  </ul>
-                  <p className="muted small goal-syllable-jumps">
-                    <button
-                      type="button"
-                      className="linkish"
-                      onClick={() => onOpenToolTab("goals")}
-                    >
-                      Open Goals
-                    </button>
-                    {goalEvaluation.syllableOverLines.length > 0 ? (
-                      <>
-                        {" "}
-                        · Lines over syllable cap:{" "}
-                        <JumpLineList
-                          lineNumbers={goalEvaluation.syllableOverLines}
-                          goToLine={goToLine}
-                        />
-                      </>
-                    ) : null}
-                  </p>
-                </>
-              ) : null}
-              {!wordlist ? (
-                <p className="muted small" aria-busy="true">
-                  Dictionary loading — spelling flags will appear here when
-                  ready.
-                </p>
-              ) : spellHits.length > 0 ? (
-                <>
-                  <h4 className="tool-subheading">Spelling</h4>
-                  <p className="muted small">
-                    <button
-                      type="button"
-                      className="linkish"
-                      onClick={() => onOpenToolTab("spell")}
-                    >
-                      Open Spelling
-                    </button>{" "}
-                    for the full list and dictionary actions.
-                  </p>
-                  <ul className="spell-hits spell-hits-draft issues-spell-preview">
-                    {spellHits.slice(0, 12).map((h) => (
-                      <li key={`${h.docFrom}-${h.docTo}`}>
-                        <div className="spell-hit-head">
-                          <button
-                            type="button"
-                            className="linkish"
-                            onClick={() => goToSpellHitAt(h)}
-                          >
-                            Line {h.lineNumber}
-                          </button>
-                          <span className="mono">{h.word}</span>
-                        </div>
-                        {h.suggestions.length > 0 ? (
-                          <p className="suggestions">
-                            Try: {h.suggestions.join(", ")}
-                          </p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                  {spellHits.length > 12 ? (
-                    <p className="muted small">
-                      +{spellHits.length - 12} more in{" "}
-                      <button
-                        type="button"
-                        className="linkish"
-                        onClick={() => onOpenToolTab("spell")}
-                      >
-                        Spelling
-                      </button>
-                      .
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-              {clicheHits.length > 0 ? (
-                <>
-                  <h4 className="tool-subheading">Possible clichés</h4>
-                  <p className="muted small">
-                    Common phrases that may weaken your poem's originality.
-                  </p>
-                  <ul className="cliche-list">
-                    {clicheHits.map((h, i) => (
-                      <li key={i} className="cliche-hit">
-                        <button
-                          type="button"
-                          className="linkish cliche-line-btn"
-                          onClick={() => goToLine(h.lineNumber)}
+                    <header className="queue-bucket-head">
+                      <span className={`queue-sev-dot queue-sev-dot-${sev}`} aria-hidden />
+                      <h4 className="tool-subheading queue-bucket-title">
+                        {label}
+                        <span className="queue-bucket-count">{items.length}</span>
+                      </h4>
+                      <span className="queue-bucket-sub muted small">{subtitle}</span>
+                    </header>
+                    <ul className="queue-list" aria-label={`${label} issues`}>
+                      {items.map((it) => (
+                        <li
+                          key={it.id}
+                          className={`queue-item queue-item-${it.category}`}
                         >
-                          Line {h.lineNumber}
-                        </button>
-                        <span className="cliche-phrase mono">&ldquo;{h.phrase}&rdquo;</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                          <span
+                            className={`queue-cat queue-cat-${it.category}`}
+                            title={it.categoryLabel}
+                          >
+                            {it.categoryLabel}
+                          </span>
+                          <div className="queue-body">
+                            <div className="queue-title-row">
+                              {it.line != null && it.onJump ? (
+                                <button
+                                  type="button"
+                                  className="linkish queue-line-link"
+                                  onClick={it.onJump}
+                                  title={`Jump to line ${it.line}`}
+                                >
+                                  L{it.line}
+                                </button>
+                              ) : null}
+                              <span className="queue-title">{it.title}</span>
+                            </div>
+                            {it.detail ? (
+                              <p className="queue-detail muted small">
+                                {it.detail}
+                              </p>
+                            ) : null}
+                          </div>
+                          {it.primary ? (
+                            <button
+                              type="button"
+                              className="small-btn queue-primary-btn"
+                              disabled={it.primary.disabled}
+                              onClick={it.primary.onClick}
+                            >
+                              {it.primary.label}
+                            </button>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+              {goalEvaluation.syllableOverLines.length > 0 ? (
+                <p className="muted small goal-syllable-jumps">
+                  Lines over syllable cap:{" "}
+                  <JumpLineList
+                    lineNumbers={goalEvaluation.syllableOverLines}
+                    goToLine={goToLine}
+                  />
+                </p>
               ) : null}
-            </>
+            </div>
           )}
         </div>
       ) : null}
@@ -1613,36 +1731,112 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                   <th scope="col">
                     <abbr title="Line number">Line</abbr>
                   </th>
-                  <th scope="col">
-                    <abbr title="Estimated syllables (heuristic)">Syll.</abbr>
+                  <th scope="col" className="line-table-preview-th">Text</th>
+                  <th scope="col" className="line-table-syll-th">
+                    <abbr title="Estimated syllables (heuristic) with bar relative to longest line">
+                      Syll.
+                    </abbr>
                   </th>
                   <th scope="col">Words</th>
                   <th scope="col">Chars</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedLineRows.slice(0, LINES_TABLE_MAX).map((row) => (
-                  <tr
-                    key={row.lineNumber}
-                    className="line-table-data-row line-table-row-jump"
-                    tabIndex={0}
-                    aria-label={`Line ${row.lineNumber}: ${row.syllables} syllables, ${row.words} words. Open in editor.`}
-                    onClick={() => goToLine(row.lineNumber)}
-                    onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        goToLine(row.lineNumber);
-                      }
-                    }}
-                  >
-                    <td className="line-table-metric line-table-line-num">
-                      {row.lineNumber}
-                    </td>
-                    <td className="line-table-metric">{row.syllables}</td>
-                    <td className="line-table-metric">{row.words}</td>
-                    <td className="line-table-metric">{row.chars}</td>
-                  </tr>
-                ))}
+                {(() => {
+                  const rows = displayedLineRows.slice(0, LINES_TABLE_MAX);
+                  const out: ReactNode[] = [];
+                  let prevStanza: number | null = null;
+                  for (const row of rows) {
+                    const stanza = lineStanzaMap.get(row.lineNumber) ?? null;
+                    if (
+                      stanza != null &&
+                      prevStanza != null &&
+                      stanza !== prevStanza
+                    ) {
+                      out.push(
+                        <tr
+                          key={`sep-${row.lineNumber}`}
+                          className="line-table-stanza-sep"
+                          aria-hidden="true"
+                        >
+                          <td colSpan={5}>
+                            <span className="line-table-stanza-sep-bar" />
+                          </td>
+                        </tr>,
+                      );
+                    }
+                    prevStanza = stanza ?? prevStanza;
+                    const trimmed = row.text.trim();
+                    const preview =
+                      trimmed.length > 22
+                        ? trimmed.slice(0, 22).trimEnd() + "…"
+                        : trimmed;
+                    const isBlank = trimmed.length === 0;
+                    const barPct = isBlank
+                      ? 0
+                      : Math.max(
+                          4,
+                          Math.round((row.syllables / maxLineSyllables) * 100),
+                        );
+                    const outlier =
+                      !isBlank &&
+                      syllOutlierBounds != null &&
+                      (row.syllables < syllOutlierBounds.lo ||
+                        row.syllables > syllOutlierBounds.hi);
+                    out.push(
+                      <tr
+                        key={row.lineNumber}
+                        className={`line-table-data-row line-table-row-jump${outlier ? " is-syll-outlier" : ""}${isBlank ? " is-blank-line" : ""}`}
+                        tabIndex={0}
+                        aria-label={`Line ${row.lineNumber}: ${row.syllables} syllables, ${row.words} words${outlier ? " (syllable outlier)" : ""}. Open in editor.`}
+                        onClick={() => goToLine(row.lineNumber)}
+                        onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            goToLine(row.lineNumber);
+                          }
+                        }}
+                      >
+                        <td className="line-table-metric line-table-line-num">
+                          {row.lineNumber}
+                        </td>
+                        <td
+                          className="line-table-preview"
+                          title={trimmed || "(blank line)"}
+                        >
+                          {isBlank ? (
+                            <span className="line-table-preview-blank">·</span>
+                          ) : (
+                            preview
+                          )}
+                        </td>
+                        <td className="line-table-metric line-table-syll-cell">
+                          <span className="line-table-syll-bar-wrap" aria-hidden>
+                            <span
+                              className="line-table-syll-bar"
+                              style={{ width: `${barPct}%` }}
+                            />
+                          </span>
+                          <span className="line-table-syll-num">
+                            {row.syllables}
+                            {outlier ? (
+                              <span
+                                className="line-table-syll-flag"
+                                aria-hidden
+                                title="Syllable outlier vs. rest of the poem"
+                              >
+                                !
+                              </span>
+                            ) : null}
+                          </span>
+                        </td>
+                        <td className="line-table-metric">{row.words}</td>
+                        <td className="line-table-metric">{row.chars}</td>
+                      </tr>,
+                    );
+                  }
+                  return out;
+                })()}
               </tbody>
             </table>
           </div>
@@ -2407,83 +2601,117 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     </p>
                   ) : null}
                 <ul className="spell-hits spell-hits-draft">
-                  {spellHits.slice(0, spellListCap).map((h) => (
-                    <li key={`${h.docFrom}-${h.docTo}`}>
-                      <div className="spell-hit-head">
-                        <button
-                          type="button"
-                          className="linkish"
-                          onClick={() => goToSpellHitAt(h)}
-                        >
-                          Line {h.lineNumber}
-                        </button>
-                        <span className="mono">{h.word}</span>
-                      </div>
-                      {h.suggestions.length > 0 ? (
-                        <div className="spell-suggestion-actions">
-                          {h.suggestions.slice(0, 3).map((sug) => (
+                  {spellHitGroups.slice(0, spellListCap).map((g) => {
+                    const count = g.hits.length;
+                    const first = g.hits[0]!;
+                    return (
+                      <li key={g.normalized} className="spell-hit-group">
+                        <div className="spell-hit-head">
+                          <span className="mono spell-hit-word">{g.display}</span>
+                          {count > 1 ? (
+                            <span
+                              className="spell-hit-count"
+                              title={`${count} occurrences`}
+                              aria-label={`${count} occurrences`}
+                            >
+                              ×{count}
+                            </span>
+                          ) : null}
+                          <span className="spell-hit-lines">
+                            {g.hits.slice(0, 6).map((h, i) => (
+                              <button
+                                key={`${h.docFrom}-${h.docTo}`}
+                                type="button"
+                                className="linkish spell-hit-line-link"
+                                onClick={() => goToSpellHitAt(h)}
+                                title={`Jump to line ${h.lineNumber}`}
+                              >
+                                L{h.lineNumber}
+                                {i < Math.min(g.hits.length, 6) - 1 ? "," : ""}
+                              </button>
+                            ))}
+                            {g.hits.length > 6 ? (
+                              <span className="muted small">
+                                +{g.hits.length - 6}
+                              </span>
+                            ) : null}
+                          </span>
+                        </div>
+                        {g.suggestions.length > 0 ? (
+                          <div className="spell-suggestion-actions">
+                            {g.suggestions.slice(0, 3).map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                className="small-btn"
+                                disabled={heavyToolsStale}
+                                title={
+                                  heavyToolsStale
+                                    ? "Pause typing so the list matches the editor"
+                                    : count > 1
+                                      ? `Replace all ${count} with “${sug}”`
+                                      : `Replace with “${sug}”`
+                                }
+                                onClick={() => {
+                                  setSpellReplaceErr(null);
+                                  const ok =
+                                    count > 1
+                                      ? applySpellSuggestionAll(g.normalized, sug)
+                                      : applySpellSuggestion(first, sug);
+                                  if (!ok) {
+                                    setSpellReplaceErr(
+                                      "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                    );
+                                    return;
+                                  }
+                                  refreshSpell();
+                                }}
+                              >
+                                {count > 1 ? `Replace all → “${sug}”` : `Use “${sug}”`}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                        <details className="spell-more-details">
+                          <summary className="spell-more-summary">More</summary>
+                          <div className="spell-actions">
                             <button
-                              key={sug}
                               type="button"
                               className="small-btn"
-                              disabled={heavyToolsStale}
-                              title={
-                                heavyToolsStale
-                                  ? "Pause typing so the list matches the editor"
-                                  : `Replace with “${sug}”`
-                              }
                               onClick={() => {
-                                setSpellReplaceErr(null);
-                                if (!applySpellSuggestion(h, sug)) {
-                                  setSpellReplaceErr(
-                                    "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                if (!addToPersonalDictionary(g.normalized)) {
+                                  onSpellPersistenceError(
+                                    "Could not save that word to your dictionary (browser storage blocked or full).",
                                   );
                                   return;
                                 }
                                 refreshSpell();
                               }}
                             >
-                              Use “{sug}”
+                              Add word
                             </button>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className="spell-actions">
-                        <button
-                          type="button"
-                          className="small-btn"
-                          onClick={() => {
-                            if (!addToPersonalDictionary(h.normalized)) {
-                              onSpellPersistenceError(
-                                "Could not save that word to your dictionary (browser storage blocked or full).",
-                              );
-                              return;
-                            }
-                            refreshSpell();
-                          }}
-                        >
-                          Add word
-                        </button>
-                        <button
-                          type="button"
-                          className="small-btn"
-                          onClick={() => {
-                            if (!ignoreWordForSession(h.normalized)) {
-                              onSpellPersistenceError(
-                                "Could not update session spelling skips.",
-                              );
-                              return;
-                            }
-                            refreshSpell();
-                          }}
-                        >
-                          Skip (session)
-                        </button>
-                      </div>
-                    </li>
-                  ))}
+                            <button
+                              type="button"
+                              className="small-btn"
+                              onClick={() => {
+                                if (!ignoreWordForSession(g.normalized)) {
+                                  onSpellPersistenceError(
+                                    "Could not update session spelling skips.",
+                                  );
+                                  return;
+                                }
+                                refreshSpell();
+                              }}
+                            >
+                              Skip (session)
+                            </button>
+                          </div>
+                        </details>
+                      </li>
+                    );
+                  })}
                 </ul>
-                {spellHits.length > spellListCap ? (
+                {spellHitGroups.length > spellListCap ? (
                   <p className="spell-show-more-wrap">
                     <button
                       type="button"

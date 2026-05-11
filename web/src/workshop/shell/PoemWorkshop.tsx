@@ -2491,6 +2491,7 @@ export function PoemWorkshop() {
             cycleSpellHit={m.cycleSpellHit}
             spellNavIndex={m.spellNavIndex}
             applySpellSuggestion={m.applySpellSuggestion}
+            applySpellSuggestionAll={m.applySpellSuggestionAll}
             spellBump={m.spellBump}
             refreshSpell={m.refreshSpell}
             onSpellPersistenceError={m.onSpellPersistenceError}

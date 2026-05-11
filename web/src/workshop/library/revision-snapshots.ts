@@ -132,7 +132,16 @@ export function addRevision(
     label?: string;
     aiScore?: number;
   },
-): { ok: boolean; revisions: RevisionSnapshot[] } {
+): { ok: boolean; revisions: RevisionSnapshot[]; duplicate?: boolean } {
+  const prev = current[0];
+  if (
+    prev &&
+    prev.body === draft.body &&
+    prev.title === draft.title &&
+    (prev.form ?? "") === (draft.form ?? "")
+  ) {
+    return { ok: true, revisions: current, duplicate: true };
+  }
   const snap: RevisionSnapshot = {
     id:
       typeof crypto !== "undefined" && "randomUUID" in crypto

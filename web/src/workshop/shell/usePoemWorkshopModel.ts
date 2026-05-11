@@ -236,7 +236,9 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const [goals, setGoals] = useState<WorkshopGoals>(() => loadWorkshopGoals());
   const [copyExportFlash, setCopyExportFlash] = useState(false);
   const [quickCopyFlash, setQuickCopyFlash] = useState(false);
-  const [snapshotFlash, setSnapshotFlash] = useState(false);
+  const [snapshotFlash, setSnapshotFlash] = useState<
+    "saved" | "duplicate" | null
+  >(null);
   const snapshotFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [exportErr, setExportErr] = useState<string | null>(null);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
@@ -621,6 +623,33 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     [heavyBody],
   );
 
+  const applySpellSuggestionAll = useCallback(
+    (normalized: string, replacement: string) => {
+      const view = editorViewRef.current;
+      if (!view) return false;
+      const docStr = view.state.doc.toString();
+      if (docStr !== heavyBody) return false;
+      const matches = spellHits.filter((h) => h.normalized === normalized);
+      if (matches.length === 0) return false;
+      const docLen = view.state.doc.length;
+      for (const h of matches) {
+        if (h.docFrom < 0 || h.docTo > docLen || h.docFrom > h.docTo)
+          return false;
+        if (view.state.doc.sliceString(h.docFrom, h.docTo) !== h.word)
+          return false;
+      }
+      const changes = matches.map((h) => ({
+        from: h.docFrom,
+        to: h.docTo,
+        insert: replacement,
+      }));
+      view.dispatch({ changes, scrollIntoView: true });
+      view.focus();
+      return true;
+    },
+    [heavyBody, spellHits],
+  );
+
   const refreshSpell = useCallback(() => {
     setSpellBump((n) => n + 1);
   }, []);
@@ -886,11 +915,11 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     );
     const next = result.revisions;
     setRevisions(next);
-    setSnapshotLabel("");
-    setSnapshotFlash(true);
+    if (!result.duplicate) setSnapshotLabel("");
+    setSnapshotFlash(result.duplicate ? "duplicate" : "saved");
     if (snapshotFlashTimer.current) clearTimeout(snapshotFlashTimer.current);
     snapshotFlashTimer.current = setTimeout(() => {
-      setSnapshotFlash(false);
+      setSnapshotFlash(null);
       snapshotFlashTimer.current = null;
     }, 1800);
     setCompareLeftId((left) =>
@@ -1420,6 +1449,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     cycleSpellHit,
     spellNavIndex,
     applySpellSuggestion,
+    applySpellSuggestionAll,
     refreshSpell,
     updateGoal,
     setGoalValue,
