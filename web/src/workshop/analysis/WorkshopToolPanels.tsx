@@ -17,7 +17,6 @@ import type { StanzaClusterGroup } from "@/workshop/rhyme/hints";
 import type {
   RepeatedWord,
   RepetitionAnalysis,
-  Severity as RepetitionSeverity,
 } from "@/workshop/analysis/repeated-words";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
@@ -671,29 +670,18 @@ function endWordOfLine(line: string | undefined): string {
   return m ? m[0] : "";
 }
 
-function severityLabel(s: RepetitionSeverity): string {
-  return s === "high" ? "Loud" : s === "med" ? "Notable" : "Quiet";
-}
-
 function RepetitionSummary({
   counts,
 }: {
-  counts: { words: number; phrases: number; patterns: number; highSeverity: number };
+  counts: { words: number; phrases: number; patterns: number };
 }) {
   const total = counts.words + counts.phrases + counts.patterns;
   return (
     <div className="rep-summary" role="status" aria-live="polite">
       <div className="rep-summary-stat">
         <span className="rep-summary-value">{total}</span>
-        <span className="rep-summary-label">repetitions</span>
+        <span className="rep-summary-label">repeats</span>
       </div>
-      {counts.highSeverity > 0 ? (
-        <div className="rep-summary-stat rep-summary-loud">
-          <span className="rep-sev-dot rep-sev-dot-high" aria-hidden="true" />
-          <span className="rep-summary-value">{counts.highSeverity}</span>
-          <span className="rep-summary-label">loud</span>
-        </div>
-      ) : null}
       {counts.patterns > 0 ? (
         <div className="rep-summary-stat rep-summary-craft">
           <span className="rep-summary-value">{counts.patterns}</span>
@@ -706,6 +694,16 @@ function RepetitionSummary({
 
 function escapeRegex(s: string): string {
   return s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
+
+function buildPhraseRegexSource(phrase: string): string {
+  const words = phrase.split(/\s+/).filter(Boolean).map(escapeRegex);
+  if (words.length === 0) return "(?!)";
+  return words.join("[^A-Za-z']+");
+}
+
+function buildPhraseRegex(phrase: string): RegExp {
+  return new RegExp(buildPhraseRegexSource(phrase), "gi");
 }
 
 function highlightInLine(
@@ -756,13 +754,8 @@ function RepeatedWordCard({
   }, [item.word, item.variants]);
   const previewOccurrences = open ? item.occurrences : item.occurrences.slice(0, 2);
   return (
-    <li className={`rep-card rep-card-sev-${item.severity}`}>
+    <li className="rep-card">
       <div className="rep-card-header">
-        <span
-          className={`rep-sev-dot rep-sev-dot-${item.severity}`}
-          aria-label={severityLabel(item.severity)}
-          title={severityLabel(item.severity)}
-        />
         <span className="rep-card-title">{item.display}</span>
         <span className="rep-card-count">×{item.count}</span>
         {variantList ? (
@@ -819,14 +812,10 @@ function PhraseRepeatCard({
 }) {
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
+  const phraseRe = useMemo(() => buildPhraseRegex(item.phrase), [item.phrase]);
   return (
-    <li className={`rep-card rep-card-sev-${item.severity}`}>
+    <li className="rep-card">
       <div className="rep-card-header">
-        <span
-          className={`rep-sev-dot rep-sev-dot-${item.severity}`}
-          aria-label={severityLabel(item.severity)}
-          title={severityLabel(item.severity)}
-        />
         <span className="rep-card-title">"{item.display}"</span>
         <span className="rep-card-count">×{item.count}</span>
         <span className="rep-card-meta muted small">{item.n}-word</span>
@@ -843,7 +832,7 @@ function PhraseRepeatCard({
               L{s.line}
             </button>
             <span className="rep-snippet-text">
-              {highlightInLine(s.text, item.phrase)}
+              {highlightInLine(s.text, phraseRe)}
             </span>
           </li>
         ))}
@@ -873,10 +862,10 @@ function EdgeRepeatCard({
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? group.snippets : group.snippets.slice(0, 3);
   const matchRe = useMemo(() => {
-    const escaped = escapeRegex(group.prefix);
+    const body = buildPhraseRegexSource(group.prefix);
     return edge === "start"
-      ? new RegExp(`^\\s*${escaped}`, "i")
-      : new RegExp(`${escaped}\\s*$`, "i");
+      ? new RegExp(`^[^A-Za-z']*${body}`, "gi")
+      : new RegExp(`${body}[^A-Za-z']*$`, "gi");
   }, [group.prefix, edge]);
   return (
     <li className="rep-card rep-card-pattern">
@@ -1163,9 +1152,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   };
   const clearRhymeSelection = () => setRhymeLinkSelection([]);
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
-  const [repeatSeverityFilter, setRepeatSeverityFilter] = useState<
-    "all" | "high" | "med"
-  >("all");
   const [repeatSubTab, setRepeatSubTab] = useState<
     "words" | "phrases" | "patterns"
   >("words");
@@ -1186,30 +1172,25 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    let arr = repeated;
-    if (t) arr = arr.filter((r) => r.word.toLowerCase().includes(t) || r.variants.some((v) => v.toLowerCase().includes(t)));
-    if (repeatSeverityFilter === "high") arr = arr.filter((r) => r.severity === "high");
-    else if (repeatSeverityFilter === "med") arr = arr.filter((r) => r.severity === "high" || r.severity === "med");
-    return arr;
-  }, [repeated, repeatWordFilter, repeatSeverityFilter]);
+    if (!t) return repeated;
+    return repeated.filter(
+      (r) =>
+        r.word.toLowerCase().includes(t) ||
+        r.variants.some((v) => v.toLowerCase().includes(t)),
+    );
+  }, [repeated, repeatWordFilter]);
 
   const filteredPhrases = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    let arr = repetition.phrases;
-    if (t) arr = arr.filter((p) => p.phrase.toLowerCase().includes(t));
-    if (repeatSeverityFilter === "high") arr = arr.filter((p) => p.severity === "high");
-    else if (repeatSeverityFilter === "med") arr = arr.filter((p) => p.severity === "high" || p.severity === "med");
-    return arr;
-  }, [repetition.phrases, repeatWordFilter, repeatSeverityFilter]);
+    if (!t) return repetition.phrases;
+    return repetition.phrases.filter((p) => p.phrase.toLowerCase().includes(t));
+  }, [repetition.phrases, repeatWordFilter]);
 
   const repetitionCounts = useMemo(
     () => ({
       words: repeated.length,
       phrases: repetition.phrases.length,
       patterns: repetition.anaphora.length + repetition.epistrophe.length,
-      highSeverity:
-        repeated.filter((r) => r.severity === "high").length +
-        repetition.phrases.filter((p) => p.severity === "high").length,
     }),
     [repeated, repetition],
   );
@@ -2090,7 +2071,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-repeat"
         >
-          <LiveSectionTitle>Repetition</LiveSectionTitle>
+          <LiveSectionTitle>Repeats</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
@@ -2102,7 +2083,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             </p>
           ) : null}
           <RepetitionSummary counts={repetitionCounts} />
-          <div className="rep-subtabs" role="tablist" aria-label="Repetition categories">
+          <div className="rep-subtabs" role="tablist" aria-label="Repeats categories">
             <button
               type="button"
               role="tab"
@@ -2141,35 +2122,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                   value={repeatWordFilter}
                   onChange={(e) => setRepeatWordFilter(e.target.value)}
                   placeholder="Substring"
-                  aria-label="Filter repetition results"
+                  aria-label="Filter repeats results"
                 />
               </label>
-              <div className="rep-sev-toggle" role="group" aria-label="Severity filter">
-                <button
-                  type="button"
-                  className={`rep-sev-btn ${repeatSeverityFilter === "all" ? "active" : ""}`}
-                  onClick={() => setRepeatSeverityFilter("all")}
-                  aria-pressed={repeatSeverityFilter === "all"}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  className={`rep-sev-btn rep-sev-btn-med ${repeatSeverityFilter === "med" ? "active" : ""}`}
-                  onClick={() => setRepeatSeverityFilter("med")}
-                  aria-pressed={repeatSeverityFilter === "med"}
-                >
-                  Notable
-                </button>
-                <button
-                  type="button"
-                  className={`rep-sev-btn rep-sev-btn-high ${repeatSeverityFilter === "high" ? "active" : ""}`}
-                  onClick={() => setRepeatSeverityFilter("high")}
-                  aria-pressed={repeatSeverityFilter === "high"}
-                >
-                  Loud
-                </button>
-              </div>
             </div>
           ) : null}
 

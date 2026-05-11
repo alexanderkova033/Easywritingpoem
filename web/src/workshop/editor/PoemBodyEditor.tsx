@@ -358,8 +358,8 @@ const schemeLetterField = StateField.define<RangeSet<GutterMarker>>({
   },
 });
 
-// ---- Rhyme end-word highlights (line → cluster index) ---- //
-const setRhymeEndDecos = StateEffect.define<Array<{ line: number; clusterIdx: number }>>();
+// ---- Rhyme end-word highlights (line → scheme letter colour key) ---- //
+const setRhymeEndDecos = StateEffect.define<Array<{ line: number; colorKey: string }>>();
 const clearRhymeEndDecos = StateEffect.define<void>();
 
 const rhymeEndField = StateField.define<DecorationSet>({
@@ -371,7 +371,7 @@ const rhymeEndField = StateField.define<DecorationSet>({
       if (e.is(setRhymeEndDecos)) {
         const decos: Range<Decoration>[] = [];
         const doc = tr.state.doc;
-        for (const { line, clusterIdx } of e.value) {
+        for (const { line, colorKey } of e.value) {
           if (line < 1 || line > doc.lines) continue;
           const docLine = doc.line(line);
           const text = docLine.text;
@@ -382,7 +382,8 @@ const rhymeEndField = StateField.define<DecorationSet>({
             last = { start: m.index, end: m.index + m[0].length };
           }
           if (!last) continue;
-          const cls = `cm-rhyme-end cm-rhyme-end-${clusterIdx % 6}`;
+          const safeKey = /^[a-z]$|^hover$/.test(colorKey) ? colorKey : "x";
+          const cls = `cm-rhyme-end cm-rhyme-end-${safeKey}`;
           decos.push(Decoration.mark({ class: cls }).range(docLine.from + last.start, docLine.from + last.end));
         }
         decos.sort((a, b) => a.from - b.from || a.to - b.to);
@@ -511,7 +512,7 @@ export interface PoemBodyEditorProps {
   /** Word-level problem highlights from AI issues. */
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   /** Per-line rhyme end-word highlights — colors the last word in each listed line by cluster index. */
-  rhymeEndHighlights?: Array<{ line: number; clusterIdx: number }>;
+  rhymeEndHighlights?: Array<{ line: number; colorKey: string }>;
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */

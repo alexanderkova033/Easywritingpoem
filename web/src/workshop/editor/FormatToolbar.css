@@ -726,12 +726,36 @@ button.primary:disabled {
   text-underline-offset: 3px;
 }
 
-.cm-rhyme-end-0 { text-decoration-color: #5fba7d; background-color: color-mix(in srgb, #5fba7d 12%, transparent); }
-.cm-rhyme-end-1 { text-decoration-color: #5b9be0; background-color: color-mix(in srgb, #5b9be0 12%, transparent); }
-.cm-rhyme-end-2 { text-decoration-color: #e0995b; background-color: color-mix(in srgb, #e0995b 12%, transparent); }
-.cm-rhyme-end-3 { text-decoration-color: #b07be0; background-color: color-mix(in srgb, #b07be0 12%, transparent); }
-.cm-rhyme-end-4 { text-decoration-color: #d95f8f; background-color: color-mix(in srgb, #d95f8f 12%, transparent); }
-.cm-rhyme-end-5 { text-decoration-color: #5fbab0; background-color: color-mix(in srgb, #5fbab0 12%, transparent); }
+/* Per-letter palette — keys match scheme labels (A=a, B=b…) so the editor
+   underline, the gutter letter, and the panel chip all share one colour
+   per rhyme group. */
+.cm-rhyme-end-a { text-decoration-color: #4c8eff; background-color: color-mix(in srgb, #4c8eff 12%, transparent); }
+.cm-rhyme-end-b { text-decoration-color: #27ae60; background-color: color-mix(in srgb, #27ae60 12%, transparent); }
+.cm-rhyme-end-c { text-decoration-color: #e67e22; background-color: color-mix(in srgb, #e67e22 12%, transparent); }
+.cm-rhyme-end-d { text-decoration-color: #9b59b6; background-color: color-mix(in srgb, #9b59b6 12%, transparent); }
+.cm-rhyme-end-e { text-decoration-color: #e74c3c; background-color: color-mix(in srgb, #e74c3c 12%, transparent); }
+.cm-rhyme-end-f { text-decoration-color: #1abc9c; background-color: color-mix(in srgb, #1abc9c 12%, transparent); }
+.cm-rhyme-end-g { text-decoration-color: #f39c12; background-color: color-mix(in srgb, #f39c12 12%, transparent); }
+.cm-rhyme-end-h { text-decoration-color: #5d8ecc; background-color: color-mix(in srgb, #5d8ecc 12%, transparent); }
+.cm-rhyme-end-i { text-decoration-color: #e056a0; background-color: color-mix(in srgb, #e056a0 12%, transparent); }
+.cm-rhyme-end-j { text-decoration-color: #00bcd4; background-color: color-mix(in srgb, #00bcd4 12%, transparent); }
+.cm-rhyme-end-k { text-decoration-color: #8bc34a; background-color: color-mix(in srgb, #8bc34a 12%, transparent); }
+.cm-rhyme-end-l { text-decoration-color: #ff7043; background-color: color-mix(in srgb, #ff7043 12%, transparent); }
+.cm-rhyme-end-m { text-decoration-color: #7c4dff; background-color: color-mix(in srgb, #7c4dff 12%, transparent); }
+.cm-rhyme-end-n { text-decoration-color: #26c6da; background-color: color-mix(in srgb, #26c6da 12%, transparent); }
+.cm-rhyme-end-o { text-decoration-color: #ec407a; background-color: color-mix(in srgb, #ec407a 12%, transparent); }
+.cm-rhyme-end-p { text-decoration-color: #66bb6a; background-color: color-mix(in srgb, #66bb6a 12%, transparent); }
+.cm-rhyme-end-q { text-decoration-color: #ab47bc; background-color: color-mix(in srgb, #ab47bc 12%, transparent); }
+.cm-rhyme-end-r { text-decoration-color: #ffa726; background-color: color-mix(in srgb, #ffa726 12%, transparent); }
+.cm-rhyme-end-s { text-decoration-color: #42a5f5; background-color: color-mix(in srgb, #42a5f5 12%, transparent); }
+.cm-rhyme-end-t { text-decoration-color: #d4a017; background-color: color-mix(in srgb, #d4a017 12%, transparent); }
+.cm-rhyme-end-u { text-decoration-color: #5c6bc0; background-color: color-mix(in srgb, #5c6bc0 12%, transparent); }
+.cm-rhyme-end-v { text-decoration-color: #26a69a; background-color: color-mix(in srgb, #26a69a 12%, transparent); }
+.cm-rhyme-end-w { text-decoration-color: #ef5350; background-color: color-mix(in srgb, #ef5350 12%, transparent); }
+.cm-rhyme-end-x { text-decoration-color: #78909c; background-color: color-mix(in srgb, #78909c 12%, transparent); }
+.cm-rhyme-end-y { text-decoration-color: #c0ca33; background-color: color-mix(in srgb, #c0ca33 12%, transparent); }
+.cm-rhyme-end-z { text-decoration-color: #8d6e63; background-color: color-mix(in srgb, #8d6e63 12%, transparent); }
+.cm-rhyme-end-hover { text-decoration-color: var(--accent); background-color: color-mix(in srgb, var(--accent) 14%, transparent); }
 
 /* ---- Internal rhyme: dotted underline on mid-line rhyming words.
    Native text-decoration keeps the line snug against the text baseline,

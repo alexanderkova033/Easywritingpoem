@@ -374,10 +374,11 @@ export function PoemWorkshop() {
   const rhymeBumpRef = useRef(0);
 
   const baseRhymeEndHighlights = useMemo(() => {
-    if (m.toolTab !== "rhyme") return [] as Array<{ line: number; clusterIdx: number }>;
-    const out: Array<{ line: number; clusterIdx: number }> = [];
-    const lineToCluster = new Map<number, number>();
-    let idx = 0;
+    if (m.toolTab !== "rhyme") return [] as Array<{ line: number; colorKey: string }>;
+    // Color key = scheme letter (lowercased). Same rhyme group → same key →
+    // same colour across every stanza it appears in.
+    const out: Array<{ line: number; colorKey: string }> = [];
+    const seen = new Set<number>();
     for (const group of m.stanzaRhymeGroups) {
       for (const c of group.clusters) {
         const words = c.lineNumbers.map((n) => {
@@ -386,44 +387,16 @@ export function PoemWorkshop() {
           return mm ? mm[0] : "";
         });
         if (rhymeIgnored.isIgnored(words)) continue;
+        const key = (c.label ?? "").charAt(0).toLowerCase() || "x";
         for (const line of c.lineNumbers) {
-          out.push({ line, clusterIdx: idx });
-          lineToCluster.set(line, idx);
+          if (seen.has(line)) continue;
+          out.push({ line, colorKey: key });
+          seen.add(line);
         }
-        idx++;
-      }
-    }
-    // Fold in manual rhyme links — `stanzaGroupsFromScheme` only emits
-    // clusters with 2+ lines per stanza, so links bridging stanzas get
-    // dropped even though `detectRhymeScheme` merged their labels.
-    const endWordByLine = m.lines.map((ln) => {
-      const mm = (ln ?? "").match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
-      return mm ? mm[0].toLowerCase().replace(/^'+|'+$/g, "") : "";
-    });
-    for (const key of manualRhymeLinks.links) {
-      const parts = key.split("+");
-      if (parts.length !== 2) continue;
-      const [a, b] = parts as [string, string];
-      const involved: number[] = [];
-      for (let i = 0; i < endWordByLine.length; i++) {
-        const w = endWordByLine[i];
-        if (w === a || w === b) involved.push(i + 1);
-      }
-      if (involved.length < 2) continue;
-      let reuse = -1;
-      for (const n of involved) {
-        const got = lineToCluster.get(n);
-        if (got !== undefined) { reuse = got; break; }
-      }
-      const clusterIdx = reuse >= 0 ? reuse : idx++;
-      for (const n of involved) {
-        if (lineToCluster.has(n)) continue;
-        out.push({ line: n, clusterIdx });
-        lineToCluster.set(n, clusterIdx);
       }
     }
     return out;
-  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored, manualRhymeLinks.links]);
+  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
 
   // Auto-fill the Rhyme Finder when the cursor parks on a different line or
   // the user opens the rhyme tab. Avoids refiring on every keystroke.
@@ -448,8 +421,9 @@ export function PoemWorkshop() {
     const word = (hit.textContent || "").trim();
     if (!word) return;
     rhymeBumpRef.current += 1;
-    // Explicit click on a highlighted end-word — open the panel if collapsed.
-    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current, expand: true });
+    // Click on a highlighted end-word fills the Rhyme Finder query but
+    // doesn't pop a collapsed panel open — keeps the layout calm.
+    setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
   }, [m.toolTab]);
 
   // Add transient highlights for end-words that rhyme with the currently
@@ -461,10 +435,7 @@ export function PoemWorkshop() {
     const targetKey = endingForBreadth(norm, rhymeBreadth);
     if (!targetKey) return baseRhymeEndHighlights;
     const existing = new Set(baseRhymeEndHighlights.map((h) => h.line));
-    const hoverIdx = baseRhymeEndHighlights.length > 0
-      ? Math.max(...baseRhymeEndHighlights.map((h) => h.clusterIdx)) + 1
-      : 0;
-    const extra: Array<{ line: number; clusterIdx: number }> = [];
+    const extra: Array<{ line: number; colorKey: string }> = [];
     for (let i = 0; i < m.lines.length; i++) {
       if (existing.has(i + 1)) continue;
       const mm = (m.lines[i] ?? "").match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
@@ -472,7 +443,7 @@ export function PoemWorkshop() {
       const wn = mm[0].toLowerCase().replace(/[^a-z']/g, "");
       if (wn.length < 2) continue;
       const k = endingForBreadth(wn, rhymeBreadth);
-      if (k && k === targetKey) extra.push({ line: i + 1, clusterIdx: hoverIdx });
+      if (k && k === targetKey) extra.push({ line: i + 1, colorKey: "hover" });
     }
     return [...baseRhymeEndHighlights, ...extra];
   }, [baseRhymeEndHighlights, hoveredRhymeWord, m.toolTab, m.lines, rhymeBreadth]);

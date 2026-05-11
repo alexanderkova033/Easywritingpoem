@@ -201,7 +201,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
           </div>
           <div className="landing-concept">
             <span className="landing-concept-icon" aria-hidden>↺</span>
-            <h3>Repetition</h3>
+            <h3>Repeats</h3>
             <p>Repeated words highlighted so you can decide whether they're intentional or just filler.</p>
           </div>
           <div className="landing-concept">
