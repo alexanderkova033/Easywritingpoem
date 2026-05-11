@@ -22,6 +22,8 @@ export interface RevisionCompareSectionProps {
   snapshotFlash?: "saved" | "duplicate" | null | boolean;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
+  onDeleteDuplicates?: () => void;
+  duplicateCount?: number;
   onDiffSnapshot?: (snap: RevisionSnapshot) => void;
   activeDiffSnapshotId?: string | null;
   compareLeftId: string;
@@ -124,6 +126,8 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     snapshotFlash = null,
     onRestoreRevision,
     onDeleteRevision,
+    onDeleteDuplicates,
+    duplicateCount = 0,
     onDiffSnapshot,
     activeDiffSnapshotId,
     compareLeftId,
@@ -141,6 +145,19 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     null,
   );
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteDupes, setPendingDeleteDupes] = useState(false);
+
+  const duplicateIds = useMemo(() => {
+    const seen = new Map<string, string>();
+    const dupes = new Set<string>();
+    for (const s of revisions) {
+      const k = `${s.title} ${s.form ?? ""} ${s.body}`;
+      const keeper = seen.get(k);
+      if (keeper) dupes.add(s.id);
+      else seen.set(k, s.id);
+    }
+    return dupes;
+  }, [revisions]);
 
   const rowsMeta = useMemo<RowMeta[]>(() => {
     return revisions.map((s, i) => {
@@ -230,8 +247,12 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         : (row.deltaLines ?? 0) + (row.deltaWords ?? 0) < 0
           ? "neg"
           : "zero";
+    const isDuplicate = duplicateIds.has(s.id);
     return (
-      <li key={s.id} className="revision-list-item revision-list-item-compact">
+      <li
+        key={s.id}
+        className={`revision-list-item revision-list-item-compact${isDuplicate ? " is-duplicate" : ""}`}
+      >
         <div className="revision-row-main">
           {renderRowControls(s)}
           {row.datePill ? (
@@ -263,6 +284,14 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
               title="Change since previous snapshot"
             >
               {phrase}
+            </span>
+          ) : null}
+          {isDuplicate ? (
+            <span
+              className="revision-dupe-tag"
+              title="Same text as a newer snapshot"
+            >
+              duplicate
             </span>
           ) : null}
         </div>
@@ -424,6 +453,54 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         <p className="snapshot-saved-flash snapshot-saved-flash-duplicate" role="status" aria-live="polite">
           No changes since last snapshot — nothing new to save
         </p>
+      ) : null}
+
+      {onDeleteDuplicates && duplicateCount > 0 ? (
+        pendingDeleteDupes ? (
+          <div
+            className="revision-inline-confirm revision-inline-confirm-danger"
+            role="group"
+            aria-label="Confirm delete duplicate snapshots"
+          >
+            <p className="revision-inline-confirm-text">
+              Delete {duplicateCount} duplicate{" "}
+              {duplicateCount === 1 ? "snapshot" : "snapshots"}? Newest copy of
+              each version is kept.
+            </p>
+            <div className="revision-inline-confirm-actions">
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setPendingDeleteDupes(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="small-btn danger-btn"
+                onClick={() => {
+                  onDeleteDuplicates();
+                  setPendingDeleteDupes(false);
+                }}
+              >
+                Delete duplicates
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="revision-dupes-strip">
+            <span className="muted small">
+              {duplicateCount} duplicate{duplicateCount === 1 ? "" : "s"} found
+            </span>
+            <button
+              type="button"
+              className="linkish danger-link"
+              onClick={() => setPendingDeleteDupes(true)}
+            >
+              Delete duplicates
+            </button>
+          </div>
+        )
       ) : null}
 
       <div className="revision-draft-row">

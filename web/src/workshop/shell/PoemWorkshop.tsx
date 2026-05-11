@@ -2507,6 +2507,8 @@ export function PoemWorkshop() {
             snapshotFlash={m.snapshotFlash}
             onRestoreRevision={m.restoreRevision}
             onDeleteRevision={m.deleteRevision}
+            onDeleteDuplicateRevisions={m.deleteDuplicateRevisions}
+            duplicateRevisionCount={m.duplicateRevisionCount}
             onDiffSnapshot={handleDiffSnapshot}
             activeDiffSnapshotId={diffSnapshot?.id ?? null}
             compareLeftId={m.compareLeftId}

@@ -49,7 +49,9 @@ import {
 } from "@/workshop/library/local-draft-storage";
 import {
   addRevision,
+  countDuplicateRevisions,
   loadRevisions,
+  removeDuplicateRevisions,
   removeRevision,
   removeRevisionsForPoem,
   type RevisionSnapshot,
@@ -1093,6 +1095,49 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     [activePoemId, revisions, compareLeftId, compareRightId],
   );
 
+  const deleteDuplicateRevisions = useCallback(() => {
+    const result = removeDuplicateRevisions(activePoemId, revisions);
+    if (!result.ok) {
+      setPersistenceError(SNAPSHOT_DELETE_MSG);
+      return;
+    }
+    setPersistenceError((prev) =>
+      prev === SNAPSHOT_DELETE_MSG ? null : prev,
+    );
+    if (result.removed === 0) return;
+    const next = result.revisions;
+    setRevisions(next);
+    let newLeft = compareLeftId;
+    let newRight = compareRightId;
+    if (
+      newLeft !== COMPARE_CURRENT_ID &&
+      !next.some((s) => s.id === newLeft)
+    ) {
+      newLeft = COMPARE_CURRENT_ID;
+    }
+    if (
+      newRight !== COMPARE_CURRENT_ID &&
+      !next.some((s) => s.id === newRight)
+    ) {
+      newRight = next[0]?.id ?? COMPARE_CURRENT_ID;
+    }
+    if (
+      newLeft !== COMPARE_CURRENT_ID &&
+      newRight !== COMPARE_CURRENT_ID &&
+      newLeft === newRight
+    ) {
+      newRight =
+        next.find((s) => s.id !== newLeft)?.id ?? COMPARE_CURRENT_ID;
+    }
+    setCompareLeftId(newLeft);
+    setCompareRightId(newRight);
+  }, [activePoemId, revisions, compareLeftId, compareRightId]);
+
+  const duplicateRevisionCount = useMemo(
+    () => countDuplicateRevisions(revisions),
+    [revisions],
+  );
+
   const onDownloadTxt = useCallback(() => {
     const cleanBody = stripFormatMarkers(bodyLiveRef.current);
     const text = buildPlainTextTitleBody(
@@ -1395,6 +1440,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     saveSnapshot,
     restoreRevision,
     deleteRevision,
+    deleteDuplicateRevisions,
+    duplicateRevisionCount,
     revisions,
     compareLeftId,
     compareRightId,
