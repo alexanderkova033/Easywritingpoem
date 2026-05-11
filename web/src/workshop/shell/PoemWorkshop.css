@@ -5933,6 +5933,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .rep-card {
@@ -5943,6 +5945,10 @@
   border-left: 3px solid color-mix(in srgb, var(--border) 90%, transparent);
   border-radius: 8px;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rep-card:hover {
@@ -5974,6 +5980,11 @@
   flex-wrap: wrap;
   gap: 0.45rem;
   margin-bottom: 0.35rem;
+  min-width: 0;
+}
+
+.rep-card-header > * {
+  min-width: 0;
 }
 
 .rep-sev-dot {
@@ -6007,6 +6018,9 @@
   font-weight: 700;
   font-size: 0.98rem;
   letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .rep-card-count {
@@ -6044,6 +6058,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .rep-snippet {
@@ -6052,6 +6068,8 @@
   gap: 0.5rem;
   font-size: 0.88rem;
   line-height: 1.45;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .rep-line-jump {
@@ -6073,8 +6091,10 @@
 }
 
 .rep-snippet-text {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
   font-family: var(--font-serif, Georgia, serif);
 }
 

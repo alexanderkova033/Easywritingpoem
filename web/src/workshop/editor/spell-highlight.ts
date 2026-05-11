@@ -109,13 +109,13 @@ export const poemEditorTheme = EditorView.theme({
   "&": {
     fontSize: "var(--poem-font-size, 1rem)",
     minHeight: "13rem",
-    backgroundColor: "var(--bg)",
+    backgroundColor: "transparent",
     color: "color-mix(in srgb, var(--text) 82%, transparent)",
     borderRadius: "8px",
     border: "1px solid var(--border)",
     transition: "border-color 0.2s ease",
   },
-  ".cm-scroller": { fontFamily: "inherit", overflowX: "hidden" },
+  ".cm-scroller": { fontFamily: "inherit", overflowX: "hidden", backgroundColor: "transparent" },
   ".cm-content": {
     fontFamily: "var(--font-poem), Georgia, serif",
     fontWeight: "var(--poem-font-weight, 400)",
@@ -127,14 +127,14 @@ export const poemEditorTheme = EditorView.theme({
     padding: "0.6rem 0.7rem",
   },
   ".cm-gutters": {
-    backgroundColor: "var(--surface)",
+    backgroundColor: "transparent",
     color: "var(--muted)",
     borderRight: "1px solid var(--border)",
     borderTopLeftRadius: "8px",
     borderBottomLeftRadius: "8px",
   },
   ".cm-activeLineGutter": {
-    backgroundColor: "color-mix(in srgb, var(--accent) 4%, var(--surface))",
+    backgroundColor: "color-mix(in srgb, var(--accent) 6%, transparent)",
   },
   ".cm-activeLine": {
     backgroundColor: "color-mix(in srgb, var(--accent) 3.5%, transparent)",

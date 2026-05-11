@@ -95,153 +95,179 @@ export function FormatToolbar({
 
   return (
     <div className="format-toolbar" role="toolbar" aria-label="Text formatting">
-      <button
-        type="button"
-        className="fmt-btn"
-        {...hint("Bold selected text (**text**)")}
-        aria-label="Bold"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          apply(toggleBold);
-        }}
-      >
-        <strong>B</strong>
-      </button>
-      <button
-        type="button"
-        className="fmt-btn fmt-btn-underline"
-        {...hint("Underline selected text (__text__)")}
-        aria-label="Underline"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          apply(toggleUnderline);
-        }}
-      >
-        <span style={{ textDecoration: "underline" }}>U</span>
-      </button>
-      <label className="fmt-size-label">
-        <span className="fmt-size-label-text">Size</span>
-        <select
-          className="fmt-size-select"
-          value={poemSize}
-          onChange={(e) => onSizeChange(e.target.value as PoemSizeId)}
+      {/* Group 1: inline formatting */}
+      <div className="fmt-group">
+        <button
+          type="button"
+          className="fmt-btn"
+          {...hint("Bold selected text (**text**)")}
+          aria-label="Bold"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            apply(toggleBold);
+          }}
         >
-          {POEM_SIZE_OPTIONS.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button
-        type="button"
-        className={`fmt-btn fmt-syllable-toggle ${showLineSyllables ? "is-on" : ""}`}
-        {...hint(
-          showLineSyllables
-            ? "Hide estimated syllable count at the end of each line"
-            : "Show estimated syllable count at the end of each line",
-        )}
-        aria-pressed={showLineSyllables}
-        aria-label={
-          showLineSyllables
-            ? "Syllable counts on lines: on. Click to hide."
-            : "Syllable counts on lines: off. Click to show."
-        }
-        onMouseDown={(e) => {
-          e.preventDefault();
-          onShowLineSyllablesChange(!showLineSyllables);
-        }}
-      >
-        ˈsyll
-      </button>
-
-      <button
-        type="button"
-        className={`fmt-btn fmt-syllable-toggle ${showRhymeScheme ? "is-on" : ""}`}
-        {...hint(
-          showRhymeScheme
-            ? "Hide end-rhyme scheme panel"
-            : "Show end-rhyme scheme panel",
-        )}
-        aria-pressed={showRhymeScheme}
-        aria-label={
-          showRhymeScheme
-            ? "Rhyme scheme: on. Click to hide."
-            : "Rhyme scheme: off. Click to show."
-        }
-        onMouseDown={(e) => {
-          e.preventDefault();
-          onShowRhymeSchemeChange(!showRhymeScheme);
-        }}
-      >
-        A B
-      </button>
+          <strong>B</strong>
+        </button>
+        <button
+          type="button"
+          className="fmt-btn fmt-btn-underline"
+          {...hint("Underline selected text (__text__)")}
+          aria-label="Underline"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            apply(toggleUnderline);
+          }}
+        >
+          <span style={{ textDecoration: "underline" }}>U</span>
+        </button>
+      </div>
 
       <span className="fmt-sep" aria-hidden />
 
-      <button
-        type="button"
-        className="fmt-btn fmt-tidy-btn"
-        {...hint("Remove double spaces in the poem")}
-        aria-label="Remove double spaces"
-        onMouseDown={(e) => { e.preventDefault(); apply(tidyDoubleSpaces); }}
-      >
-        A·A
-      </button>
-      <button
-        type="button"
-        className="fmt-btn fmt-tidy-btn"
-        {...hint("Capitalise first letter of each line")}
-        aria-label="Capitalise first letter of each line"
-        onMouseDown={(e) => { e.preventDefault(); apply(tidyCapLines); }}
-      >
-        ↑Aa
-      </button>
-      <button
-        type="button"
-        className="fmt-btn fmt-tidy-btn"
-        {...hint("Lowercase first letter of each line")}
-        aria-label="Lowercase first letter of each line"
-        onMouseDown={(e) => { e.preventDefault(); apply(tidyLowerLines); }}
-      >
-        ↓aa
-      </button>
-      <button
-        type="button"
-        className="fmt-btn fmt-tidy-btn"
-        {...hint(
-          "Even stanza spacing — collapse extra blank lines, trim trailing spaces",
-        )}
-        aria-label="Even stanza spacing"
-        onMouseDown={(e) => { e.preventDefault(); apply(tidyStanzaSpacing); }}
-      >
-        ¶≡
-      </button>
+      {/* Group 2: size */}
+      <div className="fmt-group">
+        <label className="fmt-size-label">
+          <span className="fmt-size-label-text">Size</span>
+          <select
+            className="fmt-size-select"
+            value={poemSize}
+            onChange={(e) => onSizeChange(e.target.value as PoemSizeId)}
+          >
+            {POEM_SIZE_OPTIONS.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      {onReadingMode && (
+      <span className="fmt-sep" aria-hidden />
+
+      {/* Group 3: view toggles (syllable / rhyme scheme) */}
+      <div className="fmt-group">
+        <button
+          type="button"
+          className={`fmt-btn fmt-syllable-toggle ${showLineSyllables ? "is-on" : ""}`}
+          {...hint(
+            showLineSyllables
+              ? "Hide estimated syllable count at the end of each line"
+              : "Show estimated syllable count at the end of each line",
+          )}
+          aria-pressed={showLineSyllables}
+          aria-label={
+            showLineSyllables
+              ? "Syllable counts on lines: on. Click to hide."
+              : "Syllable counts on lines: off. Click to show."
+          }
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onShowLineSyllablesChange(!showLineSyllables);
+          }}
+        >
+          ˈsyll
+        </button>
+
+        <button
+          type="button"
+          className={`fmt-btn fmt-syllable-toggle ${showRhymeScheme ? "is-on" : ""}`}
+          {...hint(
+            showRhymeScheme
+              ? "Hide end-rhyme scheme panel"
+              : "Show end-rhyme scheme panel",
+          )}
+          aria-pressed={showRhymeScheme}
+          aria-label={
+            showRhymeScheme
+              ? "Rhyme scheme: on. Click to hide."
+              : "Rhyme scheme: off. Click to show."
+          }
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onShowRhymeSchemeChange(!showRhymeScheme);
+          }}
+        >
+          A B
+        </button>
+      </div>
+
+      <span className="fmt-sep" aria-hidden />
+
+      {/* Group 4: tidy actions */}
+      <div className="fmt-group fmt-group-tidy">
         <button
           type="button"
           className="fmt-btn fmt-tidy-btn"
-          {...hint("Reading view — clean display of finished poem (⌘/Ctrl+Shift+R)")}
-          aria-label="Reading view"
-          onMouseDown={(e) => { e.preventDefault(); onReadingMode(); }}
+          {...hint("Remove double spaces in the poem")}
+          aria-label="Remove double spaces"
+          onMouseDown={(e) => { e.preventDefault(); apply(tidyDoubleSpaces); }}
         >
-          ☰
+          A·A
         </button>
-      )}
-      {onLineFocusModeChange !== undefined && (
         <button
           type="button"
-          className={`fmt-btn fmt-tidy-btn fmt-line-focus-btn fmt-labeled-btn${lineFocusMode ? " is-on" : ""}`}
-          {...hint(lineFocusMode ? "Line focus: on — dims other lines while you write" : "Line focus: off — click to dim other lines")}
-          aria-pressed={lineFocusMode}
-          aria-label={lineFocusMode ? "Line focus on" : "Line focus off"}
-          onMouseDown={(e) => { e.preventDefault(); onLineFocusModeChange(!lineFocusMode); }}
+          className="fmt-btn fmt-tidy-btn"
+          {...hint("Capitalise first letter of each line")}
+          aria-label="Capitalise first letter of each line"
+          onMouseDown={(e) => { e.preventDefault(); apply(tidyCapLines); }}
         >
-          <span className="fmt-btn-icon" aria-hidden>◉</span>
-          <span className="fmt-btn-label">Focus</span>
+          ↑Aa
         </button>
+        <button
+          type="button"
+          className="fmt-btn fmt-tidy-btn"
+          {...hint("Lowercase first letter of each line")}
+          aria-label="Lowercase first letter of each line"
+          onMouseDown={(e) => { e.preventDefault(); apply(tidyLowerLines); }}
+        >
+          ↓aa
+        </button>
+        <button
+          type="button"
+          className="fmt-btn fmt-tidy-btn"
+          {...hint(
+            "Even stanza spacing — collapse extra blank lines, trim trailing spaces",
+          )}
+          aria-label="Even stanza spacing"
+          onMouseDown={(e) => { e.preventDefault(); apply(tidyStanzaSpacing); }}
+        >
+          ¶≡
+        </button>
+      </div>
+
+      {(onReadingMode || onLineFocusModeChange !== undefined) && (
+        <span className="fmt-sep" aria-hidden />
+      )}
+
+      {/* Group 5: view modes */}
+      {(onReadingMode || onLineFocusModeChange !== undefined) && (
+        <div className="fmt-group">
+          {onReadingMode && (
+            <button
+              type="button"
+              className="fmt-btn fmt-tidy-btn"
+              {...hint("Reading view — clean display of finished poem (⌘/Ctrl+Shift+R)")}
+              aria-label="Reading view"
+              onMouseDown={(e) => { e.preventDefault(); onReadingMode(); }}
+            >
+              ☰
+            </button>
+          )}
+          {onLineFocusModeChange !== undefined && (
+            <button
+              type="button"
+              className={`fmt-btn fmt-tidy-btn fmt-line-focus-btn fmt-labeled-btn${lineFocusMode ? " is-on" : ""}`}
+              {...hint(lineFocusMode ? "Line focus: on — dims other lines while you write" : "Line focus: off — click to dim other lines")}
+              aria-pressed={lineFocusMode}
+              aria-label={lineFocusMode ? "Line focus on" : "Line focus off"}
+              onMouseDown={(e) => { e.preventDefault(); onLineFocusModeChange(!lineFocusMode); }}
+            >
+              <span className="fmt-btn-icon" aria-hidden>◉</span>
+              <span className="fmt-btn-label">Focus</span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

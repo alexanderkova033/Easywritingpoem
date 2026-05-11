@@ -149,11 +149,19 @@ const syllableCountPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
     constructor(view: EditorView) { this.decorations = this.build(view); }
-    update(update: { docChanged: boolean; view: EditorView }) {
-      if (update.docChanged) this.decorations = this.build(update.view);
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.selectionSet || update.focusChanged) {
+        this.decorations = this.build(update.view);
+      }
     }
     build(view: EditorView): DecorationSet {
-      // First pass: collect counts to find max for scaling bars
+      // Active line under the cursor — skip its widget so the count doesn't
+      // shift the text while the user is writing on that line.
+      const sel = view.state.selection.main;
+      const activeLineNo = view.hasFocus
+        ? view.state.doc.lineAt(sel.head).number
+        : -1;
+      // First pass: collect counts on all non-empty lines to find max for bar scaling.
       const counts: { lineNo: number; to: number; count: number }[] = [];
       for (let i = 1; i <= view.state.doc.lines; i++) {
         const line = view.state.doc.line(i);
@@ -163,13 +171,14 @@ const syllableCountPlugin = ViewPlugin.fromClass(
         counts.push({ lineNo: i, to: line.to, count });
       }
       const maxCount = counts.reduce((m, c) => Math.max(m, c.count), 1);
-      // Second pass: render widget with proportional bar
-      const decos = counts.map(({ to, count }) =>
-        Decoration.widget({
-          widget: new SyllableWidget(count, Math.round((count / maxCount) * 100)),
-          side: 1,
-        }).range(to),
-      );
+      const decos = counts
+        .filter(({ lineNo }) => lineNo !== activeLineNo)
+        .map(({ to, count }) =>
+          Decoration.widget({
+            widget: new SyllableWidget(count, Math.round((count / maxCount) * 100)),
+            side: 1,
+          }).range(to),
+        );
       return Decoration.set(decos);
     }
   },

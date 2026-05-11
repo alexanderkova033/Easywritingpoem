@@ -134,20 +134,44 @@ export function WorkshopTopbarHeader(props: Props) {
               <label className="draft-library-label" htmlFor="draft-poem-select">
                 Draft
               </label>
-              <select
-                id="draft-poem-select"
-                className="draft-library-select"
-                value={m.activePoemId}
-                onChange={(e) => m.selectPoem(e.target.value)}
-                aria-label="Active draft"
-              >
-                {m.poemOptions.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.label}
-                    {o.archived ? " (archived)" : ""}
-                  </option>
-                ))}
-              </select>
+              <div className="draft-select-wrap">
+                <svg
+                  className="draft-select-icon"
+                  viewBox="0 0 16 16"
+                  aria-hidden
+                  width="13"
+                  height="13"
+                >
+                  <path
+                    d="M3.5 1.5h6L13 5v9a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V2.5a1 1 0 0 1 1-1z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9.5 1.5V5H13"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <select
+                  id="draft-poem-select"
+                  className="draft-library-select"
+                  value={m.activePoemId}
+                  onChange={(e) => m.selectPoem(e.target.value)}
+                  aria-label="Active draft"
+                >
+                  {m.poemOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                      {o.archived ? " (archived)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
                 type="button"
                 className="topbar-draft-icon-btn"
