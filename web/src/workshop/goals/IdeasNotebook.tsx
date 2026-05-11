@@ -13,7 +13,7 @@ export function IdeasNotebook() {
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
-  const [hideDone, setHideDone] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
   const editInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -54,6 +54,20 @@ export function IdeasNotebook() {
     persist(ideas.filter((i) => !i.done));
   }, [ideas, persist]);
 
+  const move = useCallback(
+    (id: string, dir: -1 | 1) => {
+      const idx = ideas.findIndex((i) => i.id === id);
+      if (idx < 0) return;
+      const target = idx + dir;
+      if (target < 0 || target >= ideas.length) return;
+      if (ideas[idx].done !== ideas[target].done) return;
+      const next = ideas.slice();
+      [next[idx], next[target]] = [next[target], next[idx]];
+      persist(next);
+    },
+    [ideas, persist],
+  );
+
   const startEdit = useCallback((idea: IdeaEntry) => {
     setEditingId(idea.id);
     setEditingText(idea.text);
@@ -70,9 +84,7 @@ export function IdeasNotebook() {
     if (!text) {
       persist(ideas.filter((i) => i.id !== editingId));
     } else {
-      persist(
-        ideas.map((i) => (i.id === editingId ? { ...i, text } : i)),
-      );
+      persist(ideas.map((i) => (i.id === editingId ? { ...i, text } : i)));
     }
     setEditingId(null);
     setEditingText("");
@@ -95,21 +107,163 @@ export function IdeasNotebook() {
     }
   };
 
-  const visible = useMemo(
-    () => (hideDone ? ideas.filter((i) => !i.done) : ideas),
-    [ideas, hideDone],
-  );
+  const active = useMemo(() => ideas.filter((i) => !i.done), [ideas]);
+  const done = useMemo(() => ideas.filter((i) => i.done), [ideas]);
+  const progress =
+    ideas.length === 0 ? 0 : Math.round((done.length / ideas.length) * 100);
 
-  const doneCount = useMemo(() => ideas.filter((i) => i.done).length, [ideas]);
+  const renderItem = (idea: IdeaEntry, group: IdeaEntry[], index: number) => {
+    const isFirst = index === 0;
+    const isLast = index === group.length - 1;
+    return (
+      <li
+        key={idea.id}
+        className={`ideas-notebook-item${idea.done ? " ideas-notebook-item--done" : ""}`}
+      >
+        <label className="ideas-notebook-check">
+          <input
+            type="checkbox"
+            className="ideas-notebook-check-input"
+            checked={idea.done}
+            onChange={() => onToggle(idea.id)}
+            aria-label={`Mark "${idea.text}" ${idea.done ? "not done" : "done"}`}
+          />
+          <span className="ideas-notebook-check-box" aria-hidden="true">
+            <svg
+              viewBox="0 0 16 16"
+              className="ideas-notebook-check-icon"
+              focusable="false"
+            >
+              <path
+                d="M3.5 8.4 6.6 11.5 12.5 5.2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </label>
+
+        {editingId === idea.id ? (
+          <input
+            ref={editInputRef}
+            type="text"
+            className="ideas-notebook-input ideas-notebook-edit"
+            value={editingText}
+            onChange={(e) => setEditingText(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={onEditKeyDown}
+            maxLength={IDEA_TEXT_MAX}
+            aria-label="Edit idea"
+          />
+        ) : (
+          <button
+            type="button"
+            className="ideas-notebook-text"
+            onClick={() => startEdit(idea)}
+            title="Click to edit"
+          >
+            {idea.text}
+          </button>
+        )}
+
+        <div className="ideas-notebook-actions">
+          <button
+            type="button"
+            className="ideas-notebook-move"
+            onClick={() => move(idea.id, -1)}
+            disabled={isFirst}
+            aria-label="Move up"
+            title="Move up"
+          >
+            <svg viewBox="0 0 12 12" focusable="false" aria-hidden="true">
+              <path
+                d="M2.5 7.5 6 4l3.5 3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="ideas-notebook-move"
+            onClick={() => move(idea.id, 1)}
+            disabled={isLast}
+            aria-label="Move down"
+            title="Move down"
+          >
+            <svg viewBox="0 0 12 12" focusable="false" aria-hidden="true">
+              <path
+                d="M2.5 4.5 6 8l3.5-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="ideas-notebook-del"
+            onClick={() => onDelete(idea.id)}
+            aria-label={`Delete idea: ${idea.text}`}
+            title="Delete"
+          >
+            <svg viewBox="0 0 12 12" focusable="false" aria-hidden="true">
+              <path
+                d="M3 3l6 6M9 3l-6 6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </li>
+    );
+  };
 
   return (
     <section className="ideas-notebook" aria-labelledby="ideas-notebook-heading">
-      <h4 className="tool-subheading" id="ideas-notebook-heading">
-        Ideas notebook
-      </h4>
+      <header className="ideas-notebook-header">
+        <h4 className="tool-subheading" id="ideas-notebook-heading">
+          Ideas notebook
+        </h4>
+        {ideas.length > 0 ? (
+          <span
+            className="ideas-notebook-badge"
+            aria-label={`${done.length} of ${ideas.length} done`}
+          >
+            {done.length}/{ideas.length}
+          </span>
+        ) : null}
+      </header>
       <p className="muted small ideas-notebook-hint">
         Jot poem ideas to come back to. Tick them off when written.
       </p>
+
+      {ideas.length > 0 ? (
+        <div
+          className="ideas-notebook-progress"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Ideas completion"
+        >
+          <div
+            className="ideas-notebook-progress-fill"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      ) : null}
 
       <form className="ideas-notebook-add" onSubmit={onAdd}>
         <input
@@ -123,93 +277,82 @@ export function IdeasNotebook() {
         />
         <button
           type="submit"
-          className="small-btn"
+          className="ideas-notebook-add-btn"
           disabled={!draft.trim()}
+          aria-label="Add idea"
         >
-          Add
+          <svg viewBox="0 0 12 12" focusable="false" aria-hidden="true">
+            <path
+              d="M6 2v8M2 6h8"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+          <span>Add</span>
         </button>
       </form>
 
-      {ideas.length > 0 ? (
-        <div className="ideas-notebook-toolbar">
-          <label className="ideas-notebook-toolbar-toggle">
-            <input
-              type="checkbox"
-              checked={hideDone}
-              onChange={(e) => setHideDone(e.target.checked)}
-            />
-            Hide done
-          </label>
-          <span className="ideas-notebook-count muted small">
-            {doneCount} / {ideas.length} done
-          </span>
-          {doneCount > 0 ? (
-            <button
-              type="button"
-              className="linkish ideas-notebook-clear"
-              onClick={onClearDone}
-            >
-              Clear done
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-
       {ideas.length === 0 ? (
-        <p className="muted small ideas-notebook-empty">No ideas yet.</p>
-      ) : visible.length === 0 ? (
-        <p className="muted small ideas-notebook-empty">
-          All ideas done. Untick to show them.
-        </p>
+        <div className="ideas-notebook-empty">
+          <div className="ideas-notebook-empty-icon" aria-hidden="true">
+            ✎
+          </div>
+          <p className="muted small">No ideas yet. Add one above.</p>
+        </div>
       ) : (
-        <ul className="ideas-notebook-list">
-          {visible.map((idea) => (
-            <li
-              key={idea.id}
-              className={`ideas-notebook-item${idea.done ? " ideas-notebook-item--done" : ""}`}
+        <>
+          {active.length > 0 ? (
+            <ul className="ideas-notebook-list">
+              {active.map((idea, i) => renderItem(idea, active, i))}
+            </ul>
+          ) : (
+            <p className="muted small ideas-notebook-all-done">
+              ✓ All ideas ticked off
+            </p>
+          )}
+
+          {done.length > 0 ? (
+            <div
+              className={`ideas-notebook-done-section${doneOpen ? " ideas-notebook-done-section--open" : ""}`}
             >
-              <label className="ideas-notebook-check">
-                <input
-                  type="checkbox"
-                  checked={idea.done}
-                  onChange={() => onToggle(idea.id)}
-                  aria-label={`Mark "${idea.text}" ${idea.done ? "not done" : "done"}`}
-                />
-              </label>
-              {editingId === idea.id ? (
-                <input
-                  ref={editInputRef}
-                  type="text"
-                  className="ideas-notebook-input ideas-notebook-edit"
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={onEditKeyDown}
-                  maxLength={IDEA_TEXT_MAX}
-                  aria-label="Edit idea"
-                />
-              ) : (
+              <div className="ideas-notebook-done-header">
                 <button
                   type="button"
-                  className="ideas-notebook-text"
-                  onClick={() => startEdit(idea)}
-                  title="Click to edit"
+                  className="ideas-notebook-done-toggle"
+                  onClick={() => setDoneOpen((s) => !s)}
+                  aria-expanded={doneOpen}
+                  aria-controls="ideas-notebook-done-list"
                 >
-                  {idea.text}
+                  <span
+                    className={`ideas-notebook-caret${doneOpen ? " ideas-notebook-caret--open" : ""}`}
+                    aria-hidden="true"
+                  >
+                    ▸
+                  </span>
+                  Done ({done.length})
                 </button>
-              )}
-              <button
-                type="button"
-                className="ideas-notebook-del"
-                onClick={() => onDelete(idea.id)}
-                aria-label={`Delete idea: ${idea.text}`}
-                title="Delete"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
+                <button
+                  type="button"
+                  className="ideas-notebook-clear"
+                  onClick={onClearDone}
+                  title="Remove all done ideas"
+                >
+                  Clear
+                </button>
+              </div>
+              {doneOpen ? (
+                <ul
+                  className="ideas-notebook-list ideas-notebook-list--done"
+                  id="ideas-notebook-done-list"
+                >
+                  {done.map((idea, i) => renderItem(idea, done, i))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+        </>
       )}
     </section>
   );

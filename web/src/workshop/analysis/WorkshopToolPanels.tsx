@@ -4,6 +4,11 @@ import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
+import {
+  ALL_GOAL_KEYS,
+  canonicaliseRhymeScheme,
+  hasAnyGoalSet,
+} from "@/workshop/goals/types";
 import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
@@ -76,129 +81,510 @@ function EmptyState({
   );
 }
 
-function GoalCard({
-  label,
-  current,
-  target,
-  onSet,
-  hint,
-  extra,
+function SoftPill({
   soft,
-  onToggleSoft,
-  isCap = false,
+  onToggle,
+  label,
 }: {
+  soft: boolean;
+  onToggle: () => void;
   label: string;
-  current: number | null;
-  target: number | undefined;
-  onSet: (v: number | undefined) => void;
-  hint?: string;
-  extra?: ReactNode;
-  soft?: boolean;
-  onToggleSoft?: () => void;
-  isCap?: boolean;
 }) {
-  const [inputVal, setInputVal] = useState(target != null ? String(target) : "");
-  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      type="button"
+      className={`goal-card-soft-pill${soft ? " goal-card-soft-pill--soft" : ""}`}
+      onClick={onToggle}
+      title={
+        soft
+          ? "Stretch goal — won't trigger issues. Click to make required."
+          : "Required — counts as an issue when unmet. Click to make a stretch goal."
+      }
+      aria-label={`${label}: ${soft ? "stretch goal" : "required"}`}
+    >
+      {soft ? "Stretch" : "Required"}
+    </button>
+  );
+}
 
+function NumberStepperInput({
+  value,
+  onCommit,
+  ariaLabel,
+  placeholder = "—",
+}: {
+  value: number | undefined;
+  onCommit: (v: number | undefined) => void;
+  ariaLabel: string;
+  placeholder?: string;
+}) {
+  const [text, setText] = useState(value != null ? String(value) : "");
+  const ref = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    setInputVal(target != null ? String(target) : "");
-  }, [target]);
+    setText(value != null ? String(value) : "");
+  }, [value]);
 
-  const hasGoal = target != null;
-  const hasCurrent = current !== null && current >= 0;
-  const met = isCap
-    ? hasGoal && hasCurrent && (current as number) === 0
-    : hasGoal && hasCurrent && current === target;
-  const over = isCap
-    ? hasGoal && hasCurrent && (current as number) > 0
-    : hasGoal && hasCurrent && current! > target!;
-  const pct = !isCap && hasGoal && hasCurrent && target! > 0
-    ? Math.min(1, (current as number) / target!)
-    : null;
-  const statusClass = met ? "goal-card--met" : over ? "goal-card--over" : "";
-
-  function commitInput(raw: string) {
-    const n = parseInt(raw, 10);
-    onSet(Number.isFinite(n) && n >= 1 ? n : undefined);
+  function commit(raw: string) {
+    const trimmed = raw.trim();
+    if (trimmed === "") {
+      onCommit(undefined);
+      return;
+    }
+    const n = parseInt(trimmed, 10);
+    if (!Number.isFinite(n) || n < 1) {
+      // Reject 0/negatives/garbage — restore previous value.
+      setText(value != null ? String(value) : "");
+      return;
+    }
+    onCommit(n);
   }
+
   function step(delta: number) {
-    const base = target ?? (hasCurrent && (current as number) > 0 ? (current as number) : 1);
-    onSet(Math.max(1, base + delta));
+    const base = value ?? 1;
+    onCommit(Math.max(1, base + delta));
   }
 
   return (
-    <div
-      className={`goal-card${isCap ? " goal-card--cap" : ""}${soft ? " goal-card--soft" : ""} ${statusClass}${hasGoal ? "" : " goal-card--unset"}`}
-      title={hint}
-    >
+    <div className="goal-card-stepper">
+      <button
+        type="button"
+        className="goal-card-step"
+        onClick={() => step(-1)}
+        disabled={value != null && value <= 1}
+        aria-label={`Decrease ${ariaLabel}`}
+      >
+        −
+      </button>
+      <input
+        ref={ref}
+        type="number"
+        className="goal-card-input"
+        min={1}
+        inputMode="numeric"
+        value={text}
+        placeholder={placeholder}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            commit(text);
+            ref.current?.blur();
+          }
+        }}
+        aria-label={ariaLabel}
+      />
+      <button
+        type="button"
+        className="goal-card-step"
+        onClick={() => step(1)}
+        aria-label={`Increase ${ariaLabel}`}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+function MetricGoalCard({
+  label,
+  current,
+  hint,
+  isSoft,
+  onToggleSoft,
+  targetValue,
+  rangeMin,
+  rangeMax,
+  onSetTarget,
+  onSetRange,
+}: {
+  label: string;
+  current: number;
+  hint?: string;
+  isSoft: boolean;
+  onToggleSoft: () => void;
+  targetValue: number | undefined;
+  rangeMin: number | undefined;
+  rangeMax: number | undefined;
+  onSetTarget: (v: number | undefined) => void;
+  onSetRange: (min: number | undefined, max: number | undefined) => void;
+}) {
+  const hasTarget = targetValue != null;
+  const hasRange = rangeMin != null || rangeMax != null;
+  const hasGoal = hasTarget || hasRange;
+
+  const [mode, setMode] = useState<"exact" | "range">(
+    hasRange && !hasTarget ? "range" : "exact",
+  );
+  useEffect(() => {
+    if (hasRange && !hasTarget) setMode("range");
+    else if (hasTarget) setMode("exact");
+  }, [hasRange, hasTarget]);
+
+  const met = hasTarget
+    ? current === targetValue
+    : hasRange
+      ? (rangeMin == null || current >= rangeMin) &&
+        (rangeMax == null || current <= rangeMax)
+      : false;
+  const over = hasTarget
+    ? current > (targetValue as number)
+    : rangeMax != null && current > rangeMax;
+  const under = hasTarget
+    ? current < (targetValue as number)
+    : rangeMin != null && current < rangeMin;
+
+  const statusClass = !hasGoal
+    ? "goal-card--unset"
+    : met
+      ? "goal-card--met"
+      : over
+        ? "goal-card--over"
+        : under
+          ? "goal-card--under"
+          : "";
+
+  // Progress: exact mode = current/target; range mode = current/max (or min if only min set).
+  let pct: number | null = null;
+  if (hasTarget && (targetValue as number) > 0) {
+    pct = Math.min(1, current / (targetValue as number));
+  } else if (hasRange) {
+    const ref = rangeMax ?? rangeMin;
+    if (ref && ref > 0) pct = Math.min(1, current / ref);
+  }
+
+  const toggleMode = () => {
+    if (mode === "exact") {
+      // Move to range: seed min/max from target if present.
+      if (hasTarget) {
+        onSetRange(targetValue, targetValue);
+        onSetTarget(undefined);
+      }
+      setMode("range");
+    } else {
+      // Move to exact: seed from range min (or max).
+      const seed = rangeMin ?? rangeMax;
+      if (seed != null) onSetTarget(seed);
+      onSetRange(undefined, undefined);
+      setMode("exact");
+    }
+  };
+
+  const clearGoal = () => {
+    onSetTarget(undefined);
+    onSetRange(undefined, undefined);
+  };
+
+  return (
+    <div className={`goal-card ${statusClass}`} title={hint}>
       <div className="goal-card-header">
         <span className="goal-card-label">{label}</span>
         <div className="goal-card-actions">
-          {onToggleSoft && (
-            <button
-              type="button"
-              className={`goal-card-soft-btn${soft ? " goal-card-soft-btn--soft" : ""}`}
-              onClick={onToggleSoft}
-              title={soft ? "Aspirational — click to make required" : "Required — click to make aspirational"}
-              aria-label={soft ? `${label}: aspirational` : `${label}: required`}
-            >
-              {soft ? "◇" : "◆"}
-            </button>
-          )}
-          {hasGoal && (
+          {hasGoal ? (
+            <SoftPill soft={isSoft} onToggle={onToggleSoft} label={label} />
+          ) : null}
+          {hasGoal ? (
             <button
               type="button"
               className="goal-card-clear"
-              onClick={() => onSet(undefined)}
+              onClick={clearGoal}
               aria-label={`Clear ${label} goal`}
+              title="Clear"
             >
               ×
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
       <div className="goal-card-value-row">
-        <span className={`goal-card-current${!hasCurrent ? " goal-card-current--empty" : ""}`}>
-          {hasCurrent ? current : "—"}
-        </span>
-        {hasGoal && (
-          <span className={`goal-card-of${met ? " goal-card-of--met" : over ? " goal-card-of--over" : ""}`}>
-            /{target}
+        <span className="goal-card-current">{current}</span>
+        {hasTarget ? (
+          <span
+            className={`goal-card-of${met ? " goal-card-of--met" : over ? " goal-card-of--over" : ""}`}
+          >
+            / {targetValue}
           </span>
+        ) : hasRange ? (
+          <span
+            className={`goal-card-of${met ? " goal-card-of--met" : ""}`}
+          >
+            {" "}
+            in {rangeMin ?? "·"}–{rangeMax ?? "·"}
+          </span>
+        ) : (
+          <span className="goal-card-of goal-card-of--unset">no goal</span>
         )}
       </div>
 
-      <div className="goal-card-controls">
-        <button type="button" className="goal-card-step" onClick={() => step(-1)} aria-label={`Decrease ${label} target`}>−</button>
-        <input
-          ref={inputRef}
-          type="number"
-          className="goal-card-input"
-          min={1}
-          inputMode="numeric"
-          value={inputVal}
-          placeholder="—"
-          onChange={(e) => setInputVal(e.target.value)}
-          onBlur={(e) => commitInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { commitInput(inputVal); inputRef.current?.blur(); }
-          }}
-          aria-label={`${label} target`}
+      {mode === "exact" ? (
+        <NumberStepperInput
+          value={targetValue}
+          onCommit={onSetTarget}
+          ariaLabel={`${label} target`}
         />
-        <button type="button" className="goal-card-step" onClick={() => step(1)} aria-label={`Increase ${label} target`}>+</button>
-      </div>
+      ) : (
+        <div className="goal-card-range">
+          <NumberStepperInput
+            value={rangeMin}
+            onCommit={(v) => onSetRange(v, rangeMax)}
+            ariaLabel={`${label} minimum`}
+            placeholder="min"
+          />
+          <span className="goal-card-range-sep" aria-hidden>
+            –
+          </span>
+          <NumberStepperInput
+            value={rangeMax}
+            onCommit={(v) => onSetRange(rangeMin, v)}
+            ariaLabel={`${label} maximum`}
+            placeholder="max"
+          />
+        </div>
+      )}
 
-      {extra}
+      <button
+        type="button"
+        className="goal-card-mode-toggle linkish"
+        onClick={toggleMode}
+      >
+        {mode === "exact" ? "Use range" : "Use exact"}
+      </button>
 
-      {pct !== null && (
+      {pct !== null ? (
         <div className="goal-card-bar" aria-hidden>
           <div
             className={`goal-card-bar-fill${met ? " goal-card-bar--met" : over ? " goal-card-bar--over" : ""}`}
             style={{ width: `${Math.round(pct * 100)}%` }}
           />
         </div>
-      )}
+      ) : null}
+    </div>
+  );
+}
+
+function SyllableCapCard({
+  cap,
+  overLines,
+  goToLine,
+  isSoft,
+  onToggleSoft,
+  onSet,
+}: {
+  cap: number | undefined;
+  overLines: number[];
+  goToLine: (n: number) => void;
+  isSoft: boolean;
+  onToggleSoft: () => void;
+  onSet: (v: number | undefined) => void;
+}) {
+  const hasGoal = cap != null;
+  const overCount = overLines.length;
+  const met = hasGoal && overCount === 0;
+  const over = hasGoal && overCount > 0;
+  const statusClass = !hasGoal
+    ? "goal-card--unset"
+    : met
+      ? "goal-card--met"
+      : over
+        ? "goal-card--over"
+        : "";
+
+  return (
+    <div
+      className={`goal-card goal-card--cap ${statusClass}`}
+      title="Flag lines whose estimated syllable count exceeds this"
+    >
+      <div className="goal-card-header">
+        <span className="goal-card-label">Syllable cap</span>
+        <div className="goal-card-actions">
+          {hasGoal ? (
+            <SoftPill
+              soft={isSoft}
+              onToggle={onToggleSoft}
+              label="syllable cap"
+            />
+          ) : null}
+          {hasGoal ? (
+            <button
+              type="button"
+              className="goal-card-clear"
+              onClick={() => onSet(undefined)}
+              aria-label="Clear syllable cap goal"
+              title="Clear"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="goal-card-value-row">
+        <span className="goal-card-current">{cap ?? "—"}</span>
+        <span className="goal-card-of goal-card-of--cap">
+          max syllables/line
+        </span>
+      </div>
+
+      <NumberStepperInput
+        value={cap}
+        onCommit={onSet}
+        ariaLabel="Syllable cap"
+      />
+
+      {hasGoal && overCount > 0 ? (
+        <p className="goal-card-extra">
+          {overCount} line{overCount === 1 ? "" : "s"} over cap:{" "}
+          <JumpLineList lineNumbers={overLines} goToLine={goToLine} />
+        </p>
+      ) : hasGoal ? (
+        <p className="goal-card-extra goal-card-extra--ok">
+          ✓ No lines over cap
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+const RHYME_SCHEME_PRESETS: Array<{ label: string; value: string; hint: string }> = [
+  { label: "None", value: "", hint: "No rhyme-scheme goal" },
+  { label: "AABB", value: "AABB", hint: "Couplets" },
+  { label: "ABAB", value: "ABAB", hint: "Alternating quatrain" },
+  { label: "AABBA", value: "AABBA", hint: "Limerick" },
+  { label: "ABBA", value: "ABBA", hint: "Enclosed rhyme" },
+  {
+    label: "Sonnet",
+    value: "ABABCDCDEFEFGG",
+    hint: "Shakespearean sonnet",
+  },
+];
+
+function RhymeSchemeCard({
+  target,
+  detected,
+  matches,
+  onSet,
+  isSoft,
+  onToggleSoft,
+}: {
+  target: string;
+  detected: string;
+  matches: boolean | null;
+  onSet: (scheme: string | undefined) => void;
+  isSoft: boolean;
+  onToggleSoft: () => void;
+}) {
+  const [custom, setCustom] = useState(target);
+  useEffect(() => {
+    setCustom(target);
+  }, [target]);
+
+  const canonCustom = canonicaliseRhymeScheme(custom);
+  const matchesAnyPreset = RHYME_SCHEME_PRESETS.some(
+    (p) => p.value === target,
+  );
+
+  const commitCustom = () => {
+    const canon = canonicaliseRhymeScheme(custom);
+    onSet(canon || undefined);
+  };
+
+  const hasGoal = target.length > 0;
+  const statusClass = !hasGoal
+    ? "goal-card--unset"
+    : matches === true
+      ? "goal-card--met"
+      : matches === false
+        ? "goal-card--over"
+        : "";
+
+  return (
+    <div className={`goal-card goal-card--scheme ${statusClass}`}>
+      <div className="goal-card-header">
+        <span className="goal-card-label">Rhyme scheme</span>
+        <div className="goal-card-actions">
+          {hasGoal ? (
+            <SoftPill
+              soft={isSoft}
+              onToggle={onToggleSoft}
+              label="rhyme scheme"
+            />
+          ) : null}
+          {hasGoal ? (
+            <button
+              type="button"
+              className="goal-card-clear"
+              onClick={() => onSet(undefined)}
+              aria-label="Clear rhyme scheme goal"
+              title="Clear"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="goal-scheme-chips" role="group" aria-label="Rhyme scheme presets">
+        {RHYME_SCHEME_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            className={`goal-scheme-chip${target === p.value ? " is-active" : ""}`}
+            title={p.hint}
+            onClick={() => onSet(p.value || undefined)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="goal-scheme-custom">
+        <label className="muted small">
+          Custom
+          <input
+            type="text"
+            className="goal-scheme-input"
+            value={custom}
+            placeholder="e.g. ABBA"
+            spellCheck={false}
+            onChange={(e) => setCustom(e.target.value.toUpperCase())}
+            onBlur={commitCustom}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitCustom();
+              }
+            }}
+            aria-label="Custom rhyme scheme"
+          />
+        </label>
+        {!matchesAnyPreset && canonCustom && canonCustom !== target ? (
+          <button
+            type="button"
+            className="linkish goal-scheme-apply"
+            onClick={commitCustom}
+          >
+            Apply
+          </button>
+        ) : null}
+      </div>
+
+      <div className="goal-scheme-comparison">
+        <div className="goal-scheme-row">
+          <span className="muted small">Target</span>
+          <code className="goal-scheme-code">{target || "—"}</code>
+        </div>
+        <div className="goal-scheme-row">
+          <span className="muted small">Detected</span>
+          <code
+            className={`goal-scheme-code${matches === true ? " goal-scheme-code--met" : matches === false ? " goal-scheme-code--off" : ""}`}
+          >
+            {detected || "—"}
+          </code>
+        </div>
+        {hasGoal && matches === true ? (
+          <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -280,6 +666,8 @@ export interface WorkshopToolPanelsProps {
     key: keyof WorkshopGoals,
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   setGoalValue: (key: keyof WorkshopGoals, value: number | undefined) => void;
+  setRhymeSchemeGoal: (scheme: string | undefined) => void;
+  resetGoals: () => void;
   toggleGoalSoft: (key: string) => void;
   applyGoalPreset: (presetKey: string | null) => void;
   revisions: RevisionSnapshot[];
@@ -352,6 +740,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     refreshSpell,
     onSpellPersistenceError,
     setGoalValue,
+    setRhymeSchemeGoal,
+    resetGoals,
     toggleGoalSoft,
     applyGoalPreset,
     revisions,
@@ -673,72 +1063,121 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <span className="tool-heading-you-text">Goals</span>
           </h3>
 
-          <div className="goal-presets" role="group" aria-label="Form presets">
-            {FORM_PRESETS.map((p) => (
+          <div className="goal-presets-row">
+            <div className="goal-presets" role="group" aria-label="Form presets">
+              {FORM_PRESETS.map((p) => {
+                const isActive = goals.preset === p.key;
+                // Detect drift: compare each preset goal key to current value.
+                const drifted =
+                  isActive &&
+                  ALL_GOAL_KEYS.some((k) => {
+                    const presetVal = (p.goals as Record<string, unknown>)[k];
+                    const curVal = (goals as Record<string, unknown>)[k];
+                    return (presetVal ?? null) !== (curVal ?? null);
+                  });
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    className={`goal-preset-chip${isActive ? " goal-preset-chip--active" : ""}${drifted ? " goal-preset-chip--drifted" : ""}`}
+                    title={
+                      drifted
+                        ? `${p.description} (modified — click to re-apply)`
+                        : p.description
+                    }
+                    onClick={() =>
+                      isActive && !drifted
+                        ? applyGoalPreset(null)
+                        : applyGoalPreset(p.key)
+                    }
+                  >
+                    {p.label}
+                    {drifted ? (
+                      <span className="goal-preset-chip-modified" aria-hidden>
+                        ●
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+            {hasAnyGoalSet(goals) ? (
               <button
-                key={p.key}
                 type="button"
-                className={`goal-preset-chip${goals.preset === p.key ? " goal-preset-chip--active" : ""}`}
-                title={p.description}
-                onClick={() =>
-                  goals.preset === p.key
-                    ? applyGoalPreset(null)
-                    : applyGoalPreset(p.key)
-                }
+                className="goal-reset-btn linkish"
+                onClick={resetGoals}
+                title="Clear every goal target"
               >
-                {p.label}
+                Reset all
               </button>
-            ))}
+            ) : null}
           </div>
 
+          {!hasAnyGoalSet(goals) ? (
+            <p className="muted small goal-empty-hint">
+              Pick a form preset above, or set your own targets below.
+            </p>
+          ) : null}
+
           <div className="goal-cards">
-            <GoalCard
+            <MetricGoalCard
               label="Lines"
               current={docStats.nonEmptyLines}
-              target={goals.targetLines}
-              onSet={(v) => setGoalValue("targetLines", v)}
-              soft={goals.softGoals?.includes("targetLines")}
+              isSoft={!!goals.softGoals?.includes("targetLines")}
               onToggleSoft={() => toggleGoalSoft("targetLines")}
+              targetValue={goals.targetLines}
+              rangeMin={goals.minLines}
+              rangeMax={goals.maxLines}
+              onSetTarget={(v) => setGoalValue("targetLines", v)}
+              onSetRange={(min, max) => {
+                setGoalValue("minLines", min);
+                setGoalValue("maxLines", max);
+              }}
             />
-            <GoalCard
+            <MetricGoalCard
               label="Stanzas"
               current={docStats.stanzaCount}
-              target={goals.targetStanzas}
-              onSet={(v) => setGoalValue("targetStanzas", v)}
               hint="Stanzas are blocks of lines separated by blank lines"
-              soft={goals.softGoals?.includes("targetStanzas")}
+              isSoft={!!goals.softGoals?.includes("targetStanzas")}
               onToggleSoft={() => toggleGoalSoft("targetStanzas")}
+              targetValue={goals.targetStanzas}
+              rangeMin={goals.minStanzas}
+              rangeMax={goals.maxStanzas}
+              onSetTarget={(v) => setGoalValue("targetStanzas", v)}
+              onSetRange={(min, max) => {
+                setGoalValue("minStanzas", min);
+                setGoalValue("maxStanzas", max);
+              }}
             />
-            <GoalCard
+            <MetricGoalCard
               label="Words"
               current={docStats.totalWords}
-              target={goals.targetWords}
-              onSet={(v) => setGoalValue("targetWords", v)}
-              soft={goals.softGoals?.includes("targetWords")}
+              isSoft={!!goals.softGoals?.includes("targetWords")}
               onToggleSoft={() => toggleGoalSoft("targetWords")}
+              targetValue={goals.targetWords}
+              rangeMin={goals.minWords}
+              rangeMax={goals.maxWords}
+              onSetTarget={(v) => setGoalValue("targetWords", v)}
+              onSetRange={(min, max) => {
+                setGoalValue("minWords", min);
+                setGoalValue("maxWords", max);
+              }}
             />
-            <GoalCard
-              label="Syllable cap"
-              current={goals.maxSyllablesPerLine != null ? goalEvaluation.syllableOverLines.length : null}
-              target={goals.maxSyllablesPerLine}
-              onSet={(v) => setGoalValue("maxSyllablesPerLine", v)}
-              isCap={true}
-              hint="Flag lines whose estimated syllable count exceeds this"
-              soft={goals.softGoals?.includes("maxSyllablesPerLine")}
+            <SyllableCapCard
+              cap={goals.maxSyllablesPerLine}
+              overLines={goalEvaluation.syllableOverLines}
+              goToLine={goToLine}
+              isSoft={!!goals.softGoals?.includes("maxSyllablesPerLine")}
               onToggleSoft={() => toggleGoalSoft("maxSyllablesPerLine")}
-              extra={
-                goalEvaluation.syllableOverLines.length > 0 ? (
-                  <p className="goal-card-extra">
-                    Lines over cap:{" "}
-                    <JumpLineList
-                      lineNumbers={goalEvaluation.syllableOverLines}
-                      goToLine={goToLine}
-                    />
-                  </p>
-                ) : goals.maxSyllablesPerLine != null ? (
-                  <p className="goal-card-extra goal-card-extra--ok">✓ No lines over cap</p>
-                ) : null
-              }
+              onSet={(v) => setGoalValue("maxSyllablesPerLine", v)}
+            />
+            <RhymeSchemeCard
+              target={goals.targetRhymeScheme ?? ""}
+              detected={goalEvaluation.detectedSchemeCanonical}
+              matches={goalEvaluation.rhymeSchemeMatches}
+              onSet={setRhymeSchemeGoal}
+              isSoft={!!goals.softGoals?.includes("targetRhymeScheme")}
+              onToggleSoft={() => toggleGoalSoft("targetRhymeScheme")}
             />
           </div>
 
@@ -752,7 +1191,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
           {goalEvaluation.warnings.length === 0 &&
           goalEvaluation.softHints.length === 0 &&
-          Object.values(goals).some((v) => v != null) ? (
+          hasAnyGoalSet(goals) ? (
             <p className="goal-on-target">✓ All goals met</p>
           ) : null}
 

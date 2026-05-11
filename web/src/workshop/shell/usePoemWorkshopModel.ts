@@ -488,8 +488,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   }, [spellHits]);
 
   const goalEvaluation = useMemo(
-    () => evaluateGoals(docStats, goals),
-    [docStats, goals],
+    () => evaluateGoals(docStats, goals, rhymeScheme),
+    [docStats, goals, rhymeScheme],
   );
 
   const publication = useMemo(
@@ -1200,10 +1200,18 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
 
   const setGoalValue = useCallback(
     (key: keyof WorkshopGoals, value: number | undefined) => {
-      setGoals((g) => ({ ...g, [key]: value, preset: undefined }));
+      setGoals((g) => ({ ...g, [key]: value }));
     },
     [],
   );
+
+  const setRhymeSchemeGoal = useCallback((scheme: string | undefined) => {
+    setGoals((g) => ({ ...g, targetRhymeScheme: scheme }));
+  }, []);
+
+  const resetGoals = useCallback(() => {
+    setGoals({});
+  }, []);
 
   const setSyllablePattern = useCallback((pattern: number[] | undefined) => {
     setGoals((g) => ({ ...g, syllablePattern: pattern, preset: undefined }));
@@ -1219,11 +1227,17 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
 
   const applyGoalPreset = useCallback((presetKey: string | null) => {
     if (presetKey === null) {
-      setGoals({});
+      setGoals((g) => ({ softGoals: g.softGoals }));
       return;
     }
     const preset = FORM_PRESETS.find((p) => p.key === presetKey);
-    if (preset) setGoals({ ...preset.goals, preset: presetKey });
+    if (preset) {
+      setGoals((g) => ({
+        ...preset.goals,
+        preset: presetKey,
+        softGoals: g.softGoals,
+      }));
+    }
   }, []);
 
   const onSpellPersistenceError = useCallback((message: string) => {
@@ -1400,6 +1414,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     refreshSpell,
     updateGoal,
     setGoalValue,
+    setRhymeSchemeGoal,
+    resetGoals,
     setSyllablePattern,
     toggleGoalSoft,
     applyGoalPreset,
