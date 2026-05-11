@@ -211,7 +211,6 @@
 .poem-workshop.is-focus-mode .cm-syllable-wrap,
 .poem-workshop.is-focus-mode .cm-rhyme-scheme,
 .poem-workshop.is-focus-mode .ai-line-ribbons,
-.poem-workshop.is-focus-mode .rhyme-panel,
 .poem-workshop.is-focus-mode .editor-goal-strip {
   display: none !important;
 }
@@ -228,12 +227,24 @@
   height: 0;
 }
 
-/* ── Fade-on-idle: drift chrome and the mouse cursor away after stillness ──
- * Driven by data-focus-idle on <html>, set by PoemWorkshop after ~2.5s of no
- * input. Any pointer/key activity clears it and rearms the timer. */
+/* ── Focus mode: rhyme scheme stays present but dimmed (reference, not focus) */
+.poem-workshop.is-focus-mode .rhyme-panel,
+.poem-workshop.is-focus-mode .editor-rhyme-scheme {
+  opacity: 0.32;
+  transition: opacity 0.4s ease;
+}
+.poem-workshop.is-focus-mode .rhyme-panel:hover,
+.poem-workshop.is-focus-mode .editor-rhyme-scheme:hover {
+  opacity: 0.85;
+}
+
+/* ── Fade-on-idle: drift chrome, AI analysis, and the mouse cursor away
+ * after stillness. Driven by data-focus-idle on <html>, set by PoemWorkshop.
+ * Mouse activity reveals; idle reapplies. */
 .poem-workshop.is-focus-mode .topbar,
 .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
-.poem-workshop.is-focus-mode .toolbar {
+.poem-workshop.is-focus-mode .toolbar,
+.poem-workshop.is-focus-mode .ai-analysis-section {
   transition: opacity 0.5s ease;
 }
 
@@ -249,14 +260,23 @@
   opacity: 0.06;
   transition: opacity 1.1s ease;
 }
+:root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.4s ease;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .poem-workshop.is-focus-mode .topbar,
   .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
   .poem-workshop.is-focus-mode .toolbar,
+  .poem-workshop.is-focus-mode .ai-analysis-section,
+  .poem-workshop.is-focus-mode .rhyme-panel,
+  .poem-workshop.is-focus-mode .editor-rhyme-scheme,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .topbar,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .toolbar {
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .toolbar,
+  :root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section {
     transition: none;
   }
 }

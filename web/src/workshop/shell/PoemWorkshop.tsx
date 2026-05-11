@@ -745,9 +745,9 @@ export function PoemWorkshop() {
     };
   }, [isFocusMode]);
 
-  // Fade-on-idle: when in focus mode and the user has been still for ~2.5s,
-  // mark the workshop as idle so chrome (topbar/rail/toolbar) and the mouse
-  // cursor fade. Any pointer or key activity clears it and re-arms the timer.
+  // Fade-on-idle: in focus mode, only physical pointer activity reveals the
+  // chrome. Typing keeps the writing trance — mouse must actually move (or
+  // scroll/click) for the topbar/toolbar to fade back in.
   useEffect(() => {
     if (!isFocusMode) {
       document.documentElement.removeAttribute("data-focus-idle");
@@ -761,17 +761,16 @@ export function PoemWorkshop() {
         document.documentElement.setAttribute("data-focus-idle", "");
       }, 2500);
     };
-    arm();
+    // Enter focus mode hidden — chrome only appears once the mouse actually moves.
+    document.documentElement.setAttribute("data-focus-idle", "");
     const opts = { passive: true } as AddEventListenerOptions;
     window.addEventListener("pointermove", arm, opts);
     window.addEventListener("pointerdown", arm, opts);
-    window.addEventListener("keydown", arm, opts);
     window.addEventListener("wheel", arm, opts);
     return () => {
       if (timer) clearTimeout(timer);
       window.removeEventListener("pointermove", arm);
       window.removeEventListener("pointerdown", arm);
-      window.removeEventListener("keydown", arm);
       window.removeEventListener("wheel", arm);
       document.documentElement.removeAttribute("data-focus-idle");
     };
@@ -2023,7 +2022,7 @@ export function PoemWorkshop() {
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
-                      lineFocusMode={isFocusMode ? "stanza" : lineFocusMode}
+                      lineFocusMode={isFocusMode ? (lineFocusMode ? "line" : "stanza") : lineFocusMode}
                       typewriterScroll={isFocusMode}
                       onSelectionText={(text, rect) => {
                         setSelectionText(text);
