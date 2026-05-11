@@ -1458,24 +1458,26 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                           key={it.id}
                           className={`queue-item queue-item-${it.category}`}
                         >
-                          <span
-                            className={`queue-cat queue-cat-${it.category}`}
-                            title={it.categoryLabel}
-                          >
-                            {it.categoryLabel}
-                          </span>
+                          <div className="queue-item-header">
+                            <span
+                              className={`queue-cat queue-cat-${it.category}`}
+                              title={it.categoryLabel}
+                            >
+                              {it.categoryLabel}
+                            </span>
+                            {it.line != null && it.onJump ? (
+                              <button
+                                type="button"
+                                className="queue-line-link"
+                                onClick={it.onJump}
+                                title={`Jump to line ${it.line}`}
+                              >
+                                L{it.line}
+                              </button>
+                            ) : null}
+                          </div>
                           <div className="queue-body">
                             <div className="queue-title-row">
-                              {it.line != null && it.onJump ? (
-                                <button
-                                  type="button"
-                                  className="linkish queue-line-link"
-                                  onClick={it.onJump}
-                                  title={`Jump to line ${it.line}`}
-                                >
-                                  L{it.line}
-                                </button>
-                              ) : null}
                               <span className="queue-title">{it.title}</span>
                             </div>
                             {it.detail ? (

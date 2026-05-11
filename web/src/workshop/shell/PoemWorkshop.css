@@ -1554,79 +1554,123 @@
 .queue-buckets {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .queue-bucket {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.55rem 0.7rem 0.7rem;
-  border-radius: 10px;
+  gap: 0.6rem;
+  padding: 0.7rem 0.85rem 0.85rem;
+  border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  position: relative;
+  overflow: hidden;
+}
+
+.queue-bucket::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 .queue-bucket-now {
-  border-color: color-mix(in srgb, var(--danger) 50%, var(--border));
-  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+}
+
+.queue-bucket-now::before {
+  background: var(--danger);
 }
 
 .queue-bucket-soon {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.queue-bucket-soon::before {
+  background: color-mix(in srgb, var(--accent) 85%, var(--text));
 }
 
 .queue-bucket-optional {
   background: color-mix(in srgb, var(--surface) 75%, transparent);
 }
 
+.queue-bucket-optional::before {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
 .queue-bucket-head {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.55rem;
   flex-wrap: wrap;
+  padding-left: 0.15rem;
 }
 
 .queue-bucket-title {
   margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .queue-bucket-count {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 0.06rem 0.42rem;
+  padding: 0.1rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
   color: var(--text);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+.queue-bucket-now .queue-bucket-count {
+  background: color-mix(in srgb, var(--danger) 25%, transparent);
+  color: color-mix(in srgb, var(--danger) 95%, var(--text));
+}
+
+.queue-bucket-soon .queue-bucket-count {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
 }
 
 .queue-bucket-sub {
   margin: 0;
+  flex: 1 1 12rem;
 }
 
 .queue-sev-dot {
   display: inline-block;
-  width: 0.55rem;
-  height: 0.55rem;
+  width: 0.6rem;
+  height: 0.6rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .queue-sev-dot-now {
   background: var(--danger);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 22%, transparent);
 }
 
 .queue-sev-dot-soon {
   background: color-mix(in srgb, var(--accent) 85%, var(--text));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .queue-sev-dot-optional {
-  background: color-mix(in srgb, var(--muted) 60%, transparent);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
 
 .queue-list {
@@ -1635,98 +1679,189 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .queue-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: start;
-  gap: 0.5rem;
-  padding: 0.45rem 0.55rem;
-  border-radius: 8px;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "header  action"
+    "body    action";
+  align-items: center;
+  gap: 0.25rem 0.65rem;
+  padding: 0.6rem 0.7rem 0.65rem 0.8rem;
+  border-radius: 9px;
   background: var(--bg);
-  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  position: relative;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.queue-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.queue-bucket-now .queue-item::before {
+  background: color-mix(in srgb, var(--danger) 60%, transparent);
+}
+
+.queue-bucket-soon .queue-item::before {
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.queue-bucket-optional .queue-item::before {
+  background: color-mix(in srgb, var(--muted) 45%, transparent);
 }
 
 .queue-item:hover {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 3%, var(--bg));
+}
+
+.queue-item-header {
+  grid-area: header;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .queue-cat {
-  font-size: 0.66rem;
-  font-weight: 680;
+  font-size: 0.64rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
+  letter-spacing: 0.06em;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--muted) 18%, transparent);
   color: var(--text);
   white-space: nowrap;
-  align-self: center;
+  line-height: 1.4;
 }
 
 .queue-cat-goal {
-  background: color-mix(in srgb, var(--danger) 22%, transparent);
-  color: color-mix(in srgb, var(--danger) 90%, var(--text));
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
 }
 
 .queue-cat-spell {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: color-mix(in srgb, var(--accent) 95%, var(--text));
 }
 
 .queue-cat-checklist {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
 }
 
 .queue-cat-cliche {
   background: color-mix(in srgb, var(--muted) 22%, transparent);
+  color: var(--text);
 }
 
 .queue-body {
+  grid-area: body;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.18rem;
 }
 
 .queue-title-row {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
-  gap: 0.45rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
-  font-size: 0.92rem;
-  line-height: 1.35;
+  font-size: 0.94rem;
+  line-height: 1.4;
 }
 
 .queue-line-link {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   font-family: var(--font-metric);
-  color: var(--muted);
-  padding: 0;
+  color: color-mix(in srgb, var(--accent) 85%, var(--text));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 0.1rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 4px;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  line-height: 1.3;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.queue-line-link:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.queue-line-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .queue-title {
   color: var(--text);
+  font-weight: 500;
 }
 
 .queue-detail {
   margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .queue-primary-btn {
+  grid-area: action;
   align-self: center;
   white-space: nowrap;
+  font-weight: 600;
 }
 
-@media (max-width: 540px) {
+@media (max-width: 720px) {
+  .queue-buckets {
+    gap: 0.75rem;
+  }
+  .queue-bucket {
+    padding: 0.6rem 0.65rem 0.7rem;
+    gap: 0.5rem;
+  }
+  .queue-bucket-title {
+    font-size: 0.9rem;
+  }
+  .queue-list {
+    gap: 0.5rem;
+  }
   .queue-item {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "body"
+      "action";
+    gap: 0.4rem;
+    padding: 0.6rem 0.65rem 0.65rem 0.75rem;
+  }
+  .queue-title-row {
+    font-size: 0.9rem;
   }
   .queue-primary-btn {
-    grid-column: 1 / -1;
-    justify-self: start;
+    justify-self: stretch;
+    width: 100%;
+    padding-block: 0.45rem;
+  }
+  .queue-bucket-sub {
+    flex-basis: 100%;
+    font-size: 0.78rem;
   }
 }
 
