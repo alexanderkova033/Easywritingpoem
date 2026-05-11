@@ -20,6 +20,47 @@ function easeOutCubic(t: number): number {
 }
 
 /**
+ * Find the nearest ancestor that actually scrolls vertically. CodeMirror is
+ * mounted with `height="auto"` here, so `view.scrollDOM` (the cm-scroller)
+ * does not overflow — the page (or some wrapper) is what scrolls. Walk up
+ * until we find an element whose scrollHeight exceeds its clientHeight and
+ * whose computed overflow-y allows scrolling. Fall back to the window's
+ * scrolling element when nothing inside the document scrolls.
+ */
+function findScrollContainer(el: HTMLElement | null): HTMLElement | Window {
+  let node: HTMLElement | null = el?.parentElement ?? null;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const style = getComputedStyle(node);
+    const overflowY = style.overflowY;
+    if ((overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay") &&
+        node.scrollHeight > node.clientHeight + 1) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return window;
+}
+
+function getScrollTop(target: HTMLElement | Window): number {
+  return target instanceof Window
+    ? (target.scrollY || document.documentElement.scrollTop)
+    : target.scrollTop;
+}
+
+function setScrollTop(target: HTMLElement | Window, value: number): void {
+  if (target instanceof Window) target.scrollTo(target.scrollX, value);
+  else target.scrollTop = value;
+}
+
+function getViewportHeight(target: HTMLElement | Window): number {
+  return target instanceof Window ? target.innerHeight : target.clientHeight;
+}
+
+function getViewportTop(target: HTMLElement | Window): number {
+  return target instanceof Window ? 0 : target.getBoundingClientRect().top;
+}
+
+/**
  * Typewriter scrolling: keeps the caret near the vertical center of the
  * scroller while typing or moving the cursor. Activates only when the
  * `typewriterEnabled` state field is true.
@@ -34,6 +75,7 @@ const typewriterPlugin = ViewPlugin.fromClass(
     private animTo = 0;
     private animStart = 0;
     private animating = false;
+    private animTarget: HTMLElement | Window | null = null;
 
     constructor(_view: EditorView) {}
 
@@ -61,10 +103,11 @@ const typewriterPlugin = ViewPlugin.fromClass(
       const head = view.state.selection.main.head;
       const coords = view.coordsAtPos(head);
       if (!coords) return;
-      const scroller = view.scrollDOM;
-      const rect = scroller.getBoundingClientRect();
+      const scrollTarget = findScrollContainer(view.scrollDOM);
+      const viewportTop = getViewportTop(scrollTarget);
+      const viewportH = getViewportHeight(scrollTarget);
       const caretMid = (coords.top + coords.bottom) / 2;
-      const viewportCenter = rect.top + scroller.clientHeight / 2;
+      const viewportCenter = viewportTop + viewportH / 2;
       const offsetFromCenter = caretMid - viewportCenter;
 
       // Deadzone: caret may roam ~3 lines from center before the page follows.
@@ -74,35 +117,36 @@ const typewriterPlugin = ViewPlugin.fromClass(
       const deadzone = lineH * 3;
       if (Math.abs(offsetFromCenter) <= deadzone) return;
 
-      const caretYInScroll = caretMid - rect.top + scroller.scrollTop;
-      const target = Math.max(0, caretYInScroll - scroller.clientHeight / 2);
-      const current = scroller.scrollTop;
+      const current = getScrollTop(scrollTarget);
+      const target = Math.max(0, current + offsetFromCenter);
       if (Math.abs(target - current) < 1.5) return;
 
       // Respect reduced motion preference.
       if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        scroller.scrollTop = target;
+        setScrollTop(scrollTarget, target);
         return;
       }
 
+      this.animTarget = scrollTarget;
       this.animFrom = current;
       this.animTo = target;
       this.animStart = performance.now();
       if (!this.animating) {
         this.animating = true;
-        this.tick(view);
+        this.tick();
       }
     }
 
-    private tick(view: EditorView) {
+    private tick() {
       requestAnimationFrame(() => {
-        const scroller = view.scrollDOM;
+        const target = this.animTarget;
+        if (!target) { this.animating = false; return; }
         const elapsed = performance.now() - this.animStart;
         const t = Math.min(1, elapsed / SMOOTH_DURATION_MS);
         const eased = easeOutCubic(t);
-        scroller.scrollTop = this.animFrom + (this.animTo - this.animFrom) * eased;
+        setScrollTop(target, this.animFrom + (this.animTo - this.animFrom) * eased);
         if (t < 1) {
-          this.tick(view);
+          this.tick();
         } else {
           this.animating = false;
         }

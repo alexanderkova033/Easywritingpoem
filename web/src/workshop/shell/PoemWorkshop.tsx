@@ -29,6 +29,7 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
 import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
+import { PublicationChecklistVisual } from "@/workshop/analysis/PublicationChecklistVisual";
 import { recordWriteToday } from "@/workshop/shell/writing-streak";
 import { AiSummaryPopover } from "@/workshop/analysis/AiSummaryPopover";
 import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
@@ -352,6 +353,7 @@ export function PoemWorkshop() {
   const baseRhymeEndHighlights = useMemo(() => {
     if (m.toolTab !== "rhyme") return [] as Array<{ line: number; clusterIdx: number }>;
     const out: Array<{ line: number; clusterIdx: number }> = [];
+    const lineToCluster = new Map<number, number>();
     let idx = 0;
     for (const group of m.stanzaRhymeGroups) {
       for (const c of group.clusters) {
@@ -361,12 +363,44 @@ export function PoemWorkshop() {
           return mm ? mm[0] : "";
         });
         if (rhymeIgnored.isIgnored(words)) continue;
-        for (const line of c.lineNumbers) out.push({ line, clusterIdx: idx });
+        for (const line of c.lineNumbers) {
+          out.push({ line, clusterIdx: idx });
+          lineToCluster.set(line, idx);
+        }
         idx++;
       }
     }
+    // Fold in manual rhyme links — `stanzaGroupsFromScheme` only emits
+    // clusters with 2+ lines per stanza, so links bridging stanzas get
+    // dropped even though `detectRhymeScheme` merged their labels.
+    const endWordByLine = m.lines.map((ln) => {
+      const mm = (ln ?? "").match(/[a-zA-Z']+(?=[^a-zA-Z']*$)/);
+      return mm ? mm[0].toLowerCase().replace(/^'+|'+$/g, "") : "";
+    });
+    for (const key of manualRhymeLinks.links) {
+      const parts = key.split("+");
+      if (parts.length !== 2) continue;
+      const [a, b] = parts as [string, string];
+      const involved: number[] = [];
+      for (let i = 0; i < endWordByLine.length; i++) {
+        const w = endWordByLine[i];
+        if (w === a || w === b) involved.push(i + 1);
+      }
+      if (involved.length < 2) continue;
+      let reuse = -1;
+      for (const n of involved) {
+        const got = lineToCluster.get(n);
+        if (got !== undefined) { reuse = got; break; }
+      }
+      const clusterIdx = reuse >= 0 ? reuse : idx++;
+      for (const n of involved) {
+        if (lineToCluster.has(n)) continue;
+        out.push({ line: n, clusterIdx });
+        lineToCluster.set(n, clusterIdx);
+      }
+    }
     return out;
-  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
+  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored, manualRhymeLinks.links]);
 
   // Auto-fill the Rhyme Finder when the cursor parks on a different line or
   // the user opens the rhyme tab. Avoids refiring on every keystroke.
@@ -1520,39 +1554,15 @@ export function PoemWorkshop() {
               terms.
             </p>
             <div className="export-checklist-row">
-              <h3 className="export-backup-title">
-                Publication checklist
-                {checklistOpenCount > 0
-                  ? <span className="tool-tab-badge" style={{ marginLeft: 8 }}>{checklistOpenCount}</span>
-                  : <span className="export-checklist-done"> ✓ Ready</span>}
-              </h3>
-              <ul className="checklist checklist-draft">
-                {m.publication.items.map((item) => (
-                  <li
-                    key={item.text}
-                    className={`checklist-item ${item.done ? "done" : "open"}${!item.done ? " checklist-item-needs-attn" : ""}`}
-                  >
-                    <span className="checklist-mark" aria-hidden>{item.done ? "✓" : "○"}</span>
-                    <span className="checklist-text">
-                      {item.text}
-                      {item.detail ? <span className="checklist-detail"> — {item.detail}</span> : null}
-                    </span>
-                    {!item.done && (item.openToolTab || item.focusTitleField) && (
-                      <button
-                        type="button"
-                        className="small-btn checklist-jump-btn"
-                        onClick={() => {
-                          setIsExportOpen(false);
-                          if (item.focusTitleField) focusPoemTitle();
-                          else m.setToolTab(item.openToolTab!);
-                        }}
-                      >
-                        {item.focusTitleField ? "Focus title" : "Go to tool"}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <PublicationChecklistVisual
+                items={m.publication.items}
+                openCount={checklistOpenCount}
+                onJump={(item) => {
+                  setIsExportOpen(false);
+                  if (item.focusTitleField) focusPoemTitle();
+                  else if (item.openToolTab) m.setToolTab(item.openToolTab);
+                }}
+              />
             </div>
             <div className="export-backup-row">
               <h3 className="export-backup-title">Workshop backup</h3>
