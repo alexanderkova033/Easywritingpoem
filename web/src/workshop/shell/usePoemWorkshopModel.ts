@@ -16,6 +16,9 @@ import {
   buildPlainTextTitleBody,
   copyTextToClipboard,
   downloadDocxFile,
+  downloadHtmlFile,
+  downloadPdfFile,
+  downloadPngFile,
   downloadTextFile,
   exportFilename,
 } from "@/workshop/library/export-poem";
@@ -235,7 +238,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const [quickCopyFlash, setQuickCopyFlash] = useState(false);
   const [snapshotFlash, setSnapshotFlash] = useState(false);
   const snapshotFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [docxExportErr, setDocxExportErr] = useState<string | null>(null);
+  const [exportErr, setExportErr] = useState<string | null>(null);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
   const [jumpBump, setJumpBump] = useState(0);
   const copyExportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1061,12 +1064,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   );
 
   const onDownloadTxt = useCallback(() => {
+    const cleanBody = stripFormatMarkers(bodyLiveRef.current);
     const text = buildPlainTextTitleBody(
       title,
       formNote.trim() || undefined,
-      stripFormatMarkers(bodyLiveRef.current),
+      cleanBody,
     );
-    downloadTextFile(exportFilename(title, "txt"), text);
+    downloadTextFile(exportFilename(title, "txt", cleanBody), text);
     recordExportAt();
   }, [title, formNote]);
 
@@ -1078,7 +1082,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
       formNote.trim() || undefined,
       cleanBody,
     );
-    downloadTextFile(exportFilename(title, "md"), text);
+    downloadTextFile(exportFilename(title, "md", cleanBody), text);
     recordExportAt();
   }, [title, formNote]);
 
@@ -1117,18 +1121,73 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   }, []);
 
   const onDownloadDocx = useCallback(async () => {
-    setDocxExportErr(null);
+    setExportErr(null);
     try {
+      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
       await downloadDocxFile(
-        exportFilename(title, "docx"),
+        exportFilename(title, "docx", cleanBody),
         title,
         formNote.trim() || undefined,
-        stripFormatMarkers(bodyLiveRef.current),
+        cleanBody,
       );
       recordExportAt();
     } catch (e) {
-      setDocxExportErr(
+      setExportErr(
         e instanceof Error ? e.message : "Could not build the Word file.",
+      );
+    }
+  }, [title, formNote]);
+
+  const onDownloadPdf = useCallback(async () => {
+    setExportErr(null);
+    try {
+      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
+      await downloadPdfFile(
+        exportFilename(title, "pdf", cleanBody),
+        title,
+        formNote.trim() || undefined,
+        cleanBody,
+      );
+      recordExportAt();
+    } catch (e) {
+      setExportErr(
+        e instanceof Error ? e.message : "Could not build the PDF.",
+      );
+    }
+  }, [title, formNote]);
+
+  const onDownloadHtml = useCallback(async () => {
+    setExportErr(null);
+    try {
+      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
+      await downloadHtmlFile(
+        exportFilename(title, "html", cleanBody),
+        title,
+        formNote.trim() || undefined,
+        cleanBody,
+      );
+      recordExportAt();
+    } catch (e) {
+      setExportErr(
+        e instanceof Error ? e.message : "Could not build the HTML file.",
+      );
+    }
+  }, [title, formNote]);
+
+  const onDownloadPng = useCallback(async () => {
+    setExportErr(null);
+    try {
+      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
+      await downloadPngFile(
+        exportFilename(title, "png", cleanBody),
+        title,
+        formNote.trim() || undefined,
+        cleanBody,
+      );
+      recordExportAt();
+    } catch (e) {
+      setExportErr(
+        e instanceof Error ? e.message : "Could not build the image.",
       );
     }
   }, [title, formNote]);
@@ -1299,10 +1358,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     copyExportFlash,
     quickCopyFlash,
     snapshotFlash,
-    docxExportErr,
+    exportErr,
     onDownloadTxt,
     onDownloadMd,
     onDownloadDocx,
+    onDownloadPdf,
+    onDownloadHtml,
+    onDownloadPng,
     onCopyMarkdown,
     onQuickCopyPlain,
     toolTab,
