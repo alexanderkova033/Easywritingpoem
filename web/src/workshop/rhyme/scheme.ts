@@ -31,8 +31,6 @@ export function detectRhymeScheme(
   manualUnlinks: string[] = [],
 ): string[] {
   const labels: string[] = new Array(lines.length).fill("");
-  const endingToLabel = new Map<string, string>();
-  let nextCode = 0;
 
   const letterFor = (n: number): string => {
     const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -40,7 +38,7 @@ export function detectRhymeScheme(
     return base[Math.floor(n / 26) - 1]! + base[n % 26]!;
   };
 
-  // Per-line normalized end-word (cached so the manual-link pass can reuse).
+  // Per-line normalized end-word.
   const endNorms: (string | null)[] = lines.map((line) => {
     const lw = lastWordInLine(line);
     if (!lw) return null;
@@ -48,98 +46,91 @@ export function detectRhymeScheme(
     return norm || null;
   });
 
+  // Group lines into rhyme-equivalence classes.
+  // Class id = the line index of the canonical representative (smallest line idx).
+  // Line i's class starts as i itself; lines with the same auto-detected ending
+  // share the same class; manual links merge classes.
+  const cls: number[] = lines.map((_, i) => i);
+  const findCls = (i: number): number => {
+    while (cls[i] !== i) {
+      cls[i] = cls[cls[i]!]!; // path compression
+      i = cls[i]!;
+    }
+    return i;
+  };
+  const unionCls = (a: number, b: number) => {
+    const ra = findCls(a);
+    const rb = findCls(b);
+    if (ra === rb) return;
+    if (ra < rb) cls[rb] = ra; else cls[ra] = rb;
+  };
+
+  // Auto-detection: lines sharing the same breadth-key are merged.
+  const endingToFirstLine = new Map<string, number>();
   for (let i = 0; i < lines.length; i++) {
     const norm = endNorms[i];
     if (!norm) continue;
     const ending = endingForBreadth(norm, breadth);
     if (!ending) continue;
-    if (!endingToLabel.has(ending)) endingToLabel.set(ending, letterFor(nextCode++));
-    labels[i] = endingToLabel.get(ending)!;
+    const prev = endingToFirstLine.get(ending);
+    if (prev === undefined) endingToFirstLine.set(ending, i);
+    else unionCls(prev, i);
   }
 
-  if (manualLinks.length > 0) {
-    // Union-find across labels using the manual link pairs (matched by end-word).
-    const parent = new Map<string, string>();
-    const find = (x: string): string => {
-      let r = x;
-      while (parent.get(r) !== r && parent.has(r)) r = parent.get(r)!;
-      parent.set(x, r);
-      return r;
-    };
-    const union = (a: string, b: string) => {
-      const ra = find(a);
-      const rb = find(b);
-      if (ra === rb) return;
-      // Keep the alphabetically earlier label as the representative so the
-      // visible scheme stays stable as the user adds links.
-      if (ra < rb) parent.set(rb, ra); else parent.set(ra, rb);
-    };
-    for (const lbl of new Set(labels.filter(Boolean))) parent.set(lbl, lbl);
-
-    // Build word→labels map.
-    const wordToLabels = new Map<string, Set<string>>();
+  // Manual links: any line with end-word `a` and any line with end-word `b`
+  // get merged into the same class.
+  for (const key of manualLinks) {
+    const parts = key.split("+");
+    if (parts.length !== 2) continue;
+    const [a, b] = parts as [string, string];
+    const aLines: number[] = [];
+    const bLines: number[] = [];
     for (let i = 0; i < lines.length; i++) {
       const w = endNorms[i];
-      if (!w || !labels[i]) continue;
-      const set = wordToLabels.get(w) ?? new Set<string>();
-      set.add(labels[i]!);
-      wordToLabels.set(w, set);
+      if (!w) continue;
+      if (w === a) aLines.push(i);
+      else if (w === b) bLines.push(i);
     }
+    if (aLines.length === 0 || bLines.length === 0) continue;
+    const anchor = aLines[0]!;
+    for (const i of aLines.slice(1)) unionCls(anchor, i);
+    for (const i of bLines) unionCls(anchor, i);
+  }
 
-    // For each manual link pair, union all labels of one word with all labels of the other.
-    for (const key of manualLinks) {
-      const parts = key.split("+");
-      if (parts.length !== 2) continue;
-      const [a, b] = parts as [string, string];
-      const aLabels = wordToLabels.get(a);
-      const bLabels = wordToLabels.get(b);
-      if (!aLabels || !bLabels) continue;
-      for (const la of aLabels) for (const lb of bLabels) union(la, lb);
+  // Manual unlinks: split class so lines with end-word `b` move to a new class.
+  for (const key of manualUnlinks) {
+    const parts = key.split("+");
+    if (parts.length !== 2) continue;
+    const [a, b] = parts as [string, string];
+    const aLines: number[] = [];
+    const bLines: number[] = [];
+    for (let i = 0; i < lines.length; i++) {
+      const w = endNorms[i];
+      if (!w) continue;
+      if (w === a) aLines.push(i);
+      else if (w === b) bLines.push(i);
     }
-
-    // Rewrite labels to representatives.
-    for (let i = 0; i < labels.length; i++) {
-      if (labels[i]) labels[i] = find(labels[i]!);
+    if (aLines.length === 0 || bLines.length === 0) continue;
+    const aClasses = new Set(aLines.map((i) => findCls(i)));
+    const conflict = bLines.some((i) => aClasses.has(findCls(i)));
+    if (!conflict) continue;
+    // Re-anchor every b-line to a fresh isolated class (its own index).
+    const bAnchor = bLines[0]!;
+    cls[bAnchor] = bAnchor;
+    for (const i of bLines.slice(1)) {
+      cls[i] = i;
+      unionCls(bAnchor, i);
     }
   }
 
-  // Apply manual unlink pairs: for each (a,b), if any line whose end-word
-  // matches `a` shares a label with any line whose end-word matches `b`,
-  // shift all `b` lines onto a fresh label so the cluster splits.
-  if (manualUnlinks.length > 0) {
-    const letterFor = (n: number): string => {
-      const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      if (n < 26) return base[n]!;
-      return base[Math.floor(n / 26) - 1]! + base[n % 26]!;
-    };
-    const usedLabels = new Set(labels.filter(Boolean));
-    let nextFresh = nextCode;
-    const freshLabel = () => {
-      let label = letterFor(nextFresh++);
-      while (usedLabels.has(label)) label = letterFor(nextFresh++);
-      usedLabels.add(label);
-      return label;
-    };
-
-    for (const key of manualUnlinks) {
-      const parts = key.split("+");
-      if (parts.length !== 2) continue;
-      const [a, b] = parts as [string, string];
-      const aLines: number[] = [];
-      const bLines: number[] = [];
-      for (let i = 0; i < lines.length; i++) {
-        const w = endNorms[i];
-        if (!w || !labels[i]) continue;
-        if (w === a) aLines.push(i);
-        else if (w === b) bLines.push(i);
-      }
-      if (aLines.length === 0 || bLines.length === 0) continue;
-      const aLabels = new Set(aLines.map((i) => labels[i]!));
-      const conflict = bLines.some((i) => aLabels.has(labels[i]!));
-      if (!conflict) continue;
-      const newLabel = freshLabel();
-      for (const i of bLines) labels[i] = newLabel;
-    }
+  // Assign letters by the order each class is first seen along the lines.
+  const classToLetter = new Map<number, string>();
+  let nextCode = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!endNorms[i]) continue;
+    const root = findCls(i);
+    if (!classToLetter.has(root)) classToLetter.set(root, letterFor(nextCode++));
+    labels[i] = classToLetter.get(root)!;
   }
 
   return labels;
