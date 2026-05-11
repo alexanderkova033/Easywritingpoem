@@ -1242,9 +1242,9 @@
 .ai-compare-regressed .ai-compare-group-label { color: #d95f5f; }
 .ai-compare-unchanged .ai-compare-group-label { color: var(--muted); }
 
-.poem-workshop.is-focus-mode .ai-analysis-section {
-  display: none;
-}
+/* Focus mode: keep the AI analysis section in the layout so the workshop's
+ * fade-on-idle styles in WorkshopLayout.css can transition it (50% bright in
+ * common, dropping to 0 when the user is idle). */
 
 /* Overall poem summary */
 .ai-poem-summary {
