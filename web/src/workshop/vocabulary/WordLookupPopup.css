@@ -327,8 +327,10 @@
 
 /* ── Right-column rhyme scheme — regular flex item, not absolute ── */
 .editor-rhyme-scheme {
-  flex: 0 0 2.6rem;
-  width: 2.6rem;
+  /* Width scales with poem font so labels stay legible at any zoom */
+  --rhyme-col-width: max(2.4rem, calc(var(--poem-font-size, 1rem) * 2.2));
+  flex: 0 0 var(--rhyme-col-width);
+  width: var(--rhyme-col-width);
   /* Clip rows beyond the poem text without scrollbars */
   overflow-y: hidden;
   display: flex;
@@ -340,6 +342,13 @@
   background: color-mix(in srgb, var(--surface) 55%, var(--bg));
   /* Align with the top of the editor */
   align-self: flex-start;
+}
+
+/* Mobile: line-wrapping in the editor desyncs the per-logical-line column,
+   and the column eats horizontal space. Hide it — Sound tab still shows
+   the same scheme inline. */
+@media (max-width: 720px) {
+  .editor-rhyme-scheme { display: none; }
 }
 
 /* Every row — labeled or blank — gets the same height as one editor line.
@@ -366,10 +375,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.6rem;
-  height: 1.4rem;
+  width: calc(var(--poem-font-size, 1rem) * 1.55);
+  height: calc(var(--poem-font-size, 1rem) * 1.35);
   font-weight: 700;
-  font-size: 0.68rem;
+  font-size: calc(var(--poem-font-size, 1rem) * 0.66);
   border-radius: 4px;
 }
 

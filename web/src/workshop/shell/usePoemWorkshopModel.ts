@@ -85,6 +85,7 @@ import {
   roughRhymeClusters,
 } from "@/workshop/analysis/rhyme-hints";
 import { stanzaGroupsFromScheme } from "@/workshop/rhyme/hints";
+import { detectInternalRhymes } from "@/workshop/rhyme/internal-rhymes";
 import { scanCliches } from "@/workshop/analysis/cliche-scan";
 import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import {
@@ -452,6 +453,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
   const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks), [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks]);
+  const internalRhymes = useMemo(() => detectInternalRhymes(heavyLines, rhymeBreadth), [heavyLines, rhymeBreadth]);
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),
@@ -1319,6 +1321,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     repeated,
     clicheHits,
     rhymeScheme,
+    internalRhymes,
     spellHits,
     heavyToolsStale,
     meterCoverageSummary,

@@ -745,6 +745,38 @@ export function PoemWorkshop() {
     };
   }, [isFocusMode]);
 
+  // Fade-on-idle: when in focus mode and the user has been still for ~2.5s,
+  // mark the workshop as idle so chrome (topbar/rail/toolbar) and the mouse
+  // cursor fade. Any pointer or key activity clears it and re-arms the timer.
+  useEffect(() => {
+    if (!isFocusMode) {
+      document.documentElement.removeAttribute("data-focus-idle");
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const arm = () => {
+      document.documentElement.removeAttribute("data-focus-idle");
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        document.documentElement.setAttribute("data-focus-idle", "");
+      }, 2500);
+    };
+    arm();
+    const opts = { passive: true } as AddEventListenerOptions;
+    window.addEventListener("pointermove", arm, opts);
+    window.addEventListener("pointerdown", arm, opts);
+    window.addEventListener("keydown", arm, opts);
+    window.addEventListener("wheel", arm, opts);
+    return () => {
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("pointermove", arm);
+      window.removeEventListener("pointerdown", arm);
+      window.removeEventListener("keydown", arm);
+      window.removeEventListener("wheel", arm);
+      document.documentElement.removeAttribute("data-focus-idle");
+    };
+  }, [isFocusMode]);
+
   useEffect(() => {
     const simplify = isFocusMode || appearance.backdropPower !== "off";
     document.documentElement.toggleAttribute("data-backdrop-simplify", simplify);
@@ -1987,10 +2019,12 @@ export function PoemWorkshop() {
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
+                      internalRhymes={m.toolTab === "rhyme" ? m.internalRhymes : undefined}
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
-                      lineFocusMode={lineFocusMode}
+                      lineFocusMode={isFocusMode ? "stanza" : lineFocusMode}
+                      typewriterScroll={isFocusMode}
                       onSelectionText={(text, rect) => {
                         setSelectionText(text);
                         setSelectionRect(rect);

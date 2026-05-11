@@ -1,7 +1,8 @@
 import { EditorView, ViewPlugin, WidgetType, keymap, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
 import { StateEffect, StateField, EditorState, Transaction, RangeSet, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
-import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
+import { lineFocusExtension, setLineFocusMode, type LineFocusMode } from "@/workshop/editor/line-focus-extension";
+import { typewriterExtension, setTypewriterEnabled } from "@/workshop/editor/typewriter-extension";
 import { diffOverlayField, setDiffSnapshot } from "@/workshop/editor/diff-overlay";
 import "@/workshop/editor/diff-overlay.css";
 import { highlightSelectionMatches, search } from "@codemirror/search";
@@ -393,6 +394,38 @@ const rhymeEndField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Internal-rhyme highlights (word ranges within a line) ---- //
+const setInternalRhymeDecos = StateEffect.define<Array<{ line: number; ranges: Array<{ start: number; end: number }> }>>();
+const clearInternalRhymeDecos = StateEffect.define<void>();
+
+const internalRhymeField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearInternalRhymeDecos)) { next = Decoration.none; }
+      if (e.is(setInternalRhymeDecos)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const { line, ranges } of e.value) {
+          if (line < 1 || line > doc.lines) continue;
+          const docLine = doc.line(line);
+          for (const r of ranges) {
+            const from = docLine.from + r.start;
+            const to = docLine.from + r.end;
+            if (to <= from || to > docLine.to) continue;
+            decos.push(Decoration.mark({ class: "cm-rhyme-internal" }).range(from, to));
+          }
+        }
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // ---- Word-level problem highlights ---- //
 const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>();
 const clearWordHighlights = StateEffect.define<void>();
@@ -460,8 +493,11 @@ export interface PoemBodyEditorProps {
   persistentIssueHighlights?: Array<[number, number, string?]>;
   /** Per-line syllable counts at end of each line (CodeMirror widgets). */
   showLineSyllables?: boolean;
-  /** Dim non-active lines very subtly (typewriter focus mode). */
-  lineFocusMode?: boolean;
+  /** Dim non-active lines very subtly (typewriter focus mode).
+   *  Boolean kept for back-compat: true → "line", false → "off". */
+  lineFocusMode?: boolean | LineFocusMode;
+  /** Keep the caret near vertical center of the viewport while typing. */
+  typewriterScroll?: boolean;
   /** Called when user selects text; null means selection cleared. */
   onSelectionText?: (text: string | null, rect: DOMRect | null) => void;
   /** Severity dot markers in the gutter for lines with AI issues. */
@@ -476,6 +512,8 @@ export interface PoemBodyEditorProps {
   wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
   /** Per-line rhyme end-word highlights — colors the last word in each listed line by cluster index. */
   rhymeEndHighlights?: Array<{ line: number; clusterIdx: number }>;
+  /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
+  internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
   rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */
@@ -630,6 +668,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setRhymeEndDecos.of(rh) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.rhymeEndHighlights]);
 
+  // Internal-rhyme decorations
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const ir = props.internalRhymes;
+    if (!ir || ir.length === 0) {
+      try { view.dispatch({ effects: clearInternalRhymeDecos.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setInternalRhymeDecos.of(ir) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.internalRhymes]);
+
   // Rhyme scheme letters in gutter
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -672,12 +722,21 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const showSyllables = props.showLineSyllables !== false;
 
-  // Sync line-focus enabled state into the CM state field when the prop changes
+  // Sync line-focus mode into the CM state field when the prop changes
   useEffect(() => {
     const view = props.editorViewRef.current;
     if (!view) return;
-    try { view.dispatch({ effects: setLineFocusEnabled.of(props.lineFocusMode ?? false) }); } catch { /* ignore */ }
+    const raw = props.lineFocusMode;
+    const mode: LineFocusMode = raw === true ? "line" : raw === false || raw == null ? "off" : raw;
+    try { view.dispatch({ effects: setLineFocusMode.of(mode) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.lineFocusMode]);
+
+  // Sync typewriter scroll state.
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    try { view.dispatch({ effects: setTypewriterEnabled.of(props.typewriterScroll ?? false) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.typewriterScroll]);
 
   // Sync diff overlay: dispatch new snapshot body or clear when null/undefined.
   useEffect(() => {
@@ -736,9 +795,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       schemeLetterField,
       wordHighlightField,
       rhymeEndField,
+      internalRhymeField,
       diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,
+      ...typewriterExtension,
       placeholder("Start writing…"),
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,

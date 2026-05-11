@@ -733,6 +733,15 @@ button.primary:disabled {
 .cm-rhyme-end-4 { text-decoration-color: #d95f8f; background: color-mix(in srgb, #d95f8f 12%, transparent); }
 .cm-rhyme-end-5 { text-decoration-color: #5fbab0; background: color-mix(in srgb, #5fbab0 12%, transparent); }
 
+/* ---- Internal rhyme: subtle dotted underline on mid-line rhyming words ---- */
+.cm-rhyme-internal {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  text-decoration-thickness: 1.4px;
+  text-underline-offset: 3px;
+  text-decoration-skip-ink: none;
+}
+
 /* ---- Persistent (always-on) dim highlights after AI analysis ---- */
 .cm-line-issue-persistent {
   border-radius: 3px;
