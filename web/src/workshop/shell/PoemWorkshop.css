@@ -2026,6 +2026,11 @@
   background: color-mix(in srgb, var(--danger, #d95f5f) 4%, var(--surface));
 }
 
+.rhyme-manual-link-stanza {
+  margin-left: auto;
+  margin-right: 0.3rem;
+}
+
 .rhyme-manual-unlinks .rhyme-manual-link-arrow {
   color: var(--danger, #d95f5f);
 }

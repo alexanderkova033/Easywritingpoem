@@ -411,16 +411,25 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   // Auto-resolve when two end-words are selected:
   //   • different clusters (or one loose) → link them as a rhyme
   //   • same cluster → split them apart (unlink)
+  // The opposite-direction record is removed so the same pair can never
+  // appear in both lists at once.
   useEffect(() => {
     if (rhymeLinkSelection.length < 2) return;
     const [a, b] = rhymeLinkSelection;
     if (a && b && a.word.toLowerCase() !== b.word.toLowerCase()) {
       const sameCluster = a.label !== null && a.label === b.label;
-      if (sameCluster) onAddManualRhymeUnlink?.(a.word, b.word);
-      else onAddManualRhymeLink?.(a.word, b.word);
+      const sorted = [a.word.toLowerCase().trim(), b.word.toLowerCase().trim()].sort();
+      const conflictKey = `${sorted[0]}+${sorted[1]}`;
+      if (sameCluster) {
+        onRemoveManualRhymeLink?.(conflictKey);
+        onAddManualRhymeUnlink?.(a.word, b.word);
+      } else {
+        onRemoveManualRhymeUnlink?.(conflictKey);
+        onAddManualRhymeLink?.(a.word, b.word);
+      }
     }
     setRhymeLinkSelection([]);
-  }, [rhymeLinkSelection, onAddManualRhymeLink, onAddManualRhymeUnlink]);
+  }, [rhymeLinkSelection, onAddManualRhymeLink, onAddManualRhymeUnlink, onRemoveManualRhymeLink, onRemoveManualRhymeUnlink]);
 
   const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
     setRhymeLinkSelection((prev) => {
@@ -1036,10 +1045,96 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             ) : null}
 
             {stanzaRhymeGroups.map((group) => {
-              const visibleClusters = group.clusters.filter((c) => {
+              // Start from scheme-derived clusters, drop ignored ones.
+              const baseClusters = group.clusters.filter((c) => {
                 const words = c.lineNumbers.map((n) => endWordOfLine(poemLines[n - 1]));
                 return !isIgnored(words);
               });
+
+              // Defensive merge: even if the scheme didn't fold a manual link
+              // into the labels (timing/edge case), enforce it visually here.
+              type Cluster = {
+                ending: string;
+                label: string | null;
+                lineNumbers: number[];
+                manual?: boolean;
+              };
+              const working: Cluster[] = baseClusters.map((c) => ({
+                ending: c.ending,
+                label: c.label ?? null,
+                lineNumbers: [...c.lineNumbers],
+              }));
+
+              const wordsInStanzaByLine = new Map<number, string>();
+              for (let n = group.lineRange[0]; n <= group.lineRange[1]; n++) {
+                const w = endWordOfLine(poemLines[n - 1]).toLowerCase();
+                if (w) wordsInStanzaByLine.set(n, w);
+              }
+
+              const findClusterIdxByLine = (line: number): number => {
+                for (let i = 0; i < working.length; i++) if (working[i]!.lineNumbers.includes(line)) return i;
+                return -1;
+              };
+
+              for (const key of manualRhymeLinks) {
+                const parts = key.split("+");
+                if (parts.length !== 2) continue;
+                const [a, b] = parts as [string, string];
+                const linesA: number[] = [];
+                const linesB: number[] = [];
+                for (const [n, w] of wordsInStanzaByLine) {
+                  if (w === a) linesA.push(n);
+                  else if (w === b) linesB.push(n);
+                }
+                if (linesA.length === 0 || linesB.length === 0) continue;
+
+                const involved = [...linesA, ...linesB];
+                const targetIdxs = new Set<number>();
+                let firstIdx = -1;
+                for (const n of involved) {
+                  const idx = findClusterIdxByLine(n);
+                  if (idx >= 0) {
+                    if (firstIdx < 0) firstIdx = idx;
+                    targetIdxs.add(idx);
+                  }
+                }
+                if (firstIdx < 0) {
+                  working.push({
+                    ending: key,
+                    label: null,
+                    lineNumbers: [...new Set(involved)].sort((x, y) => x - y),
+                    manual: true,
+                  });
+                  continue;
+                }
+                const target = working[firstIdx]!;
+                for (const idx of targetIdxs) {
+                  if (idx === firstIdx) continue;
+                  for (const n of working[idx]!.lineNumbers) target.lineNumbers.push(n);
+                }
+                for (const n of involved) if (!target.lineNumbers.includes(n)) target.lineNumbers.push(n);
+                target.lineNumbers = [...new Set(target.lineNumbers)].sort((x, y) => x - y);
+                target.manual = target.manual || target.label === null;
+                // Remove merged clusters (in reverse order to keep indices stable).
+                const removeIdxs = [...targetIdxs].filter((i) => i !== firstIdx).sort((x, y) => y - x);
+                for (const i of removeIdxs) working.splice(i, 1);
+              }
+
+              // Assign synthetic letters to any clusters left without one (rare —
+              // happens when a manual link involves words whose original
+              // ending didn't match anything in the scheme).
+              const usedLabels = new Set(working.map((c) => c.label).filter(Boolean) as string[]);
+              const cycle = "ABCDEFGHIJKLMN";
+              let nextIdx = 0;
+              for (const c of working) {
+                if (c.label) continue;
+                while (usedLabels.has(cycle[nextIdx % cycle.length]!)) nextIdx++;
+                c.label = cycle[nextIdx % cycle.length]!;
+                usedLabels.add(c.label);
+                nextIdx++;
+              }
+
+              const visibleClusters = working;
 
               // Loose ends: end-words in this stanza not currently in any visible cluster.
               // Shown only in edit mode so user can link them into other rhymes.
@@ -1141,13 +1236,41 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                   {manualRhymeLinks.map((key) => {
                     const parts = key.split("+");
                     if (parts.length !== 2) return null;
+                    // Find which stanza + cluster letter this link landed in,
+                    // by scanning lines for end-words matching either side.
+                    let stanzaNum: number | null = null;
+                    let labelChar = "";
+                    for (let i = 0; i < poemLines.length; i++) {
+                      const w = endWordOfLine(poemLines[i]).toLowerCase();
+                      if (w === parts[0] || w === parts[1]) {
+                        for (const g of stanzaRhymeGroups) {
+                          if (i + 1 >= g.lineRange[0] && i + 1 <= g.lineRange[1]) {
+                            stanzaNum = g.stanza;
+                            for (const c of g.clusters) {
+                              if (c.lineNumbers.includes(i + 1) && c.label) {
+                                labelChar = c.label.charAt(0).toLowerCase();
+                                break;
+                              }
+                            }
+                            break;
+                          }
+                        }
+                        if (labelChar) break;
+                      }
+                    }
                     return (
                       <li key={key} className="rhyme-manual-link-row">
+                        {labelChar ? (
+                          <span className={`rhyme-cluster-card-tag rhyme-label-${labelChar}`}>{labelChar.toUpperCase()}</span>
+                        ) : null}
                         <span className="rhyme-manual-link-pair">
                           <span className="rhyme-manual-link-word">{parts[0]}</span>
                           <span className="rhyme-manual-link-arrow" aria-hidden>↔</span>
                           <span className="rhyme-manual-link-word">{parts[1]}</span>
                         </span>
+                        {stanzaNum !== null ? (
+                          <span className="rhyme-manual-link-stanza muted small">stanza {stanzaNum}</span>
+                        ) : null}
                         <button
                           type="button"
                           className="rhyme-cluster-reject"
