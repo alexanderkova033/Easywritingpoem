@@ -14,7 +14,11 @@ import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
 import type { RhymeCluster } from "@/workshop/analysis/rhyme-hints";
 import type { StanzaClusterGroup } from "@/workshop/rhyme/hints";
-import type { RepeatedWord } from "@/workshop/analysis/repeated-words";
+import type {
+  RepeatedWord,
+  RepetitionAnalysis,
+  Severity as RepetitionSeverity,
+} from "@/workshop/analysis/repeated-words";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type {
@@ -667,6 +671,255 @@ function endWordOfLine(line: string | undefined): string {
   return m ? m[0] : "";
 }
 
+function severityLabel(s: RepetitionSeverity): string {
+  return s === "high" ? "Loud" : s === "med" ? "Notable" : "Quiet";
+}
+
+function RepetitionSummary({
+  counts,
+}: {
+  counts: { words: number; phrases: number; patterns: number; highSeverity: number };
+}) {
+  const total = counts.words + counts.phrases + counts.patterns;
+  return (
+    <div className="rep-summary" role="status" aria-live="polite">
+      <div className="rep-summary-stat">
+        <span className="rep-summary-value">{total}</span>
+        <span className="rep-summary-label">repetitions</span>
+      </div>
+      {counts.highSeverity > 0 ? (
+        <div className="rep-summary-stat rep-summary-loud">
+          <span className="rep-sev-dot rep-sev-dot-high" aria-hidden="true" />
+          <span className="rep-summary-value">{counts.highSeverity}</span>
+          <span className="rep-summary-label">loud</span>
+        </div>
+      ) : null}
+      {counts.patterns > 0 ? (
+        <div className="rep-summary-stat rep-summary-craft">
+          <span className="rep-summary-value">{counts.patterns}</span>
+          <span className="rep-summary-label">pattern{counts.patterns === 1 ? "" : "s"}</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+}
+
+function highlightInLine(
+  lineText: string,
+  match: string | RegExp,
+): ReactNode[] {
+  const out: ReactNode[] = [];
+  const source = typeof match === "string" ? escapeRegex(match) : match.source;
+  const flags = typeof match === "string" ? "gi" : (match.flags.includes("g") ? match.flags : match.flags + "g");
+  const re = new RegExp(source, flags);
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(lineText)) !== null) {
+    if (m.index > lastIndex) {
+      out.push(lineText.slice(lastIndex, m.index));
+    }
+    out.push(
+      <mark key={`${m.index}-${m[0]}`} className="rep-highlight">
+        {m[0]}
+      </mark>,
+    );
+    lastIndex = m.index + m[0].length;
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  if (lastIndex < lineText.length) {
+    out.push(lineText.slice(lastIndex));
+  }
+  return out;
+}
+
+function RepeatedWordCard({
+  item,
+  goToLine,
+}: {
+  item: RepeatedWord;
+  goToLine: (line1Based: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const variantList =
+    item.variants.length > 1 ? item.variants.join(", ") : null;
+  const wordRe = useMemo(() => {
+    const escaped = escapeRegex(item.word);
+    if (item.variants.length > 1) {
+      const stem = escaped.replace(/(ing|ed|es|s|y)$/i, "");
+      return new RegExp(`\\b${stem}\\w*\\b`, "gi");
+    }
+    return new RegExp(`\\b${escaped}\\b`, "gi");
+  }, [item.word, item.variants]);
+  const previewOccurrences = open ? item.occurrences : item.occurrences.slice(0, 2);
+  return (
+    <li className={`rep-card rep-card-sev-${item.severity}`}>
+      <div className="rep-card-header">
+        <span
+          className={`rep-sev-dot rep-sev-dot-${item.severity}`}
+          aria-label={severityLabel(item.severity)}
+          title={severityLabel(item.severity)}
+        />
+        <span className="rep-card-title">{item.display}</span>
+        <span className="rep-card-count">×{item.count}</span>
+        {variantList ? (
+          <span className="rep-card-variants" title={`Variants: ${variantList}`}>
+            {item.variants.length} forms
+          </span>
+        ) : null}
+        <span className="rep-card-gap muted small">
+          {item.minGap === Number.POSITIVE_INFINITY
+            ? ""
+            : item.minGap <= 0
+              ? "same line"
+              : item.minGap === 1
+                ? "adjacent lines"
+                : `${item.minGap} lines apart`}
+        </span>
+      </div>
+      <ul className="rep-snippets">
+        {previewOccurrences.map((o, i) => (
+          <li key={`${o.line}-${o.start}-${i}`} className="rep-snippet">
+            <button
+              type="button"
+              className="rep-line-jump linkish"
+              onClick={() => goToLine(o.line)}
+              aria-label={`Go to line ${o.line}`}
+            >
+              L{o.line}
+            </button>
+            <span className="rep-snippet-text">
+              {highlightInLine(o.lineText, wordRe)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {item.occurrences.length > 2 ? (
+        <button
+          type="button"
+          className="rep-show-more linkish small"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? "Show less" : `Show ${item.occurrences.length - 2} more`}
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
+function PhraseRepeatCard({
+  item,
+  goToLine,
+}: {
+  item: import("@/workshop/analysis/repeated-words").PhraseRepeat;
+  goToLine: (line1Based: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
+  return (
+    <li className={`rep-card rep-card-sev-${item.severity}`}>
+      <div className="rep-card-header">
+        <span
+          className={`rep-sev-dot rep-sev-dot-${item.severity}`}
+          aria-label={severityLabel(item.severity)}
+          title={severityLabel(item.severity)}
+        />
+        <span className="rep-card-title">"{item.display}"</span>
+        <span className="rep-card-count">×{item.count}</span>
+        <span className="rep-card-meta muted small">{item.n}-word</span>
+      </div>
+      <ul className="rep-snippets">
+        {previewSnippets.map((s, i) => (
+          <li key={`${s.line}-${i}`} className="rep-snippet">
+            <button
+              type="button"
+              className="rep-line-jump linkish"
+              onClick={() => goToLine(s.line)}
+              aria-label={`Go to line ${s.line}`}
+            >
+              L{s.line}
+            </button>
+            <span className="rep-snippet-text">
+              {highlightInLine(s.text, item.phrase)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {item.snippets.length > 2 ? (
+        <button
+          type="button"
+          className="rep-show-more linkish small"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? "Show less" : `Show ${item.snippets.length - 2} more`}
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
+function EdgeRepeatCard({
+  group,
+  edge,
+  goToLine,
+}: {
+  group: import("@/workshop/analysis/repeated-words").AnaphoraGroup;
+  edge: "start" | "end";
+  goToLine: (line1Based: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const previewSnippets = open ? group.snippets : group.snippets.slice(0, 3);
+  const matchRe = useMemo(() => {
+    const escaped = escapeRegex(group.prefix);
+    return edge === "start"
+      ? new RegExp(`^\\s*${escaped}`, "i")
+      : new RegExp(`${escaped}\\s*$`, "i");
+  }, [group.prefix, edge]);
+  return (
+    <li className="rep-card rep-card-pattern">
+      <div className="rep-card-header">
+        <span className="rep-pattern-icon" aria-hidden="true">
+          {edge === "start" ? "↦" : "↤"}
+        </span>
+        <span className="rep-card-title">"{group.display}"</span>
+        <span className="rep-card-count">×{group.lines.length}</span>
+        <span className="rep-card-meta muted small">
+          {edge === "start" ? "line-start" : "line-end"}
+        </span>
+      </div>
+      <ul className="rep-snippets">
+        {previewSnippets.map((s, i) => (
+          <li key={`${s.line}-${i}`} className="rep-snippet">
+            <button
+              type="button"
+              className="rep-line-jump linkish"
+              onClick={() => goToLine(s.line)}
+              aria-label={`Go to line ${s.line}`}
+            >
+              L{s.line}
+            </button>
+            <span className="rep-snippet-text">
+              {highlightInLine(s.text, matchRe)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {group.snippets.length > 3 ? (
+        <button
+          type="button"
+          className="rep-show-more linkish small"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? "Show less" : `Show ${group.snippets.length - 3} more`}
+        </button>
+      ) : null}
+    </li>
+  );
+}
+
 function JumpLineList({
   lineNumbers,
   goToLine,
@@ -706,6 +959,7 @@ export interface WorkshopToolPanelsProps {
   stanzaRhymeGroups: StanzaClusterGroup[];
   clicheHits: ClicheHit[];
   repeated: RepeatedWord[];
+  repetition: RepetitionAnalysis;
   spellHits: SpellHit[];
   wordlist: Set<string> | null;
   wordlistErr: string | null;
@@ -784,6 +1038,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     stanzaRhymeGroups,
     clicheHits,
     repeated,
+    repetition,
     spellHits,
     wordlist,
     wordlistErr,
@@ -858,37 +1113,62 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [rhymeLinkSelection, setRhymeLinkSelection] = useState<Array<{ word: string; line: number; label: string | null }>>([]);
   const { ignoreCluster, isIgnored } = useIgnoredRhymes();
 
-  // Auto-resolve when two end-words are selected:
-  //   • different clusters (or one loose) → link them as a rhyme
-  //   • same cluster → split them apart (unlink)
-  // The opposite-direction record is removed so the same pair can never
-  // appear in both lists at once.
-  useEffect(() => {
-    if (rhymeLinkSelection.length < 2) return;
-    const [a, b] = rhymeLinkSelection;
-    if (a && b && a.word.toLowerCase() !== b.word.toLowerCase()) {
-      const sameCluster = a.label !== null && a.label === b.label;
-      const sorted = [a.word.toLowerCase().trim(), b.word.toLowerCase().trim()].sort();
-      const conflictKey = `${sorted[0]}+${sorted[1]}`;
-      if (sameCluster) {
-        onRemoveManualRhymeLink?.(conflictKey);
-        onAddManualRhymeUnlink?.(a.word, b.word);
-      } else {
-        onRemoveManualRhymeUnlink?.(conflictKey);
-        onAddManualRhymeLink?.(a.word, b.word);
-      }
-    }
-    setRhymeLinkSelection([]);
-  }, [rhymeLinkSelection, onAddManualRhymeLink, onAddManualRhymeUnlink, onRemoveManualRhymeLink, onRemoveManualRhymeUnlink]);
-
   const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
     setRhymeLinkSelection((prev) => {
       const i = prev.findIndex((p) => p.line === line);
       if (i >= 0) return prev.filter((_, idx) => idx !== i);
-      return [...prev, { word, line, label }].slice(-2);
+      return [...prev, { word, line, label }];
     });
   };
+
+  // Whether the selected end-words all belong to the same rhyme cluster.
+  // Used to decide what the action button does (link new group / split apart).
+  const rhymeSelectionSameCluster = useMemo(() => {
+    if (rhymeLinkSelection.length < 2) return false;
+    const first = rhymeLinkSelection[0]!;
+    if (first.label === null) return false;
+    return rhymeLinkSelection.every((p) => p.label === first.label);
+  }, [rhymeLinkSelection]);
+
+  // Distinct end-words in the current selection, lowercased and sorted.
+  const rhymeSelectionWords = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of rhymeLinkSelection) {
+      const w = p.word.toLowerCase().trim();
+      if (w) set.add(w);
+    }
+    return [...set].sort();
+  }, [rhymeLinkSelection]);
+
+  // Anchor each pair to the first selected word so the manual-class union
+  // chains them all into one group via the shared anchor line.
+  const applyRhymeSelection = (mode: "link" | "split") => {
+    if (rhymeSelectionWords.length < 2) return;
+    const [anchor, ...rest] = rhymeSelectionWords;
+    if (!anchor) return;
+    for (const w of rest) {
+      if (mode === "link") {
+        const sorted = [anchor, w].sort();
+        const conflictKey = `${sorted[0]}+${sorted[1]}`;
+        onRemoveManualRhymeUnlink?.(conflictKey);
+        onAddManualRhymeLink?.(anchor, w);
+      } else {
+        const sorted = [anchor, w].sort();
+        const conflictKey = `${sorted[0]}+${sorted[1]}`;
+        onRemoveManualRhymeLink?.(conflictKey);
+        onAddManualRhymeUnlink?.(anchor, w);
+      }
+    }
+    setRhymeLinkSelection([]);
+  };
+  const clearRhymeSelection = () => setRhymeLinkSelection([]);
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
+  const [repeatSeverityFilter, setRepeatSeverityFilter] = useState<
+    "all" | "high" | "med"
+  >("all");
+  const [repeatSubTab, setRepeatSubTab] = useState<
+    "words" | "phrases" | "patterns"
+  >("words");
   const [goLineField, setGoLineField] = useState("");
 
   useEffect(() => {
@@ -906,9 +1186,33 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    if (!t) return repeated;
-    return repeated.filter((r) => r.word.toLowerCase().includes(t));
-  }, [repeated, repeatWordFilter]);
+    let arr = repeated;
+    if (t) arr = arr.filter((r) => r.word.toLowerCase().includes(t) || r.variants.some((v) => v.toLowerCase().includes(t)));
+    if (repeatSeverityFilter === "high") arr = arr.filter((r) => r.severity === "high");
+    else if (repeatSeverityFilter === "med") arr = arr.filter((r) => r.severity === "high" || r.severity === "med");
+    return arr;
+  }, [repeated, repeatWordFilter, repeatSeverityFilter]);
+
+  const filteredPhrases = useMemo(() => {
+    const t = repeatWordFilter.trim().toLowerCase();
+    let arr = repetition.phrases;
+    if (t) arr = arr.filter((p) => p.phrase.toLowerCase().includes(t));
+    if (repeatSeverityFilter === "high") arr = arr.filter((p) => p.severity === "high");
+    else if (repeatSeverityFilter === "med") arr = arr.filter((p) => p.severity === "high" || p.severity === "med");
+    return arr;
+  }, [repetition.phrases, repeatWordFilter, repeatSeverityFilter]);
+
+  const repetitionCounts = useMemo(
+    () => ({
+      words: repeated.length,
+      phrases: repetition.phrases.length,
+      patterns: repetition.anaphora.length + repetition.epistrophe.length,
+      highSeverity:
+        repeated.filter((r) => r.severity === "high").length +
+        repetition.phrases.filter((p) => p.severity === "high").length,
+    }),
+    [repeated, repetition],
+  );
 
   const displayedLineRows = useMemo(() => {
     if (!hideEmptyLines) return docStats.lines;
@@ -1509,9 +1813,42 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </div>
               <p className="rhyme-live-sub muted small">
                 {rhymeEditMode
-                  ? "Pick two end-words: same group splits them apart, different groups (or unlinked) links them as a rhyme."
+                  ? "Click end-words to pick a group, then press Link or Split. Pick as many as you like."
                   : "Lines whose end-words rhyme — click a word to jump to it."}
               </p>
+              {rhymeEditMode && rhymeLinkSelection.length > 0 ? (
+                <div className="rhyme-edit-action-bar" role="toolbar" aria-label="Rhyme link actions">
+                  <span className="rhyme-edit-action-count muted small">
+                    {rhymeSelectionWords.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    className="small-btn small-btn-primary"
+                    disabled={rhymeSelectionWords.length < 2 || rhymeSelectionSameCluster}
+                    onClick={() => applyRhymeSelection("link")}
+                    title="Group these end-words as a new rhyme"
+                  >
+                    Link as rhyme
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    disabled={rhymeSelectionWords.length < 2 || !rhymeSelectionSameCluster}
+                    onClick={() => applyRhymeSelection("split")}
+                    title="Split these end-words apart"
+                  >
+                    Split apart
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={clearRhymeSelection}
+                    title="Clear selection"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             {rhymeSettingsOpen ? (
@@ -1546,98 +1883,18 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             ) : null}
 
             {stanzaRhymeGroups.map((group) => {
-              // Start from scheme-derived clusters, drop ignored ones.
-              const baseClusters = group.clusters.filter((c) => {
-                const words = c.lineNumbers.map((n) => endWordOfLine(poemLines[n - 1]));
-                return !isIgnored(words);
-              });
-
-              // Defensive merge: even if the scheme didn't fold a manual link
-              // into the labels (timing/edge case), enforce it visually here.
-              type Cluster = {
-                ending: string;
-                label: string | null;
-                lineNumbers: number[];
-                manual?: boolean;
-              };
-              const working: Cluster[] = baseClusters.map((c) => ({
-                ending: c.ending,
-                label: c.label ?? null,
-                lineNumbers: [...c.lineNumbers],
-              }));
-
-              const wordsInStanzaByLine = new Map<number, string>();
-              for (let n = group.lineRange[0]; n <= group.lineRange[1]; n++) {
-                const w = endWordOfLine(poemLines[n - 1]).toLowerCase();
-                if (w) wordsInStanzaByLine.set(n, w);
-              }
-
-              const findClusterIdxByLine = (line: number): number => {
-                for (let i = 0; i < working.length; i++) if (working[i]!.lineNumbers.includes(line)) return i;
-                return -1;
-              };
-
-              for (const key of manualRhymeLinks) {
-                const parts = key.split("+");
-                if (parts.length !== 2) continue;
-                const [a, b] = parts as [string, string];
-                const linesA: number[] = [];
-                const linesB: number[] = [];
-                for (const [n, w] of wordsInStanzaByLine) {
-                  if (w === a) linesA.push(n);
-                  else if (w === b) linesB.push(n);
-                }
-                if (linesA.length === 0 || linesB.length === 0) continue;
-
-                const involved = [...linesA, ...linesB];
-                const targetIdxs = new Set<number>();
-                let firstIdx = -1;
-                for (const n of involved) {
-                  const idx = findClusterIdxByLine(n);
-                  if (idx >= 0) {
-                    if (firstIdx < 0) firstIdx = idx;
-                    targetIdxs.add(idx);
-                  }
-                }
-                if (firstIdx < 0) {
-                  working.push({
-                    ending: key,
-                    label: null,
-                    lineNumbers: [...new Set(involved)].sort((x, y) => x - y),
-                    manual: true,
-                  });
-                  continue;
-                }
-                const target = working[firstIdx]!;
-                for (const idx of targetIdxs) {
-                  if (idx === firstIdx) continue;
-                  for (const n of working[idx]!.lineNumbers) target.lineNumbers.push(n);
-                }
-                for (const n of involved) if (!target.lineNumbers.includes(n)) target.lineNumbers.push(n);
-                target.lineNumbers = [...new Set(target.lineNumbers)].sort((x, y) => x - y);
-                target.manual = target.manual || target.label === null;
-                // Remove merged clusters (in reverse order to keep indices stable).
-                const removeIdxs = [...targetIdxs].filter((i) => i !== firstIdx).sort((x, y) => y - x);
-                for (const i of removeIdxs) working.splice(i, 1);
-              }
-
-              // Assign synthetic letters to any clusters left without one (rare —
-              // happens when a manual link involves words whose original
-              // ending didn't match anything in the scheme). Pick fresh letters
-              // *after* any auto labels already in use so Fix-rhymes additions
-              // visually stand apart from the heuristic groupings.
-              const usedLabels = new Set(working.map((c) => c.label).filter(Boolean) as string[]);
-              const cycle = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-              let nextIdx = 0;
-              for (const c of working) {
-                if (c.label) continue;
-                while (usedLabels.has(cycle[nextIdx % cycle.length]!)) nextIdx++;
-                c.label = cycle[nextIdx % cycle.length]!;
-                usedLabels.add(c.label);
-                nextIdx++;
-              }
-
-              const visibleClusters = working;
+              // Scheme already produces final labels (auto + manual classes
+              // with fresh letters). Just drop ignored clusters and render.
+              const visibleClusters = group.clusters
+                .filter((c) => {
+                  const words = c.lineNumbers.map((n) => endWordOfLine(poemLines[n - 1]));
+                  return !isIgnored(words);
+                })
+                .map((c) => ({
+                  ending: c.ending,
+                  label: c.label ?? null,
+                  lineNumbers: [...c.lineNumbers],
+                }));
 
               // Loose ends: end-words in this stanza not currently in any visible cluster.
               // Shown only in edit mode so user can link them into other rhymes.
@@ -1833,7 +2090,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-repeat"
         >
-          <LiveSectionTitle>Repeated words</LiveSectionTitle>
+          <LiveSectionTitle>Repetition</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
@@ -1841,37 +2098,173 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               role="status"
               aria-live="polite"
             >
-              Tools updating… (repeats match your text in a moment)
+              Tools updating…
             </p>
           ) : null}
-          <label className="tool-filter-field">
-            <span className="tool-filter-label">Filter words</span>
-            <input
-              type="search"
-              value={repeatWordFilter}
-              onChange={(e) => setRepeatWordFilter(e.target.value)}
-              placeholder="Substring"
-              aria-label="Filter repeated words"
-            />
-          </label>
-          {repeated.length === 0 ? (
-            <EmptyState title="No repeats detected">
-              <p className="muted small">
-                Nice—this list stays empty unless a non-stopword repeats.
-              </p>
-            </EmptyState>
-          ) : filteredRepeated.length === 0 ? (
-            <p className="muted small">No words match this filter.</p>
-          ) : (
-            <ul className="hint-list hint-list-draft">
-              {filteredRepeated.map((r) => (
-                <li key={r.word}>
-                  <span className="mono">{r.word}</span> ×{r.count} — lines{" "}
-                  <JumpLineList lineNumbers={r.lines} goToLine={goToLine} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <RepetitionSummary counts={repetitionCounts} />
+          <div className="rep-subtabs" role="tablist" aria-label="Repetition categories">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={repeatSubTab === "words"}
+              className={`rep-subtab ${repeatSubTab === "words" ? "active" : ""}`}
+              onClick={() => setRepeatSubTab("words")}
+            >
+              Words <span className="rep-subtab-count">{repetitionCounts.words}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={repeatSubTab === "phrases"}
+              className={`rep-subtab ${repeatSubTab === "phrases" ? "active" : ""}`}
+              onClick={() => setRepeatSubTab("phrases")}
+            >
+              Phrases <span className="rep-subtab-count">{repetitionCounts.phrases}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={repeatSubTab === "patterns"}
+              className={`rep-subtab ${repeatSubTab === "patterns" ? "active" : ""}`}
+              onClick={() => setRepeatSubTab("patterns")}
+            >
+              Patterns <span className="rep-subtab-count">{repetitionCounts.patterns}</span>
+            </button>
+          </div>
+
+          {repeatSubTab !== "patterns" ? (
+            <div className="rep-controls">
+              <label className="tool-filter-field rep-filter">
+                <span className="tool-filter-label">Filter</span>
+                <input
+                  type="search"
+                  value={repeatWordFilter}
+                  onChange={(e) => setRepeatWordFilter(e.target.value)}
+                  placeholder="Substring"
+                  aria-label="Filter repetition results"
+                />
+              </label>
+              <div className="rep-sev-toggle" role="group" aria-label="Severity filter">
+                <button
+                  type="button"
+                  className={`rep-sev-btn ${repeatSeverityFilter === "all" ? "active" : ""}`}
+                  onClick={() => setRepeatSeverityFilter("all")}
+                  aria-pressed={repeatSeverityFilter === "all"}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  className={`rep-sev-btn rep-sev-btn-med ${repeatSeverityFilter === "med" ? "active" : ""}`}
+                  onClick={() => setRepeatSeverityFilter("med")}
+                  aria-pressed={repeatSeverityFilter === "med"}
+                >
+                  Notable
+                </button>
+                <button
+                  type="button"
+                  className={`rep-sev-btn rep-sev-btn-high ${repeatSeverityFilter === "high" ? "active" : ""}`}
+                  onClick={() => setRepeatSeverityFilter("high")}
+                  aria-pressed={repeatSeverityFilter === "high"}
+                >
+                  Loud
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {repeatSubTab === "words" ? (
+            repeated.length === 0 ? (
+              <EmptyState title="No word repeats">
+                <p className="muted small">
+                  Nice—list stays empty unless a non-stopword repeats.
+                </p>
+              </EmptyState>
+            ) : filteredRepeated.length === 0 ? (
+              <p className="muted small">No words match this filter.</p>
+            ) : (
+              <ul className="rep-card-list">
+                {filteredRepeated.map((r) => (
+                  <RepeatedWordCard
+                    key={r.word}
+                    item={r}
+                    goToLine={goToLine}
+                  />
+                ))}
+              </ul>
+            )
+          ) : null}
+
+          {repeatSubTab === "phrases" ? (
+            repetition.phrases.length === 0 ? (
+              <EmptyState title="No phrase echoes">
+                <p className="muted small">
+                  No 2- or 3-word phrases repeat across your poem.
+                </p>
+              </EmptyState>
+            ) : filteredPhrases.length === 0 ? (
+              <p className="muted small">No phrases match this filter.</p>
+            ) : (
+              <ul className="rep-card-list">
+                {filteredPhrases.map((p) => (
+                  <PhraseRepeatCard
+                    key={`${p.n}:${p.phrase}`}
+                    item={p}
+                    goToLine={goToLine}
+                  />
+                ))}
+              </ul>
+            )
+          ) : null}
+
+          {repeatSubTab === "patterns" ? (
+            repetition.anaphora.length === 0 &&
+            repetition.epistrophe.length === 0 ? (
+              <EmptyState title="No structural patterns">
+                <p className="muted small">
+                  Anaphora (line-start) and epistrophe (line-end) repeats appear here
+                  when two or more lines share an edge — often intentional craft.
+                </p>
+              </EmptyState>
+            ) : (
+              <div className="rep-patterns">
+                {repetition.anaphora.length > 0 ? (
+                  <section className="rep-pattern-section">
+                    <h4 className="rep-pattern-title">
+                      Anaphora <span className="muted small">— line-start echoes</span>
+                    </h4>
+                    <ul className="rep-card-list">
+                      {repetition.anaphora.map((g) => (
+                        <EdgeRepeatCard
+                          key={`a:${g.prefix}`}
+                          group={g}
+                          edge="start"
+                          goToLine={goToLine}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+                {repetition.epistrophe.length > 0 ? (
+                  <section className="rep-pattern-section">
+                    <h4 className="rep-pattern-title">
+                      Epistrophe <span className="muted small">— line-end echoes</span>
+                    </h4>
+                    <ul className="rep-card-list">
+                      {repetition.epistrophe.map((g) => (
+                        <EdgeRepeatCard
+                          key={`e:${g.prefix}`}
+                          group={g}
+                          edge="end"
+                          goToLine={goToLine}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
+              </div>
+            )
+          ) : null}
         </div>
       ) : null}
 

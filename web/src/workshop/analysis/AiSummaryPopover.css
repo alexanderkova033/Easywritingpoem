@@ -5,21 +5,32 @@
   z-index: 6;
 }
 
-/* Inline placement in the title area — overrides absolute positioning. */
+/* Float trigger at top-right of the editor panel so it never takes a row
+   above the editor and stays out of the typing area on small screens. */
 .ai-summary-titlebar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.3rem;
+  position: absolute;
+  top: 0.45rem;
+  right: 0.5rem;
+  z-index: 6;
+  pointer-events: none;
 }
 .ai-summary-titlebar .ai-pop-wrap {
   position: relative;
   top: auto;
   right: auto;
   z-index: 1;
+  pointer-events: auto;
 }
 .ai-summary-titlebar .ai-pop-panel {
-  /* Anchor below the trigger toward the right edge so it stays in the panel. */
   right: 0;
+}
+
+/* Reserve room on the meta row so the title input / hide-btn don't sit
+   underneath the floating AI summary trigger. */
+.editor-stack:has(.ai-summary-titlebar) .editor-meta-bar,
+.editor-stack:has(.ai-summary-titlebar) .editor-meta-grid,
+.editor-stack:has(.ai-summary-titlebar) .editor-meta-peek-btn {
+  padding-right: 4.25rem;
 }
 
 .ai-pop-trigger {

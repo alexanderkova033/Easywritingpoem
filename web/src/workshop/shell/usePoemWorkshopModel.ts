@@ -79,7 +79,7 @@ import {
   meterHintsForBody,
   summarizeMeterCoverage,
 } from "@/workshop/analysis/meter-hints";
-import { findRepeatedWords } from "@/workshop/analysis/repeated-words";
+import { analyzeRepetition } from "@/workshop/analysis/repeated-words";
 import { buildPublicationChecklist } from "@/workshop/analysis/publication-checklist";
 import {
   lightAssonanceClusters,
@@ -453,7 +453,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     () => lightConsonanceClusters(heavyLines),
     [heavyLines],
   );
-  const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
+  const repetition = useMemo(() => analyzeRepetition(heavyLines), [heavyLines]);
+  const repeated = repetition.words;
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
   const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks), [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks]);
   const internalRhymes = useMemo(() => detectInternalRhymes(heavyLines, rhymeBreadth), [heavyLines, rhymeBreadth]);
@@ -1402,6 +1403,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     assonanceClusters,
     consonanceClusters,
     repeated,
+    repetition,
     clicheHits,
     rhymeScheme,
     internalRhymes,

@@ -19,17 +19,18 @@ export function endingForBreadth(norm: string, breadth: RhymeBreadth): string | 
  * Assigns end-rhyme scheme labels (A, B, C…) to each line.
  * Lines with no last word or blank lines get an empty string.
  *
- * `manualLinks` is a list of alphabetised `"wordA+wordB"` keys. End-words
- * appearing in a link pair are union-merged so they share a single label —
- * lets the user fix rhymes the heuristic misses (slant rhymes, near-rhymes
- * the lexicon doesn't catch).
+ * `manualLinks` is a list of alphabetised `"wordA+wordB"` keys. Manual links
+ * create *dedicated* rhyme classes — the involved lines are detached from
+ * whatever auto-class the heuristic put them in and grouped together.
+ * Multiple links that share a line transitively form a single class
+ * (so the user can build groups of 3+ rhyming words by adding pairs).
  *
- * Lettering policy: auto-detected rhyme classes get labels A, B, C… in
- * line order. Classes produced by manual links (Fix-rhymes merges of two
- * distinct auto-classes) get a fresh letter allocated *after* all auto
- * letters, so the user can see at a glance which groups were added by
- * hand. Manual unlinks similarly hand off a fresh letter to the split-off
- * remnant.
+ * Lettering policy: auto classes get A, B, C… in line order; manual
+ * classes get fresh letters allocated *after* every auto letter, so the
+ * user can see at a glance which groups they added by hand.
+ *
+ * `manualUnlinks` peel `b`-end-words off the auto-class that `a` lives in,
+ * giving them a separate fresh letter.
  */
 export function detectRhymeScheme(
   lines: string[],
@@ -53,7 +54,7 @@ export function detectRhymeScheme(
     return norm || null;
   });
 
-  // === Pass 1: auto-only union-find (heuristic groupings, no manual ops). ===
+  // === Auto-only union-find (heuristic groupings). ===
   const autoCls: number[] = lines.map((_, i) => i);
   const findAuto = (i: number): number => {
     while (autoCls[i] !== i) {
@@ -79,39 +80,31 @@ export function detectRhymeScheme(
     else unionAuto(prev, i);
   }
 
-  // Auto-only label map (allocated in line order) — used as the source of
-  // truth for classes the user hasn't touched.
-  const autoLabelByRoot = new Map<number, string>();
-  let autoCode = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (!endNorms[i]) continue;
-    const r = findAuto(i);
-    if (!autoLabelByRoot.has(r)) autoLabelByRoot.set(r, letterFor(autoCode++));
-  }
-
-  // === Pass 2: full union-find (auto + manual links + manual unlinks). ===
-  const cls: number[] = lines.map((_, i) => i);
-  const findCls = (i: number): number => {
-    while (cls[i] !== i) {
-      cls[i] = cls[cls[i]!]!; // path compression
-      i = cls[i]!;
+  // === Manual classes: each line touched by any manual link sits in a
+  // dedicated class detached from its auto-class. Links that share a line
+  // are chained into the same manual class via union-find on synthetic
+  // anchor ids (kept separate from line indices to avoid colliding with
+  // auto roots). ===
+  const manualParent = new Map<number, number>();
+  const manualLineToAnchor = new Map<number, number>();
+  let nextAnchor = 1_000_000;
+  const findManual = (a: number): number => {
+    let cur = a;
+    while ((manualParent.get(cur) ?? cur) !== cur) {
+      const p = manualParent.get(cur)!;
+      const pp = manualParent.get(p) ?? p;
+      manualParent.set(cur, pp);
+      cur = pp;
     }
-    return i;
+    return cur;
   };
-  const unionCls = (a: number, b: number) => {
-    const ra = findCls(a);
-    const rb = findCls(b);
+  const unionManual = (a: number, b: number) => {
+    const ra = findManual(a);
+    const rb = findManual(b);
     if (ra === rb) return;
-    if (ra < rb) cls[rb] = ra; else cls[ra] = rb;
+    if (ra < rb) manualParent.set(rb, ra); else manualParent.set(ra, rb);
   };
-  // Re-apply auto unions into the full union-find.
-  for (let i = 0; i < lines.length; i++) {
-    const r = findAuto(i);
-    if (r !== i) unionCls(r, i);
-  }
 
-  // Manual links: any line with end-word `a` and any line with end-word `b`
-  // get merged into the same class.
   for (const key of manualLinks) {
     const parts = key.split("+");
     if (parts.length !== 2) continue;
@@ -125,12 +118,33 @@ export function detectRhymeScheme(
       else if (w === b) bLines.push(i);
     }
     if (aLines.length === 0 || bLines.length === 0) continue;
-    const anchor = aLines[0]!;
-    for (const i of aLines.slice(1)) unionCls(anchor, i);
-    for (const i of bLines) unionCls(anchor, i);
+    const involved = [...aLines, ...bLines];
+
+    let anchor = -1;
+    for (const i of involved) {
+      const existing = manualLineToAnchor.get(i);
+      if (existing !== undefined) { anchor = findManual(existing); break; }
+    }
+    if (anchor < 0) {
+      anchor = nextAnchor++;
+      manualParent.set(anchor, anchor);
+    }
+    for (const i of involved) {
+      const existing = manualLineToAnchor.get(i);
+      if (existing !== undefined) unionManual(existing, anchor);
+      manualLineToAnchor.set(i, anchor);
+    }
   }
 
-  // Manual unlinks: split class so lines with end-word `b` move to a new class.
+  // Resolve each manual line to its final anchor root.
+  const lineToManualRoot = new Map<number, number>();
+  for (const [line, a] of manualLineToAnchor) {
+    lineToManualRoot.set(line, findManual(a));
+  }
+
+  // Manual unlinks: lines with end-word `b` get peeled off `a`'s auto-class
+  // into a fresh manual class (one per unlink key), unless they already
+  // belong to a manual class.
   for (const key of manualUnlinks) {
     const parts = key.split("+");
     if (parts.length !== 2) continue;
@@ -144,66 +158,46 @@ export function detectRhymeScheme(
       else if (w === b) bLines.push(i);
     }
     if (aLines.length === 0 || bLines.length === 0) continue;
-    const aClasses = new Set(aLines.map((i) => findCls(i)));
-    const conflict = bLines.some((i) => aClasses.has(findCls(i)));
-    if (!conflict) continue;
-    // Re-anchor every b-line to a fresh isolated class (its own index).
-    const bAnchor = bLines[0]!;
-    cls[bAnchor] = bAnchor;
-    for (const i of bLines.slice(1)) {
-      cls[i] = i;
-      unionCls(bAnchor, i);
-    }
+    // Only act when at least one b-line shares an auto-class with an a-line.
+    const aAutos = new Set(aLines.map((i) => findAuto(i)));
+    const bToPeel = bLines.filter((i) => aAutos.has(findAuto(i)) && !lineToManualRoot.has(i));
+    if (bToPeel.length === 0) continue;
+    const anchor = nextAnchor++;
+    manualParent.set(anchor, anchor);
+    for (const i of bToPeel) lineToManualRoot.set(i, anchor);
   }
 
-  // Map each final class to the set of auto-classes it spans.
-  // - size > 1  → manual link merged distinct auto-classes (fresh letter).
-  // - size = 1, but the auto-class is split across multiple final classes
-  //   → manual unlink (first-encountered keeps auto letter, rest fresh).
-  const finalRootToAutoRoots = new Map<number, Set<number>>();
-  const autoRootToFinalRoots = new Map<number, Set<number>>();
+  // === Letter allocation. Auto labels come first, in line order, skipping
+  // any line that's been claimed by a manual class. Manual labels come
+  // next, also in line order — so the user can read the poem top-to-bottom
+  // and see the same letter for the same rhyme group. ===
+  const autoLabelByRoot = new Map<number, string>();
+  let autoCode = 0;
   for (let i = 0; i < lines.length; i++) {
     if (!endNorms[i]) continue;
-    const fr = findCls(i);
-    const ar = findAuto(i);
-    if (!finalRootToAutoRoots.has(fr)) finalRootToAutoRoots.set(fr, new Set());
-    finalRootToAutoRoots.get(fr)!.add(ar);
-    if (!autoRootToFinalRoots.has(ar)) autoRootToFinalRoots.set(ar, new Set());
-    autoRootToFinalRoots.get(ar)!.add(fr);
+    if (lineToManualRoot.has(i)) continue;
+    const r = findAuto(i);
+    if (!autoLabelByRoot.has(r)) autoLabelByRoot.set(r, letterFor(autoCode++));
   }
 
-  // Assign final letters in line order. Manual-influenced classes draw from
-  // a fresh counter that starts past every auto label.
-  const classToLetter = new Map<number, string>();
-  const usedAutoLabels = new Set<string>();
-  let nextManualCode = autoCode;
+  const manualLabelByRoot = new Map<number, string>();
+  let manualCode = autoCode;
   for (let i = 0; i < lines.length; i++) {
     if (!endNorms[i]) continue;
-    const fr = findCls(i);
-    if (classToLetter.has(fr)) {
-      labels[i] = classToLetter.get(fr)!;
+    const mr = lineToManualRoot.get(i);
+    if (mr === undefined) continue;
+    if (!manualLabelByRoot.has(mr)) manualLabelByRoot.set(mr, letterFor(manualCode++));
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!endNorms[i]) continue;
+    const mr = lineToManualRoot.get(i);
+    if (mr !== undefined) {
+      labels[i] = manualLabelByRoot.get(mr)!;
       continue;
     }
-    const autoRoots = finalRootToAutoRoots.get(fr)!;
-    const isManualMerge = autoRoots.size > 1;
-
-    let letter: string;
-    if (isManualMerge) {
-      letter = letterFor(nextManualCode++);
-    } else {
-      const ar = autoRoots.values().next().value!;
-      const autoLbl = autoLabelByRoot.get(ar)!;
-      // Auto-class was split (manual unlink): first remnant keeps its
-      // original letter; later remnants get fresh letters.
-      if (usedAutoLabels.has(autoLbl)) {
-        letter = letterFor(nextManualCode++);
-      } else {
-        letter = autoLbl;
-        usedAutoLabels.add(autoLbl);
-      }
-    }
-    classToLetter.set(fr, letter);
-    labels[i] = letter;
+    const r = findAuto(i);
+    labels[i] = autoLabelByRoot.get(r) ?? "";
   }
 
   return labels;

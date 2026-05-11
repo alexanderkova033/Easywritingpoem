@@ -121,14 +121,37 @@ export function PoemWorkshop() {
     recordWriteToday();
   }, [m.body]);
 
-  const [mainIdea, setMainIdea] = useState(() => {
-    try { return localStorage.getItem("easy-poems:main-idea") ?? ""; } catch { return ""; }
-  });
+  const mainIdeaStorageKey = (poemId: string | undefined) =>
+    poemId ? `easy-poems:main-idea:${poemId}` : null;
+  const readMainIdea = (poemId: string | undefined) => {
+    const key = mainIdeaStorageKey(poemId);
+    if (!key) return "";
+    try {
+      const scoped = localStorage.getItem(key);
+      if (scoped != null) return scoped;
+      // One-time migration: if a legacy global value exists and the active
+      // poem has no scoped value yet, claim it for this poem so the user
+      // doesn't lose what they typed before this fix.
+      const legacy = localStorage.getItem("easy-poems:main-idea");
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem("easy-poems:main-idea");
+        return legacy;
+      }
+    } catch { /* ignore */ }
+    return "";
+  };
+  const [mainIdea, setMainIdea] = useState(() => readMainIdea(m.activePoemId));
+  useEffect(() => {
+    setMainIdea(readMainIdea(m.activePoemId));
+  }, [m.activePoemId]);
   const saveMainIdea = (v: string) => {
     setMainIdea(v);
+    const key = mainIdeaStorageKey(m.activePoemId);
+    if (!key) return;
     try {
-      if (v.trim()) localStorage.setItem("easy-poems:main-idea", v);
-      else localStorage.removeItem("easy-poems:main-idea");
+      if (v.trim()) localStorage.setItem(key, v);
+      else localStorage.removeItem(key);
     } catch { /* ignore */ }
   };
   const [mainIdeaOpen, setMainIdeaOpen] = useState(() => {
@@ -2485,6 +2508,7 @@ export function PoemWorkshop() {
             consonanceClusters={m.consonanceClusters}
             stanzaRhymeGroups={m.stanzaRhymeGroups}
             repeated={m.repeated}
+            repetition={m.repetition}
             spellHits={m.spellHits}
             wordlist={m.wordlist}
             wordlistErr={m.wordlistErr}
