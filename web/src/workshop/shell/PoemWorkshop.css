@@ -3963,30 +3963,19 @@
   text-overflow: ellipsis;
 }
 
-.revision-delta {
-  display: inline-flex;
-  gap: 0.3rem;
-  font-family: var(--font-metric);
-  font-variant-numeric: tabular-nums;
-  font-size: 0.72rem;
-  margin-top: 0.1rem;
-}
-
-.revision-delta-chunk {
-  padding: 0.05rem 0.4rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 18%, transparent);
+.revision-change-note {
+  font-size: 0.74rem;
   color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.revision-delta-chunk.is-pos {
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
-  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+.revision-change-pos {
+  color: color-mix(in srgb, var(--accent) 88%, var(--text));
 }
 
-.revision-delta-chunk.is-neg {
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
-  color: color-mix(in srgb, var(--danger) 85%, var(--text));
+.revision-change-neg {
+  color: color-mix(in srgb, var(--danger) 80%, var(--text));
 }
 
 .revision-draft-row {
@@ -4019,35 +4008,52 @@
   font-weight: 700;
 }
 
-.revision-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+.revision-list-scroll {
+  max-height: 22rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 36%, transparent) transparent;
+  border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
-.revision-group-head {
-  margin: 0 0 0.3rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+.revision-list-scroll::-webkit-scrollbar {
+  width: 8px;
 }
 
-.revision-group-count {
-  font-size: 0.66rem;
-  padding: 0.05rem 0.4rem;
+.revision-list-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 22%, transparent);
-  color: var(--text);
-  letter-spacing: 0.02em;
 }
 
-.revision-group-today .revision-group-head {
-  color: color-mix(in srgb, var(--accent) 85%, var(--text));
+.revision-list-scroll:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 44%, transparent);
+}
+
+.revision-date-pill {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.revision-date-pill-today {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+}
+
+.revision-date-pill-yesterday {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--accent) 78%, var(--text));
 }
 
 .revision-compare-summary {

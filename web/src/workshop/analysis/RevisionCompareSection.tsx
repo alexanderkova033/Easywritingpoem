@@ -36,13 +36,13 @@ export interface RevisionCompareSectionProps {
   compareDiffRows: LineDiffRow[];
 }
 
-type Bucket = "today" | "yesterday" | "earlier";
-
 interface RowMeta {
   snap: RevisionSnapshot;
   snippet: string;
   deltaLines: number | null;
   deltaWords: number | null;
+  datePill: string;
+  dateTone: "today" | "yesterday" | "older";
 }
 
 function lineCount(body: string): number {
@@ -62,29 +62,56 @@ function buildSnippet(body: string): string {
   return flat.length > 32 ? flat.slice(0, 32).trimEnd() + "…" : flat;
 }
 
-function bucketOf(iso: string): Bucket {
+function datePillFor(iso: string): {
+  label: string;
+  tone: "today" | "yesterday" | "older";
+} {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "earlier";
+  if (Number.isNaN(d.getTime())) return { label: "", tone: "older" };
   const now = new Date();
   const sameDay =
     d.getFullYear() === now.getFullYear() &&
     d.getMonth() === now.getMonth() &&
     d.getDate() === now.getDate();
-  if (sameDay) return "today";
+  if (sameDay) return { label: "Today", tone: "today" };
   const y = new Date(now);
   y.setDate(y.getDate() - 1);
   const isYesterday =
     d.getFullYear() === y.getFullYear() &&
     d.getMonth() === y.getMonth() &&
     d.getDate() === y.getDate();
-  if (isYesterday) return "yesterday";
-  return "earlier";
+  if (isYesterday) return { label: "Yesterday", tone: "yesterday" };
+  const sameYear = d.getFullYear() === now.getFullYear();
+  const label = sameYear
+    ? d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : d.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+  return { label, tone: "older" };
 }
 
-function fmtDelta(n: number | null): string | null {
-  if (n == null) return null;
-  if (n === 0) return "±0";
-  return n > 0 ? `+${n}` : `${n}`;
+function fmtSignedCount(n: number, singular: string, plural: string): string {
+  const sign = n > 0 ? "+" : "−";
+  const abs = Math.abs(n);
+  return `${sign}${abs} ${abs === 1 ? singular : plural}`;
+}
+
+function deltaPhrase(
+  deltaLines: number | null,
+  deltaWords: number | null,
+): string | null {
+  if (deltaLines == null && deltaWords == null) return null;
+  const parts: string[] = [];
+  if (deltaLines != null && deltaLines !== 0) {
+    parts.push(fmtSignedCount(deltaLines, "line", "lines"));
+  }
+  if (deltaWords != null && deltaWords !== 0) {
+    parts.push(fmtSignedCount(deltaWords, "word", "words"));
+  }
+  if (parts.length === 0) return "no change";
+  return parts.join(" · ");
 }
 
 export function RevisionCompareSection(props: RevisionCompareSectionProps) {
@@ -124,24 +151,17 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
       const deltaWords = older
         ? wordCount(s.body) - wordCount(older.body)
         : null;
+      const pill = datePillFor(s.createdAt);
       return {
         snap: s,
         snippet: buildSnippet(s.body),
         deltaLines,
         deltaWords,
+        datePill: pill.label,
+        dateTone: pill.tone,
       };
     });
   }, [revisions]);
-
-  const grouped = useMemo(() => {
-    const g: Record<Bucket, RowMeta[]> = {
-      today: [],
-      yesterday: [],
-      earlier: [],
-    };
-    for (const r of rowsMeta) g[bucketOf(r.snap.createdAt)].push(r);
-    return g;
-  }, [rowsMeta]);
 
   const flashStatus =
     snapshotFlash === true || snapshotFlash === "saved"
@@ -203,12 +223,25 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
 
   const renderSnapItem = (row: RowMeta) => {
     const s = row.snap;
-    const dLines = fmtDelta(row.deltaLines);
-    const dWords = fmtDelta(row.deltaWords);
+    const phrase = deltaPhrase(row.deltaLines, row.deltaWords);
+    const netSign =
+      (row.deltaLines ?? 0) + (row.deltaWords ?? 0) > 0
+        ? "pos"
+        : (row.deltaLines ?? 0) + (row.deltaWords ?? 0) < 0
+          ? "neg"
+          : "zero";
     return (
       <li key={s.id} className="revision-list-item revision-list-item-compact">
         <div className="revision-row-main">
           {renderRowControls(s)}
+          {row.datePill ? (
+            <span
+              className={`revision-date-pill revision-date-pill-${row.dateTone}`}
+              title={formatSnapshotWhen(s.createdAt)}
+            >
+              {row.datePill}
+            </span>
+          ) : null}
           <span
             className="revision-when"
             title={formatSnapshotWhen(s.createdAt)}
@@ -224,37 +257,12 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
           >
             {row.snippet}
           </span>
-          {dLines || dWords ? (
+          {phrase ? (
             <span
-              className="revision-delta"
-              aria-label="Change since previous snapshot"
+              className={`revision-change-note revision-change-${netSign}`}
+              title="Change since previous snapshot"
             >
-              {dLines ? (
-                <span
-                  className={`revision-delta-chunk${
-                    (row.deltaLines ?? 0) > 0
-                      ? " is-pos"
-                      : (row.deltaLines ?? 0) < 0
-                        ? " is-neg"
-                        : ""
-                  }`}
-                >
-                  {dLines}L
-                </span>
-              ) : null}
-              {dWords ? (
-                <span
-                  className={`revision-delta-chunk${
-                    (row.deltaWords ?? 0) > 0
-                      ? " is-pos"
-                      : (row.deltaWords ?? 0) < 0
-                        ? " is-neg"
-                        : ""
-                  }`}
-                >
-                  {dWords}w
-                </span>
-              ) : null}
+              {phrase}
             </span>
           ) : null}
         </div>
@@ -460,26 +468,8 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
       {revisions.length === 0 ? (
         <p className="muted small">No snapshots yet.</p>
       ) : (
-        <div className="revision-groups">
-          {(["today", "yesterday", "earlier"] as Bucket[]).map((b) => {
-            const items = grouped[b];
-            if (items.length === 0) return null;
-            const heading =
-              b === "today"
-                ? "Today"
-                : b === "yesterday"
-                  ? "Yesterday"
-                  : "Earlier";
-            return (
-              <section key={b} className={`revision-group revision-group-${b}`}>
-                <h5 className="revision-group-head">
-                  {heading}
-                  <span className="revision-group-count">{items.length}</span>
-                </h5>
-                <ul className="revision-list">{items.map(renderSnapItem)}</ul>
-              </section>
-            );
-          })}
+        <div className="revision-list-scroll">
+          <ul className="revision-list">{rowsMeta.map(renderSnapItem)}</ul>
         </div>
       )}
 
