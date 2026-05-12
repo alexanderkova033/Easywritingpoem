@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, type PointerEvent as ReactPointerEvent } from "react";
 import "./BackgroundPicker.css";
 import {
   BACKGROUND_OPTIONS,
@@ -161,6 +161,27 @@ export function BackgroundPicker(props: {
     setRecents(loadRecents());
   }, [appearance, onChange]);
 
+  // Distinguish a tap from a touch-drag-to-scroll. Touch users on tablets
+  // would otherwise pick a background every time they tried to scroll the
+  // modal by dragging on a card.
+  const tapDragRef = useRef<{ y: number; x: number; moved: boolean } | null>(null);
+  const tapHandlers = (run: () => void) => ({
+    onPointerDown: (e: ReactPointerEvent) => {
+      tapDragRef.current = { y: e.clientY, x: e.clientX, moved: false };
+    },
+    onPointerMove: (e: ReactPointerEvent) => {
+      const s = tapDragRef.current;
+      if (!s) return;
+      if (Math.abs(e.clientY - s.y) > 8 || Math.abs(e.clientX - s.x) > 8) s.moved = true;
+    },
+    onPointerCancel: () => { tapDragRef.current = null; },
+    onClick: () => {
+      const moved = tapDragRef.current?.moved;
+      tapDragRef.current = null;
+      if (!moved) run();
+    },
+  });
+
   const recentOptions = recents
     .map((id) => PRESET_OPTIONS.find((o) => o.id === id))
     .filter(Boolean) as typeof PRESET_OPTIONS;
@@ -180,7 +201,7 @@ export function BackgroundPicker(props: {
                   role="radio"
                   aria-checked={selected}
                   className={`bg-picker-recent-btn ${selected ? "is-selected" : ""}`}
-                  onClick={() => handleSelect(o.id)}
+                  {...tapHandlers(() => handleSelect(o.id))}
                   title={o.label}
                 >
                   <span className={`bg-picker-swatch bg-picker-swatch--${o.id}`} aria-hidden />
@@ -202,7 +223,7 @@ export function BackgroundPicker(props: {
               role="radio"
               aria-checked={selected}
               className={`bg-picker-card ${selected ? "is-selected" : ""}`}
-              onClick={() => handleSelect(o.id)}
+              {...tapHandlers(() => handleSelect(o.id))}
             >
               <span className={`bg-picker-swatch bg-picker-swatch--${o.id}`} aria-hidden />
               <span className="bg-picker-glyph" aria-hidden>{o.glyph}</span>

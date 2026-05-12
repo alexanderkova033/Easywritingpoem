@@ -95,6 +95,11 @@ function deriveAiHighlights(poemId: string | undefined): {
   };
 }
 
+const IS_TOUCH_DEVICE =
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 export function PoemWorkshop() {
   const [rhymeBreadth, setRhymeBreadth] = useState<RhymeBreadth>(() => {
     try {
@@ -2202,7 +2207,7 @@ export function PoemWorkshop() {
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
                       lineFocusMode={isFocusMode ? (lineFocusMode ? "line" : "stanza") : lineFocusMode}
-                      typewriterScroll={isFocusMode}
+                      typewriterScroll={isFocusMode && !IS_TOUCH_DEVICE}
                       onSelectionText={(text, rect) => {
                         setSelectionText(text);
                         setSelectionRect(rect);

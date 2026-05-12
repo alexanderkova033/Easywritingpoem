@@ -32,6 +32,7 @@
   font: inherit;
   font-size: 0.82rem;
   cursor: pointer;
+  touch-action: pan-y;
   transition: border-color 0.14s, background 0.14s;
 }
 
@@ -71,6 +72,9 @@
   color: var(--text);
   cursor: pointer;
   font: inherit;
+  /* Allow native vertical scrolling on touch — a touch-drag down should
+     scroll the modal, not pick a background. */
+  touch-action: pan-y;
   transition:
     border-color 0.15s ease,
     background 0.15s ease,
