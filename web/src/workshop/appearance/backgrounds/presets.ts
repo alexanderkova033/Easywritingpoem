@@ -17,6 +17,7 @@ export const BACKGROUND_OPTIONS = [
   { id: "summer",    label: "Summer",        blurb: "Clear sky, golden sun, bright open air.",                         glyph: "⊙"  },
   { id: "rain",      label: "Rainy day",     blurb: "Streaking droplets, wet reflections, grey overcast.",             glyph: "⌁"  },
   { id: "park",      label: "Park afternoon",blurb: "Dappled light, green canopy, warm afternoon air.",                glyph: "⊛"  },
+  { id: "dark",      label: "Dark",          blurb: "Word-style dark workspace: flat charcoal desk, page silhouette.", glyph: "■"  },
   { id: "custom",    label: "Custom",        blurb: "Your generated backdrop.",                                        glyph: "✦"  },
 ] as const;
 

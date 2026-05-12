@@ -614,7 +614,8 @@
 .tools-scroll-body {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  min-width: 0;
+  overflow: hidden auto;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) transparent;
@@ -6698,6 +6699,7 @@
 
 .rep-subtab {
   flex: 1 1 0;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;

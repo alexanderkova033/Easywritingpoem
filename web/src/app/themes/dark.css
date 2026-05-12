@@ -1,0 +1,78 @@
+html[data-workshop-bg="dark"] {
+  color-scheme: dark;
+  --bg: #1f1f1f;
+  --surface: #2d2d2d;
+  --surface-2: #383838;
+  --surface-elevated: #404040;
+  --border: #4a4a4a;
+  --text: #ededed;
+  --muted: #a0a0a0;
+  --accent: #4a9eff;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 30%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #e07070;
+  --net-line: rgba(255, 255, 255, 0.025);
+  --ambient-a: rgba(255, 255, 255, 0.018);
+  --ambient-b: rgba(255, 255, 255, 0.012);
+  --ambient-c: rgba(255, 255, 255, 0.015);
+  --ambient-d: rgba(0, 0, 0, 0.10);
+  --shine-top: rgba(255, 255, 255, 0.03);
+  --shine-mid: rgba(255, 255, 255, 0.015);
+  --after-opacity: 0.55;
+  --shadow-1: 0 2px 8px color-mix(in srgb, #000 40%, transparent);
+  --shadow-2: 0 4px 14px color-mix(in srgb, #000 50%, transparent);
+  --shadow-3: 0 10px 32px color-mix(in srgb, #000 60%, transparent);
+}
+
+/* Word-style dark workspace: flat dark grey desk, faint document page centered. */
+html[data-workshop-bg="dark"] body::before {
+  background-image:
+    radial-gradient(ellipse 140% 90% at 50% 0%, var(--ambient-a), transparent 65%),
+    radial-gradient(ellipse 120% 80% at 50% 100%, var(--ambient-d), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='620' viewBox='0 0 480 620'%3E%3Crect x='80' y='40' width='320' height='560' rx='2' fill='%232d2d2d' stroke='%23484848' stroke-width='1'/%3E%3Crect x='80' y='40' width='320' height='3' fill='%23404040'/%3E%3C/svg%3E");
+  background-size:
+    150% 150%,
+    150% 150%,
+    480px 620px;
+  background-position:
+    50% 0%,
+    50% 100%,
+    center center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  animation: none;
+}
+
+/* Slow ambient color drift — green/blue/purple/teal tint pools shifting across desk. */
+html[data-workshop-bg="dark"]::after {
+  background-image:
+    radial-gradient(ellipse 70% 55% at 20% 25%, color-mix(in srgb, #3aa970 24%, transparent), transparent 70%),
+    radial-gradient(ellipse 65% 50% at 82% 30%, color-mix(in srgb, #4a9eff 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 75% 60% at 30% 82%, color-mix(in srgb, #a070e8 20%, transparent), transparent 72%),
+    radial-gradient(ellipse 60% 50% at 78% 78%, color-mix(in srgb, #2cb0c8 22%, transparent), transparent 70%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: var(--after-opacity);
+  animation: dark-ambient-drift 90s ease-in-out infinite;
+}
+
+@keyframes dark-ambient-drift {
+  0%   { filter: hue-rotate(0deg);   opacity: 0.55; }
+  12%  { filter: hue-rotate(30deg);  opacity: 0.60; }
+  22%  { filter: hue-rotate(45deg);  opacity: 0;    }
+  30%  { filter: hue-rotate(60deg);  opacity: 0;    }
+  42%  { filter: hue-rotate(-20deg); opacity: 0.55; }
+  55%  { filter: hue-rotate(-40deg); opacity: 0.50; }
+  64%  { filter: hue-rotate(-10deg); opacity: 0;    }
+  72%  { filter: hue-rotate(20deg);  opacity: 0;    }
+  85%  { filter: hue-rotate(50deg);  opacity: 0.58; }
+  100% { filter: hue-rotate(0deg);   opacity: 0.55; }
+}
+
+html[data-backdrop-motion="off"][data-workshop-bg="dark"]::after {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-workshop-bg="dark"]::after { animation: none; }
+}

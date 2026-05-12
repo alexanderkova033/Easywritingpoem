@@ -45,8 +45,6 @@ html[data-workshop-bg="ocean"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='28'%3E%3Cpath fill='none' stroke='%2380d8f0' stroke-opacity='0.16' stroke-width='0.7' d='M0 14 Q20 4 40 14 Q60 24 80 14'/%3E%3Cpath fill='none' stroke='%2360c8e0' stroke-opacity='0.09' stroke-width='0.5' d='M0 22 Q20 14 40 22 Q60 30 80 22'/%3E%3C/svg%3E"),
     /* Hero: whale silhouette mid-distance */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='240' viewBox='0 0 480 240'%3E%3Cpath fill='%23061824' fill-opacity='0.55' d='M60 130 Q80 110 130 108 Q190 104 260 110 Q330 116 388 122 Q420 126 432 134 Q420 136 410 134 L406 138 Q408 144 404 148 Q396 152 388 148 Q382 144 386 138 Q370 138 358 140 Q320 144 268 142 Q210 140 162 138 Q120 136 90 142 Q74 144 64 148 Q54 152 46 148 Q42 144 50 138 Q56 134 60 130 Z'/%3E%3Cellipse cx='106' cy='124' rx='1.6' ry='1.6' fill='%23000' fill-opacity='0.5'/%3E%3Cpath fill='%23061824' fill-opacity='0.50' d='M428 130 Q444 122 458 126 Q470 132 462 142 Q452 152 438 144 Q424 138 428 130 Z'/%3E%3Cpath fill='%2390d0e8' fill-opacity='0.20' d='M138 108 Q140 100 144 96 Q142 100 142 108 Q146 100 152 96 Q148 102 148 110'/%3E%3C/svg%3E"),
-    /* Hero: jellyfish drifting upper-right */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='320' viewBox='0 0 200 320'%3E%3Cpath fill='%23a0e0f8' fill-opacity='0.16' d='M50 90 Q50 50 100 50 Q150 50 150 90 Q150 110 142 118 Q132 110 130 122 Q118 110 112 124 Q102 112 100 126 Q88 112 84 124 Q72 112 70 122 Q60 110 50 118 Q50 110 50 90 Z'/%3E%3Cpath fill='none' stroke='%23a0e0f8' stroke-opacity='0.22' stroke-width='0.8' stroke-linecap='round' d='M68 122 Q70 180 60 234 Q56 264 64 290 M88 124 Q90 186 80 240 Q76 268 84 296 M102 126 Q104 188 96 244 Q92 270 100 298 M118 124 Q120 184 112 238 Q108 266 116 294 M134 122 Q136 178 128 232 Q124 260 132 288'/%3E%3Cpath fill='none' stroke='%23c0e8fa' stroke-opacity='0.20' stroke-width='1.4' d='M62 50 Q92 26 100 22 Q108 26 138 50'/%3E%3Cellipse cx='100' cy='80' rx='28' ry='4' fill='%23ffffff' fill-opacity='0.12'/%3E%3C/svg%3E"),
     /* Bubble streams (low corners) */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='340'%3E%3Cg fill='none' stroke='%2370d8f0' stroke-opacity='0.30'%3E%3Ccircle cx='22' cy='320' r='2.6' stroke-width='0.7'/%3E%3Ccircle cx='30' cy='290' r='1.8' stroke-width='0.6'/%3E%3Ccircle cx='40' cy='258' r='1.2' stroke-width='0.5'/%3E%3Ccircle cx='34' cy='226' r='1.6' stroke-width='0.6'/%3E%3Ccircle cx='44' cy='190' r='1.0' stroke-width='0.45'/%3E%3Ccircle cx='38' cy='160' r='0.8' stroke-width='0.4'/%3E%3Ccircle cx='52' cy='128' r='1.2' stroke-width='0.45'/%3E%3Ccircle cx='46' cy='96' r='0.7' stroke-width='0.4'/%3E%3Ccircle cx='160' cy='318' r='2.0' stroke-width='0.6'/%3E%3Ccircle cx='168' cy='284' r='1.4' stroke-width='0.5'/%3E%3Ccircle cx='160' cy='248' r='1.0' stroke-width='0.45'/%3E%3Ccircle cx='172' cy='212' r='1.6' stroke-width='0.55'/%3E%3Ccircle cx='162' cy='176' r='0.9' stroke-width='0.4'/%3E%3Ccircle cx='174' cy='140' r='1.1' stroke-width='0.45'/%3E%3Ccircle cx='168' cy='104' r='0.7' stroke-width='0.4'/%3E%3C/g%3E%3C/svg%3E"),
     /* Kelp swaying */
@@ -59,7 +57,6 @@ html[data-workshop-bg="ocean"] body::before {
     100% 100%,
     80px 28px,
     480px 240px,
-    200px 320px,
     200px 340px,
     100px 320px;
   background-position:
@@ -70,7 +67,6 @@ html[data-workshop-bg="ocean"] body::before {
     0 0,
     0 30%,
     20% 44%,
-    82% 18%,
     50% 100%,
     50% 100%;
   background-repeat:
@@ -81,19 +77,26 @@ html[data-workshop-bg="ocean"] body::before {
     repeat,
     repeat,
     no-repeat,
-    no-repeat,
     repeat-x,
     repeat-x;
 }
 
-/* Ocean: caustic light shimmer + bioluminescent pulse */
+/* Ocean: jellyfish school + caustic shimmer */
 html[data-workshop-bg="ocean"]::after {
   background-image:
-    radial-gradient(ellipse 60% 18% at 50% 4%, rgba(140, 230, 255, 0.18), transparent 100%),
-    radial-gradient(ellipse 30% 10% at 30% 6%, rgba(180, 240, 255, 0.14), transparent 100%),
-    radial-gradient(ellipse 24% 8% at 70% 8%, rgba(160, 230, 255, 0.12), transparent 100%);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+    /* Hero jellyfish — large, bright, mid-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='480' viewBox='0 0 320 480'%3E%3Cdefs%3E%3CradialGradient id='jgA' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23e0f8ff' stop-opacity='0.95'/%3E%3Cstop offset='40%25' stop-color='%23a0e8ff' stop-opacity='0.65'/%3E%3Cstop offset='100%25' stop-color='%2360c8f0' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='jgB' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23fff0ff' stop-opacity='0.85'/%3E%3Cstop offset='40%25' stop-color='%23ffb8e8' stop-opacity='0.55'/%3E%3Cstop offset='100%25' stop-color='%23d068b8' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='jgC' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23e8ffe0' stop-opacity='0.80'/%3E%3Cstop offset='40%25' stop-color='%2398f0c8' stroke-opacity='0.55'/%3E%3Cstop offset='100%25' stop-color='%2350c890' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3C!-- Large jellyfish (cyan-white) center --%3E%3Cg transform='translate(160 130)'%3E%3Cellipse cx='0' cy='0' rx='90' ry='40' fill='url(%23jgA)'/%3E%3Cpath fill='%23c0f0ff' fill-opacity='0.78' d='M-70 -8 Q-70 -56 0 -60 Q70 -56 70 -8 Q70 18 60 28 Q44 14 38 32 Q22 14 14 34 Q0 14 -6 36 Q-22 14 -28 32 Q-44 14 -54 28 Q-70 18 -70 -8 Z'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='1.2' d='M-70 -10 Q-70 -50 0 -54 Q70 -50 70 -10'/%3E%3Cellipse cx='0' cy='-22' rx='38' ry='10' fill='%23ffffff' fill-opacity='0.55'/%3E%3Cg fill='none' stroke='%23a0e0f8' stroke-opacity='0.78' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M-54 30 Q-50 90 -64 150 Q-72 200 -56 250 Q-44 290 -60 330'/%3E%3Cpath d='M-28 34 Q-22 96 -34 156 Q-44 206 -28 256 Q-14 296 -30 336'/%3E%3Cpath d='M-6 38 Q0 102 -10 162 Q-20 212 -4 262 Q10 302 -6 342'/%3E%3Cpath d='M14 36 Q20 98 8 158 Q-2 208 14 258 Q28 298 12 338'/%3E%3Cpath d='M38 34 Q44 96 32 156 Q22 206 38 256 Q52 296 36 336'/%3E%3Cpath d='M60 30 Q66 90 54 150 Q44 200 60 250 Q74 290 58 330'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    /* Second jellyfish (pink) upper-left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='360' viewBox='0 0 240 360'%3E%3Cdefs%3E%3CradialGradient id='jpink' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23fff0fa' stop-opacity='0.85'/%3E%3Cstop offset='40%25' stop-color='%23ffb8e8' stop-opacity='0.55'/%3E%3Cstop offset='100%25' stop-color='%23d068b8' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg transform='translate(120 90)'%3E%3Cellipse cx='0' cy='0' rx='62' ry='28' fill='url(%23jpink)'/%3E%3Cpath fill='%23ffc0e8' fill-opacity='0.72' d='M-48 -6 Q-48 -40 0 -42 Q48 -40 48 -6 Q48 14 42 22 Q30 10 26 24 Q14 10 8 26 Q0 10 -6 26 Q-16 10 -22 24 Q-32 10 -42 22 Q-48 14 -48 -6 Z'/%3E%3Cellipse cx='0' cy='-16' rx='26' ry='7' fill='%23ffffff' fill-opacity='0.50'/%3E%3Cg fill='none' stroke='%23ffb8e0' stroke-opacity='0.78' stroke-width='1.3' stroke-linecap='round'%3E%3Cpath d='M-38 22 Q-36 70 -46 118 Q-52 158 -40 198 Q-28 230 -42 264'/%3E%3Cpath d='M-18 24 Q-14 76 -22 124 Q-30 162 -18 200 Q-6 232 -20 266'/%3E%3Cpath d='M4 26 Q8 78 0 126 Q-8 164 6 202 Q18 234 4 268'/%3E%3Cpath d='M24 24 Q28 76 20 124 Q12 162 26 200 Q38 232 24 266'/%3E%3Cpath d='M42 22 Q44 72 36 120 Q28 160 42 198 Q54 230 40 264'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    /* Third small jellyfish (green) right edge */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='280' viewBox='0 0 180 280'%3E%3Cdefs%3E%3CradialGradient id='jgrn' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23e8ffe0' stop-opacity='0.78'/%3E%3Cstop offset='40%25' stop-color='%2398f0c8' stop-opacity='0.50'/%3E%3Cstop offset='100%25' stop-color='%2350c890' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg transform='translate(90 80)'%3E%3Cellipse cx='0' cy='0' rx='48' ry='22' fill='url(%23jgrn)'/%3E%3Cpath fill='%23b8f0d0' fill-opacity='0.68' d='M-38 -5 Q-38 -32 0 -34 Q38 -32 38 -5 Q38 12 32 18 Q22 8 18 22 Q10 8 4 22 Q-4 8 -10 22 Q-18 8 -24 18 Q-34 8 -38 -5 Z'/%3E%3Cellipse cx='0' cy='-12' rx='22' ry='6' fill='%23ffffff' fill-opacity='0.45'/%3E%3Cg fill='none' stroke='%2398e8c0' stroke-opacity='0.70' stroke-width='1.1' stroke-linecap='round'%3E%3Cpath d='M-30 18 Q-28 60 -36 102 Q-42 138 -32 172'/%3E%3Cpath d='M-12 20 Q-8 64 -16 108 Q-24 142 -12 174'/%3E%3Cpath d='M8 22 Q12 66 4 110 Q-4 144 10 176'/%3E%3Cpath d='M28 20 Q30 62 22 104 Q14 140 28 172'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+    /* Caustic light shimmer at surface */
+    radial-gradient(ellipse 60% 18% at 50% 4%, rgba(140, 230, 255, 0.22), transparent 100%),
+    radial-gradient(ellipse 30% 10% at 30% 6%, rgba(180, 240, 255, 0.18), transparent 100%),
+    radial-gradient(ellipse 24% 8% at 70% 8%, rgba(160, 230, 255, 0.16), transparent 100%);
+  background-size: 320px 480px, 240px 360px, 180px 280px, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 78% 42%, 14% 22%, 96% 70%, 0 0, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
   animation: ocean-caustic 14s ease-in-out infinite alternate;

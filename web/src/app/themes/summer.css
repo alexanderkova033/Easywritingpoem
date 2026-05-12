@@ -1,25 +1,25 @@
-/* ---- Summer: bright sky, golden sun ---- */
+/* ---- Summer: bright sky over sunflower field ---- */
 html[data-workshop-bg="summer"] {
   color-scheme: light;
-  --bg: #e8f4fb;
-  --surface: #f4fbff;
-  --surface-2: #eef8fc;
+  --bg: #d9eefb;
+  --surface: #f0faff;
+  --surface-2: #e6f3fc;
   --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
-  --border: #b8d8ec;
-  --text: #0c1726;
-  --muted: #4a6880;
-  --accent: #1872b8;
+  --border: #a8d0ea;
+  --text: #0a1424;
+  --muted: #406480;
+  --accent: #1a82c8;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
-  --selection-bg: color-mix(in srgb, var(--accent) 16%, #c8e0f4);
+  --selection-bg: color-mix(in srgb, var(--accent) 18%, #c0dcf4);
   --selection-fg: var(--text);
   --danger: #c0321e;
-  --net-line: rgba(24, 114, 184, 0.038);
-  --ambient-a: rgba(40, 145, 210, 0.060);
-  --ambient-b: rgba(28, 105, 165, 0.048);
-  --ambient-c: rgba(55, 170, 225, 0.052);
-  --ambient-d: rgba(20, 80, 140, 0.038);
-  --shine-top: rgba(255, 255, 255, 0.50);
-  --shine-mid: rgba(100, 180, 230, 0.040);
+  --net-line: rgba(24, 114, 184, 0.045);
+  --ambient-a: rgba(60, 165, 230, 0.085);
+  --ambient-b: rgba(35, 120, 185, 0.065);
+  --ambient-c: rgba(80, 190, 240, 0.075);
+  --ambient-d: rgba(30, 100, 160, 0.055);
+  --shine-top: rgba(255, 255, 255, 0.55);
+  --shine-mid: rgba(120, 195, 235, 0.055);
   --after-blend: multiply;
   --after-opacity: 0.30;
   --after-animation: studio-light-soft 55s ease-in-out infinite alternate;
@@ -27,69 +27,67 @@ html[data-workshop-bg="summer"] {
   --shadow-2: 0 3px 14px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 20%, transparent);
 }
+
 html[data-workshop-bg="summer"] body::before {
   animation: ambient-drift 160s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 200% 130% at 5% 10%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 200% 130% at 95% 75%, var(--ambient-b), transparent 70%),
-    /* Deep sky blue zenith */
-    radial-gradient(ellipse 120% 70% at 45% 0%, color-mix(in srgb, #3898d8 26%, transparent), transparent 65%),
-    /* Bright sun halo */
-    radial-gradient(ellipse 75% 55% at 86% 2%, color-mix(in srgb, #ffd840 24%, transparent), transparent 58%),
+    /* Crisp sky-blue zenith */
+    radial-gradient(ellipse 140% 80% at 50% 0%, color-mix(in srgb, #2a90d8 36%, transparent), transparent 65%),
+    /* Soft sun glow centered, stays within frame */
+    radial-gradient(ellipse 35% 24% at 78% 14%, color-mix(in srgb, #ffd840 35%, transparent), transparent 58%),
+    radial-gradient(ellipse 14% 10% at 78% 14%, color-mix(in srgb, #fff8a0 50%, transparent), transparent 60%),
     /* Horizon haze */
-    radial-gradient(ellipse 140% 35% at 50% 52%, color-mix(in srgb, #c8e8ff 16%, transparent), transparent 60%),
-    /* Bright green meadow ground */
-    radial-gradient(ellipse 140% 55% at 50% 100%, color-mix(in srgb, #68bc38 22%, transparent), transparent 55%),
-    radial-gradient(ellipse 90% 22% at 50% 100%, color-mix(in srgb, #4a9a28 18%, transparent), transparent 55%),
-    /* Sun disc with lens flare halo */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Ccircle cx='220' cy='52' r='28' fill='%23fff2a0' fill-opacity='0.55'/%3E%3Ccircle cx='220' cy='52' r='42' fill='%23ffd840' fill-opacity='0.28'/%3E%3Ccircle cx='220' cy='52' r='66' fill='%23ffe060' fill-opacity='0.14'/%3E%3Ccircle cx='220' cy='52' r='100' fill='%23fff080' fill-opacity='0.06'/%3E%3Cg stroke='%23fff080' stroke-opacity='0.32' stroke-width='1.2' stroke-linecap='round'%3E%3Cline x1='220' y1='8' x2='220' y2='28'/%3E%3Cline x1='220' y1='76' x2='220' y2='96'/%3E%3Cline x1='176' y1='52' x2='196' y2='52'/%3E%3Cline x1='244' y1='52' x2='264' y2='52'/%3E%3Cline x1='190' y1='22' x2='200' y2='32'/%3E%3Cline x1='240' y1='72' x2='250' y2='82'/%3E%3Cline x1='190' y1='82' x2='200' y2='72'/%3E%3Cline x1='240' y1='32' x2='250' y2='22'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Cumulus cloud bank */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='200' viewBox='0 0 480 200'%3E%3Cg fill='%23ffffff'%3E%3Cellipse cx='80' cy='62' rx='62' ry='18' fill-opacity='0.45'/%3E%3Cellipse cx='62' cy='58' rx='32' ry='14' fill-opacity='0.50'/%3E%3Cellipse cx='105' cy='56' rx='36' ry='14' fill-opacity='0.48'/%3E%3Cellipse cx='90' cy='50' rx='24' ry='12' fill-opacity='0.42'/%3E%3Cellipse cx='248' cy='88' rx='72' ry='20' fill-opacity='0.42'/%3E%3Cellipse cx='220' cy='82' rx='30' ry='15' fill-opacity='0.46'/%3E%3Cellipse cx='268' cy='80' rx='38' ry='15' fill-opacity='0.46'/%3E%3Cellipse cx='304' cy='86' rx='28' ry='12' fill-opacity='0.40'/%3E%3Cellipse cx='400' cy='52' rx='52' ry='16' fill-opacity='0.40'/%3E%3Cellipse cx='386' cy='48' rx='26' ry='12' fill-opacity='0.44'/%3E%3Cellipse cx='418' cy='48' rx='28' ry='12' fill-opacity='0.42'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Birds silhouette in mid sky */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180' viewBox='0 0 320 180'%3E%3Cg fill='none' stroke='%23223a4a' stroke-opacity='0.48' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M40 50 Q48 42 56 50 Q64 42 72 50'/%3E%3Cpath d='M120 78 Q126 72 132 78 Q138 72 144 78'/%3E%3Cpath d='M210 58 Q218 50 226 58 Q234 50 242 58'/%3E%3Cpath d='M270 90 Q276 84 282 90 Q288 84 294 90'/%3E%3Cpath d='M80 108 Q86 102 92 108 Q98 102 104 108'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Tall grass blades silhouette at ground */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='120' viewBox='0 0 320 120'%3E%3Cg fill='none' stroke='%23308828' stroke-opacity='0.32' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M14 120 Q18 95 14 70'/%3E%3Cpath d='M28 120 Q24 95 30 72'/%3E%3Cpath d='M48 120 Q50 92 44 64'/%3E%3Cpath d='M62 120 Q66 96 58 70'/%3E%3Cpath d='M82 120 Q78 98 86 76'/%3E%3Cpath d='M102 120 Q106 96 100 68'/%3E%3Cpath d='M124 120 Q120 92 128 66'/%3E%3Cpath d='M142 120 Q146 96 140 72'/%3E%3Cpath d='M168 120 Q164 98 172 76'/%3E%3Cpath d='M188 120 Q192 96 186 68'/%3E%3Cpath d='M208 120 Q204 90 212 64'/%3E%3Cpath d='M228 120 Q232 98 226 74'/%3E%3Cpath d='M252 120 Q248 96 256 70'/%3E%3Cpath d='M268 120 Q272 96 266 70'/%3E%3Cpath d='M288 120 Q284 92 292 66'/%3E%3Cpath d='M306 120 Q310 96 304 72'/%3E%3C/g%3E%3Cg fill='%23f0c828' fill-opacity='0.55'%3E%3Ccircle cx='48' cy='82' r='2.5'/%3E%3Ccircle cx='102' cy='86' r='2.2'/%3E%3Ccircle cx='168' cy='90' r='2.4'/%3E%3Ccircle cx='228' cy='84' r='2.2'/%3E%3Ccircle cx='306' cy='86' r='2.0'/%3E%3C/g%3E%3C/svg%3E");
+    radial-gradient(ellipse 140% 28% at 50% 58%, color-mix(in srgb, #d8eeff 20%, transparent), transparent 60%),
+    /* Sunflower field — yellow ground */
+    radial-gradient(ellipse 140% 48% at 50% 100%, color-mix(in srgb, #f0c020 28%, transparent), transparent 55%),
+    /* Green stems base */
+    radial-gradient(ellipse 130% 22% at 50% 100%, color-mix(in srgb, #4a9028 30%, transparent), transparent 55%),
+    /* Sunflower field repeating tile — many small flowers covering ground */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='200' viewBox='0 0 180 200'%3E%3Cg stroke='%232e6818' stroke-width='2' fill='none' stroke-linecap='round'%3E%3Cpath d='M28 200 Q26 160 28 124'/%3E%3Cpath d='M72 200 Q74 158 72 116'/%3E%3Cpath d='M118 200 Q116 164 118 130'/%3E%3Cpath d='M160 200 Q162 162 160 122'/%3E%3C/g%3E%3Cg stroke='%23388820' stroke-width='1.4' fill='%2358a830' fill-opacity='0.55' stroke-linejoin='round'%3E%3Cpath d='M28 158 Q14 152 10 142 Q22 144 30 152 Z'/%3E%3Cpath d='M72 152 Q86 146 90 136 Q78 138 70 146 Z'/%3E%3Cpath d='M118 168 Q104 162 100 152 Q112 154 120 162 Z'/%3E%3Cpath d='M160 156 Q174 150 178 140 Q166 142 158 150 Z'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='28' cy='124' r='14' fill='%23e8a818'/%3E%3Cg fill='%23ffc830'%3E%3Cellipse cx='28' cy='108' rx='5' ry='10'/%3E%3Cellipse cx='28' cy='140' rx='5' ry='10'/%3E%3Cellipse cx='12' cy='124' rx='10' ry='5'/%3E%3Cellipse cx='44' cy='124' rx='10' ry='5'/%3E%3Cellipse cx='17' cy='113' rx='8' ry='5' transform='rotate(-45 17 113)'/%3E%3Cellipse cx='39' cy='113' rx='8' ry='5' transform='rotate(45 39 113)'/%3E%3Cellipse cx='17' cy='135' rx='8' ry='5' transform='rotate(45 17 135)'/%3E%3Cellipse cx='39' cy='135' rx='8' ry='5' transform='rotate(-45 39 135)'/%3E%3C/g%3E%3Ccircle cx='28' cy='124' r='6' fill='%236a4818'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='72' cy='116' r='13' fill='%23e8a818'/%3E%3Cg fill='%23ffc830'%3E%3Cellipse cx='72' cy='100' rx='4.5' ry='9'/%3E%3Cellipse cx='72' cy='132' rx='4.5' ry='9'/%3E%3Cellipse cx='56' cy='116' rx='9' ry='4.5'/%3E%3Cellipse cx='88' cy='116' rx='9' ry='4.5'/%3E%3Cellipse cx='62' cy='106' rx='7' ry='4.5' transform='rotate(-45 62 106)'/%3E%3Cellipse cx='82' cy='106' rx='7' ry='4.5' transform='rotate(45 82 106)'/%3E%3Cellipse cx='62' cy='126' rx='7' ry='4.5' transform='rotate(45 62 126)'/%3E%3Cellipse cx='82' cy='126' rx='7' ry='4.5' transform='rotate(-45 82 126)'/%3E%3C/g%3E%3Ccircle cx='72' cy='116' r='5.5' fill='%236a4818'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='118' cy='130' r='14' fill='%23e8a818'/%3E%3Cg fill='%23ffc830'%3E%3Cellipse cx='118' cy='114' rx='5' ry='10'/%3E%3Cellipse cx='118' cy='146' rx='5' ry='10'/%3E%3Cellipse cx='102' cy='130' rx='10' ry='5'/%3E%3Cellipse cx='134' cy='130' rx='10' ry='5'/%3E%3Cellipse cx='107' cy='119' rx='8' ry='5' transform='rotate(-45 107 119)'/%3E%3Cellipse cx='129' cy='119' rx='8' ry='5' transform='rotate(45 129 119)'/%3E%3Cellipse cx='107' cy='141' rx='8' ry='5' transform='rotate(45 107 141)'/%3E%3Cellipse cx='129' cy='141' rx='8' ry='5' transform='rotate(-45 129 141)'/%3E%3C/g%3E%3Ccircle cx='118' cy='130' r='6' fill='%236a4818'/%3E%3C/g%3E%3Cg%3E%3Ccircle cx='160' cy='122' r='12' fill='%23e8a818'/%3E%3Cg fill='%23ffc830'%3E%3Cellipse cx='160' cy='108' rx='4' ry='8'/%3E%3Cellipse cx='160' cy='136' rx='4' ry='8'/%3E%3Cellipse cx='146' cy='122' rx='8' ry='4'/%3E%3Cellipse cx='174' cy='122' rx='8' ry='4'/%3E%3C/g%3E%3Ccircle cx='160' cy='122' r='5' fill='%236a4818'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Cumulus clouds across sky (multiple, smaller) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='240' viewBox='0 0 560 240'%3E%3Cg fill='%23ffffff'%3E%3Cellipse cx='60' cy='62' rx='44' ry='14' fill-opacity='0.78'/%3E%3Cellipse cx='44' cy='58' rx='24' ry='12' fill-opacity='0.82'/%3E%3Cellipse cx='82' cy='56' rx='28' ry='12' fill-opacity='0.80'/%3E%3Cellipse cx='68' cy='50' rx='18' ry='10' fill-opacity='0.74'/%3E%3Cellipse cx='198' cy='98' rx='52' ry='15' fill-opacity='0.72'/%3E%3Cellipse cx='180' cy='94' rx='24' ry='12' fill-opacity='0.78'/%3E%3Cellipse cx='220' cy='92' rx='28' ry='12' fill-opacity='0.76'/%3E%3Cellipse cx='350' cy='62' rx='40' ry='14' fill-opacity='0.74'/%3E%3Cellipse cx='332' cy='58' rx='22' ry='11' fill-opacity='0.78'/%3E%3Cellipse cx='368' cy='58' rx='24' ry='11' fill-opacity='0.76'/%3E%3Cellipse cx='480' cy='108' rx='48' ry='14' fill-opacity='0.70'/%3E%3Cellipse cx='462' cy='104' rx='22' ry='11' fill-opacity='0.74'/%3E%3Cellipse cx='500' cy='104' rx='26' ry='11' fill-opacity='0.72'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Birds (smaller flock, mid sky) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160' viewBox='0 0 320 160'%3E%3Cg fill='none' stroke='%23223a4a' stroke-opacity='0.65' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M40 50 Q46 44 52 50 Q58 44 64 50'/%3E%3Cpath d='M104 68 Q108 64 112 68 Q116 64 120 68'/%3E%3Cpath d='M158 48 Q164 42 170 48 Q176 42 182 48'/%3E%3Cpath d='M220 78 Q224 74 228 78 Q232 74 236 78'/%3E%3Cpath d='M276 56 Q282 50 288 56 Q294 50 300 56'/%3E%3Cpath d='M80 92 Q84 88 88 92 Q92 88 96 92'/%3E%3Cpath d='M192 100 Q196 96 200 100 Q204 96 208 100'/%3E%3C/g%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
-    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
-    280px 280px,
-    480px 200px,
-    320px 180px,
-    320px 120px;
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    180px 200px,
+    560px 240px,
+    320px 160px;
   background-position:
     0% 0%, 100% 100%,
-    0% 0%, 0% 0%, 0% 0%, 0% 0%, 0 0,
-    62% 2%,
-    18% 16%,
-    34% 38%,
-    50% 100%;
+    0% 0%, 0% 0%, 0% 0%, 0% 0%, 0 0, 0 0,
+    50% 100%,
+    0% 10%,
+    0% 28%;
   background-repeat:
     repeat, repeat,
-    repeat, repeat, repeat, repeat, repeat,
-    no-repeat,
+    repeat, repeat, repeat, repeat, repeat, repeat,
     repeat-x,
     repeat-x,
     repeat-x;
 }
 
-/* Summer: drifting clouds + heat shimmer */
+/* Summer: drifting clouds + butterflies */
 html[data-workshop-bg="summer"]::after {
   background-image:
-    /* Wispy drift clouds */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='240' viewBox='0 0 560 240'%3E%3Cg fill='%23ffffff' fill-opacity='0.36'%3E%3Cellipse cx='80' cy='62' rx='44' ry='12'/%3E%3Cellipse cx='66' cy='60' rx='20' ry='9'/%3E%3Cellipse cx='100' cy='58' rx='24' ry='9'/%3E%3Cellipse cx='280' cy='102' rx='52' ry='14'/%3E%3Cellipse cx='260' cy='98' rx='24' ry='10'/%3E%3Cellipse cx='306' cy='98' rx='28' ry='10'/%3E%3Cellipse cx='440' cy='52' rx='40' ry='12'/%3E%3Cellipse cx='420' cy='48' rx='20' ry='10'/%3E%3Cellipse cx='460' cy='48' rx='22' ry='10'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Drifting wispy clouds */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='180' viewBox='0 0 600 180'%3E%3Cg fill='%23ffffff' fill-opacity='0.50'%3E%3Cellipse cx='80' cy='42' rx='44' ry='11'/%3E%3Cellipse cx='66' cy='40' rx='20' ry='8'/%3E%3Cellipse cx='100' cy='38' rx='24' ry='9'/%3E%3Cellipse cx='280' cy='82' rx='52' ry='12'/%3E%3Cellipse cx='260' cy='78' rx='22' ry='9'/%3E%3Cellipse cx='306' cy='78' rx='26' ry='9'/%3E%3Cellipse cx='440' cy='42' rx='40' ry='11'/%3E%3Cellipse cx='420' cy='38' rx='20' ry='9'/%3E%3Cellipse cx='460' cy='38' rx='22' ry='9'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Butterflies sprinkled across */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='420' viewBox='0 0 480 420'%3E%3Cg transform='translate(82 88)' opacity='0.78'%3E%3Cpath fill='%23ff7028' d='M0 0 Q-9 -8 -13 -3 Q-15 4 -7 7 Q-2 5 0 0 Z'/%3E%3Cpath fill='%23ffae50' d='M0 0 Q-7 5 -11 12 Q-9 18 -2 14 Q1 11 0 0 Z'/%3E%3Cpath fill='%23ff7028' d='M0 0 Q9 -8 13 -3 Q15 4 7 7 Q2 5 0 0 Z'/%3E%3Cpath fill='%23ffae50' d='M0 0 Q7 5 11 12 Q9 18 2 14 Q-1 11 0 0 Z'/%3E%3Cline x1='0' y1='-2' x2='0' y2='8' stroke='%23301414' stroke-width='1'/%3E%3C/g%3E%3Cg transform='translate(260 158) scale(0.85)' opacity='0.72'%3E%3Cpath fill='%231a82c8' d='M0 0 Q-9 -8 -13 -3 Q-15 4 -7 7 Q-2 5 0 0 Z'/%3E%3Cpath fill='%2360b0e0' d='M0 0 Q-7 5 -11 12 Q-9 18 -2 14 Q1 11 0 0 Z'/%3E%3Cpath fill='%231a82c8' d='M0 0 Q9 -8 13 -3 Q15 4 7 7 Q2 5 0 0 Z'/%3E%3Cpath fill='%2360b0e0' d='M0 0 Q7 5 11 12 Q9 18 2 14 Q-1 11 0 0 Z'/%3E%3C/g%3E%3Cg transform='translate(396 268) scale(0.78)' opacity='0.70'%3E%3Cpath fill='%23c83878' d='M0 0 Q-9 -8 -13 -3 Q-15 4 -7 7 Q-2 5 0 0 Z'/%3E%3Cpath fill='%23ef8aaa' d='M0 0 Q-7 5 -11 12 Q-9 18 -2 14 Q1 11 0 0 Z'/%3E%3Cpath fill='%23c83878' d='M0 0 Q9 -8 13 -3 Q15 4 7 7 Q2 5 0 0 Z'/%3E%3Cpath fill='%23ef8aaa' d='M0 0 Q7 5 11 12 Q9 18 2 14 Q-1 11 0 0 Z'/%3E%3C/g%3E%3Cg transform='translate(152 308) scale(0.72)' opacity='0.66'%3E%3Cpath fill='%23ffae50' d='M0 0 Q-9 -8 -13 -3 Q-15 4 -7 7 Q-2 5 0 0 Z'/%3E%3Cpath fill='%23ffd070' d='M0 0 Q-7 5 -11 12 Q-9 18 -2 14 Q1 11 0 0 Z'/%3E%3Cpath fill='%23ffae50' d='M0 0 Q9 -8 13 -3 Q15 4 7 7 Q2 5 0 0 Z'/%3E%3Cpath fill='%23ffd070' d='M0 0 Q7 5 11 12 Q9 18 2 14 Q-1 11 0 0 Z'/%3E%3C/g%3E%3C/svg%3E"),
     /* Hazy horizon band */
-    linear-gradient(transparent 50%, color-mix(in srgb, #c8e8ff 8%, transparent) 60%, color-mix(in srgb, #c8e8ff 5%, transparent) 68%, transparent 78%);
-  background-size: 560px 240px, 100% 100%;
-  background-position: 0 14%, 0 0;
-  background-repeat: repeat-x, no-repeat;
-  mix-blend-mode: screen;
+    linear-gradient(transparent 50%, color-mix(in srgb, #d8eeff 10%, transparent) 60%, color-mix(in srgb, #d8eeff 6%, transparent) 68%, transparent 78%);
+  background-size: 600px 180px, 480px 420px, 100% 100%;
+  background-position: 0 14%, 0 0, 0 0;
+  background-repeat: repeat-x, repeat, no-repeat;
+  mix-blend-mode: normal;
   opacity: 1;
   animation: summer-clouds 180s linear infinite;
 }
 
 @keyframes summer-clouds {
   0%   { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-12%, 0, 0); }
+  100% { transform: translate3d(-10%, 0, 0); }
 }
-
-/* Summer body::after uses shared backdrop vars */

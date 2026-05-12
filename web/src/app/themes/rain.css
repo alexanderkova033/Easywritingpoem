@@ -102,19 +102,24 @@ html[data-workshop-bg="rain"] body::before {
     repeat;
 }
 
-/* Rain: pulsing lamp puddles + splash ripples on wet ground */
+/* Rain: lit street lamps, bright splash ripples, puddle reflections */
 html[data-workshop-bg="rain"]::after {
   background-image:
-    /* Splash ripple dots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='160' viewBox='0 0 400 160'%3E%3Cg fill='none' stroke='%2390c8e8' stroke-opacity='0.40'%3E%3Cellipse cx='32' cy='128' rx='6' ry='1.8' stroke-width='0.8'/%3E%3Cellipse cx='32' cy='128' rx='10' ry='2.6' stroke-width='0.5'/%3E%3Cellipse cx='88' cy='142' rx='4' ry='1.4' stroke-width='0.7'/%3E%3Cellipse cx='88' cy='142' rx='7' ry='2' stroke-width='0.4'/%3E%3Cellipse cx='148' cy='130' rx='7' ry='2' stroke-width='0.8'/%3E%3Cellipse cx='148' cy='130' rx='12' ry='3' stroke-width='0.5'/%3E%3Cellipse cx='210' cy='148' rx='5' ry='1.6' stroke-width='0.7'/%3E%3Cellipse cx='210' cy='148' rx='9' ry='2.4' stroke-width='0.4'/%3E%3Cellipse cx='278' cy='134' rx='6' ry='1.8' stroke-width='0.8'/%3E%3Cellipse cx='278' cy='134' rx='10' ry='2.6' stroke-width='0.5'/%3E%3Cellipse cx='338' cy='148' rx='4' ry='1.3' stroke-width='0.7'/%3E%3Cellipse cx='338' cy='148' rx='7' ry='2' stroke-width='0.4'/%3E%3Cellipse cx='384' cy='130' rx='5' ry='1.6' stroke-width='0.7'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Lamp puddle glows */
-    radial-gradient(ellipse 70% 12% at 22% 100%, rgba(248, 195, 80, 0.18), transparent 100%),
-    radial-gradient(ellipse 55% 10% at 78% 100%, rgba(235, 170, 55, 0.15), transparent 100%),
-    radial-gradient(ellipse 80% 18% at 50% 100%, rgba(90, 155, 210, 0.10), transparent 100%);
-  background-size: 400px 160px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: center bottom, 0 0, 0 0, 0 0;
-  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat;
-  mix-blend-mode: screen;
+    /* Window-glass condensation rivulets (bright, foreground) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cg fill='none' stroke='%23a8e0ff' stroke-opacity='0.55' stroke-linecap='round'%3E%3Cpath stroke-width='1.8' d='M52 0 Q48 26 56 50 Q62 72 52 102 Q44 130 56 162 Q66 188 52 218'/%3E%3Cpath stroke-width='1.4' d='M138 12 Q132 42 142 70 Q150 92 138 122 Q128 148 142 178'/%3E%3Cpath stroke-width='1.6' d='M218 4 Q212 32 222 60 Q232 84 220 116 Q210 144 224 174 Q236 200 218 232'/%3E%3Cpath stroke-width='1.2' d='M298 18 Q294 46 304 70 Q314 92 300 122'/%3E%3Cpath stroke-width='1.4' d='M362 8 Q358 38 368 64 Q376 86 360 118 Q348 148 364 180'/%3E%3Cpath stroke-width='1.6' d='M86 240 Q80 268 92 296 Q104 320 88 352 Q76 378 90 412'/%3E%3Cpath stroke-width='1.4' d='M192 252 Q188 282 200 308 Q208 330 194 360 Q184 388 198 420'/%3E%3Cpath stroke-width='1.4' d='M268 248 Q262 278 274 304 Q284 326 270 356 Q260 384 274 416'/%3E%3Cpath stroke-width='1.2' d='M348 262 Q346 290 356 314 Q364 336 352 366'/%3E%3C/g%3E%3Cg fill='%23b8e8ff' fill-opacity='0.78'%3E%3Ccircle cx='56' cy='52' r='3'/%3E%3Ccircle cx='142' cy='72' r='2.6'/%3E%3Ccircle cx='222' cy='62' r='2.8'/%3E%3Ccircle cx='304' cy='72' r='2.4'/%3E%3Ccircle cx='368' cy='66' r='2.6'/%3E%3Ccircle cx='92' cy='298' r='3.2'/%3E%3Ccircle cx='200' cy='310' r='2.8'/%3E%3Ccircle cx='274' cy='306' r='2.6'/%3E%3Ccircle cx='356' cy='316' r='2.2'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Ground splash ripples — bigger, brighter */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='200' viewBox='0 0 420 200'%3E%3Cg fill='none' stroke='%23b0d8f0' stroke-opacity='0.78'%3E%3Cellipse cx='40' cy='140' rx='10' ry='3' stroke-width='1.3'/%3E%3Cellipse cx='40' cy='140' rx='16' ry='5' stroke-width='0.9'/%3E%3Cellipse cx='100' cy='168' rx='7' ry='2.2' stroke-width='1.1'/%3E%3Cellipse cx='100' cy='168' rx='12' ry='3.6' stroke-width='0.7'/%3E%3Cellipse cx='168' cy='148' rx='12' ry='3.6' stroke-width='1.3'/%3E%3Cellipse cx='168' cy='148' rx='20' ry='5.6' stroke-width='0.9'/%3E%3Cellipse cx='240' cy='180' rx='8' ry='2.4' stroke-width='1.1'/%3E%3Cellipse cx='240' cy='180' rx='14' ry='4' stroke-width='0.7'/%3E%3Cellipse cx='316' cy='154' rx='11' ry='3.2' stroke-width='1.3'/%3E%3Cellipse cx='316' cy='154' rx='18' ry='5' stroke-width='0.9'/%3E%3Cellipse cx='380' cy='176' rx='8' ry='2.4' stroke-width='1.1'/%3E%3Cellipse cx='380' cy='176' rx='14' ry='4' stroke-width='0.7'/%3E%3C/g%3E%3Cg fill='%23b8e0f8' fill-opacity='0.50'%3E%3Ccircle cx='40' cy='140' r='1.4'/%3E%3Ccircle cx='100' cy='168' r='1.2'/%3E%3Ccircle cx='168' cy='148' r='1.6'/%3E%3Ccircle cx='240' cy='180' r='1.3'/%3E%3Ccircle cx='316' cy='154' r='1.5'/%3E%3Ccircle cx='380' cy='176' r='1.2'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Street lamp warm halos (much brighter) */
+    radial-gradient(ellipse 32% 28% at 20% 92%, rgba(255, 190, 60, 0.40), transparent 100%),
+    radial-gradient(ellipse 18% 16% at 20% 92%, rgba(255, 230, 130, 0.55), transparent 100%),
+    radial-gradient(ellipse 28% 24% at 78% 94%, rgba(255, 180, 50, 0.36), transparent 100%),
+    radial-gradient(ellipse 16% 14% at 78% 94%, rgba(255, 220, 120, 0.48), transparent 100%),
+    /* Puddle reflections */
+    radial-gradient(ellipse 70% 10% at 50% 100%, rgba(140, 195, 240, 0.20), transparent 100%);
+  background-size: 420px 420px, 420px 200px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 0 0, center bottom, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: repeat, repeat-x, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: normal;
   opacity: 1;
   animation: rain-lamp-flicker 8s ease-in-out infinite alternate;
 }

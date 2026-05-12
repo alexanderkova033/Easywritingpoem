@@ -17,6 +17,7 @@
 @import "./themes/summer.css";
 @import "./themes/rain.css";
 @import "./themes/park.css";
+@import "./themes/dark.css";
 
 :root {
   color-scheme: light dark;

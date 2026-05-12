@@ -1,4 +1,4 @@
-/* ---- Old parchment: aged cream warm light ---- */
+/* ---- Old parchment: aged cream warm light, lit by candles ---- */
 html[data-workshop-bg="parchment"] {
   color-scheme: light;
   --bg: #f5eedc;
@@ -27,6 +27,7 @@ html[data-workshop-bg="parchment"] {
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 18%, transparent);
 }
+
 html[data-workshop-bg="parchment"] body::before {
   animation: ambient-drift 180s ease-in-out infinite alternate;
   background-image:
@@ -34,55 +35,53 @@ html[data-workshop-bg="parchment"] body::before {
     radial-gradient(ellipse 110% 95% at 88% 18%, var(--ambient-b), transparent 70%),
     radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
     radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
-    /* Warm candlelight pools */
-    radial-gradient(ellipse 45% 55% at 30% 60%, color-mix(in srgb, #e0a830 9%, transparent), transparent 58%),
-    radial-gradient(ellipse 22% 40% at 85% 80%, color-mix(in srgb, #c89028 7%, transparent), transparent 52%),
-    /* Aged vignette corners */
-    radial-gradient(ellipse 55% 55% at 0% 0%, color-mix(in srgb, #7a5028 6%, transparent), transparent 62%),
-    radial-gradient(ellipse 48% 48% at 100% 100%, color-mix(in srgb, #604018 5%, transparent), transparent 58%),
-    /* Laid paper fiber texture */
+    /* Bright candlelight pool (mid-left, where main candle stands) */
+    radial-gradient(ellipse 40% 50% at 18% 70%, color-mix(in srgb, #ffb030 22%, transparent), transparent 58%),
+    radial-gradient(ellipse 18% 24% at 18% 70%, color-mix(in srgb, #ffd060 30%, transparent), transparent 60%),
+    /* Smaller candle pool upper-right */
+    radial-gradient(ellipse 22% 28% at 88% 22%, color-mix(in srgb, #f0a830 18%, transparent), transparent 58%),
+    /* Aged vignette corners (heavier) */
+    radial-gradient(ellipse 60% 60% at 0% 0%, color-mix(in srgb, #503018 14%, transparent), transparent 60%),
+    radial-gradient(ellipse 55% 55% at 100% 100%, color-mix(in srgb, #503018 14%, transparent), transparent 58%),
+    radial-gradient(ellipse 50% 50% at 100% 0%, color-mix(in srgb, #5a3818 11%, transparent), transparent 58%),
+    radial-gradient(ellipse 50% 50% at 0% 100%, color-mix(in srgb, #5a3818 11%, transparent), transparent 58%),
+    /* Laid paper fiber */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cline x1='0' y1='2' x2='6' y2='2' stroke='%237a502810' stroke-width='0.4'/%3E%3Cline x1='0' y1='5' x2='6' y2='5' stroke='%237a502807' stroke-width='0.3'/%3E%3C/svg%3E"),
-    /* Ruled lines */
-    repeating-linear-gradient(0deg, transparent, transparent 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 29px),
-    /* Soft age spots (one layer only) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Ccircle cx='54' cy='74' r='8' fill='%238b6030' fill-opacity='0.045'/%3E%3Ccircle cx='54' cy='74' r='5' fill='%237a5028' fill-opacity='0.032'/%3E%3Ccircle cx='232' cy='50' r='10' fill='%23906535' fill-opacity='0.040'/%3E%3Ccircle cx='232' cy='50' r='6' fill='%237a5028' fill-opacity='0.028'/%3E%3Ccircle cx='284' cy='204' r='7' fill='%23855830' fill-opacity='0.038'/%3E%3Ccircle cx='96' cy='252' r='9' fill='%238a6032' fill-opacity='0.038'/%3E%3Ccircle cx='182' cy='158' r='6' fill='%23906838' fill-opacity='0.032'/%3E%3C/svg%3E");
+    /* Age spots */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Ccircle cx='54' cy='74' r='8' fill='%238b6030' fill-opacity='0.080'/%3E%3Ccircle cx='54' cy='74' r='5' fill='%237a5028' fill-opacity='0.060'/%3E%3Ccircle cx='232' cy='50' r='10' fill='%23906535' fill-opacity='0.075'/%3E%3Ccircle cx='232' cy='50' r='6' fill='%237a5028' fill-opacity='0.055'/%3E%3Ccircle cx='284' cy='204' r='7' fill='%23855830' fill-opacity='0.068'/%3E%3Ccircle cx='96' cy='252' r='9' fill='%238a6032' fill-opacity='0.068'/%3E%3Ccircle cx='182' cy='158' r='6' fill='%23906838' fill-opacity='0.060'/%3E%3Ccircle cx='38' cy='180' r='5' fill='%23855830' fill-opacity='0.052'/%3E%3Ccircle cx='258' cy='128' r='7' fill='%238a6032' fill-opacity='0.056'/%3E%3C/svg%3E");
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
-    75% 70%, 40% 50%,
-    70% 70%, 60% 60%,
-    6px 6px, 100% 100%,
+    100% 100%, 100% 100%,
+    100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    6px 6px,
     320px 320px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 70% 55%,
-    28% 58%, 88% 82%,
-    0% 0%, 100% 100%,
     0 0, 0 0,
+    0 0,
+    0% 0%, 100% 100%, 100% 0%, 0% 100%,
+    0 0,
     50% 46%;
 }
 
-html[data-workshop-bg="parchment"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.35;
-}
-
+/* Hero: tall lit candle + small candle, text ghost, seal, ruled lines */
 html[data-workshop-bg="parchment"]::after {
   background-image:
-    /* Illuminated capital — gold/blue ornate letter upper-left */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect x='14' y='14' width='152' height='152' rx='4' fill='none' stroke='%237a3818' stroke-opacity='0.22' stroke-width='1.5'/%3E%3Crect x='22' y='22' width='136' height='136' rx='2' fill='%23c8a040' fill-opacity='0.06'/%3E%3Crect x='22' y='22' width='136' height='136' rx='2' fill='none' stroke='%23c0a040' stroke-opacity='0.20' stroke-width='0.8'/%3E%3Cpath fill='%23c0801c' fill-opacity='0.16' d='M58 50 L122 50 L122 64 L96 64 L96 142 L84 142 L84 64 L58 64 Z'/%3E%3Cpath fill='none' stroke='%23801818' stroke-opacity='0.22' stroke-width='0.9' d='M58 50 L122 50 L122 64 L96 64 L96 142 L84 142 L84 64 L58 64 Z'/%3E%3Cg fill='none' stroke='%23306828' stroke-opacity='0.18' stroke-width='0.7'%3E%3Cpath d='M30 30 Q36 26 42 30 Q38 36 30 32'/%3E%3Cpath d='M150 30 Q144 26 138 30 Q142 36 150 32'/%3E%3Cpath d='M30 150 Q36 154 42 150 Q38 144 30 148'/%3E%3Cpath d='M150 150 Q144 154 138 150 Q142 144 150 148'/%3E%3Cpath d='M28 88 Q34 84 40 90 Q36 96 28 92Z M152 88 Q146 84 140 90 Q144 96 152 92Z'/%3E%3C/g%3E%3Cg fill='%23901818' fill-opacity='0.18'%3E%3Ccircle cx='32' cy='90' r='1.6'/%3E%3Ccircle cx='148' cy='90' r='1.6'/%3E%3Ccircle cx='90' cy='32' r='1.6'/%3E%3Ccircle cx='90' cy='148' r='1.6'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Decorative margin border with vine + flourishes — right side */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='400' viewBox='0 0 80 400'%3E%3Cpath fill='none' stroke='%23304820' stroke-opacity='0.22' stroke-width='1.0' stroke-linecap='round' d='M40 0 Q44 30 38 60 Q32 90 42 120 Q50 150 38 180 Q28 210 42 240 Q52 270 38 300 Q28 330 42 360 Q48 380 40 400'/%3E%3Cg fill='%23801818' fill-opacity='0.18'%3E%3Ccircle cx='42' cy='38' r='2.5'/%3E%3Ccircle cx='38' cy='98' r='2.5'/%3E%3Ccircle cx='42' cy='158' r='2.5'/%3E%3Ccircle cx='38' cy='218' r='2.5'/%3E%3Ccircle cx='42' cy='278' r='2.5'/%3E%3Ccircle cx='38' cy='338' r='2.5'/%3E%3C/g%3E%3Cg fill='%23306828' fill-opacity='0.22'%3E%3Cpath d='M28 38 Q22 36 24 30 Q30 30 32 36 Z'/%3E%3Cpath d='M52 98 Q58 96 56 90 Q50 90 48 96 Z'/%3E%3Cpath d='M28 158 Q22 156 24 150 Q30 150 32 156 Z'/%3E%3Cpath d='M52 218 Q58 216 56 210 Q50 210 48 216 Z'/%3E%3Cpath d='M28 278 Q22 276 24 270 Q30 270 32 276 Z'/%3E%3Cpath d='M52 338 Q58 336 56 330 Q50 330 48 336 Z'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Wax seal lower-right */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Ccircle cx='70' cy='70' r='34' fill='%237a3818' fill-opacity='0.14'/%3E%3Ccircle cx='70' cy='70' r='27' fill='%238a4020' fill-opacity='0.10'/%3E%3Ccircle cx='70' cy='70' r='27' fill='none' stroke='%237a3818' stroke-opacity='0.20' stroke-width='1.4'/%3E%3Ccircle cx='70' cy='70' r='34' fill='none' stroke='%237a3818' stroke-opacity='0.12' stroke-width='0.7'/%3E%3Cpath fill='none' stroke='%237a3818' stroke-opacity='0.20' stroke-width='0.9' d='M70 48 L75 64 L92 64 L78 74 L84 90 L70 80 L56 90 L62 74 L48 64 L65 64Z'/%3E%3C/svg%3E"),
+    /* Hero candle taper — bright flame, melted wax, brass holder. Left side, full height visible. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='460' viewBox='0 0 200 460'%3E%3Cdefs%3E%3CradialGradient id='glow' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.55'/%3E%3Cstop offset='60%25' stop-color='%23ffae40' stop-opacity='0.22'/%3E%3Cstop offset='100%25' stop-color='%23ff8020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3C!-- Halo glow --%3E%3Ccircle cx='100' cy='130' r='90' fill='url(%23glow)'/%3E%3C!-- Outer flame --%3E%3Cpath fill='%23ff8a28' d='M100 80 Q82 110 86 142 Q92 168 100 168 Q108 168 114 142 Q118 110 100 80 Z'/%3E%3C!-- Inner flame --%3E%3Cpath fill='%23ffd040' d='M100 96 Q90 118 92 140 Q96 158 100 158 Q104 158 108 140 Q110 118 100 96 Z'/%3E%3C!-- Hot core --%3E%3Cpath fill='%23ffffff' d='M100 116 Q95 130 96 144 Q98 152 100 152 Q102 152 104 144 Q105 130 100 116 Z'/%3E%3C!-- Wick --%3E%3Cline x1='100' y1='162' x2='100' y2='180' stroke='%23302010' stroke-width='2'/%3E%3C!-- Candle body (cream wax) --%3E%3Crect x='86' y='180' width='28' height='220' fill='%23f6e8c0' stroke='%23a88840' stroke-width='1.2'/%3E%3C!-- Wax drips --%3E%3Cpath fill='%23f6e8c0' stroke='%23a88840' stroke-width='1' d='M86 180 Q80 230 88 280 L88 180 Z'/%3E%3Cpath fill='%23f6e8c0' stroke='%23a88840' stroke-width='1' d='M114 180 Q120 250 112 320 L112 180 Z'/%3E%3C!-- Soft body shading --%3E%3Crect x='86' y='180' width='10' height='220' fill='%23000' fill-opacity='0.10'/%3E%3Crect x='104' y='180' width='10' height='220' fill='%23000' fill-opacity='0.10'/%3E%3C!-- Brass holder --%3E%3Cellipse cx='100' cy='400' rx='40' ry='6' fill='%23a87830'/%3E%3Cpath fill='%23a87830' d='M68 400 Q80 422 122 422 Q142 422 132 400 Z'/%3E%3Cellipse cx='100' cy='422' rx='32' ry='5' fill='%238a5e20'/%3E%3C!-- Cast shadow on parchment --%3E%3Cellipse cx='100' cy='432' rx='60' ry='6' fill='%23000' fill-opacity='0.18'/%3E%3C/svg%3E"),
+    /* Smaller candle upper-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='240' viewBox='0 0 140 240'%3E%3Cdefs%3E%3CradialGradient id='g2' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.50'/%3E%3Cstop offset='60%25' stop-color='%23ffae40' stop-opacity='0.20'/%3E%3Cstop offset='100%25' stop-color='%23ff8020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='70' cy='72' r='60' fill='url(%23g2)'/%3E%3Cpath fill='%23ff8a28' d='M70 38 Q58 60 62 84 Q66 100 70 100 Q74 100 78 84 Q82 60 70 38 Z'/%3E%3Cpath fill='%23ffd040' d='M70 50 Q63 66 65 82 Q68 94 70 94 Q72 94 75 82 Q77 66 70 50 Z'/%3E%3Cpath fill='%23ffffff' d='M70 64 Q67 74 68 84 Q70 90 70 90 Q70 90 72 84 Q73 74 70 64 Z'/%3E%3Cline x1='70' y1='94' x2='70' y2='108' stroke='%23302010' stroke-width='1.5'/%3E%3Crect x='60' y='108' width='20' height='110' fill='%23f6e8c0' stroke='%23a88840' stroke-width='1'/%3E%3Cpath fill='%23f6e8c0' stroke='%23a88840' stroke-width='0.8' d='M60 108 Q56 150 62 190 L62 108 Z'/%3E%3Crect x='60' y='108' width='6' height='110' fill='%23000' fill-opacity='0.10'/%3E%3Cellipse cx='70' cy='218' rx='28' ry='4' fill='%23a87830'/%3E%3Cpath fill='%23a87830' d='M48 218 Q58 234 92 234 Q104 234 96 218 Z'/%3E%3Cellipse cx='70' cy='240' rx='22' ry='3' fill='%238a5e20'/%3E%3C/svg%3E"),
     /* Inked manuscript text ghost mid */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320' viewBox='0 0 420 320'%3E%3Cg stroke='%23241408' stroke-opacity='0.13' stroke-width='1.3' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 40 Q72 32 108 40 Q148 50 188 38 Q232 28 276 40 Q316 50 360 38'/%3E%3Cpath d='M40 70 Q70 62 100 70 Q132 80 168 68 Q208 56 248 68 Q282 78 320 68'/%3E%3Cpath d='M40 102 Q72 94 110 102 Q150 112 192 100 Q236 90 280 102 Q322 112 366 100'/%3E%3Cpath d='M40 132 Q68 124 96 132 Q130 142 164 130 Q204 118 244 132'/%3E%3Cpath d='M40 162 Q72 154 108 162 Q148 172 188 160 Q232 150 278 162 Q318 172 358 160'/%3E%3Cpath d='M40 192 Q70 184 100 192 Q132 202 168 190 Q208 178 248 190'/%3E%3Cpath d='M40 222 Q74 214 110 222 Q150 232 190 220 Q232 208 274 222 Q316 232 358 220'/%3E%3Cpath d='M40 252 Q72 244 102 252 Q138 262 174 250'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Corner tea-stain — upper right */
-    radial-gradient(ellipse 35% 28% at 96% 4%, color-mix(in srgb, #c09050 8%, transparent), transparent 70%),
-    /* Candle pool warmth */
-    radial-gradient(ellipse 32% 38% at 26% 64%, color-mix(in srgb, #ffb858 9%, transparent), transparent 60%);
-  background-size: 180px 180px, 80px 400px, 140px 140px, 420px 320px, 100% 100%, 100% 100%;
-  background-position: 6% 8%, 96% 50%, 92% 92%, 50% 50%, 0 0, 0 0;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  mix-blend-mode: multiply;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320' viewBox='0 0 420 320'%3E%3Cg stroke='%23241408' stroke-opacity='0.18' stroke-width='1.4' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 40 Q72 32 108 40 Q148 50 188 38 Q232 28 276 40 Q316 50 360 38'/%3E%3Cpath d='M40 70 Q70 62 100 70 Q132 80 168 68 Q208 56 248 68 Q282 78 320 68'/%3E%3Cpath d='M40 102 Q72 94 110 102 Q150 112 192 100 Q236 90 280 102 Q322 112 366 100'/%3E%3Cpath d='M40 132 Q68 124 96 132 Q130 142 164 130 Q204 118 244 132'/%3E%3Cpath d='M40 162 Q72 154 108 162 Q148 172 188 160 Q232 150 278 162 Q318 172 358 160'/%3E%3Cpath d='M40 192 Q70 184 100 192 Q132 202 168 190 Q208 178 248 190'/%3E%3Cpath d='M40 222 Q74 214 110 222 Q150 232 190 220 Q232 208 274 222 Q316 232 358 220'/%3E%3Cpath d='M40 252 Q72 244 102 252 Q138 262 174 250'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Wax seal lower-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='80' cy='80' r='42' fill='%23a02818' fill-opacity='0.80'/%3E%3Ccircle cx='80' cy='80' r='36' fill='%23c03020' fill-opacity='0.78'/%3E%3Ccircle cx='80' cy='80' r='36' fill='none' stroke='%23601810' stroke-opacity='0.55' stroke-width='1.5'/%3E%3Ccircle cx='80' cy='80' r='42' fill='none' stroke='%23601810' stroke-opacity='0.35' stroke-width='1'/%3E%3Cpath fill='%23ffd060' fill-opacity='0.55' d='M80 56 L86 72 L102 72 L88 82 L94 98 L80 88 L66 98 L72 82 L58 72 L74 72 Z'/%3E%3Cpath fill='none' stroke='%23601810' stroke-opacity='0.42' stroke-width='0.7' d='M80 56 L86 72 L102 72 L88 82 L94 98 L80 88 L66 98 L72 82 L58 72 L74 72 Z'/%3E%3C/svg%3E"),
+    /* Strong candle glow halo on left */
+    radial-gradient(ellipse 38% 32% at 16% 38%, color-mix(in srgb, #ffd060 18%, transparent), transparent 58%);
+  background-size: 200px 460px, 140px 240px, 420px 320px, 160px 160px, 100% 100%;
+  background-position: 4% 16%, 92% 6%, 50% 50%, 90% 88%, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: normal;
   opacity: 1;
-  animation: candle-breathe 12s ease-in-out infinite;
+  animation: candle-breathe 7s ease-in-out infinite;
 }
