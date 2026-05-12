@@ -23,7 +23,7 @@ function buildSystemPrompt(harshness?: string): string {
     ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
     : HARSHNESS_PERSONAS.editor;
   return `You are ${persona}. Return JSON only (no fences). Keys:
-overall_score (int 1-100), warm_reaction (≤14 words, terse), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (4-8 — be generous, comment on most non-trivial lines).
+overall_score (int 1-100), warm_reaction (≤14 words, terse), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; pick the most useful across that range).
 overall_feedback (string, 1-2 short sentences max, holistic read of the poem — voice, mood, what it lands or misses. Specific, not generic. Keep it tight.).
 personal_feedback (string, 1-2 short sentences max, addressed to the writer as "you". One thing they're doing well + one concrete craft move to try next. Warm but brief, no preamble.).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED whenever the issue centers on specific words — diction, cliché, weak verb, filler, vague noun, sound clash, repetition. List the exact lowercase tokens from the poem text that the editor should highlight. Only omit when the issue is purely structural — line break, stanza order, missing volta — where no specific word is the culprit.),
@@ -128,16 +128,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const spend = precheckSpend({
-    rawIp: req.headers["x-forwarded-for"],
-    endpoint: "analyze",
-    cooldownMs: cooldownFor("analyze"),
-  });
-  if (!spend.ok) {
-    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
-    return res.status(spend.status).json(spend.body);
-  }
-
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -160,6 +150,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "analyze",
+    cooldownMs: cooldownFor("analyze", model),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
@@ -184,7 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 5000,
+      max_tokens: 4000,
       temperature: 0.4,
       reasoningEffort: "low",
     },

@@ -10,7 +10,7 @@ import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 
 const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Return JSON only (no fences). Keys:
-overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (4-8 — comment on most non-trivial lines), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
+overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; pick the most useful across that range), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
 overall_feedback (string, 2-3 full sentences, holistic read of the current draft as a whole — voice, mood, what it accomplishes, where it lands).
 personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc — what improved, what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not rubric).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
@@ -110,16 +110,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const spend = precheckSpend({
-    rawIp: req.headers["x-forwarded-for"],
-    endpoint: "compare",
-    cooldownMs: cooldownFor("compare"),
-  });
-  if (!spend.ok) {
-    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
-    return res.status(spend.status).json(spend.body);
-  }
-
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -157,6 +147,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+
+  const spend = precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "compare",
+    cooldownMs: cooldownFor("compare", model),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
@@ -182,7 +182,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 6000,
+      max_tokens: 5000,
       temperature: 0.4,
       reasoningEffort: "low",
     },

@@ -16,8 +16,17 @@
 const PER_IP_MONTHLY_CAP_CENTS = 200;   // $2.00
 const GLOBAL_DAILY_CAP_CENTS   = 500;   // $5.00
 
-const DEFAULT_COOLDOWN_MS  = 5_000;
-const ANALYZE_COOLDOWN_MS  = 60_000;
+const DEFAULT_COOLDOWN_MS = 5_000;
+// Heavy-endpoint cooldowns scale with model cost/latency.
+// fast  (nano)    → 60s
+// normal(mini)    → 120s
+// thinking(gpt-5) → 180s
+const ANALYZE_COOLDOWN_BY_MODEL_MS: Record<string, number> = {
+  "gpt-5-nano": 60_000,
+  "gpt-5-mini": 120_000,
+  "gpt-5":      180_000,
+};
+const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
 
 /**
  * Model pricing in cents per 1M tokens. Values are conservative — round up
@@ -163,8 +172,15 @@ export function precheckSpend(opts: PrecheckOpts): PrecheckResult {
   return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
 }
 
-export function cooldownFor(endpoint: string): number {
-  if (endpoint === "analyze" || endpoint === "compare") return ANALYZE_COOLDOWN_MS;
+export function cooldownFor(endpoint: string, model?: string): number {
+  if (endpoint === "analyze" || endpoint === "compare") {
+    if (!model) return ANALYZE_COOLDOWN_FALLBACK_MS;
+    if (ANALYZE_COOLDOWN_BY_MODEL_MS[model] != null) return ANALYZE_COOLDOWN_BY_MODEL_MS[model]!;
+    for (const key of Object.keys(ANALYZE_COOLDOWN_BY_MODEL_MS)) {
+      if (model.startsWith(key)) return ANALYZE_COOLDOWN_BY_MODEL_MS[key]!;
+    }
+    return ANALYZE_COOLDOWN_FALLBACK_MS;
+  }
   return DEFAULT_COOLDOWN_MS;
 }
 
