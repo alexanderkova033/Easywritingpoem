@@ -24,9 +24,9 @@ function buildSystemPrompt(harshness?: string): string {
     : HARSHNESS_PERSONAS.editor;
   return `You are ${persona}. Return JSON only (no fences). Keys:
 overall_score (int 1-100), warm_reaction (≤14 words, terse), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (4-8 — be generous, comment on most non-trivial lines).
-overall_feedback (string, 2-3 full sentences, holistic read of the poem as a whole — voice, mood, what it accomplishes, where it lands or falls short. Specific, not generic).
-personal_feedback (string, 2-3 full sentences addressed directly to the writer as "you". Warm, perceptive — what their voice/sensibility shows in this draft, what they should keep doing, and one concrete craft move to grow into next. Sound like a thoughtful mentor, not a rubric).
-Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[] (omit if none),
+overall_feedback (string, 1-2 short sentences max, holistic read of the poem — voice, mood, what it lands or misses. Specific, not generic. Keep it tight.).
+personal_feedback (string, 1-2 short sentences max, addressed to the writer as "you". One thing they're doing well + one concrete craft move to try next. Warm but brief, no preamble.).
+Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED whenever the issue centers on specific words — diction, cliché, weak verb, filler, vague noun, sound clash, repetition. List the exact lowercase tokens from the poem text that the editor should highlight. Only omit when the issue is purely structural — line break, stanza order, missing volta — where no specific word is the culprit.),
   rationale (3-5 full sentences — (1) name the specific craft problem, (2) explain WHY it weakens the line in this poem's context, quoting concrete words/sounds/rhythm, (3) describe how it lands on the reader (the sensory or emotional effect, what gets blurred or lost), (4) when useful, contrast with what a sharper move would do. Do not generalise; speak about THIS line.),
   improvements[] (2-4 concrete moves the writer can try, each ≤14 words, naming a specific technique or word swap rather than vague advice),
   rewrite? (omit unless you can offer a clearly stronger one-line replacement),

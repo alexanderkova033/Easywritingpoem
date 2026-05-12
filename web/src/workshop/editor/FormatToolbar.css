@@ -292,10 +292,10 @@
 }
 
 .poem-cm-wrap:focus-within {
-  border-color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent),
-    0 2px 10px color-mix(in srgb, var(--accent) 16%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
+    0 1px 6px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .poem-cm-wrap .cm-editor {
