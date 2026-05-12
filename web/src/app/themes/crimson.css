@@ -1,0 +1,88 @@
+/* ---- Crimson dusk: dark red ember palette ---- */
+html[data-workshop-bg="crimson"] {
+  color-scheme: dark;
+  --bg: #0e0608;
+  --surface: #1a0c0e;
+  --surface-2: #211014;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #4a1a22;
+  --text: #f5e2e4;
+  --muted: #a87880;
+  --accent: #d46070;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9aa1;
+  --net-line: rgba(220, 130, 140, 0.045);
+  --ambient-a: rgba(180, 40, 60, 0.09);
+  --ambient-b: rgba(130, 20, 40, 0.07);
+  --ambient-c: rgba(200, 80, 90, 0.06);
+  --ambient-d: rgba(100, 30, 45, 0.05);
+  --shine-top: rgba(255, 160, 170, 0.055);
+  --shine-mid: rgba(160, 50, 65, 0.04);
+  --after-opacity: 0.48;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 55%, transparent);
+}
+html[data-workshop-bg="crimson"] body::before {
+  animation: ember-drift 90s ease-in-out infinite;
+  background-image:
+    radial-gradient(ellipse 130% 110% at 15% 25%, var(--ambient-a), transparent 70%),
+    radial-gradient(ellipse 110% 95% at 85% 20%, var(--ambient-b), transparent 68%),
+    radial-gradient(ellipse 140% 120% at 50% 95%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 88% at 70% 60%, var(--ambient-d), transparent 66%),
+    /* Heavy smoke ceiling */
+    radial-gradient(ellipse 130% 50% at 50% 0%, color-mix(in srgb, #020002 92%, transparent), transparent 62%),
+    /* Dominant fire glow on horizon — wide, bright, central */
+    radial-gradient(ellipse 100% 35% at 50% 100%, color-mix(in srgb, #d04018 32%, transparent), transparent 56%),
+    radial-gradient(ellipse 55% 22% at 50% 100%, color-mix(in srgb, #ff7028 28%, transparent), transparent 52%),
+    radial-gradient(ellipse 25% 12% at 50% 100%, color-mix(in srgb, #ffc060 22%, transparent), transparent 55%),
+    /* Secondary pyre points */
+    radial-gradient(ellipse 18% 14% at 22% 92%, color-mix(in srgb, #ff6028 22%, transparent), transparent 55%),
+    radial-gradient(ellipse 16% 12% at 78% 94%, color-mix(in srgb, #ff5020 18%, transparent), transparent 55%),
+    /* Hero: rising embers (denser, taller column) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='480'%3E%3Cg%3E%3Ccircle cx='32' cy='460' r='2.2' fill='%23ffb060' fill-opacity='0.78'/%3E%3Ccircle cx='32' cy='460' r='6' fill='%23ff7028' fill-opacity='0.22'/%3E%3Ccircle cx='86' cy='420' r='1.4' fill='%23ff8038' fill-opacity='0.65'/%3E%3Ccircle cx='148' cy='448' r='2.4' fill='%23ffa050' fill-opacity='0.75'/%3E%3Ccircle cx='148' cy='448' r='7' fill='%23ff6020' fill-opacity='0.20'/%3E%3Ccircle cx='208' cy='430' r='1.6' fill='%23ff9040' fill-opacity='0.68'/%3E%3Ccircle cx='270' cy='460' r='2.0' fill='%23ffc878' fill-opacity='0.72'/%3E%3Ccircle cx='270' cy='460' r='5.5' fill='%23ff8030' fill-opacity='0.20'/%3E%3Ccircle cx='58' cy='358' r='1.0' fill='%23ffa070' fill-opacity='0.55'/%3E%3Ccircle cx='118' cy='318' r='1.2' fill='%23ff9050' fill-opacity='0.50'/%3E%3Ccircle cx='178' cy='340' r='0.9' fill='%23ffb088' fill-opacity='0.48'/%3E%3Ccircle cx='240' cy='298' r='1.1' fill='%23ff8050' fill-opacity='0.45'/%3E%3Ccircle cx='38' cy='258' r='0.7' fill='%23ffb898' fill-opacity='0.38'/%3E%3Ccircle cx='92' cy='220' r='0.8' fill='%23ffa080' fill-opacity='0.34'/%3E%3Ccircle cx='168' cy='180' r='0.6' fill='%23ffc0a8' fill-opacity='0.30'/%3E%3Ccircle cx='228' cy='148' r='0.7' fill='%23ffb090' fill-opacity='0.26'/%3E%3Ccircle cx='148' cy='98' r='0.55' fill='%23ffd0b8' fill-opacity='0.22'/%3E%3Ccircle cx='280' cy='66' r='0.45' fill='%23ffc8b0' fill-opacity='0.18'/%3E%3C/g%3E%3Cg fill='none' stroke-opacity='0.10' stroke-width='0.6'%3E%3Cpath stroke='%23d06050' d='M32 458 Q38 410 30 365 Q22 318 32 268'/%3E%3Cpath stroke='%23c04030' d='M148 446 Q156 398 148 350 Q138 300 150 252'/%3E%3Cpath stroke='%23e07060' d='M270 458 Q262 412 270 364'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Hero: silhouetted burning ruins/tower far horizon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='180' viewBox='0 0 420 180'%3E%3Cpath fill='%23030104' fill-opacity='0.80' d='M0 180V158 L8 152 12 158 18 142 24 158 32 130 38 158 46 148 54 158 64 138 72 158 82 124 90 158 100 142 108 158 120 130 130 158 142 144 152 158 165 122 175 158 188 138 200 158 215 132 230 158 248 146 262 158 280 124 295 158 312 140 326 158 342 134 358 158 374 142 388 158 402 136 415 158 420 152V180Z'/%3E%3Cpath fill='%23030104' fill-opacity='0.92' d='M196 158V80 L198 70 200 78 204 60 208 78 212 50 216 78 220 64 224 78 196 80z'/%3E%3Cpath fill='%23030104' fill-opacity='0.85' d='M270 158V108 L272 100 274 106 278 92 282 106 286 88 290 106 274 108z'/%3E%3Cpath fill='%23030104' fill-opacity='0.85' d='M88 158V112 L90 104 92 110 96 96 100 110 104 100 108 110 92 112z'/%3E%3C/svg%3E"),
+    /* Ash flakes scattered overhead */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cellipse cx='62' cy='40' rx='1.4' ry='0.7' fill='%23b8a090' fill-opacity='0.22' transform='rotate(20 62 40)'/%3E%3Cellipse cx='148' cy='68' rx='1.2' ry='0.6' fill='%23a89080' fill-opacity='0.18' transform='rotate(-30 148 68)'/%3E%3Cellipse cx='232' cy='32' rx='1.6' ry='0.7' fill='%23b8a090' fill-opacity='0.20' transform='rotate(15 232 32)'/%3E%3Cellipse cx='282' cy='90' rx='1.0' ry='0.5' fill='%23a89080' fill-opacity='0.16' transform='rotate(-22 282 90)'/%3E%3Cellipse cx='108' cy='128' rx='1.2' ry='0.6' fill='%23b8a090' fill-opacity='0.15' transform='rotate(40 108 128)'/%3E%3Cellipse cx='198' cy='148' rx='1.4' ry='0.7' fill='%23a89080' fill-opacity='0.14' transform='rotate(-10 198 148)'/%3E%3Cellipse cx='40' cy='178' rx='1.0' ry='0.5' fill='%23b8a090' fill-opacity='0.12' transform='rotate(25 40 178)'/%3E%3Cellipse cx='260' cy='208' rx='1.2' ry='0.6' fill='%23a89080' fill-opacity='0.10' transform='rotate(-32 260 208)'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    100% 100%,
+    120% 35%, 80% 22%, 40% 12%,
+    35% 28%, 32% 26%,
+    320px 480px,
+    420px 180px,
+    320px 320px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 70% 55%,
+    0 0,
+    50% 100%, 50% 100%, 50% 100%,
+    22% 100%, 78% 100%,
+    50% 100%,
+    50% 98%,
+    20% 20%;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    no-repeat,
+    no-repeat, no-repeat, no-repeat,
+    no-repeat, no-repeat,
+    no-repeat,
+    no-repeat,
+    repeat;
+}
+
+/* Crimson: ember pulse + fire glow breath */
+html[data-workshop-bg="crimson"]::after {
+  background-image:
+    radial-gradient(ellipse 90% 28% at 50% 100%, rgba(255, 96, 30, 0.16), transparent 100%),
+    radial-gradient(ellipse 45% 14% at 50% 100%, rgba(255, 168, 60, 0.14), transparent 100%),
+    radial-gradient(ellipse 22% 8% at 22% 92%, rgba(255, 110, 40, 0.12), transparent 100%),
+    radial-gradient(ellipse 20% 8% at 78% 94%, rgba(255, 100, 30, 0.10), transparent 100%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: ember-glow-pulse 11s ease-in-out infinite alternate;
+}

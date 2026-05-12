@@ -1,0 +1,123 @@
+html[data-workshop-bg="dawn"] {
+  color-scheme: light;
+  --bg: #f4ecef;
+  --surface: #f9f5f7;
+  --surface-2: #f5edf1;
+  --surface-elevated: #fff9fb;
+  --border: #dfd2d8;
+  --text: #1f1619;
+  --muted: #665a61;
+  --accent: #7d4a63;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 14%, #ebe0e6);
+  --selection-fg: var(--text);
+  --danger: #a32128;
+  --net-line: rgba(90, 50, 70, 0.04);
+  --ambient-a: rgba(200, 120, 155, 0.055);
+  --ambient-b: rgba(150, 110, 140, 0.044);
+  --ambient-c: rgba(220, 170, 185, 0.05);
+  --ambient-d: rgba(170, 120, 145, 0.038);
+  --shine-top: rgba(255, 245, 252, 0.42);
+  --shine-mid: rgba(210, 150, 175, 0.042);
+  --after-blend: multiply;
+  --after-opacity: 0.32;
+  --after-animation: studio-light-soft 70s ease-in-out infinite alternate;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
+}
+html[data-workshop-bg="dawn"] body::before {
+  animation: ambient-drift 130s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 48% 22% at 82% 9%,
+      color-mix(in srgb, var(--accent) 11%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 40% 20% at 10% 24%,
+      color-mix(in srgb, #fff 14%, transparent),
+      transparent 55%
+    ),
+    /* Soft sunbloom — replaces conic rays */
+    radial-gradient(
+      ellipse 65% 35% at 50% -8%,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      circle at 18% 12%,
+      color-mix(in srgb, #fff 22%, transparent),
+      transparent 42%
+    ),
+    /* Dawn sky gradient — deep lavender zenith fading to warm rose-gold horizon */
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #6040b8 16%, transparent) 0%,
+      color-mix(in srgb, #b860a0 12%, transparent) 18%,
+      color-mix(in srgb, #e898c0 6%, transparent) 36%,
+      transparent 52%,
+      color-mix(in srgb, var(--accent) 8%, transparent) 70%,
+      color-mix(in srgb, #f88850 16%, transparent) 100%
+    ),
+    /* Light-scatter petal ellipses */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3Cellipse cx='40' cy='32' rx='6' ry='3.2' fill='%23b0608010' transform='rotate(-35 40 32)'/%3E%3Cellipse cx='92' cy='48' rx='5' ry='2.8' fill='%23a050780d' transform='rotate(22 92 48)'/%3E%3Cellipse cx='128' cy='88' rx='7' ry='3.5' fill='%23c0709010' transform='rotate(-15 128 88)'/%3E%3Cellipse cx='56' cy='108' rx='4.5' ry='2.5' fill='%239048680c' transform='rotate(48 56 108)'/%3E%3Ccircle cx='72' cy='64' r='0.9' fill='%23fff' fill-opacity='0.18'/%3E%3Ccircle cx='110' cy='124' r='0.7' fill='%23fff' fill-opacity='0.14'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    85% 34%,
+    70% 42%,
+    100% 100%,
+    90% 55%,
+    100% 100%,
+    185px 185px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    86% 2%,
+    4% 8%,
+    center top,
+    12% 0%,
+    50% 100%,
+    28% 72%;
+}
+
+/* Dawn: rose-gold horizon band at ~72% */
+html[data-workshop-bg="dawn"]::after {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, #5830b0 22%, transparent) 0%,
+    color-mix(in srgb, #c060a8 16%, transparent) 16%,
+    color-mix(in srgb, #e898c0 7%, transparent) 36%,
+    transparent 54%,
+    color-mix(in srgb, #f8a050 12%, transparent) 78%,
+    color-mix(in srgb, #f8c870 22%, transparent) 100%
+  );
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 1;
+}

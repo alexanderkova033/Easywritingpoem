@@ -1,0 +1,82 @@
+html[data-workshop-bg="stone"] {
+  color-scheme: dark;
+  --bg: #1e1e1c;
+  --surface: #272724;
+  --surface-2: #2e2e2b;
+  --surface-elevated: #323230;
+  --border: #3e3e3a;
+  --text: #e1e1dd;
+  --muted: #888882;
+  --accent: #b0a898;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #e07070;
+  --net-line: rgba(180, 174, 162, 0.04);
+  --ambient-a: rgba(140, 132, 118, 0.06);
+  --ambient-b: rgba(110, 104, 92, 0.05);
+  --ambient-c: rgba(160, 152, 138, 0.045);
+  --ambient-d: rgba(90, 86, 76, 0.035);
+  --shine-top: rgba(200, 195, 185, 0.05);
+  --shine-mid: rgba(130, 124, 112, 0.03);
+  --after-opacity: 0.40;
+  --after-animation: candle-breathe 28s ease-in-out infinite;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 38%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 44%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
+}
+
+/*
+ * Themed backdrop motifs (mesh + symbols). Animation is static so layers stay aligned.
+/* ---- Stone: chiseled slab — rune carving, mortar lines, candle-lit corner ---- */
+html[data-workshop-bg="stone"] body::before {
+  animation: ambient-drift 170s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
+    /* Warm candle pool lower-left */
+    radial-gradient(ellipse 45% 55% at 14% 84%, color-mix(in srgb, #d8a060 12%, transparent), transparent 55%),
+    radial-gradient(ellipse 18% 22% at 14% 84%, color-mix(in srgb, #ffc080 14%, transparent), transparent 60%),
+    /* Cool moon-glow upper-right */
+    radial-gradient(ellipse 40% 40% at 88% 16%, color-mix(in srgb, #a0b0c0 8%, transparent), transparent 58%),
+    /* Diamond lattice (small) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath fill='none' stroke='%23b0a89820' stroke-width='0.6' d='M14 0L28 14L14 28L0 14z'/%3E%3C/svg%3E"),
+    /* Hero: large carved rune slab center */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='420' viewBox='0 0 320 420'%3E%3Crect x='40' y='40' width='240' height='340' rx='6' fill='none' stroke='%23807868' stroke-opacity='0.18' stroke-width='1.2'/%3E%3Crect x='52' y='52' width='216' height='316' rx='4' fill='none' stroke='%23807868' stroke-opacity='0.10' stroke-width='0.6'/%3E%3Cg fill='none' stroke='%23d0c4a8' stroke-opacity='0.14' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M100 110 L100 180 L160 140 L160 210'/%3E%3Cpath d='M196 110 L160 145 L196 180 L160 215'/%3E%3Cpath d='M100 250 L160 250 M130 250 L130 320 M115 310 L130 320 L145 310'/%3E%3Cpath d='M196 250 L196 320 M180 268 L212 268 M180 302 L212 302'/%3E%3C/g%3E%3Cg fill='%23807868' fill-opacity='0.16'%3E%3Ccircle cx='60' cy='62' r='2.2'/%3E%3Ccircle cx='260' cy='62' r='2.2'/%3E%3Ccircle cx='60' cy='358' r='2.2'/%3E%3Ccircle cx='260' cy='358' r='2.2'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Mortar courses — horizontal slab divisions */
+    repeating-linear-gradient(0deg, transparent, transparent 64px, color-mix(in srgb, #000 22%, transparent) 64px, color-mix(in srgb, #000 22%, transparent) 65.5px, transparent 65.5px, transparent 66px, color-mix(in srgb, #c0b8a8 5%, transparent) 66px, color-mix(in srgb, #c0b8a8 5%, transparent) 67px),
+    /* Vertical mortar segments (offset brick) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='128' viewBox='0 0 180 128'%3E%3Cline x1='60' y1='0' x2='60' y2='64' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='120' y1='0' x2='120' y2='64' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='30' y1='64' x2='30' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='90' y1='64' x2='90' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='150' y1='64' x2='150' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3C/svg%3E"),
+    /* Crosshatch chisel texture */
+    repeating-linear-gradient(45deg, transparent, transparent 14px, color-mix(in srgb, var(--net-line) 75%, transparent) 14px, color-mix(in srgb, var(--net-line) 75%, transparent) 14.5px);
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    100% 100%, 100% 100%, 100% 100%,
+    28px 28px,
+    320px 420px,
+    100% 66px,
+    180px 128px,
+    100% 100%;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 72% 55%,
+    0 0, 0 0, 0 0,
+    center center,
+    50% 50%,
+    0 0,
+    0 0,
+    0 0;
+}
+
+/* Stone: flickering candlelight from lower-left corner */
+html[data-workshop-bg="stone"]::after {
+  background-image:
+    radial-gradient(ellipse 35% 45% at 14% 84%, color-mix(in srgb, #f0a858 12%, transparent), transparent 60%),
+    radial-gradient(ellipse 15% 18% at 14% 84%, color-mix(in srgb, #ffd090 16%, transparent), transparent 65%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: candle-breathe 7s ease-in-out infinite;
+}

@@ -1,0 +1,79 @@
+html[data-workshop-bg="night"] {
+  color-scheme: dark;
+  --bg: #04060c;
+  --surface: #0b0f1a;
+  --surface-2: #101728;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #22304a;
+  --text: #e4eef9;
+  --muted: #7f90ad;
+  --accent: #84b9ff;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #f09098;
+  --net-line: rgba(150, 190, 240, 0.038);
+  --ambient-a: rgba(40, 90, 160, 0.085);
+  --ambient-b: rgba(30, 55, 110, 0.070);
+  --ambient-c: rgba(70, 120, 200, 0.060);
+  --ambient-d: rgba(18, 28, 70, 0.055);
+  --shine-top: rgba(210, 235, 255, 0.05);
+  --shine-mid: rgba(90, 140, 200, 0.038);
+  --after-opacity: 0.44;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
+}
+html[data-workshop-bg="night"] body::before {
+  animation: ambient-drift 150s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 140% 90% at 50% 0%, color-mix(in srgb, #0b1a3a 85%, transparent), transparent 60%),
+    radial-gradient(ellipse 120% 75% at 18% 28%, var(--ambient-a), transparent 70%),
+    radial-gradient(ellipse 110% 70% at 84% 18%, var(--ambient-b), transparent 72%),
+    radial-gradient(ellipse 140% 90% at 50% 96%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 110% 70% at 72% 62%, var(--ambient-d), transparent 70%),
+    /* Crisp moonlight cone (kept subtle) */
+    linear-gradient(108deg, transparent 40%, color-mix(in srgb, var(--accent) 6%, transparent) 52%, transparent 66%),
+    /* Crescent moon silhouette + halo */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cdefs%3E%3CradialGradient id='h' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23eaf6ff' stop-opacity='0.22'/%3E%3Cstop offset='60%25' stop-color='%23b8dcff' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%23000000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='182' cy='74' r='62' fill='url(%23h)'/%3E%3Cpath fill='%23eef7ff' fill-opacity='0.55' d='M194 36c-18 9-30 28-30 50s12 41 30 50c-30 2-56-23-56-50s26-52 56-50z'/%3E%3C/svg%3E"),
+    /* Sparse starfield */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='220'%3E%3Ccircle cx='22' cy='26' r='0.9' fill='%23ffffff' fill-opacity='0.42'/%3E%3Ccircle cx='68' cy='18' r='0.7' fill='%23d8ecff' fill-opacity='0.30'/%3E%3Ccircle cx='118' cy='34' r='0.85' fill='%23ffffff' fill-opacity='0.28'/%3E%3Ccircle cx='168' cy='22' r='0.7' fill='%23c8e4ff' fill-opacity='0.24'/%3E%3Ccircle cx='248' cy='42' r='0.9' fill='%23ffffff' fill-opacity='0.20'/%3E%3Ccircle cx='282' cy='78' r='0.7' fill='%23e8f4ff' fill-opacity='0.18'/%3E%3Ccircle cx='40' cy='96' r='0.6' fill='%23ffffff' fill-opacity='0.16'/%3E%3Ccircle cx='210' cy='108' r='0.7' fill='%23d8ecff' fill-opacity='0.14'/%3E%3C/svg%3E"),
+    /* Dark garden horizon (grounded night) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='140' viewBox='0 0 320 140'%3E%3Cpath fill='%23020712' fill-opacity='0.72' d='M0 140V96L12 86 18 96 28 78 36 96 48 72 58 94 70 80 82 96 96 70 108 92 122 76 134 94 152 68 164 92 180 78 194 96 210 74 224 94 240 80 254 96 270 76 284 94 300 82 312 96 320 88V140z'/%3E%3C/svg%3E");
+  background-size:
+    150% 150%,
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    140% 70%,
+    260px 260px,
+    320px 220px,
+    320px 140px;
+  background-position:
+    50% 0%,
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    0 0,
+    50% 0%,
+    50% 0%,
+    50% 100%;
+}
+
+/* Night garden: fireflies drifting low, crescent moon upper-right */
+html[data-workshop-bg="night"]::after {
+  background-image:
+    /* Crescent moon — thin sickle, soft glow halo */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Ccircle cx='108' cy='52' r='22' fill='%23d0eed8' fill-opacity='0.08'/%3E%3Ccircle cx='118' cy='46' r='18' fill='%230c1210' fill-opacity='0.72'/%3E%3Ccircle cx='108' cy='52' r='26' fill='none' stroke='%23b8e8cc' stroke-opacity='0.05' stroke-width='0.8'/%3E%3C/svg%3E"),
+    /* Botanical garden silhouettes — rose bushes, tulips, ferns, tall grass */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='120' viewBox='0 0 320 120'%3E%3Cpath d='M8 120 Q10 95 8 78' stroke='%231e3828' stroke-opacity='0.50' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M14 120 Q17 88 15 70' stroke='%231e3828' stroke-opacity='0.42' stroke-width='1.0' fill='none' stroke-linecap='round'/%3E%3Cpath d='M22 120 Q20 92 22 80' stroke='%231a3020' stroke-opacity='0.38' stroke-width='1.1' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='52' cy='88' rx='14' ry='10' fill='%23182a1e' fill-opacity='0.45'/%3E%3Cellipse cx='62' cy='82' rx='10' ry='8' fill='%23182a1e' fill-opacity='0.38'/%3E%3Ccircle cx='50' cy='82' r='5' fill='%231a2c20' fill-opacity='0.42'/%3E%3Ccircle cx='60' cy='78' r='4' fill='%231a2c20' fill-opacity='0.35'/%3E%3Cline x1='52' y1='98' x2='52' y2='120' stroke='%231a2c20' stroke-opacity='0.40' stroke-width='1.2'/%3E%3Cline x1='62' y1='94' x2='62' y2='120' stroke='%231a2c20' stroke-opacity='0.35' stroke-width='1.0'/%3E%3Cpath d='M110 120 Q108 95 110 78' stroke='%231e3828' stroke-opacity='0.48' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M110 90 Q100 85 95 80' stroke='%231e3828' stroke-opacity='0.30' stroke-width='0.8' fill='none' stroke-linecap='round'/%3E%3Cpath d='M110 96 Q100 92 94 88' stroke='%231e3828' stroke-opacity='0.28' stroke-width='0.7' fill='none' stroke-linecap='round'/%3E%3Cpath d='M110 88 Q120 83 125 78' stroke='%231e3828' stroke-opacity='0.26' stroke-width='0.7' fill='none' stroke-linecap='round'/%3E%3Cline x1='168' y1='120' x2='168' y2='88' stroke='%23182a1e' stroke-opacity='0.45' stroke-width='1.3'/%3E%3Cpath d='M168 88 Q164 78 168 70 Q172 78 168 88Z' fill='%231a2e20' fill-opacity='0.42'/%3E%3Cline x1='178' y1='120' x2='178' y2='92' stroke='%23182a1e' stroke-opacity='0.40' stroke-width='1.1'/%3E%3Cpath d='M178 92 Q174 83 178 76 Q182 83 178 92Z' fill='%231a2e20' fill-opacity='0.36'/%3E%3Cellipse cx='232' cy='108' rx='22' ry='12' fill='%23142018' fill-opacity='0.48'/%3E%3Cellipse cx='248' cy='104' rx='16' ry='10' fill='%23142018' fill-opacity='0.40'/%3E%3Cpath d='M290 120 Q292 90 290 72' stroke='%231e3828' stroke-opacity='0.44' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M298 120 Q296 96 298 82' stroke='%231a3020' stroke-opacity='0.36' stroke-width='1.0' fill='none' stroke-linecap='round'/%3E%3Cpath d='M308 120 Q310 94 308 80' stroke='%231e3828' stroke-opacity='0.32' stroke-width='0.9' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='88' cy='112' r='2.5' fill='%231a3028' fill-opacity='0.35'/%3E%3Ccircle cx='140' cy='116' r='2' fill='%23182a20' fill-opacity='0.30'/%3E%3Ccircle cx='202' cy='114' r='2.5' fill='%231a3028' fill-opacity='0.32'/%3E%3Ccircle cx='270' cy='110' r='2' fill='%23182a20' fill-opacity='0.28'/%3E%3C/svg%3E"),
+    /* Firefly cluster — low in the garden */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Ccircle cx='68' cy='218' r='1.8' fill='%23c8ffb0' fill-opacity='0.70'/%3E%3Ccircle cx='68' cy='218' r='5' fill='%23a0e880' fill-opacity='0.18'/%3E%3Ccircle cx='168' cy='234' r='1.4' fill='%23d0ffb8' fill-opacity='0.65'/%3E%3Ccircle cx='168' cy='234' r='4' fill='%23a8f090' fill-opacity='0.15'/%3E%3Ccircle cx='255' cy='205' r='1.6' fill='%23c0ffaa' fill-opacity='0.60'/%3E%3Ccircle cx='255' cy='205' r='4.5' fill='%2398e870' fill-opacity='0.14'/%3E%3Ccircle cx='318' cy='228' r='1.2' fill='%23d0ffb0' fill-opacity='0.55'/%3E%3Ccircle cx='318' cy='228' r='3.5' fill='%23a8e880' fill-opacity='0.12'/%3E%3Ccircle cx='122' cy='248' r='1.0' fill='%23b8ff98' fill-opacity='0.50'/%3E%3C/svg%3E");
+  background-size: 180px 180px, 100% 120px, 100% 100%;
+  background-position: 88% 6%, center bottom, center center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  opacity: 0.9;
+  animation: firefly-glow 48s ease-in-out infinite;
+}

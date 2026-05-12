@@ -1,0 +1,70 @@
+/* ---- Aurora: violet-green northern lights ---- */
+html[data-workshop-bg="aurora"] {
+  color-scheme: dark;
+  --bg: #050810;
+  --surface: #0c1020;
+  --surface-2: #12182e;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2a2050;
+  --text: #e9e2fb;
+  --muted: #8878b8;
+  --accent: #a070e0;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(150, 120, 220, 0.038);
+  --ambient-a: rgba(80, 40, 180, 0.085);
+  --ambient-b: rgba(40, 160, 120, 0.065);
+  --ambient-c: rgba(120, 60, 200, 0.06);
+  --ambient-d: rgba(50, 180, 140, 0.05);
+  --shine-top: rgba(190, 160, 255, 0.06);
+  --shine-mid: rgba(90, 60, 160, 0.038);
+  --after-blend: screen;
+  --after-animation: aurora-shimmer 120s ease-in-out infinite;
+  --after-opacity: 0.28;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
+}
+html[data-workshop-bg="aurora"] body::before {
+  animation: aurora-pulse 200s ease-in-out infinite;
+  background-image:
+    /* Merged ambient washes */
+    radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),
+    radial-gradient(ellipse 200% 130% at 95% 75%, color-mix(in srgb, var(--ambient-b) 80%, var(--ambient-d)), transparent 68%),
+    /* Aurora curtain bands — softened so curtains feel atmospheric, not vivid */
+    radial-gradient(ellipse 22% 95% at 16% 44%, color-mix(in srgb, #7030d8 18%, transparent), transparent 58%),
+    radial-gradient(ellipse 20% 100% at 48% 38%, color-mix(in srgb, #28b888 17%, transparent), transparent 58%),
+    radial-gradient(ellipse 18% 92% at 74% 42%, color-mix(in srgb, #18d8a8 16%, transparent), transparent 56%),
+    /* Cyan shimmer + violet accent */
+    radial-gradient(ellipse 16% 80% at 64% 32%, color-mix(in srgb, #00d8cc 13%, transparent), transparent 56%),
+    radial-gradient(ellipse 12% 70% at 88% 46%, color-mix(in srgb, #d038a8 10%, transparent), transparent 54%),
+    /* Horizon + sky base */
+    linear-gradient(180deg, color-mix(in srgb, #050310 40%, transparent) 0%, transparent 42%, color-mix(in srgb, #0e2238 60%, transparent) 100%),
+    /* Star field — reduced to 10 circles */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='12' cy='18' r='0.6' fill='%23e0d8ff' fill-opacity='0.38'/%3E%3Ccircle cx='62' cy='22' r='0.7' fill='%23c8f0e0' fill-opacity='0.34'/%3E%3Ccircle cx='118' cy='28' r='0.65' fill='%23e8f0ff' fill-opacity='0.30'/%3E%3Ccircle cx='170' cy='20' r='0.7' fill='%23f0e8ff' fill-opacity='0.32'/%3E%3Ccircle cx='50' cy='38' r='0.42' fill='%23fff' fill-opacity='0.30'/%3E%3Ccircle cx='134' cy='56' r='0.68' fill='%23e8f0ff' fill-opacity='0.24'/%3E%3Ccircle cx='8' cy='74' r='0.5' fill='%23e0d8ff' fill-opacity='0.18'/%3E%3Ccircle cx='98' cy='72' r='0.55' fill='%23d8ecff' fill-opacity='0.16'/%3E%3Ccircle cx='160' cy='70' r='0.40' fill='%23fff' fill-opacity='0.15'/%3E%3Ccircle cx='182' cy='78' r='0.52' fill='%23c0ffe8' fill-opacity='0.14'/%3E%3C/svg%3E"),
+    /* Aurora curtain detail */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cellipse cx='65' cy='155' rx='14' ry='120' fill='%238040e0' fill-opacity='0.055' transform='rotate(-5 65 155)'/%3E%3Cellipse cx='135' cy='145' rx='11' ry='110' fill='%2330c090' fill-opacity='0.05' transform='rotate(4 135 145)'/%3E%3Cellipse cx='205' cy='150' rx='13' ry='115' fill='%23a050d8' fill-opacity='0.048' transform='rotate(-3 205 150)'/%3E%3Cellipse cx='275' cy='148' rx='10' ry='105' fill='%2320d8b0' fill-opacity='0.042' transform='rotate(2 275 148)'/%3E%3Cpath fill='none' stroke='%23a070e0' stroke-opacity='0.1' stroke-width='0.6' d='M20 80 Q80 72 140 80 Q200 88 260 78 Q300 72 320 78'/%3E%3Cpath fill='none' stroke='%2350d0a0' stroke-opacity='0.08' stroke-width='0.5' d='M0 100 Q70 92 140 100 Q210 108 280 96 Q305 90 320 96'/%3E%3Cpath fill='none' stroke='%23b080f0' stroke-opacity='0.07' stroke-width='0.4' d='M10 118 Q80 110 150 118 Q220 126 290 112'/%3E%3C/svg%3E"),
+    /* Luminous white halos / circumferences scattered across the sky */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='280'%3E%3Ccircle cx='72' cy='90' r='38' fill='none' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='0.9'/%3E%3Ccircle cx='72' cy='90' r='68' fill='none' stroke='%23ffffff' stroke-opacity='0.022' stroke-width='0.6'/%3E%3Ccircle cx='240' cy='62' r='28' fill='none' stroke='%23e8f4ff' stroke-opacity='0.05' stroke-width='0.8'/%3E%3Ccircle cx='240' cy='62' r='52' fill='none' stroke='%23e8f4ff' stroke-opacity='0.025' stroke-width='0.5'/%3E%3Ccircle cx='355' cy='110' r='20' fill='none' stroke='%23f0f8ff' stroke-opacity='0.06' stroke-width='0.7'/%3E%3Ccircle cx='355' cy='110' r='40' fill='none' stroke='%23f0f8ff' stroke-opacity='0.03' stroke-width='0.45'/%3E%3Ccircle cx='155' cy='38' r='16' fill='none' stroke='%23ffffff' stroke-opacity='0.07' stroke-width='0.8'/%3E%3Ccircle cx='155' cy='38' r='32' fill='none' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.5'/%3E%3C/svg%3E");
+  /* 11 layers */
+  background-size:
+    200% 200%, 200% 200%,
+    100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%,
+    100% 100%,
+    200px 200px,
+    320px 320px,
+    400px 280px;
+  background-position:
+    0% 0%, 100% 100%,
+    0% 0%, 0% 0%, 0% 0%,
+    0% 0%, 0% 0%,
+    0 0,
+    6% 4%,
+    48% 30%,
+    12% 18%;
+}
+
+/* Per-theme body::after tuning now lives in CSS variables on each theme. */

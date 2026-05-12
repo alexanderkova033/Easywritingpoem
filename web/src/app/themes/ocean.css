@@ -1,0 +1,106 @@
+/* ---- Open ocean: teal-blue depths ---- */
+html[data-workshop-bg="ocean"] {
+  color-scheme: dark;
+  --bg: #020c14;
+  --surface: #071520;
+  --surface-2: #0c1e2c;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #1a3a52;
+  --text: #daeefb;
+  --muted: #6a9ab8;
+  --accent: #4ab8d8;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 28%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(100, 190, 225, 0.042);
+  --ambient-a: rgba(30, 120, 180, 0.09);
+  --ambient-b: rgba(20, 80, 130, 0.07);
+  --ambient-c: rgba(50, 160, 200, 0.065);
+  --ambient-d: rgba(15, 60, 100, 0.052);
+  --shine-top: rgba(140, 220, 255, 0.06);
+  --shine-mid: rgba(60, 140, 190, 0.04);
+  --after-opacity: 0.42;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
+}
+html[data-workshop-bg="ocean"] body::before {
+  animation: ocean-drift 80s ease-in-out infinite;
+  background-image:
+    radial-gradient(ellipse 140% 120% at 20% 30%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 120% 100% at 80% 15%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 150% 130% at 50% 90%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 110% 95% at 75% 65%, var(--ambient-d), transparent 68%),
+    /* Surface light from above */
+    radial-gradient(ellipse 80% 32% at 50% 0%, color-mix(in srgb, #a0e0ff 18%, transparent), transparent 58%),
+    radial-gradient(ellipse 45% 20% at 50% 0%, color-mix(in srgb, #c8f0ff 14%, transparent), transparent 60%),
+    /* Surface ripple band — where light meets water */
+    linear-gradient(180deg, color-mix(in srgb, #80d0f0 14%, transparent) 0%, transparent 14%),
+    /* Deep ocean abyss bottom */
+    radial-gradient(ellipse 130% 65% at 50% 100%, color-mix(in srgb, #000408 95%, transparent), transparent 60%),
+    /* Light beams piercing from surface (god rays) */
+    repeating-linear-gradient(174deg, transparent, transparent 28px, color-mix(in srgb, #80e0ff 5%, transparent) 28px, color-mix(in srgb, #80e0ff 5%, transparent) 32px, transparent 32px, transparent 78px),
+    /* Caustic shimmer */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='28'%3E%3Cpath fill='none' stroke='%2380d8f0' stroke-opacity='0.16' stroke-width='0.7' d='M0 14 Q20 4 40 14 Q60 24 80 14'/%3E%3Cpath fill='none' stroke='%2360c8e0' stroke-opacity='0.09' stroke-width='0.5' d='M0 22 Q20 14 40 22 Q60 30 80 22'/%3E%3C/svg%3E"),
+    /* Hero: whale silhouette mid-distance */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='240' viewBox='0 0 480 240'%3E%3Cpath fill='%23061824' fill-opacity='0.55' d='M60 130 Q80 110 130 108 Q190 104 260 110 Q330 116 388 122 Q420 126 432 134 Q420 136 410 134 L406 138 Q408 144 404 148 Q396 152 388 148 Q382 144 386 138 Q370 138 358 140 Q320 144 268 142 Q210 140 162 138 Q120 136 90 142 Q74 144 64 148 Q54 152 46 148 Q42 144 50 138 Q56 134 60 130 Z'/%3E%3Cellipse cx='106' cy='124' rx='1.6' ry='1.6' fill='%23000' fill-opacity='0.5'/%3E%3Cpath fill='%23061824' fill-opacity='0.50' d='M428 130 Q444 122 458 126 Q470 132 462 142 Q452 152 438 144 Q424 138 428 130 Z'/%3E%3Cpath fill='%2390d0e8' fill-opacity='0.20' d='M138 108 Q140 100 144 96 Q142 100 142 108 Q146 100 152 96 Q148 102 148 110'/%3E%3C/svg%3E"),
+    /* Hero: jellyfish drifting upper-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='320' viewBox='0 0 200 320'%3E%3Cpath fill='%23a0e0f8' fill-opacity='0.16' d='M50 90 Q50 50 100 50 Q150 50 150 90 Q150 110 142 118 Q132 110 130 122 Q118 110 112 124 Q102 112 100 126 Q88 112 84 124 Q72 112 70 122 Q60 110 50 118 Q50 110 50 90 Z'/%3E%3Cpath fill='none' stroke='%23a0e0f8' stroke-opacity='0.22' stroke-width='0.8' stroke-linecap='round' d='M68 122 Q70 180 60 234 Q56 264 64 290 M88 124 Q90 186 80 240 Q76 268 84 296 M102 126 Q104 188 96 244 Q92 270 100 298 M118 124 Q120 184 112 238 Q108 266 116 294 M134 122 Q136 178 128 232 Q124 260 132 288'/%3E%3Cpath fill='none' stroke='%23c0e8fa' stroke-opacity='0.20' stroke-width='1.4' d='M62 50 Q92 26 100 22 Q108 26 138 50'/%3E%3Cellipse cx='100' cy='80' rx='28' ry='4' fill='%23ffffff' fill-opacity='0.12'/%3E%3C/svg%3E"),
+    /* Bubble streams (low corners) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='340'%3E%3Cg fill='none' stroke='%2370d8f0' stroke-opacity='0.30'%3E%3Ccircle cx='22' cy='320' r='2.6' stroke-width='0.7'/%3E%3Ccircle cx='30' cy='290' r='1.8' stroke-width='0.6'/%3E%3Ccircle cx='40' cy='258' r='1.2' stroke-width='0.5'/%3E%3Ccircle cx='34' cy='226' r='1.6' stroke-width='0.6'/%3E%3Ccircle cx='44' cy='190' r='1.0' stroke-width='0.45'/%3E%3Ccircle cx='38' cy='160' r='0.8' stroke-width='0.4'/%3E%3Ccircle cx='52' cy='128' r='1.2' stroke-width='0.45'/%3E%3Ccircle cx='46' cy='96' r='0.7' stroke-width='0.4'/%3E%3Ccircle cx='160' cy='318' r='2.0' stroke-width='0.6'/%3E%3Ccircle cx='168' cy='284' r='1.4' stroke-width='0.5'/%3E%3Ccircle cx='160' cy='248' r='1.0' stroke-width='0.45'/%3E%3Ccircle cx='172' cy='212' r='1.6' stroke-width='0.55'/%3E%3Ccircle cx='162' cy='176' r='0.9' stroke-width='0.4'/%3E%3Ccircle cx='174' cy='140' r='1.1' stroke-width='0.45'/%3E%3Ccircle cx='168' cy='104' r='0.7' stroke-width='0.4'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Kelp swaying */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='320'%3E%3Cpath fill='none' stroke='%2328906830' stroke-width='1.8' d='M22 320 Q14 270 24 218 Q32 168 18 118 Q10 70 28 22'/%3E%3Cpath fill='none' stroke='%2320806022' stroke-width='1.4' d='M60 320 Q68 268 58 214 Q48 160 64 110 Q72 60 56 14'/%3E%3Cpath fill='none' stroke='%2330a07018' stroke-width='1.0' d='M88 320 Q80 280 92 240 Q98 200 86 158'/%3E%3Cg stroke='%2328906814' stroke-width='0.6' fill='none'%3E%3Cpath d='M22 268 Q34 258 22 250M22 200 Q36 188 20 178M22 138 Q36 124 20 116M60 268 Q46 256 62 248M60 196 Q74 184 58 174M60 132 Q74 118 58 110'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    80% 35%, 50% 22%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    80px 28px,
+    480px 240px,
+    200px 320px,
+    200px 340px,
+    100px 320px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 75% 58%,
+    50% 0%, 50% 0%,
+    0 0,
+    0 0,
+    0 0,
+    0 30%,
+    20% 44%,
+    82% 18%,
+    50% 100%,
+    50% 100%;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat,
+    no-repeat,
+    repeat,
+    repeat,
+    repeat,
+    no-repeat,
+    no-repeat,
+    repeat-x,
+    repeat-x;
+}
+
+/* Ocean: caustic light shimmer + bioluminescent pulse */
+html[data-workshop-bg="ocean"]::after {
+  background-image:
+    radial-gradient(ellipse 60% 18% at 50% 4%, rgba(140, 230, 255, 0.18), transparent 100%),
+    radial-gradient(ellipse 30% 10% at 30% 6%, rgba(180, 240, 255, 0.14), transparent 100%),
+    radial-gradient(ellipse 24% 8% at 70% 8%, rgba(160, 230, 255, 0.12), transparent 100%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: ocean-caustic 14s ease-in-out infinite alternate;
+}
+
+@keyframes ocean-caustic {
+  0%   { opacity: 0.55; transform: translateY(0); }
+  50%  { opacity: 0.95; }
+  100% { opacity: 0.65; transform: translateY(2%); }
+}

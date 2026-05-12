@@ -1,0 +1,89 @@
+html[data-workshop-bg="slate"] {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --surface: #121720;
+  --surface-2: #161c28;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2a3444;
+  --text: #e2e8f1;
+  --muted: #8b98ab;
+  --accent: #7eb8e8;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 25%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(130, 170, 210, 0.045);
+  --ambient-a: rgba(60, 120, 190, 0.08);
+  --ambient-b: rgba(45, 70, 120, 0.06);
+  --ambient-c: rgba(90, 140, 200, 0.055);
+  --ambient-d: rgba(70, 110, 160, 0.045);
+  --shine-top: rgba(180, 210, 245, 0.06);
+  --shine-mid: rgba(90, 130, 180, 0.035);
+  --after-opacity: 0.48;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
+}
+html[data-workshop-bg="slate"] body::before {
+  animation: ambient-drift 110s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
+    /* Blueprint cyan wash from upper-left */
+    radial-gradient(ellipse 70% 60% at 14% 16%, color-mix(in srgb, #4488cc 12%, transparent), transparent 60%),
+    /* Drafting-table edge shadow lower-right */
+    radial-gradient(ellipse 50% 40% at 96% 98%, color-mix(in srgb, #000814 30%, transparent), transparent 62%),
+    /* Vertical pinstripe blind-light */
+    repeating-linear-gradient(90deg, transparent, transparent 38px, color-mix(in srgb, #88b8e8 2.5%, transparent) 38px, color-mix(in srgb, #88b8e8 2.5%, transparent) 39px),
+    /* Diagonal light shaft */
+    linear-gradient(125deg, transparent 42%, color-mix(in srgb, #88b0e0 5%, transparent) 50%, transparent 58%),
+    /* Engineering graph paper — minor */
+    linear-gradient(color-mix(in srgb, #6098d0 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, #6098d0 4%, transparent) 1px, transparent 1px),
+    /* Major graph paper grid */
+    linear-gradient(color-mix(in srgb, #88b8e8 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, #88b8e8 9%, transparent) 1px, transparent 1px),
+    /* Hero: blueprint compass + technical drawing — center-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%2388b8e8' stroke-opacity='0.22' stroke-width='0.8'%3E%3Ccircle cx='180' cy='180' r='130'/%3E%3Ccircle cx='180' cy='180' r='95'/%3E%3Ccircle cx='180' cy='180' r='62'/%3E%3Ccircle cx='180' cy='180' r='3' fill='%2388b8e8' fill-opacity='0.35'/%3E%3Cline x1='40' y1='180' x2='320' y2='180'/%3E%3Cline x1='180' y1='40' x2='180' y2='320'/%3E%3Cline x1='82' y1='82' x2='278' y2='278'/%3E%3Cline x1='82' y1='278' x2='278' y2='82'/%3E%3Cpath d='M180 50 L186 60 L174 60 Z' fill='%2388b8e8' fill-opacity='0.4'/%3E%3Ctext x='192' y='56' font-family='monospace' font-size='9' fill='%2388b8e8' fill-opacity='0.45'%3EN%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23a0c8f0' stroke-opacity='0.12' stroke-width='0.5'%3E%3Cpath d='M180 180 L240 100 L280 100 M240 100 L240 60'/%3E%3Cpath d='M180 180 L100 240 L60 240 M100 240 L100 280'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Drafting dimension lines + isometric box upper-left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='200' viewBox='0 0 260 200'%3E%3Cg fill='none' stroke='%2388b8e8' stroke-opacity='0.16' stroke-width='0.7'%3E%3Cpath d='M30 50 L130 50 L180 80 L80 80 Z'/%3E%3Cpath d='M130 50 L130 130 L180 160 L180 80'/%3E%3Cpath d='M30 50 L30 130 L80 160 L80 80'/%3E%3Cpath d='M30 130 L130 130'/%3E%3Cpath stroke-dasharray='3 3' d='M30 30 L130 30 M30 22 L30 38 M130 22 L130 38'/%3E%3Cpath stroke-dasharray='3 3' d='M195 50 L195 130 M190 50 L200 50 M190 130 L200 130'/%3E%3Ctext x='72' y='28' font-family='monospace' font-size='8' fill='%2388b8e8' fill-opacity='0.30'%3E100mm%3C/text%3E%3Ctext x='200' y='95' font-family='monospace' font-size='8' fill='%2388b8e8' fill-opacity='0.30'%3E80mm%3C/text%3E%3C/g%3E%3C/svg%3E"),
+    /* City-lights horizon glow */
+    radial-gradient(ellipse 110% 22% at 50% 100%, color-mix(in srgb, #4488cc 9%, transparent), transparent 55%);
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    100% 100%, 100% 100%,
+    100% 100%, 140% 55%,
+    16px 16px, 16px 16px,
+    96px 96px, 96px 96px,
+    360px 360px,
+    260px 200px,
+    100% 100%;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 72% 55%,
+    0 0, 0 0,
+    0 0, 60% -5%,
+    0 0, 0 0,
+    0 0, 0 0,
+    78% 48%,
+    6% 14%,
+    0 0;
+}
+
+/* Slate: faint pulsing schematic — periodic surveyor's scan */
+html[data-workshop-bg="slate"]::after {
+  background-image:
+    radial-gradient(circle 220px at 78% 48%, color-mix(in srgb, #88b8e8 6%, transparent), transparent 70%),
+    radial-gradient(ellipse 110% 24% at 50% 100%, color-mix(in srgb, #4488cc 10%, transparent), transparent 60%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: slate-scan 22s ease-in-out infinite;
+}
+
+@keyframes slate-scan {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}

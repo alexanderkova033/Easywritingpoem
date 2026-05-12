@@ -1,0 +1,88 @@
+/* ---- Old parchment: aged cream warm light ---- */
+html[data-workshop-bg="parchment"] {
+  color-scheme: light;
+  --bg: #f5eedc;
+  --surface: #fdfaf2;
+  --surface-2: #f8f2e4;
+  --surface-elevated: #ffffff;
+  --border: #d4c4a8;
+  --text: #241a0e;
+  --muted: #6b5840;
+  --accent: #7a5028;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 16%, #e8d8b8);
+  --selection-fg: var(--text);
+  --danger: #9a1c10;
+  --net-line: rgba(80, 55, 25, 0.055);
+  --ambient-a: rgba(180, 130, 70, 0.07);
+  --ambient-b: rgba(140, 100, 50, 0.055);
+  --ambient-c: rgba(200, 160, 90, 0.065);
+  --ambient-d: rgba(120, 90, 45, 0.045);
+  --shine-top: rgba(255, 250, 225, 0.5);
+  --shine-mid: rgba(200, 165, 100, 0.055);
+  --after-blend: multiply;
+  --after-opacity: 0.35;
+  --after-animation: studio-light-soft 65s ease-in-out infinite alternate;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 18%, transparent);
+}
+html[data-workshop-bg="parchment"] body::before {
+  animation: ambient-drift 180s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 130% 110% at 12% 22%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 95% at 88% 18%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
+    /* Warm candlelight pools */
+    radial-gradient(ellipse 45% 55% at 30% 60%, color-mix(in srgb, #e0a830 9%, transparent), transparent 58%),
+    radial-gradient(ellipse 22% 40% at 85% 80%, color-mix(in srgb, #c89028 7%, transparent), transparent 52%),
+    /* Aged vignette corners */
+    radial-gradient(ellipse 55% 55% at 0% 0%, color-mix(in srgb, #7a5028 6%, transparent), transparent 62%),
+    radial-gradient(ellipse 48% 48% at 100% 100%, color-mix(in srgb, #604018 5%, transparent), transparent 58%),
+    /* Laid paper fiber texture */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cline x1='0' y1='2' x2='6' y2='2' stroke='%237a502810' stroke-width='0.4'/%3E%3Cline x1='0' y1='5' x2='6' y2='5' stroke='%237a502807' stroke-width='0.3'/%3E%3C/svg%3E"),
+    /* Ruled lines */
+    repeating-linear-gradient(0deg, transparent, transparent 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 29px),
+    /* Soft age spots (one layer only) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Ccircle cx='54' cy='74' r='8' fill='%238b6030' fill-opacity='0.045'/%3E%3Ccircle cx='54' cy='74' r='5' fill='%237a5028' fill-opacity='0.032'/%3E%3Ccircle cx='232' cy='50' r='10' fill='%23906535' fill-opacity='0.040'/%3E%3Ccircle cx='232' cy='50' r='6' fill='%237a5028' fill-opacity='0.028'/%3E%3Ccircle cx='284' cy='204' r='7' fill='%23855830' fill-opacity='0.038'/%3E%3Ccircle cx='96' cy='252' r='9' fill='%238a6032' fill-opacity='0.038'/%3E%3Ccircle cx='182' cy='158' r='6' fill='%23906838' fill-opacity='0.032'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    75% 70%, 40% 50%,
+    70% 70%, 60% 60%,
+    6px 6px, 100% 100%,
+    320px 320px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 70% 55%,
+    28% 58%, 88% 82%,
+    0% 0%, 100% 100%,
+    0 0, 0 0,
+    50% 46%;
+}
+
+html[data-workshop-bg="parchment"] body::after {
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+
+html[data-workshop-bg="parchment"]::after {
+  background-image:
+    /* Illuminated capital — gold/blue ornate letter upper-left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect x='14' y='14' width='152' height='152' rx='4' fill='none' stroke='%237a3818' stroke-opacity='0.22' stroke-width='1.5'/%3E%3Crect x='22' y='22' width='136' height='136' rx='2' fill='%23c8a040' fill-opacity='0.06'/%3E%3Crect x='22' y='22' width='136' height='136' rx='2' fill='none' stroke='%23c0a040' stroke-opacity='0.20' stroke-width='0.8'/%3E%3Cpath fill='%23c0801c' fill-opacity='0.16' d='M58 50 L122 50 L122 64 L96 64 L96 142 L84 142 L84 64 L58 64 Z'/%3E%3Cpath fill='none' stroke='%23801818' stroke-opacity='0.22' stroke-width='0.9' d='M58 50 L122 50 L122 64 L96 64 L96 142 L84 142 L84 64 L58 64 Z'/%3E%3Cg fill='none' stroke='%23306828' stroke-opacity='0.18' stroke-width='0.7'%3E%3Cpath d='M30 30 Q36 26 42 30 Q38 36 30 32'/%3E%3Cpath d='M150 30 Q144 26 138 30 Q142 36 150 32'/%3E%3Cpath d='M30 150 Q36 154 42 150 Q38 144 30 148'/%3E%3Cpath d='M150 150 Q144 154 138 150 Q142 144 150 148'/%3E%3Cpath d='M28 88 Q34 84 40 90 Q36 96 28 92Z M152 88 Q146 84 140 90 Q144 96 152 92Z'/%3E%3C/g%3E%3Cg fill='%23901818' fill-opacity='0.18'%3E%3Ccircle cx='32' cy='90' r='1.6'/%3E%3Ccircle cx='148' cy='90' r='1.6'/%3E%3Ccircle cx='90' cy='32' r='1.6'/%3E%3Ccircle cx='90' cy='148' r='1.6'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Decorative margin border with vine + flourishes — right side */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='400' viewBox='0 0 80 400'%3E%3Cpath fill='none' stroke='%23304820' stroke-opacity='0.22' stroke-width='1.0' stroke-linecap='round' d='M40 0 Q44 30 38 60 Q32 90 42 120 Q50 150 38 180 Q28 210 42 240 Q52 270 38 300 Q28 330 42 360 Q48 380 40 400'/%3E%3Cg fill='%23801818' fill-opacity='0.18'%3E%3Ccircle cx='42' cy='38' r='2.5'/%3E%3Ccircle cx='38' cy='98' r='2.5'/%3E%3Ccircle cx='42' cy='158' r='2.5'/%3E%3Ccircle cx='38' cy='218' r='2.5'/%3E%3Ccircle cx='42' cy='278' r='2.5'/%3E%3Ccircle cx='38' cy='338' r='2.5'/%3E%3C/g%3E%3Cg fill='%23306828' fill-opacity='0.22'%3E%3Cpath d='M28 38 Q22 36 24 30 Q30 30 32 36 Z'/%3E%3Cpath d='M52 98 Q58 96 56 90 Q50 90 48 96 Z'/%3E%3Cpath d='M28 158 Q22 156 24 150 Q30 150 32 156 Z'/%3E%3Cpath d='M52 218 Q58 216 56 210 Q50 210 48 216 Z'/%3E%3Cpath d='M28 278 Q22 276 24 270 Q30 270 32 276 Z'/%3E%3Cpath d='M52 338 Q58 336 56 330 Q50 330 48 336 Z'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Wax seal lower-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Ccircle cx='70' cy='70' r='34' fill='%237a3818' fill-opacity='0.14'/%3E%3Ccircle cx='70' cy='70' r='27' fill='%238a4020' fill-opacity='0.10'/%3E%3Ccircle cx='70' cy='70' r='27' fill='none' stroke='%237a3818' stroke-opacity='0.20' stroke-width='1.4'/%3E%3Ccircle cx='70' cy='70' r='34' fill='none' stroke='%237a3818' stroke-opacity='0.12' stroke-width='0.7'/%3E%3Cpath fill='none' stroke='%237a3818' stroke-opacity='0.20' stroke-width='0.9' d='M70 48 L75 64 L92 64 L78 74 L84 90 L70 80 L56 90 L62 74 L48 64 L65 64Z'/%3E%3C/svg%3E"),
+    /* Inked manuscript text ghost mid */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320' viewBox='0 0 420 320'%3E%3Cg stroke='%23241408' stroke-opacity='0.13' stroke-width='1.3' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 40 Q72 32 108 40 Q148 50 188 38 Q232 28 276 40 Q316 50 360 38'/%3E%3Cpath d='M40 70 Q70 62 100 70 Q132 80 168 68 Q208 56 248 68 Q282 78 320 68'/%3E%3Cpath d='M40 102 Q72 94 110 102 Q150 112 192 100 Q236 90 280 102 Q322 112 366 100'/%3E%3Cpath d='M40 132 Q68 124 96 132 Q130 142 164 130 Q204 118 244 132'/%3E%3Cpath d='M40 162 Q72 154 108 162 Q148 172 188 160 Q232 150 278 162 Q318 172 358 160'/%3E%3Cpath d='M40 192 Q70 184 100 192 Q132 202 168 190 Q208 178 248 190'/%3E%3Cpath d='M40 222 Q74 214 110 222 Q150 232 190 220 Q232 208 274 222 Q316 232 358 220'/%3E%3Cpath d='M40 252 Q72 244 102 252 Q138 262 174 250'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Corner tea-stain — upper right */
+    radial-gradient(ellipse 35% 28% at 96% 4%, color-mix(in srgb, #c09050 8%, transparent), transparent 70%),
+    /* Candle pool warmth */
+    radial-gradient(ellipse 32% 38% at 26% 64%, color-mix(in srgb, #ffb858 9%, transparent), transparent 60%);
+  background-size: 180px 180px, 80px 400px, 140px 140px, 420px 320px, 100% 100%, 100% 100%;
+  background-position: 6% 8%, 96% 50%, 92% 92%, 50% 50%, 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: multiply;
+  opacity: 1;
+  animation: candle-breathe 12s ease-in-out infinite;
+}

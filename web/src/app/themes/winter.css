@@ -1,0 +1,89 @@
+/* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
+html[data-workshop-bg="winter"] {
+  color-scheme: light;
+  --bg: #edf2f8;
+  --surface: #f5f8fc;
+  --surface-2: #eef3f9;
+  --surface-elevated: #fafcff;
+  --border: #ccd6e4;
+  --text: #14202e;
+  --muted: #5a6e88;
+  --accent: #3a78b8;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 16%, #d4e4f4);
+  --selection-fg: var(--text);
+  --danger: #b02020;
+  --net-line: rgba(60, 100, 155, 0.04);
+  --ambient-a: rgba(100, 160, 220, 0.06);
+  --ambient-b: rgba(70, 120, 180, 0.05);
+  --ambient-c: rgba(130, 185, 240, 0.055);
+  --ambient-d: rgba(55, 95, 148, 0.04);
+  --shine-top: rgba(255, 255, 255, 0.55);
+  --shine-mid: rgba(160, 200, 240, 0.05);
+  --after-blend: multiply;
+  --after-opacity: 0.22;
+  --after-animation: studio-light-soft 58s ease-in-out infinite alternate;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
+}
+html[data-workshop-bg="winter"] body::before {
+  animation: ambient-drift 175s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 130% 110% at 14% 22%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 95% at 86% 18%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
+    /* Pale zenith */
+    radial-gradient(ellipse 100% 65% at 50% 0%, color-mix(in srgb, #fff 12%, transparent), transparent 68%),
+    /* Cold light shaft upper-left */
+    radial-gradient(ellipse 60% 45% at 8% 10%, color-mix(in srgb, #c8e0f8 12%, transparent), transparent 62%),
+    /* Snow-blanket ground */
+    radial-gradient(ellipse 130% 38% at 50% 100%, color-mix(in srgb, #f0f6ff 35%, transparent), transparent 55%),
+    /* Frosted upper corners */
+    radial-gradient(ellipse 35% 30% at 0% 0%, color-mix(in srgb, #ffffff 30%, transparent), transparent 60%),
+    radial-gradient(ellipse 35% 30% at 100% 0%, color-mix(in srgb, #ffffff 28%, transparent), transparent 60%),
+    /* Snowflake / ice crystal lattice */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg stroke='%233a78b812' stroke-width='0.6' fill='none'%3E%3Cline x1='40' y1='4' x2='40' y2='76'/%3E%3Cline x1='4' y1='40' x2='76' y2='40'/%3E%3Cline x1='12' y1='12' x2='68' y2='68'/%3E%3Cline x1='68' y1='12' x2='12' y2='68'/%3E%3Cline x1='40' y1='4' x2='34' y2='14'/%3E%3Cline x1='40' y1='4' x2='46' y2='14'/%3E%3Cline x1='40' y1='76' x2='34' y2='66'/%3E%3Cline x1='40' y1='76' x2='46' y2='66'/%3E%3Cline x1='4' y1='40' x2='14' y2='34'/%3E%3Cline x1='4' y1='40' x2='14' y2='46'/%3E%3Cline x1='76' y1='40' x2='66' y2='34'/%3E%3Cline x1='76' y1='40' x2='66' y2='46'/%3E%3C/g%3E%3Ccircle cx='40' cy='40' r='2' fill='%233a78b810'/%3E%3C/svg%3E"),
+    /* Hero: large snowflake watermark */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg stroke='%233a78b8' stroke-opacity='0.14' stroke-width='1.3' fill='none' stroke-linecap='round' transform='translate(180 180)'%3E%3Cg%3E%3Cline x1='0' y1='-150' x2='0' y2='150'/%3E%3Cline x1='-150' y1='0' x2='150' y2='0'/%3E%3Cline x1='-106' y1='-106' x2='106' y2='106'/%3E%3Cline x1='106' y1='-106' x2='-106' y2='106'/%3E%3C/g%3E%3Cg%3E%3Cpath d='M0 -150 L-12 -132 M0 -150 L12 -132 M0 -120 L-10 -108 M0 -120 L10 -108 M0 -90 L-8 -80 M0 -90 L8 -80'/%3E%3Cpath d='M0 150 L-12 132 M0 150 L12 132 M0 120 L-10 108 M0 120 L10 108 M0 90 L-8 80 M0 90 L8 80'/%3E%3Cpath d='M-150 0 L-132 -12 M-150 0 L-132 12 M-120 0 L-108 -10 M-120 0 L-108 10 M-90 0 L-80 -8 M-90 0 L-80 8'/%3E%3Cpath d='M150 0 L132 -12 M150 0 L132 12 M120 0 L108 -10 M120 0 L108 10 M90 0 L80 -8 M90 0 L80 8'/%3E%3Cpath d='M-106 -106 L-118 -94 M-106 -106 L-94 -118 M-85 -85 L-95 -75 M-85 -85 L-75 -95 M106 106 L94 118 M106 106 L118 94 M85 85 L75 95 M85 85 L95 75 M-106 106 L-94 118 M-106 106 L-118 94 M106 -106 L118 -94 M106 -106 L94 -118'/%3E%3C/g%3E%3Ccircle r='8' fill='%233a78b8' fill-opacity='0.12'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Hero: dense evergreen forest at horizon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='220' viewBox='0 0 480 220'%3E%3Cg fill='%231a2638' fill-opacity='0.35'%3E%3Cpath d='M20 220 L20 130 L8 158 L14 158 L4 178 L12 178 L0 198 L40 198 L28 178 L36 178 L26 158 L32 158 Z'/%3E%3Cpath d='M62 220 L62 110 L48 144 L56 144 L42 170 L52 170 L38 192 L86 192 L72 170 L82 170 L68 144 L76 144 Z'/%3E%3Cpath d='M110 220 L110 124 L96 154 L104 154 L92 178 L102 178 L88 198 L132 198 L118 178 L128 178 L116 154 L124 154 Z'/%3E%3Cpath d='M156 220 L156 100 L142 138 L150 138 L136 166 L146 166 L132 190 L180 190 L166 166 L176 166 L162 138 L170 138 Z'/%3E%3Cpath d='M204 220 L204 116 L190 148 L198 148 L186 172 L196 172 L184 194 L224 194 L212 172 L222 172 L210 148 L218 148 Z'/%3E%3Cpath d='M248 220 L248 108 L234 142 L242 142 L228 168 L238 168 L224 192 L272 192 L260 168 L270 168 L256 142 L262 142 Z'/%3E%3Cpath d='M296 220 L296 122 L282 152 L290 152 L278 176 L288 176 L274 196 L318 196 L306 176 L314 176 L302 152 L310 152 Z'/%3E%3Cpath d='M342 220 L342 104 L328 140 L336 140 L322 168 L332 168 L318 192 L366 192 L354 168 L364 168 L350 140 L358 140 Z'/%3E%3Cpath d='M388 220 L388 120 L374 150 L382 150 L370 174 L380 174 L366 194 L410 194 L398 174 L408 174 L396 150 L402 150 Z'/%3E%3Cpath d='M432 220 L432 112 L418 144 L426 144 L414 170 L424 170 L410 192 L458 192 L446 170 L456 170 L442 144 L450 144 Z'/%3E%3C/g%3E%3Crect x='0' y='190' width='480' height='30' fill='%23f0f6ff' fill-opacity='0.4'/%3E%3Cpath fill='%23f0f6ff' fill-opacity='0.32' d='M0 200 Q60 192 120 196 Q180 200 240 194 Q300 188 360 196 Q420 204 480 198 L480 220 L0 220 Z'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    100% 55%, 65% 50%,
+    100% 40%,
+    100% 100%, 100% 100%,
+    160px 160px,
+    360px 360px,
+    480px 220px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 70% 55%,
+    50% 0%, 0% 0%,
+    50% 100%,
+    0 0, 100% 0%,
+    12% 8%,
+    50% 32%,
+    50% 100%;
+}
+
+/* Winter: drifting snowfall + evergreen line + frosted corners */
+html[data-workshop-bg="winter"]::after {
+  background-image:
+    /* Dense snow particles */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340'%3E%3Ccircle cx='24' cy='18' r='1.0' fill='%23ffffff' fill-opacity='0.55'/%3E%3Ccircle cx='88' cy='45' r='0.7' fill='%23ddeeff' fill-opacity='0.45'/%3E%3Ccircle cx='155' cy='12' r='1.1' fill='%23ffffff' fill-opacity='0.50'/%3E%3Ccircle cx='222' cy='38' r='0.7' fill='%23e8f4ff' fill-opacity='0.42'/%3E%3Ccircle cx='304' cy='22' r='1.0' fill='%23ffffff' fill-opacity='0.46'/%3E%3Ccircle cx='52' cy='98' r='0.9' fill='%23ffffff' fill-opacity='0.40'/%3E%3Ccircle cx='128' cy='82' r='1.2' fill='%23ddeeff' fill-opacity='0.42'/%3E%3Ccircle cx='208' cy='108' r='0.7' fill='%23e0f0ff' fill-opacity='0.38'/%3E%3Ccircle cx='280' cy='78' r='0.9' fill='%23ffffff' fill-opacity='0.36'/%3E%3Ccircle cx='32' cy='168' r='0.8' fill='%23e8f4ff' fill-opacity='0.30'/%3E%3Ccircle cx='112' cy='148' r='1.1' fill='%23ddeeff' fill-opacity='0.32'/%3E%3Ccircle cx='182' cy='178' r='0.7' fill='%23ffffff' fill-opacity='0.28'/%3E%3Ccircle cx='254' cy='162' r='0.8' fill='%23ddeeff' fill-opacity='0.26'/%3E%3Ccircle cx='62' cy='232' r='0.9' fill='%23ffffff' fill-opacity='0.24'/%3E%3Ccircle cx='148' cy='248' r='0.7' fill='%23e0f0ff' fill-opacity='0.22'/%3E%3Ccircle cx='224' cy='225' r='1.0' fill='%23ffffff' fill-opacity='0.24'/%3E%3Ccircle cx='298' cy='254' r='0.8' fill='%23ddeeff' fill-opacity='0.22'/%3E%3Ccircle cx='38' cy='302' r='1.1' fill='%23ffffff' fill-opacity='0.20'/%3E%3Ccircle cx='118' cy='318' r='0.7' fill='%23e0f0ff' fill-opacity='0.18'/%3E%3Ccircle cx='202' cy='298' r='0.9' fill='%23ffffff' fill-opacity='0.20'/%3E%3Ccircle cx='268' cy='320' r='0.7' fill='%23ddeeff' fill-opacity='0.18'/%3E%3C/svg%3E"),
+    /* Larger blurred flakes (foreground) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='40' cy='30' r='2.2' fill='%23ffffff' fill-opacity='0.20'/%3E%3Ccircle cx='128' cy='62' r='2.6' fill='%23ddeeff' fill-opacity='0.18'/%3E%3Ccircle cx='188' cy='118' r='2.0' fill='%23ffffff' fill-opacity='0.18'/%3E%3Ccircle cx='62' cy='148' r='2.4' fill='%23ddeeff' fill-opacity='0.16'/%3E%3Ccircle cx='148' cy='188' r='2.2' fill='%23ffffff' fill-opacity='0.14'/%3E%3C/svg%3E");
+  background-size: 340px 340px, 220px 220px;
+  background-repeat: repeat, repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: winter-snowfall 60s linear infinite;
+}
+
+@keyframes winter-snowfall {
+  0%   { transform: translate3d(0, -2%, 0); }
+  100% { transform: translate3d(-3%, 6%, 0); }
+}
+
+/* Winter body::after uses shared backdrop vars */

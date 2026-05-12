@@ -1,0 +1,98 @@
+/* ---- Autumn: warm dark amber, falling leaves ---- */
+html[data-workshop-bg="autumn"] {
+  color-scheme: dark;
+  --bg: #120a04;
+  --surface: #1e1008;
+  --surface-2: #261408;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #3a1e0c;
+  --text: #eedccb;
+  --muted: #a88868;
+  --accent: #c87832;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a7a;
+  --net-line: rgba(200, 130, 50, 0.035);
+  --ambient-a: rgba(180, 90, 20, 0.065);
+  --ambient-b: rgba(120, 55, 10, 0.050);
+  --ambient-c: rgba(200, 115, 28, 0.055);
+  --ambient-d: rgba(145, 68, 14, 0.042);
+  --shine-top: rgba(220, 165, 75, 0.052);
+  --shine-mid: rgba(155, 78, 18, 0.038);
+  --after-opacity: 0.48;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
+}
+html[data-workshop-bg="autumn"] body::before {
+  animation: ember-drift 130s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),
+    radial-gradient(ellipse 200% 130% at 95% 75%, color-mix(in srgb, var(--ambient-b) 80%, var(--ambient-d)), transparent 68%),
+    /* Late-afternoon sun upper right */
+    radial-gradient(ellipse 65% 50% at 88% 2%, color-mix(in srgb, #e08820 32%, transparent), transparent 58%),
+    radial-gradient(ellipse 25% 22% at 88% 4%, color-mix(in srgb, #ffc060 24%, transparent), transparent 55%),
+    /* Warm amber mid-glow */
+    radial-gradient(ellipse 80% 60% at 22% 38%, color-mix(in srgb, #c07010 18%, transparent), transparent 62%),
+    /* Warm ground (leaf litter) */
+    radial-gradient(ellipse 130% 48% at 50% 100%, color-mix(in srgb, #a85012 26%, transparent), transparent 55%),
+    /* Smoky horizon darkening */
+    linear-gradient(180deg, transparent 48%, color-mix(in srgb, #0a0301 60%, transparent) 100%),
+    /* Hero: large maple tree with golden canopy left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='420' viewBox='0 0 340 420'%3E%3Cpath fill='%23150802' fill-opacity='0.55' d='M150 420 Q145 320 138 240 Q130 160 122 100 L130 60 L135 92 L142 60 L148 96 L154 60 L160 92 L168 64 Q174 100 168 130 Q160 180 162 230 Q166 290 168 360 Q170 410 168 420 Z'/%3E%3Cg%3E%3Cellipse cx='80' cy='120' rx='62' ry='38' fill='%23c85812' fill-opacity='0.40'/%3E%3Cellipse cx='160' cy='80' rx='75' ry='42' fill='%23d86818' fill-opacity='0.42'/%3E%3Cellipse cx='235' cy='115' rx='58' ry='35' fill='%23a8480c' fill-opacity='0.38'/%3E%3Cellipse cx='115' cy='168' rx='42' ry='26' fill='%23e07820' fill-opacity='0.35'/%3E%3Cellipse cx='198' cy='168' rx='48' ry='28' fill='%23b85012' fill-opacity='0.36'/%3E%3Cellipse cx='160' cy='130' rx='90' ry='52' fill='%23d46814' fill-opacity='0.28'/%3E%3C/g%3E%3Cg fill='%23ffa840' fill-opacity='0.35'%3E%3Ccircle cx='90' cy='110' r='3'/%3E%3Ccircle cx='168' cy='75' r='4'/%3E%3Ccircle cx='220' cy='118' r='3.5'/%3E%3Ccircle cx='130' cy='155' r='2.5'/%3E%3Ccircle cx='195' cy='160' r='3'/%3E%3Ccircle cx='105' cy='80' r='2.5'/%3E%3Ccircle cx='240' cy='90' r='3'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Falling leaves (mid-air) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='340' viewBox='0 0 340 340'%3E%3Cg%3E%3Cpath d='M48 58 L52 52 L60 50 L66 56 L60 62 L52 64 Z' fill='%23d46414' fill-opacity='0.30' transform='rotate(35 56 58)'/%3E%3Cpath d='M120 32 L124 27 L132 26 L138 32 L132 38 L124 40 Z' fill='%239e340a' fill-opacity='0.25' transform='rotate(-22 128 32)'/%3E%3Cpath d='M190 68 L194 62 L202 60 L208 66 L202 72 L194 74 Z' fill='%23e47218' fill-opacity='0.28' transform='rotate(48 198 68)'/%3E%3Cpath d='M32 138 L36 132 L46 130 L52 138 L46 145 L36 147 Z' fill='%23b2440c' fill-opacity='0.24' transform='rotate(-16 40 138)'/%3E%3Cpath d='M155 112 L159 107 L165 106 L170 112 L165 117 L159 119 Z' fill='%23e47218' fill-opacity='0.26' transform='rotate(62 162 112)'/%3E%3Cpath d='M228 94 L232 88 L240 86 L246 94 L240 102 L232 104 Z' fill='%23983008' fill-opacity='0.22' transform='rotate(-32 236 94)'/%3E%3Cpath d='M86 168 L90 162 L96 160 L102 166 L96 174 L90 176 Z' fill='%23c65812' fill-opacity='0.24' transform='rotate(26 94 168)'/%3E%3Cpath d='M210 158 L214 152 L222 150 L228 158 L222 166 L214 168 Z' fill='%23ac410c' fill-opacity='0.20' transform='rotate(-42 218 158)'/%3E%3Cpath d='M62 218 L66 213 L72 212 L78 218 L72 223 L66 225 Z' fill='%23d85a10' fill-opacity='0.20' transform='rotate(18 70 218)'/%3E%3Cpath d='M170 225 L174 220 L182 218 L188 226 L182 234 L174 236 Z' fill='%23a03808' fill-opacity='0.18' transform='rotate(-55 178 226)'/%3E%3Cpath d='M278 282 L282 277 L288 276 L294 282 L288 288 L282 290 Z' fill='%23c45810' fill-opacity='0.16' transform='rotate(30 286 282)'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Distant tree silhouette horizon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='180' viewBox='0 0 480 180'%3E%3Cpath fill='%23140802' fill-opacity='0.42' d='M0 180V128 L8 116 14 128 22 108 30 128 40 102 48 126 58 108 66 128 78 98 86 124 98 106 106 126 118 96 128 124 140 106 148 128 160 100 170 124 182 106 190 128 204 96 214 124 226 106 236 126 250 98 260 124 272 106 282 126 296 102 308 126 320 110 332 128 346 100 358 126 372 108 384 128 396 104 408 126 422 110 434 128 448 102 460 126 480 114V180Z'/%3E%3Cpath fill='%23080300' fill-opacity='0.32' d='M0 180V152 L14 144 28 152 44 138 60 152 78 140 96 154 116 138 136 152 156 140 178 154 198 138 220 152 240 140 262 154 282 138 304 152 322 140 344 154 366 138 388 152 408 140 430 154 452 138 472 152 480 146V180Z'/%3E%3C/svg%3E"),
+    /* Campfire glow lower-left */
+    radial-gradient(ellipse 18% 22% at 14% 92%, color-mix(in srgb, #ff8030 28%, transparent), transparent 55%),
+    radial-gradient(ellipse 8% 10% at 14% 92%, color-mix(in srgb, #ffd060 22%, transparent), transparent 60%),
+    /* Ground fog drift */
+    radial-gradient(ellipse 120% 16% at 50% 100%, color-mix(in srgb, #d09060 10%, transparent), transparent 58%);
+  background-size:
+    200% 200%, 200% 200%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    340px 420px,
+    340px 340px,
+    480px 180px,
+    100% 100%, 100% 100%,
+    100% 100%;
+  background-position:
+    0% 0%, 100% 100%,
+    0% 0%, 0% 0%, 0% 0%, 0% 0%, 0 0,
+    4% 12%,
+    50% 30%,
+    50% 96%,
+    0 0, 0 0,
+    0 0;
+  background-repeat:
+    repeat, repeat,
+    repeat, repeat, repeat, repeat, repeat,
+    no-repeat,
+    repeat,
+    repeat-x,
+    no-repeat, no-repeat,
+    no-repeat;
+}
+
+/* Autumn: drifting leaf motion + campfire flicker */
+html[data-workshop-bg="autumn"]::after {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cpath d='M60 90 L66 84 L74 82 L80 90 L74 98 L66 100 Z' fill='%23ff9038' fill-opacity='0.42' transform='rotate(25 70 90)'/%3E%3Cpath d='M180 50 L186 44 L194 42 L200 50 L194 58 L186 60 Z' fill='%23e07020' fill-opacity='0.40' transform='rotate(-15 190 50)'/%3E%3Cpath d='M270 110 L276 104 L284 102 L290 110 L284 118 L276 120 Z' fill='%23d06018' fill-opacity='0.36' transform='rotate(42 280 110)'/%3E%3Cpath d='M90 180 L96 174 L104 172 L110 180 L104 188 L96 190 Z' fill='%23ff8830' fill-opacity='0.38' transform='rotate(-30 100 180)'/%3E%3Cpath d='M210 220 L216 214 L224 212 L230 220 L224 228 L216 230 Z' fill='%23c85812' fill-opacity='0.34' transform='rotate(55 220 220)'/%3E%3Cpath d='M40 260 L46 254 L54 252 L60 260 L54 268 L46 270 Z' fill='%23e07020' fill-opacity='0.30' transform='rotate(-22 50 260)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 16% 18% at 14% 92%, rgba(255, 130, 40, 0.30), transparent 100%),
+    radial-gradient(ellipse 8% 9% at 14% 92%, rgba(255, 200, 90, 0.22), transparent 100%);
+  background-size: 320px 320px, 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0, 0 0;
+  background-repeat: repeat, no-repeat, no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: autumn-drift 70s linear infinite;
+}
+
+@keyframes autumn-drift {
+  0%   { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-6%, 4%, 0); }
+}
+
+/* Autumn body::after uses shared backdrop vars */

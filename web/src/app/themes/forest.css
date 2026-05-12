@@ -1,0 +1,86 @@
+html[data-workshop-bg="forest"] {
+  color-scheme: dark;
+  --bg: #06120c;
+  --surface: #0d1a14;
+  --surface-2: #102018;
+  --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
+  --border: #256648;
+  --text: #ddf5ea;
+  --muted: #7eb89a;
+  --accent: #5ec995;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9aa1;
+  --net-line: rgba(130, 225, 175, 0.040);
+  --ambient-a: rgba(42, 168, 108, 0.092);
+  --ambient-b: rgba(28, 98, 75, 0.075);
+  --ambient-c: rgba(64, 148, 118, 0.065);
+  --ambient-d: rgba(85, 170, 135, 0.052);
+  --shine-top: rgba(105, 235, 170, 0.055);
+  --shine-mid: rgba(52, 150, 108, 0.042);
+  --after-opacity: 0.48;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 40%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 48%, transparent);
+}
+html[data-workshop-bg="forest"] body::before {
+  animation: ambient-drift 120s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
+    /* Mossy forest floor */
+    radial-gradient(ellipse 130% 55% at 50% 100%, color-mix(in srgb, #2a6a40 22%, transparent), transparent 60%),
+    /* Bright canopy break — single strong light beam center */
+    radial-gradient(ellipse 35% 80% at 50% 0%, color-mix(in srgb, #c8f0a0 14%, transparent), transparent 58%),
+    radial-gradient(ellipse 18% 60% at 50% 4%, color-mix(in srgb, #e8ffc0 18%, transparent), transparent 55%),
+    /* Soft secondary shaft */
+    radial-gradient(ellipse 22% 80% at 78% 6%, color-mix(in srgb, #a8e070 10%, transparent), transparent 60%),
+    /* Dappled diagonal shafts */
+    repeating-linear-gradient(122deg, transparent, transparent 36px, color-mix(in srgb, #b8e890 4%, transparent) 36px, color-mix(in srgb, #b8e890 4%, transparent) 38px),
+    repeating-linear-gradient(108deg, transparent, transparent 58px, color-mix(in srgb, var(--accent) 2.2%, transparent) 58px, color-mix(in srgb, var(--accent) 2.2%, transparent) 60px),
+    /* Deep top vignette — canopy ceiling */
+    radial-gradient(ellipse 100% 35% at 50% 0%, color-mix(in srgb, #03100a 65%, transparent), transparent 62%),
+    /* Tree canopy silhouette at top — denser */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='180' viewBox='0 0 480 180'%3E%3Cpath fill='%23061a10' fill-opacity='0.62' d='M0 0 Q18 32 0 62L0 0zM480 0 Q462 32 480 62L480 0z'/%3E%3Cpath fill='%2308221a' fill-opacity='0.55' d='M0 0 Q60 40 38 75 Q22 96 0 88L0 0zM480 0 Q420 40 442 75 Q458 96 480 88L480 0z'/%3E%3Cpath fill='%230a2820' fill-opacity='0.40' d='M0 0V52 Q22 30 48 48 Q72 64 96 44 Q120 22 146 46 Q172 70 198 42 Q222 18 248 44 Q274 70 300 40 Q326 14 352 44 Q378 72 406 42 Q432 16 460 44 Q474 58 480 50V0Z'/%3E%3C/svg%3E"),
+    /* Hero: large fern frond mid-left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='340' viewBox='0 0 260 340'%3E%3Cpath fill='none' stroke='%23306a40' stroke-opacity='0.28' stroke-width='2' stroke-linecap='round' d='M30 320 Q40 240 70 175 Q105 100 175 35'/%3E%3Cg stroke='%23306a40' stroke-opacity='0.20' stroke-width='1.1' fill='none' stroke-linecap='round'%3E%3Cpath d='M65 250 Q40 245 22 258'/%3E%3Cpath d='M58 220 Q32 215 14 226'/%3E%3Cpath d='M70 200 Q98 195 116 184'/%3E%3Cpath d='M82 165 Q110 158 126 144'/%3E%3Cpath d='M62 175 Q38 170 22 178'/%3E%3Cpath d='M98 130 Q126 122 142 110'/%3E%3Cpath d='M78 138 Q54 134 38 142'/%3E%3Cpath d='M118 96 Q146 88 162 78'/%3E%3Cpath d='M96 102 Q72 100 56 106'/%3E%3Cpath d='M140 64 Q166 58 182 50'/%3E%3Cpath d='M116 68 Q92 68 78 74'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Distant mist-veiled treeline */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='200' viewBox='0 0 480 200'%3E%3Cpath fill='%23184a32' fill-opacity='0.22' d='M0 200V128 L14 110 24 130 38 96 52 124 68 108 82 130 96 100 110 122 128 105 144 124 162 95 178 116 196 102 214 122 232 100 250 118 270 104 286 120 304 100 322 118 340 102 358 122 376 100 392 120 410 104 428 118 446 102 462 120 480 108V200Z'/%3E%3Cpath fill='%230c3624' fill-opacity='0.30' d='M0 200V152 L18 138 32 152 48 134 66 148 84 136 102 150 122 132 142 148 162 134 184 150 204 134 226 148 246 136 268 150 290 134 312 148 332 136 354 150 376 134 398 148 420 136 442 150 462 136 480 148V200Z'/%3E%3Cpath fill='none' stroke='%2350a07820' stroke-width='1' stroke-linecap='round' d='M0 168 Q120 158 240 162 T480 156'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%, 155% 155%, 170% 170%, 150% 150%,
+    130% 50%,
+    80% 100%, 50% 100%, 70% 100%,
+    100% 100%, 100% 100%,
+    100% 35%,
+    480px 180px,
+    260px 340px,
+    480px 200px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 72% 55%,
+    50% 100%,
+    50% 0%, 50% 0%, 78% 0%,
+    0 0, 0 0,
+    50% 0%,
+    50% 0%,
+    4% 60%,
+    50% 92%;
+}
+
+/* Forest: drifting mist + fireflies low among ferns */
+html[data-workshop-bg="forest"]::after {
+  background-image:
+    /* Low fog band */
+    radial-gradient(ellipse 120% 22% at 50% 78%, rgba(160, 220, 195, 0.13), transparent 100%),
+    radial-gradient(ellipse 80% 14% at 22% 88%, rgba(180, 230, 200, 0.10), transparent 100%),
+    /* Firefly cluster */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320'%3E%3Ccircle cx='52' cy='240' r='1.4' fill='%23d8ffb0' fill-opacity='0.78'/%3E%3Ccircle cx='52' cy='240' r='5' fill='%23a0e880' fill-opacity='0.18'/%3E%3Ccircle cx='148' cy='268' r='1.0' fill='%23e0ffb8' fill-opacity='0.68'/%3E%3Ccircle cx='148' cy='268' r='4' fill='%23a8f090' fill-opacity='0.14'/%3E%3Ccircle cx='238' cy='222' r='1.6' fill='%23ccffa0' fill-opacity='0.72'/%3E%3Ccircle cx='238' cy='222' r='5.5' fill='%2398e870' fill-opacity='0.14'/%3E%3Ccircle cx='318' cy='258' r='1.2' fill='%23d8ffb0' fill-opacity='0.60'/%3E%3Ccircle cx='318' cy='258' r='4' fill='%23a8e880' fill-opacity='0.12'/%3E%3Ccircle cx='382' cy='232' r='0.9' fill='%23c8ff98' fill-opacity='0.55'/%3E%3Ccircle cx='98' cy='282' r='1.0' fill='%23d0ffa8' fill-opacity='0.50'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 100% 100%, 420px 320px;
+  background-position: 0 0, 0 0, center bottom;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: firefly-glow 48s ease-in-out infinite;
+}

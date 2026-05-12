@@ -1,0 +1,132 @@
+/* ---- Rainy day: blue-grey overcast, rain streaks ---- */
+/* ---- Rainy day: viewed through a wet window — overcast, condensation trails, lamp-lit puddles ---- */
+html[data-workshop-bg="rain"] {
+  color-scheme: dark;
+  /* Deeper blue-grey — the colour of a sky with no sun at all */
+  --bg: #090c10;
+  --surface: #101620;
+  --surface-2: #151d28;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #243040;
+  --text: #d2e1ef;
+  --muted: #6e8498;
+  --accent: #5ea0cc;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #f09098;
+  --net-line: rgba(80, 130, 175, 0.042);
+  --ambient-a: rgba(40, 82, 135, 0.095);
+  --ambient-b: rgba(28, 58, 105, 0.075);
+  --ambient-c: rgba(55, 100, 155, 0.065);
+  --ambient-d: rgba(45, 75, 122, 0.050);
+  --shine-top: rgba(140, 185, 220, 0.065);
+  --shine-mid: rgba(65, 110, 158, 0.042);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
+}
+html[data-workshop-bg="rain"] body::before {
+  animation: ambient-drift 150s ease-in-out infinite alternate;
+  background-image:
+    /* Ambient depth */
+    radial-gradient(ellipse 130% 110% at 15% 30%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 95% at 85% 20%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 95%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 100% 88% at 70% 60%, var(--ambient-d), transparent 68%),
+    /* Overcast sky blanket — heavy grey-blue ceiling */
+    linear-gradient(180deg,
+      rgba(18, 28, 45, 0.92) 0%,
+      rgba(22, 34, 52, 0.50) 38%,
+      transparent 65%
+    ),
+    /* Street-lamp warm halos — the main colour contrast against the cold grey */
+    radial-gradient(ellipse 38% 32% at 22% 94%, rgba(248, 195, 80, 0.14), transparent 55%),
+    radial-gradient(ellipse 32% 28% at 78% 96%, rgba(235, 170, 55, 0.11), transparent 52%),
+    radial-gradient(ellipse 20% 20% at 50% 92%, rgba(240, 185, 65, 0.08), transparent 48%),
+    /* Wet ground reflection — the lamps mirrored in puddles */
+    radial-gradient(ellipse 55% 18% at 22% 100%, rgba(90, 145, 200, 0.10), transparent 52%),
+    radial-gradient(ellipse 45% 15% at 78% 100%, rgba(80, 135, 190, 0.09), transparent 50%),
+    /* Primary rain streaks — diagonal, measured opacity so text stays readable */
+    repeating-linear-gradient(
+      172deg,
+      transparent,
+      transparent 2.5px,
+      rgba(90, 150, 200, 0.028) 2.5px,
+      rgba(90, 150, 200, 0.028) 3px,
+      transparent 3px,
+      transparent 9px
+    ),
+    /* Secondary finer streak layer — slightly different angle for depth */
+    repeating-linear-gradient(
+      174deg,
+      transparent,
+      transparent 5px,
+      rgba(70, 130, 185, 0.018) 5px,
+      rgba(70, 130, 185, 0.018) 5.5px,
+      transparent 5.5px,
+      transparent 18px
+    ),
+    /* Tertiary sparse long streaks */
+    repeating-linear-gradient(
+      170deg,
+      transparent,
+      transparent 14px,
+      rgba(80, 140, 195, 0.012) 14px,
+      rgba(80, 140, 195, 0.012) 14.8px,
+      transparent 14.8px,
+      transparent 42px
+    ),
+    /* Window condensation — rivulets running down glass */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.16' stroke-width='1.2' stroke-linecap='round' d='M55 0 Q52 22 57 42 Q61 60 54 85 Q50 105 56 128'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.13' stroke-width='0.9' stroke-linecap='round' d='M120 10 Q116 36 122 58 Q127 75 120 100 Q115 122 121 148'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.14' stroke-width='1.0' stroke-linecap='round' d='M200 4 Q196 30 202 52 Q207 70 200 96'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.11' stroke-width='0.8' stroke-linecap='round' d='M278 12 Q274 38 280 60 Q285 78 278 104 Q273 125 279 150'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.10' stroke-width='0.7' stroke-linecap='round' d='M330 5 Q326 28 332 48'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.15' stroke-width='1.1' stroke-linecap='round' d='M30 180 Q26 206 32 228 Q37 248 30 275'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.12' stroke-width='0.9' stroke-linecap='round' d='M160 195 Q156 222 162 245 Q167 264 160 290'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.13' stroke-width='1.0' stroke-linecap='round' d='M245 188 Q241 214 247 236 Q252 255 245 280'/%3E%3Cpath fill='none' stroke='%235ea0cc' stroke-opacity='0.10' stroke-width='0.7' stroke-linecap='round' d='M310 200 Q306 225 312 246'/%3E%3C!-- Drop beads collecting at meander points --%3E%3Ccircle cx='57' cy='43' r='2.2' fill='%235ea0cc' fill-opacity='0.18'/%3E%3Ccircle cx='122' cy='59' r='1.8' fill='%235ea0cc' fill-opacity='0.14'/%3E%3Ccircle cx='201' cy='53' r='2.0' fill='%235ea0cc' fill-opacity='0.16'/%3E%3Ccircle cx='279' cy='61' r='1.6' fill='%235ea0cc' fill-opacity='0.12'/%3E%3Ccircle cx='32' cy='229' r='2.4' fill='%235ea0cc' fill-opacity='0.16'/%3E%3Ccircle cx='162' cy='246' r='1.9' fill='%235ea0cc' fill-opacity='0.13'/%3E%3C/svg%3E");
+  background-size:
+    155% 155%, 145% 145%, 165% 165%, 140% 140%,
+    100% 100%,
+    100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%,
+    360px 360px;
+  background-position:
+    0% 0%, 100% 0%, 50% 100%, 70% 55%,
+    0 0,
+    0 0, 0 0, 0 0,
+    0 0, 0 0,
+    0 0, 0 0, 0 0,
+    0 0;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    no-repeat,
+    no-repeat, no-repeat, no-repeat,
+    no-repeat, no-repeat,
+    repeat, repeat, repeat,
+    repeat;
+}
+
+/* Rain: pulsing lamp puddles + splash ripples on wet ground */
+html[data-workshop-bg="rain"]::after {
+  background-image:
+    /* Splash ripple dots */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='160' viewBox='0 0 400 160'%3E%3Cg fill='none' stroke='%2390c8e8' stroke-opacity='0.40'%3E%3Cellipse cx='32' cy='128' rx='6' ry='1.8' stroke-width='0.8'/%3E%3Cellipse cx='32' cy='128' rx='10' ry='2.6' stroke-width='0.5'/%3E%3Cellipse cx='88' cy='142' rx='4' ry='1.4' stroke-width='0.7'/%3E%3Cellipse cx='88' cy='142' rx='7' ry='2' stroke-width='0.4'/%3E%3Cellipse cx='148' cy='130' rx='7' ry='2' stroke-width='0.8'/%3E%3Cellipse cx='148' cy='130' rx='12' ry='3' stroke-width='0.5'/%3E%3Cellipse cx='210' cy='148' rx='5' ry='1.6' stroke-width='0.7'/%3E%3Cellipse cx='210' cy='148' rx='9' ry='2.4' stroke-width='0.4'/%3E%3Cellipse cx='278' cy='134' rx='6' ry='1.8' stroke-width='0.8'/%3E%3Cellipse cx='278' cy='134' rx='10' ry='2.6' stroke-width='0.5'/%3E%3Cellipse cx='338' cy='148' rx='4' ry='1.3' stroke-width='0.7'/%3E%3Cellipse cx='338' cy='148' rx='7' ry='2' stroke-width='0.4'/%3E%3Cellipse cx='384' cy='130' rx='5' ry='1.6' stroke-width='0.7'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Lamp puddle glows */
+    radial-gradient(ellipse 70% 12% at 22% 100%, rgba(248, 195, 80, 0.18), transparent 100%),
+    radial-gradient(ellipse 55% 10% at 78% 100%, rgba(235, 170, 55, 0.15), transparent 100%),
+    radial-gradient(ellipse 80% 18% at 50% 100%, rgba(90, 155, 210, 0.10), transparent 100%);
+  background-size: 400px 160px, 100% 100%, 100% 100%, 100% 100%;
+  background-position: center bottom, 0 0, 0 0, 0 0;
+  background-repeat: repeat-x, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: rain-lamp-flicker 8s ease-in-out infinite alternate;
+}
+
+@keyframes rain-lamp-flicker {
+  0%   { opacity: 0.75; }
+  30%  { opacity: 1.0; }
+  55%  { opacity: 0.82; }
+  80%  { opacity: 0.95; }
+  100% { opacity: 0.78; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-workshop-bg="rain"]::after { animation: none; opacity: 1; }
+}
