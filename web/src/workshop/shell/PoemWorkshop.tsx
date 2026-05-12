@@ -33,7 +33,12 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
-import { AiAnalysis, loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/AiAnalysis";
+import { loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/ai-analysis-storage";
+// Lazy-load the AI analysis panel — it pulls in the analyze/compare client,
+// chat UI, and rationale renderer, none of which are needed for first paint.
+const AiAnalysis = lazy(() =>
+  import("@/workshop/analysis/AiAnalysis").then((m) => ({ default: m.AiAnalysis }))
+);
 import { PublicationChecklistVisual } from "@/workshop/analysis/PublicationChecklistVisual";
 import { recordWriteToday } from "@/workshop/shell/writing-streak";
 import { AiSummaryPopover } from "@/workshop/analysis/AiSummaryPopover";
@@ -1317,7 +1322,10 @@ export function PoemWorkshop() {
   }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, setHoverHintsEnabled]);
 
   return (
-    <div className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}>
+    <div
+      className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}
+      data-tool-tab={m.toolTab}
+    >
       {isFocusMode && (
         <button
           type="button"
@@ -1693,7 +1701,10 @@ export function PoemWorkshop() {
             aria-labelledby="style-modal-title"
           >
             <div className="modal-head">
-              <h2 id="style-modal-title" className="modal-title">Fonts &amp; Typography</h2>
+              <div className="style-modal-head-text">
+                <h2 id="style-modal-title" className="modal-title">Fonts &amp; Typography</h2>
+                <p className="style-modal-subtitle">Pick how your poem and the app look.</p>
+              </div>
               <button type="button" className="small-btn" onClick={() => setIsStyleOpen(false)}>
                 Close
               </button>
@@ -1711,7 +1722,10 @@ export function PoemWorkshop() {
                     try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
                   }}
                 />
-                <span>Show "Define" button when selecting a word (requires word lookup service).</span>
+                <span className="appearance-hints-text">
+                  <span className="appearance-hints-title">Define on selection</span>
+                  <span className="appearance-hints-desc">Show a "Define" button when you select a word.</span>
+                </span>
               </label>
               <label className="appearance-hints-toggle">
                 <input
@@ -1719,7 +1733,10 @@ export function PoemWorkshop() {
                   checked={hoverHintsEnabled}
                   onChange={(e) => setHoverHintsEnabled(e.target.checked)}
                 />
-                <span>Show button hints on hover (hover devices only).</span>
+                <span className="appearance-hints-text">
+                  <span className="appearance-hints-title">Hover hints</span>
+                  <span className="appearance-hints-desc">Show button tooltips on hover (hover devices only).</span>
+                </span>
               </label>
             </div>
           </section>
@@ -1918,6 +1935,7 @@ export function PoemWorkshop() {
             onClick={() => setIsBackgroundOpen((v) => !v)}
             aria-haspopup="dialog"
             aria-expanded={isBackgroundOpen}
+            data-tour-id="rail-background"
             {...hint("Background — choose a scene behind the page")}
           >
             <RailIcon>
@@ -1976,6 +1994,7 @@ export function PoemWorkshop() {
             className="rail-btn"
             onClick={() => setIsFocusMode((v) => !v)}
             aria-pressed={isFocusMode}
+            data-tour-id="rail-focus"
             {...hint(
               isFocusMode
                 ? "Exit focus mode — show tools and side rail again"
@@ -2628,39 +2647,41 @@ export function PoemWorkshop() {
       </main>
 
       {/* AI Analysis — full-width section below the grid on desktop; hidden on mobile (results flow into the Issues tab) */}
-      <AiAnalysis
-        key={m.activePoemId}
-        poemId={m.activePoemId}
-        title={m.title}
-        lines={m.lines}
-        mainIdea={mainIdea}
-        localAnalysis={localAnalysis}
-        goals={m.goals}
-        onJumpToLine={m.goToLine}
-        onPeekLine={smartPreviewLine}
-        onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
-        onClearHighlight={() => setIssueHighlight(null)}
-        onAnalysisDone={(issues, score) => {
-          handleVisibleIssuesChange(issues);
-          m.setLastAiScore(score);
-          requestAnimationFrame(() => {
-            const panel = toolsPanelRef.current;
-            if (!panel) return;
-            const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
-            if (resultsEl) {
-              const panelRect = panel.getBoundingClientRect();
-              const elRect = resultsEl.getBoundingClientRect();
-              panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
-            }
-          });
-        }}
-        onVisibleIssuesChange={handleVisibleIssuesChange}
-        onResultChange={setAiResult}
-        onApplyLine={m.applyLineRewrite}
-        onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
-        onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
-        onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
-      />
+      <Suspense fallback={null}>
+        <AiAnalysis
+          key={m.activePoemId}
+          poemId={m.activePoemId}
+          title={m.title}
+          lines={m.lines}
+          mainIdea={mainIdea}
+          localAnalysis={localAnalysis}
+          goals={m.goals}
+          onJumpToLine={m.goToLine}
+          onPeekLine={smartPreviewLine}
+          onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+          onClearHighlight={() => setIssueHighlight(null)}
+          onAnalysisDone={(issues, score) => {
+            handleVisibleIssuesChange(issues);
+            m.setLastAiScore(score);
+            requestAnimationFrame(() => {
+              const panel = toolsPanelRef.current;
+              if (!panel) return;
+              const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
+              if (resultsEl) {
+                const panelRect = panel.getBoundingClientRect();
+                const elRect = resultsEl.getBoundingClientRect();
+                panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
+              }
+            });
+          }}
+          onVisibleIssuesChange={handleVisibleIssuesChange}
+          onResultChange={setAiResult}
+          onApplyLine={m.applyLineRewrite}
+          onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
+          onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
+          onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
+        />
+      </Suspense>
 
       <MobileActionBar
         isFocusMode={isFocusMode}
@@ -2704,29 +2725,31 @@ export function PoemWorkshop() {
               </button>
             </div>
             <div className="mobile-ai-sheet-body">
-              <AiAnalysis
-                key={`mobile-ai-${m.activePoemId}`}
-                poemId={m.activePoemId}
-                title={m.title}
-                lines={m.lines}
-                mainIdea={mainIdea}
-                localAnalysis={localAnalysis}
-                goals={m.goals}
-                onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
-                onPeekLine={smartPreviewLine}
-                onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
-                onClearHighlight={() => setIssueHighlight(null)}
-                onAnalysisDone={(issues, score) => {
-                  handleVisibleIssuesChange(issues);
-                  m.setLastAiScore(score);
-                }}
-                onVisibleIssuesChange={handleVisibleIssuesChange}
-                onResultChange={setAiResult}
-                onApplyLine={m.applyLineRewrite}
-                onAnalyzeRef={mobileSheetAiRef}
-                onLoadingChange={setMobileIsAnalyzing}
-                onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
-              />
+              <Suspense fallback={<p className="muted small" style={{ padding: "1rem" }}>Loading…</p>}>
+                <AiAnalysis
+                  key={`mobile-ai-${m.activePoemId}`}
+                  poemId={m.activePoemId}
+                  title={m.title}
+                  lines={m.lines}
+                  mainIdea={mainIdea}
+                  localAnalysis={localAnalysis}
+                  goals={m.goals}
+                  onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
+                  onPeekLine={smartPreviewLine}
+                  onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+                  onClearHighlight={() => setIssueHighlight(null)}
+                  onAnalysisDone={(issues, score) => {
+                    handleVisibleIssuesChange(issues);
+                    m.setLastAiScore(score);
+                  }}
+                  onVisibleIssuesChange={handleVisibleIssuesChange}
+                  onResultChange={setAiResult}
+                  onApplyLine={m.applyLineRewrite}
+                  onAnalyzeRef={mobileSheetAiRef}
+                  onLoadingChange={setMobileIsAnalyzing}
+                  onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
+                />
+              </Suspense>
             </div>
           </div>
         </div>

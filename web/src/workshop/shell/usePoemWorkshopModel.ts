@@ -331,30 +331,52 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
 
   useEffect(() => {
     setWordlistErr(null);
-    void loadEnglishWordlist()
-      .then((w) => {
-        setWordlist(w);
-        setWordlistErr(null);
-      })
-      .catch((e) => {
-        const msg = e instanceof Error ? e.message : "Could not load word list.";
-        setWordlistErr(msg);
-      });
+    // Defer the 2.7MB wordlist fetch + parse until the browser is idle so it
+    // doesn't compete with first paint or initial editor mount.
+    const run = () => {
+      void loadEnglishWordlist()
+        .then((w) => {
+          setWordlist(w);
+          setWordlistErr(null);
+        })
+        .catch((e) => {
+          const msg = e instanceof Error ? e.message : "Could not load word list.";
+          setWordlistErr(msg);
+        });
+    };
+    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const cic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+    if (typeof ric === "function") {
+      const id = ric(run, { timeout: 2000 });
+      return () => { if (typeof cic === "function") cic(id); };
+    }
+    const t = window.setTimeout(run, 800);
+    return () => window.clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wordlistRetryBump]);
 
   useEffect(() => {
-    void loadStressLexicon()
-      .then((m) => {
-        setStressLexicon(m);
-        setStressLexiconErr(null);
-      })
-      .catch((e) => {
-        setStressLexicon(null);
-        setStressLexiconErr(
-          e instanceof Error ? e.message : "Could not load stress dictionary.",
-        );
-      });
+    const run = () => {
+      void loadStressLexicon()
+        .then((m) => {
+          setStressLexicon(m);
+          setStressLexiconErr(null);
+        })
+        .catch((e) => {
+          setStressLexicon(null);
+          setStressLexiconErr(
+            e instanceof Error ? e.message : "Could not load stress dictionary.",
+          );
+        });
+    };
+    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const cic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+    if (typeof ric === "function") {
+      const id = ric(run, { timeout: 2500 });
+      return () => { if (typeof cic === "function") cic(id); };
+    }
+    const t = window.setTimeout(run, 1200);
+    return () => window.clearTimeout(t);
   }, []);
 
   useEffect(() => {

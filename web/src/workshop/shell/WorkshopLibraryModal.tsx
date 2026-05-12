@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import type { CSSProperties, Dispatch, MutableRefObject, SetStateAction } from "react";
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
 import type { DraftMeta } from "@/workshop/library/library-meta";
@@ -8,6 +8,14 @@ import { formatRelativeSnapshotWhen, formatSnapshotWhen } from "./workshop-helpe
 import type { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 
 type Model = ReturnType<typeof usePoemWorkshopModel>;
+
+function bookHueFromId(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return h % 360;
+}
 
 export type LibraryRow = {
   id: string;
@@ -193,11 +201,17 @@ export function WorkshopLibraryModal(props: Props) {
               </label>
             </div>
             {libraryListRows.length === 0 ? (
-              <p className="drawer-note library-empty-msg" role="status">
-                No drafts match this filter.
-              </p>
+              <div className="library-bookshelf library-bookshelf-empty" role="status" aria-label="Empty library">
+                <div className="shelf-empty-row">
+                  <div className="shelf-plank" aria-hidden />
+                </div>
+                <div className="shelf-empty-row">
+                  <div className="shelf-plank" aria-hidden />
+                </div>
+                <p className="drawer-note library-empty-msg">No drafts match this filter.</p>
+              </div>
             ) : (
-            <div ref={libraryListParentRef} className="library-list-scroll">
+            <div ref={libraryListParentRef} className="library-list-scroll library-bookshelf">
               <div
                 role="list"
                 aria-label="Drafts in library"
@@ -213,6 +227,7 @@ export function WorkshopLibraryModal(props: Props) {
                   const firstLine = poem.body.split("\n").find((l) => l.trim().length > 0)?.trim() ?? "";
                   const isActive = id === m.activePoemId;
                   const isArchived = Boolean(meta.archived);
+                  const spineTitle = (label && label.trim()) || "Untitled";
                   return (
                     <div
                       key={id}
@@ -231,75 +246,86 @@ export function WorkshopLibraryModal(props: Props) {
                       }}
                     >
                       <div
-                        className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${vItem.index === libraryActiveIdx ? "is-keyboard-active" : ""}`}
+                        className={`draft-item shelf-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${vItem.index === libraryActiveIdx ? "is-keyboard-active" : ""}`}
+                        style={{ ["--book-hue" as never]: bookHueFromId(id) } as CSSProperties}
                       >
-                        <div className="draft-item-row">
+                        <div className="shelf-row">
                           <button
                             type="button"
-                            className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                            onClick={() => m.togglePinned(id)}
-                            aria-pressed={Boolean(meta.pinned)}
-                            {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
-                          >
-                            {meta.pinned ? "★" : "☆"}
-                          </button>
-                          <div className="draft-open-wrap">
-                            <button
-                              type="button"
-                              className="draft-open-btn"
-                              onClick={() => {
-                                m.selectPoem(id);
-                                setIsLibraryOpen(false);
-                              }}
-                              aria-current={isActive ? "true" : undefined}
-                              {...hint("Open this draft in the editor")}
-                            >
-                              {label}
-                              {isArchived ? " (archived)" : ""}
-                            </button>
-                            {firstLine && (
-                              <span className="draft-first-line" aria-hidden>
-                                {firstLine}
-                              </span>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            className="small-btn draft-row-dup"
+                            className={`book ${meta.pinned ? "is-pinned" : ""}`}
                             onClick={() => {
-                              m.duplicatePoemById(id);
+                              m.selectPoem(id);
                               setIsLibraryOpen(false);
                             }}
-                            {...hint("Duplicate this draft")}
+                            aria-current={isActive ? "true" : undefined}
+                            aria-label={`Open draft "${spineTitle}"`}
+                            {...hint("Open this draft in the editor")}
                           >
-                            Dup
+                            <span className="book-spine">
+                              <span className="book-spine-title">{spineTitle}</span>
+                              {meta.pinned && <span className="book-spine-pin" aria-hidden>★</span>}
+                            </span>
                           </button>
-                          {isArchived ? (
-                            <button
-                              type="button"
-                              className="small-btn"
-                              onClick={() => m.setDraftArchived(id, false)}
-                              {...hint("Return draft to main list")}
-                            >
-                              Unarchive
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="small-btn"
-                              disabled={isActive}
-                              {...hint(
-                                isActive
-                                  ? "Switch to another draft before archiving this one"
-                                  : "Archive — hide from list (data kept)",
+                          <div className="shelf-row-meta">
+                            <div className="shelf-row-head">
+                              <button
+                                type="button"
+                                className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
+                                onClick={() => m.togglePinned(id)}
+                                aria-pressed={Boolean(meta.pinned)}
+                                {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
+                              >
+                                {meta.pinned ? "★" : "☆"}
+                              </button>
+                              {firstLine ? (
+                                <span className="draft-first-line" aria-hidden>
+                                  {firstLine}
+                                </span>
+                              ) : (
+                                <span className="draft-first-line is-blank" aria-hidden>
+                                  Blank page…
+                                </span>
                               )}
-                              onClick={() => m.setDraftArchived(id, true)}
-                            >
-                              Archive
-                            </button>
-                          )}
-                        </div>
-                        <div className="draft-item-edit">
+                              {isArchived && (
+                                <span className="shelf-archived-badge" aria-hidden>archived</span>
+                              )}
+                              <button
+                                type="button"
+                                className="small-btn draft-row-dup"
+                                onClick={() => {
+                                  m.duplicatePoemById(id);
+                                  setIsLibraryOpen(false);
+                                }}
+                                {...hint("Duplicate this draft")}
+                              >
+                                Dup
+                              </button>
+                              {isArchived ? (
+                                <button
+                                  type="button"
+                                  className="small-btn"
+                                  onClick={() => m.setDraftArchived(id, false)}
+                                  {...hint("Return draft to main list")}
+                                >
+                                  Unarchive
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="small-btn"
+                                  disabled={isActive}
+                                  {...hint(
+                                    isActive
+                                      ? "Switch to another draft before archiving this one"
+                                      : "Archive — hide from list (data kept)",
+                                  )}
+                                  onClick={() => m.setDraftArchived(id, true)}
+                                >
+                                  Archive
+                                </button>
+                              )}
+                            </div>
+                            <div className="draft-item-edit">
                           <label className="draft-edit-field">
                             Label
                             <input
@@ -347,6 +373,8 @@ export function WorkshopLibraryModal(props: Props) {
                               ))}
                             </div>
                           )}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

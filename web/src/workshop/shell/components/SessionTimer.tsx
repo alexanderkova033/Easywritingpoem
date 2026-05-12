@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 export function SessionTimer({ startTs }: { startTs: number }) {
   const [, tick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 60_000);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      tick((n) => n + 1);
+    }, 60_000);
     return () => clearInterval(id);
   }, []);
   const mins = Math.floor((Date.now() - startTs) / 60_000);

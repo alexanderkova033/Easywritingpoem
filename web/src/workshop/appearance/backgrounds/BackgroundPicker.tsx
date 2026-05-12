@@ -71,13 +71,12 @@ function ColorEditor({
         {EDITABLE_COLORS.map(({ key, label }) => {
           const value = theme[key] as string;
           return (
-            <label key={key} className="bg-color-swatch-label" title={label}>
+            <label key={key} className="bg-color-swatch-label" title={`${label} — ${value}`}>
               <span
                 className="bg-color-swatch"
                 style={{ background: value }}
                 onClick={() => inputRefs.current[key]?.click()}
               />
-              <span className="bg-color-swatch-name">{label}</span>
               <input
                 ref={(el) => { inputRefs.current[key] = el; }}
                 type="color"
@@ -94,11 +93,27 @@ function ColorEditor({
   );
 }
 
-const EXAMPLE_PROMPTS = [
-  "misty autumn morning",
-  "candlelit library at night",
-  "ocean at dawn",
-  "winter solstice, cold and still",
+const EXAMPLE_PROMPTS: { label: string; prompt: string; gradient: string }[] = [
+  {
+    label: "Misty autumn",
+    prompt: "misty autumn morning",
+    gradient: "linear-gradient(135deg, #b8612c 0%, #6d3014 60%, #2a140a 100%)",
+  },
+  {
+    label: "Candlelit library",
+    prompt: "candlelit library at night",
+    gradient: "linear-gradient(135deg, #c8923a 0%, #4a2a14 55%, #1a0e08 100%)",
+  },
+  {
+    label: "Ocean at dawn",
+    prompt: "ocean at dawn",
+    gradient: "linear-gradient(135deg, #ffb98c 0%, #5fa6c8 55%, #1a3a5a 100%)",
+  },
+  {
+    label: "Winter solstice",
+    prompt: "winter solstice, cold and still",
+    gradient: "linear-gradient(135deg, #e8f1fa 0%, #88aac8 55%, #2a3a5a 100%)",
+  },
 ];
 
 export function BackgroundPicker(props: {
@@ -238,7 +253,10 @@ export function BackgroundPicker(props: {
 
       {/* ── Custom backdrop creator ── */}
       <div className="bg-creator">
-        <p className="bg-creator-heading">Generate a custom backdrop</p>
+        <div className="bg-creator-header">
+          <span className="bg-creator-spark" aria-hidden>✨</span>
+          <span className="bg-creator-title">Make your own</span>
+        </div>
 
         <div className="bg-creator-input-row">
           <input
@@ -257,23 +275,31 @@ export function BackgroundPicker(props: {
             className="btn btn--primary btn--sm bg-creator-generate-btn"
             disabled={!prompt.trim() || generating}
             onClick={() => void handleGenerate()}
+            aria-label={generating ? "Generating" : "Generate backdrop"}
+            title="Generate"
           >
-            {generating ? (
-              <><span className="bg-creator-spinner" aria-hidden />Generating…</>
-            ) : "Generate"}
+            {generating
+              ? <span className="bg-creator-spinner" aria-hidden />
+              : <span aria-hidden>✨</span>}
           </button>
         </div>
 
         {!draft && !generating && (
-          <div className="bg-creator-examples">
+          <div className="bg-creator-examples" aria-label="Example prompts">
             {EXAMPLE_PROMPTS.map((ex) => (
               <button
-                key={ex}
+                key={ex.prompt}
                 type="button"
                 className="bg-creator-example-chip"
-                onClick={() => setPrompt(ex)}
+                onClick={() => setPrompt(ex.prompt)}
+                title={ex.prompt}
               >
-                {ex}
+                <span
+                  className="bg-creator-example-swatch"
+                  style={{ background: ex.gradient }}
+                  aria-hidden
+                />
+                <span className="bg-creator-example-label">{ex.label}</span>
               </button>
             ))}
           </div>
@@ -285,32 +311,30 @@ export function BackgroundPicker(props: {
 
         {draft && (
           <div className="bg-creator-draft">
-            <ThemePreviewCard theme={draft} />
-            <div className="bg-creator-draft-row">
-              <div className="bg-creator-draft-meta">
-                <span className="bg-creator-draft-name">{draft.label}</span>
-                <div className="bg-creator-draft-palette">
-                  {([draft.bg, draft.surface, draft.accent, draft.text, draft.muted] as const).map((c, i) => (
-                    <span key={i} className="bg-creator-palette-dot" style={{ background: c }} title={c} />
-                  ))}
-                </div>
-              </div>
-              <div className="bg-creator-draft-actions">
-                <button type="button" className="btn btn--primary btn--sm" onClick={handleUseDraft}>
-                  Use
-                </button>
+            <div className="bg-creator-stage">
+              <ThemePreviewCard theme={draft} />
+              <span className="bg-creator-stage-name" title={draft.label}>{draft.label}</span>
+              <div className="bg-creator-stage-actions">
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="bg-creator-icon-btn"
                   disabled={generating}
                   onClick={() => void handleGenerate()}
                   title="Regenerate"
-                >
-                  ↺
-                </button>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={handleDiscardDraft} title="Discard">
-                  ✕
-                </button>
+                  aria-label="Regenerate"
+                >↺</button>
+                <button
+                  type="button"
+                  className="bg-creator-icon-btn"
+                  onClick={handleDiscardDraft}
+                  title="Discard"
+                  aria-label="Discard"
+                >✕</button>
+                <button
+                  type="button"
+                  className="btn btn--primary btn--sm bg-creator-use-btn"
+                  onClick={handleUseDraft}
+                >Use</button>
               </div>
             </div>
             <ColorEditor theme={draft} onChange={handleDraftColorChange} />
@@ -319,15 +343,20 @@ export function BackgroundPicker(props: {
 
         {isCustomActive && !draft && (
           <div className="bg-creator-active">
-            <ThemePreviewCard theme={appearance.customBackground!} />
-            <div className="bg-creator-active-row">
-              <div className="bg-creator-active-meta">
-                <span className="bg-creator-active-name">{appearance.customBackground!.label}</span>
-                <span className="bg-creator-active-badge">Active</span>
+            <div className="bg-creator-stage is-active">
+              <ThemePreviewCard theme={appearance.customBackground!} />
+              <span className="bg-creator-stage-name" title={appearance.customBackground!.label}>
+                {appearance.customBackground!.label}
+              </span>
+              <div className="bg-creator-stage-actions">
+                <button
+                  type="button"
+                  className="bg-creator-icon-btn"
+                  onClick={handleRemoveCustom}
+                  title="Remove custom backdrop"
+                  aria-label="Remove custom backdrop"
+                >✕</button>
               </div>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
-                Remove
-              </button>
             </div>
             <ColorEditor theme={appearance.customBackground!} onChange={handleActiveColorChange} />
           </div>

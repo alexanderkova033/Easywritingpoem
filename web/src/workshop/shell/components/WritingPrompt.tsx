@@ -20,6 +20,7 @@ export function WritingPrompt({ visible }: { visible: boolean }) {
   useEffect(() => {
     if (!visible) return;
     const interval = setInterval(() => {
+      if (document.hidden) return;
       setFading(true);
       const timer = setTimeout(() => {
         setIdx((i) => (i + 1) % WRITING_PROMPTS.length);

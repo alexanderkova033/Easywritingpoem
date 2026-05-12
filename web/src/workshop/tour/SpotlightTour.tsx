@@ -17,49 +17,63 @@ const STEPS: TourStep[] = [
   {
     id: "poem-editor",
     title: "Your writing space",
-    body: "Type your poem here — title at the top, verses below. Everything autosaves to your browser instantly. Press Enter for a new line, leave a blank line between stanzas. Nothing ever leaves your device.",
+    body: "Type your poem here. Autosaves to this browser as you type — nothing leaves your device. Press Enter for a new line; blank line between stanzas.",
     placement: "right",
     pad: 10,
   },
   {
     id: "format-toolbar",
-    title: "Formatting & reading",
-    body: "Bold, italic, or strikethrough any word. The reading-mode button opens a distraction-free parchment view. All marks carry through to exported .docx files.",
+    title: "Format & read",
+    body: "Bold, italic, or strikethrough any word. The reading-mode button opens a distraction-free parchment view. Marks carry through to .docx export.",
     placement: "bottom",
     pad: 8,
   },
   {
     id: "topbar-actions",
-    title: "Quick actions",
-    body: "Start from a template, enter full-screen focus mode, capture a named revision snapshot, or export to .docx. Press Cmd+K (Ctrl+K on Windows) to search every action from one place — the fastest way to navigate the app.",
+    title: "Top bar",
+    body: "Live save indicator, stats popover, templates, snapshots, and .docx export live here. Press Cmd+K (Ctrl+K on Windows) to search every action.",
     placement: "bottom",
     pad: 8,
   },
   {
     id: "rail-library",
-    title: "Draft library",
-    body: "Keep as many poems as you like and switch between them instantly. Save a snapshot any time you want to preserve a version — you can compare two snapshots side-by-side later to see exactly what changed line by line.",
+    title: "Drafts & snapshots",
+    body: "Keep many poems and switch instantly. Save a snapshot to lock a version — compare any two later, line by line, to see what changed.",
+    placement: "right",
+    pad: 8,
+  },
+  {
+    id: "rail-background",
+    title: "Background scenes",
+    body: "Pick a backdrop behind the page — parchment, forest, summer, winter, and more. Seasonal themes change the whole mood of the workshop.",
+    placement: "right",
+    pad: 8,
+  },
+  {
+    id: "rail-focus",
+    title: "Focus mode",
+    body: "Hide the rail and tools panel for a calm, full-bleed writing space. Toggle anytime — your draft stays open underneath.",
     placement: "right",
     pad: 8,
   },
   {
     id: "tool-buckets",
     title: "Two tool buckets",
-    body: "Overview shows word counts, goal progress, issues, and a publication checklist. Sound digs into rhyme scheme, meter stress, cliché detection, and repeated words. Switch freely — both update live as you write.",
+    body: "Overview: word counts, goal progress, issues, publication checklist. Sound: rhyme scheme, meter, clichés, repeated words. Both update live.",
     placement: "top",
     pad: 8,
   },
   {
     id: "tools-panel",
     title: "Live analysis",
-    body: "The panel re-analyses your poem on every keystroke. Hover any result to see more detail. Click a line number to jump there in the editor. Spell-check works in both permissive (poetry-friendly) and strict modes.",
+    body: "Re-analyses on every keystroke. Hover any result for detail. Click a line number to jump there. Spell-check has poetry-friendly and strict modes.",
     placement: "left",
     pad: 10,
   },
   {
     id: "ai-analysis",
-    title: "AI feedback",
-    body: "Paste an OpenAI or Anthropic API key to unlock AI scoring across six dimensions: imagery, rhythm, emotional resonance, originality, coherence, and word choice. Save a snapshot first, then edit and compare — the AI shows exactly what improved.",
+    title: "AI feedback (optional)",
+    body: "Paste an OpenAI or Anthropic API key to unlock scoring across six dimensions. Save a snapshot, edit, then compare — the AI shows what improved.",
     placement: "top",
     pad: 8,
   },
@@ -230,6 +244,12 @@ export function SpotlightTour({ onClose }: Props) {
       setStepIndex((i) => i - 1);
     }
   };
+  const restart = () => {
+    setAnimDir("prev");
+    setStepIndex(0);
+  };
+
+  const isLast = stepIndex === STEPS.length - 1;
 
   /**
    * Forward wheel events from the dim overlay to the underlying scrollable
@@ -326,14 +346,25 @@ export function SpotlightTour({ onClose }: Props) {
           <span className="spotlight-step-count">
             {stepIndex + 1} / {STEPS.length}
           </span>
-          <button
-            type="button"
-            className="spotlight-close"
-            onClick={onClose}
-            aria-label="Close tour"
-          >
-            ✕
-          </button>
+          <div className="spotlight-step-row-end">
+            {!isLast && (
+              <button
+                type="button"
+                className="spotlight-skip"
+                onClick={onClose}
+              >
+                Skip tour
+              </button>
+            )}
+            <button
+              type="button"
+              className="spotlight-close"
+              onClick={onClose}
+              aria-label="Close tour"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -362,21 +393,36 @@ export function SpotlightTour({ onClose }: Props) {
 
         {/* Navigation */}
         <div className="spotlight-nav">
-          <button
-            type="button"
-            className="spotlight-btn spotlight-btn-prev"
-            onClick={goPrev}
-            disabled={stepIndex === 0}
-          >
-            ← Back
-          </button>
+          {isLast ? (
+            <button
+              type="button"
+              className="spotlight-btn spotlight-btn-prev"
+              onClick={restart}
+            >
+              ↺ Restart
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="spotlight-btn spotlight-btn-prev"
+              onClick={goPrev}
+              disabled={stepIndex === 0}
+            >
+              ← Back
+            </button>
+          )}
           <button
             type="button"
             className="spotlight-btn spotlight-btn-next"
             onClick={goNext}
           >
-            {stepIndex === STEPS.length - 1 ? "Done" : "Next →"}
+            {isLast ? "Done" : "Next →"}
           </button>
+        </div>
+
+        {/* Keyboard hint */}
+        <div className="spotlight-kbd-hint" aria-hidden>
+          <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>Esc</kbd> close
         </div>
       </div>
     </div>

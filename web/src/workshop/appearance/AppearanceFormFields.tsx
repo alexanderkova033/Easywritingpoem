@@ -115,11 +115,13 @@ export function AppearanceFormFields(props: {
   onChange: (next: AppearanceSettings) => void;
 }) {
   const { appearance, onChange } = props;
+  const poemSel = POEM_FONT_OPTIONS.find((o) => o.id === appearance.poemFont) ?? POEM_FONT_OPTIONS[0]!;
+  const uiSel = UI_FONT_OPTIONS.find((o) => o.id === appearance.uiFont) ?? UI_FONT_OPTIONS[0]!;
 
   return (
     <div className="appearance-fields" aria-label="Font options">
       <label className="appearance-field">
-        Poem font
+        <span className="appearance-field-label">Poem font</span>
         <FontSelect<PoemFontId>
           id="poem-font-select"
           value={appearance.poemFont}
@@ -129,7 +131,7 @@ export function AppearanceFormFields(props: {
       </label>
 
       <label className="appearance-field">
-        UI font
+        <span className="appearance-field-label">UI font</span>
         <FontSelect<UiFontId>
           id="ui-font-select"
           value={appearance.uiFont}
@@ -138,13 +140,24 @@ export function AppearanceFormFields(props: {
         />
       </label>
 
+      <div className="font-preview" aria-hidden="true">
+        <div className="font-preview-poem" style={{ fontFamily: poemSel.fontFamily }}>
+          She walks in beauty, like the night
+          <br />
+          Of cloudless climes and starry skies
+        </div>
+        <div className="font-preview-ui" style={{ fontFamily: uiSel.fontFamily }}>
+          Interface · Buttons · Menus
+        </div>
+      </div>
+
       <div className="appearance-actions">
         <button
           type="button"
-          className="small-btn"
+          className="small-btn appearance-reset-btn"
           onClick={() => onChange(defaultAppearance())}
         >
-          Reset appearance
+          Reset to defaults
         </button>
       </div>
     </div>

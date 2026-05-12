@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import "./StuckHelper.css";
 
@@ -15,12 +15,12 @@ const TYPE_CONFIG: {
   label: string;
   desc: string;
 }[] = [
-  { id: "idea",     icon: "💡", label: "Poem idea",    desc: "Generate a poem concept or starting point" },
-  { id: "continue", icon: "→",  label: "Continue",     desc: "What could come next"      },
-  { id: "words",    icon: "✦",  label: "Better words", desc: "Vivid alternatives"         },
-  { id: "rhyme",    icon: "♪",  label: "Rhymes",       desc: "For your last line"         },
-  { id: "spark",    icon: "⚡", label: "New angle",    desc: "Break out of a rut"         },
-  { id: "line",     icon: "✏",  label: "Fix a line",   desc: "Rewrite a specific line"    },
+  { id: "idea",     icon: "💡", label: "Idea",     desc: "Generate a poem concept or starting point." },
+  { id: "continue", icon: "→",  label: "Continue", desc: "What could come next." },
+  { id: "words",    icon: "✦",  label: "Words",    desc: "Vivid alternatives for the wording." },
+  { id: "rhyme",    icon: "♪",  label: "Rhyme",    desc: "Rhymes for your last line." },
+  { id: "spark",    icon: "⚡", label: "Angle",    desc: "Break out of a rut with a new direction." },
+  { id: "line",     icon: "✏",  label: "Fix line", desc: "Rewrite a specific line." },
 ];
 
 async function fetchSuggestions(
@@ -59,11 +59,14 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
   const [result, setResult] = useState<SuggestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showContext, setShowContext] = useState(false);
-  const contextRef = useRef<HTMLInputElement>(null);
+  const contextInputRef = useRef<HTMLInputElement>(null);
 
-  const nonEmptyLines = lines
-    .map((text, i) => ({ text, num: i + 1 }))
-    .filter(({ text }) => text.trim().length > 0);
+  const nonEmptyLines = useMemo(
+    () => lines
+      .map((text, i) => ({ text, num: i + 1 }))
+      .filter(({ text }) => text.trim().length > 0),
+    [lines],
+  );
 
   const targetLineText = targetLineNum != null
     ? (lines[targetLineNum - 1] ?? "")
@@ -71,15 +74,13 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
 
   const isFirstRender = useRef(true);
 
-  // Stable refs so effects can call the latest version without stale closures
   const titleRef   = useRef(title);
   const linesRef   = useRef(lines);
-  const contextRef2 = useRef(context);
-  titleRef.current    = title;
-  linesRef.current    = lines;
-  contextRef2.current = context;
+  const contextRef = useRef(context);
+  titleRef.current   = title;
+  linesRef.current   = lines;
+  contextRef.current = context;
 
-  // When switching to "line" mode, auto-select last non-empty line if none picked
   useEffect(() => {
     if (activeType === "line" && targetLineNum == null && nonEmptyLines.length > 0) {
       setTargetLineNum(nonEmptyLines[nonEmptyLines.length - 1]!.num);
@@ -97,7 +98,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
         titleRef.current,
         linesRef.current,
         suggestType,
-        contextRef2.current,
+        contextRef.current,
         targetLine,
       );
       setResult(data);
@@ -108,8 +109,6 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     }
   }, [activeType, targetLineText]); // eslint-disable-line
 
-  // Auto-generate when the user switches mode (skip first render and "line" mode
-  // which needs the user to pick a specific line first)
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     if (activeType === "line") return;
@@ -122,134 +121,149 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     setError(null);
   }, []);
 
+  const activeConfig = TYPE_CONFIG.find((c) => c.id === activeType)!;
+
   const resultLabel = () => {
-    if (!activeType) return "";
-    if (activeType === "idea") return "Poem ideas";
-    if (activeType === "words") return "Word alternatives";
-    if (activeType === "rhyme") return result?.rhymes_with ? `Rhymes for "${result.rhymes_with}"` : "Rhyme suggestions";
-    if (activeType === "spark") return "New directions";
-    if (activeType === "line") return "Line rewrites";
+    if (activeType === "idea")     return "Poem ideas";
+    if (activeType === "words")    return "Word alternatives";
+    if (activeType === "rhyme")    return result?.rhymes_with ? `Rhymes for "${result.rhymes_with}"` : "Rhyme suggestions";
+    if (activeType === "spark")    return "New directions";
+    if (activeType === "line")     return "Line rewrites";
     return "Continue with…";
   };
 
+  const generateDisabled = loading || (activeType === "line" && !targetLineText.trim());
+
   return (
     <div className="sh-root">
-      {/* Mode card grid */}
-      <div className="sh-card-grid" role="group" aria-label="Suggestion mode">
+      {/* Pill tab strip */}
+      <div className="sh-tabs" role="tablist" aria-label="Suggestion mode">
         {TYPE_CONFIG.map(({ id, icon, label, desc }) => (
           <button
             key={id}
             type="button"
-            aria-pressed={activeType === id}
-            className={`sh-card${activeType === id ? " is-active" : ""}${id === "idea" ? " sh-card-idea" : ""}`}
+            role="tab"
+            aria-selected={activeType === id}
+            className={`sh-tab${activeType === id ? " is-active" : ""}`}
             onClick={() => handleSelectMode(id)}
             title={desc}
           >
-            <span className="sh-card-icon" aria-hidden>{icon}</span>
-            <span className="sh-card-label">{label}</span>
-            <span className="sh-card-desc">{desc}</span>
+            <span className="sh-tab-icon" aria-hidden>{icon}</span>
+            <span className="sh-tab-label">{label}</span>
           </button>
         ))}
       </div>
 
-      {/* Active mode body */}
-      {(
-        <div className="sh-body">
-          {/* Line picker for "Fix a line" */}
-          {activeType === "line" && (
-            <div className="sh-line-picker">
-              <p className="sh-section-label">Which line?</p>
-              <div className="sh-line-list">
-                {nonEmptyLines.length === 0 ? (
-                  <p className="sh-empty-hint">Write a few lines first.</p>
-                ) : (
-                  nonEmptyLines.map(({ text, num }) => (
-                    <button
-                      key={num}
-                      type="button"
-                      className={`sh-line-item${targetLineNum === num ? " is-selected" : ""}`}
-                      onClick={() => setTargetLineNum(num)}
-                      title={`Line ${num}`}
-                    >
-                      <span className="sh-line-num">{num}</span>
-                      <span className="sh-line-text">{text}</span>
-                    </button>
-                  ))
-                )}
-              </div>
+      {/* Active mode description */}
+      <p className="sh-tab-desc">{activeConfig.desc}</p>
+
+      {/* Line picker for "Fix a line" */}
+      {activeType === "line" && (
+        <div className="sh-line-picker">
+          {nonEmptyLines.length === 0 ? (
+            <p className="sh-empty-hint">Write a few lines first.</p>
+          ) : (
+            <div className="sh-line-list">
+              {nonEmptyLines.map(({ text, num }) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`sh-line-item${targetLineNum === num ? " is-selected" : ""}`}
+                  onClick={() => setTargetLineNum(num)}
+                  title={`Line ${num}`}
+                >
+                  <span className="sh-line-num">{num}</span>
+                  <span className="sh-line-text">{text}</span>
+                </button>
+              ))}
             </div>
           )}
-
-          {/* Optional context toggle */}
-          <button
-            type="button"
-            className="sh-context-toggle"
-            onClick={() => {
-              setShowContext((v) => !v);
-              if (!showContext) setTimeout(() => contextRef.current?.focus(), 50);
-            }}
-          >
-            <span className="sh-context-toggle-icon" aria-hidden>{showContext ? "▾" : "›"}</span>
-            {showContext ? "Hide note" : "Add a note"}<span className="sh-context-toggle-hint"> — optional, e.g. "wants to feel hopeful"</span>
-          </button>
-          {showContext && (
-            <input
-              ref={contextRef}
-              type="text"
-              className="sh-context-input"
-              placeholder='e.g. "wants to feel hopeful" or "more concrete imagery"'
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") void handleGenerate(); }}
-              maxLength={200}
-              aria-label="Optional context note"
-            />
-          )}
-
-          {/* Generate / Regenerate button */}
-          <button
-            type="button"
-            className="sh-generate-btn"
-            onClick={() => void handleGenerate()}
-            disabled={loading || (activeType === "line" && !targetLineText.trim())}
-          >
-            {loading ? (
-              <><span className="sh-btn-spinner" aria-hidden /> Generating…</>
-            ) : activeType === "line" ? (
-              "↺ Rewrite this line"
-            ) : result ? (
-              "↺ Try again"
-            ) : (
-              "✦ Generate"
-            )}
-          </button>
         </div>
       )}
 
-      {/* Error */}
-      {/* (closing brace removed — activeType is always set) */}
+      {/* Controls row: note chip + generate */}
+      <div className="sh-controls">
+        {!showContext ? (
+          <button
+            type="button"
+            className={`sh-note-chip${context.trim() ? " has-value" : ""}`}
+            onClick={() => {
+              setShowContext(true);
+              setTimeout(() => contextInputRef.current?.focus(), 30);
+            }}
+            title={context.trim() ? `Note: ${context}` : "Add an optional steering note"}
+          >
+            <span aria-hidden>+</span>
+            {context.trim() ? "Edit note" : "Note"}
+          </button>
+        ) : (
+          <div className="sh-note-row">
+            <input
+              ref={contextInputRef}
+              type="text"
+              className="sh-note-input"
+              placeholder='Steer the suggestions — e.g. "more concrete imagery"'
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { setShowContext(false); void handleGenerate(); }
+                else if (e.key === "Escape") { setShowContext(false); }
+              }}
+              maxLength={200}
+              aria-label="Optional context note"
+            />
+            <button
+              type="button"
+              className="sh-note-close"
+              onClick={() => setShowContext(false)}
+              aria-label="Close note"
+              title="Done"
+            >✓</button>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="sh-generate-btn"
+          onClick={() => void handleGenerate()}
+          disabled={generateDisabled}
+        >
+          {loading ? (
+            <><span className="sh-btn-spinner" aria-hidden /> Generating…</>
+          ) : activeType === "line" ? (
+            <>↺ Rewrite line</>
+          ) : result ? (
+            <>↺ Try again</>
+          ) : (
+            <>✦ Generate</>
+          )}
+        </button>
+      </div>
+
       {error && (
         <div className="sh-error" role="alert">{error}</div>
       )}
 
-      {/* Results */}
+      {/* Skeleton while loading */}
+      {loading && !result && (
+        <div className="sh-skeleton" aria-hidden>
+          <div className="sh-skel-card" />
+          <div className="sh-skel-card" />
+          <div className="sh-skel-card" />
+        </div>
+      )}
+
       {result && !loading && (
         <div className="sh-results">
           <div className="sh-results-header">
             <span className="sh-results-label">{resultLabel()}</span>
-            <button
-              type="button"
-              className="sh-regenerate-btn"
-              onClick={() => void handleGenerate()}
-              title="Generate again"
-            >
-              ↺ Again
-            </button>
+            <span className="sh-results-count">{result.suggestions.length}</span>
           </div>
           <div className="sh-suggestions">
             {result.suggestions.map((s, i) => (
               <SuggestionCard
                 key={i}
+                index={i + 1}
                 text={s}
                 onInsert={onInsert}
                 onReplace={
@@ -262,16 +276,17 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
 function SuggestionCard({
+  index,
   text,
   onInsert,
   onReplace,
 }: {
+  index: number;
   text: string;
   onInsert?: (text: string) => void;
   onReplace?: () => void;
@@ -291,7 +306,6 @@ function SuggestionCard({
     if (onReplace) {
       onReplace();
     } else if (onInsert) {
-      // Normalise line endings so multi-line suggestions each become a poem line.
       onInsert(text.replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
     }
     setApplied(true);
@@ -299,20 +313,22 @@ function SuggestionCard({
   }, [onReplace, onInsert, text]);
 
   const canApply = Boolean(onReplace || onInsert);
-  const applyLabel = onReplace ? "Replace" : "↓ Use";
+  const applyLabel = onReplace ? "Replace" : "Use";
   const applyTitle = onReplace ? "Replace the selected line in the poem" : "Append to poem";
 
   return (
     <div className="sh-suggestion">
+      <span className="sh-suggestion-index" aria-hidden>{index}</span>
       <p className="sh-suggestion-text">{text}</p>
-      <div className="sh-suggestion-footer">
+      <div className="sh-suggestion-actions">
         <button
           type="button"
-          className={`sh-copy-btn${copied ? " is-copied" : ""}`}
+          className={`sh-icon-btn${copied ? " is-copied" : ""}`}
           onClick={handleCopy}
-          title={copied ? "Copied!" : "Copy to clipboard"}
+          aria-label={copied ? "Copied" : "Copy"}
+          title={copied ? "Copied!" : "Copy"}
         >
-          {copied ? "✓ Copied" : "⎘ Copy"}
+          {copied ? "✓" : "⎘"}
         </button>
         {canApply && (
           <button
@@ -321,7 +337,7 @@ function SuggestionCard({
             onClick={handleApply}
             title={applyTitle}
           >
-            {applied ? "✓ Done" : applyLabel}
+            {applied ? "✓ Done" : (onReplace ? applyLabel : `↓ ${applyLabel}`)}
           </button>
         )}
       </div>

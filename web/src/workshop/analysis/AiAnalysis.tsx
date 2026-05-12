@@ -24,9 +24,17 @@ const LEGACY_MODEL_MAP: Record<string, string> = {
 };
 
 // ---- last analysis per poem ---- //
-const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
-const LS_RESOLVED_PREFIX = "easy-poems:ai-resolved:";
-const LS_IGNORED_PREFIX = "easy-poems:ai-ignored:";
+import {
+  LS_LAST_ANALYSIS_PREFIX,
+  LS_RESOLVED_PREFIX,
+  LS_IGNORED_PREFIX,
+  loadLastAnalysis,
+  saveLastAnalysis,
+  loadIdSet,
+  saveIdSet,
+  loadIgnoredIssueIds,
+} from "./ai-analysis-storage";
+export { loadLastAnalysis, loadIgnoredIssueIds };
 const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
 const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
 const LS_CHAT_PREFIX = "easy-poems:ai-chat:";
@@ -137,44 +145,6 @@ function saveChat(poemId: string | undefined, msgs: StoredChatMessage[]) {
     if (msgs.length === 0) localStorage.removeItem(LS_CHAT_PREFIX + poemId);
     else localStorage.setItem(LS_CHAT_PREFIX + poemId, JSON.stringify(msgs));
   } catch { /* ignore */ }
-}
-
-export function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
-  if (!poemId) return null;
-  try {
-    const raw = localStorage.getItem(LS_LAST_ANALYSIS_PREFIX + poemId);
-    if (!raw) return null;
-    return JSON.parse(raw) as PoemAnalysis;
-  } catch { return null; }
-}
-
-function saveLastAnalysis(poemId: string | undefined, analysis: PoemAnalysis) {
-  if (!poemId) return;
-  try { localStorage.setItem(LS_LAST_ANALYSIS_PREFIX + poemId, JSON.stringify(analysis)); }
-  catch { /* storage full */ }
-}
-
-function loadIdSet(prefix: string, poemId?: string): Set<string> {
-  if (!poemId) return new Set();
-  try {
-    const raw = localStorage.getItem(prefix + poemId);
-    if (!raw) return new Set();
-    const arr = JSON.parse(raw) as unknown;
-    if (!Array.isArray(arr)) return new Set();
-    return new Set(arr.map((x) => String(x)));
-  } catch { return new Set(); }
-}
-
-function saveIdSet(prefix: string, poemId: string | undefined, set: Set<string>) {
-  if (!poemId) return;
-  try {
-    if (set.size === 0) localStorage.removeItem(prefix + poemId);
-    else localStorage.setItem(prefix + poemId, JSON.stringify([...set]));
-  } catch { /* ignore */ }
-}
-
-export function loadIgnoredIssueIds(poemId?: string): Set<string> {
-  return loadIdSet(LS_IGNORED_PREFIX, poemId);
 }
 
 // ---- score history (per poem) ---- //

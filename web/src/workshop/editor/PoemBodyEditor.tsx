@@ -153,19 +153,41 @@ class SyllableWidget extends WidgetType {
   ignoreEvent() { return true; }
 }
 
+function activeLineNumber(view: EditorView): number {
+  if (!view.hasFocus) return -1;
+  return view.state.doc.lineAt(view.state.selection.main.head).number;
+}
+
 const syllableCountPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
-    constructor(view: EditorView) { this.decorations = this.build(view); }
+    private lastActiveLine = -2;
+    constructor(view: EditorView) {
+      this.lastActiveLine = activeLineNumber(view);
+      this.decorations = this.build(view);
+    }
     update(update: ViewUpdate) {
       // Touch: skip selectionSet/focusChanged — they fire on every tap and the
       // only side effect is hiding the active-line widget. Worth the trade-off
       // to keep typing fluid on iPad. Doc changes still rebuild.
       if (IS_TOUCH_DEVICE) {
         if (update.docChanged) {
+          this.lastActiveLine = activeLineNumber(update.view);
           this.decorations = this.build(update.view);
         }
-      } else if (update.docChanged || update.selectionSet || update.focusChanged) {
+        return;
+      }
+      if (update.docChanged) {
+        this.lastActiveLine = activeLineNumber(update.view);
+        this.decorations = this.build(update.view);
+        return;
+      }
+      if (update.selectionSet || update.focusChanged) {
+        // Only rebuild when the active line actually changed; cursor moves on
+        // the same line don't affect which widget is filtered out.
+        const next = activeLineNumber(update.view);
+        if (next === this.lastActiveLine) return;
+        this.lastActiveLine = next;
         this.decorations = this.build(update.view);
       }
     }

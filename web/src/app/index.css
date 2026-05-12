@@ -609,3 +609,13 @@ html[data-ui-font="system"] {
     animation: none !important;
   }
 }
+
+/* Pause all CSS animations + transitions when the tab is hidden so the
+   browser stops compositing them in the background. Toggled from main.tsx
+   on visibilitychange. */
+body.tab-hidden,
+body.tab-hidden *,
+body.tab-hidden *::before,
+body.tab-hidden *::after {
+  animation-play-state: paused !important;
+}

@@ -3,7 +3,10 @@ import { useEffect, useState } from "react";
 export function SavedAgo({ ts }: { ts: number }) {
   const [, tick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 15_000);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      tick((n) => n + 1);
+    }, 15_000);
     return () => clearInterval(id);
   }, []);
   const secs = Math.floor((Date.now() - ts) / 1000);

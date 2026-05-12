@@ -37,6 +37,19 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* Hero */}
       <section className="landing-hero" ref={heroRef}>
+        <div className="landing-aurora" aria-hidden>
+          <span className="landing-aurora-blob landing-aurora-blob-1" />
+          <span className="landing-aurora-blob landing-aurora-blob-2" />
+          <span className="landing-aurora-blob landing-aurora-blob-3" />
+        </div>
+        <div className="landing-floaters" aria-hidden>
+          <span className="landing-floater landing-floater-1">moonlight</span>
+          <span className="landing-floater landing-floater-2">whisper</span>
+          <span className="landing-floater landing-floater-3">ember</span>
+          <span className="landing-floater landing-floater-4">silver</span>
+          <span className="landing-floater landing-floater-5">drift</span>
+          <span className="landing-floater landing-floater-6">hush</span>
+        </div>
         <div className="landing-hero-inner">
           <div className="landing-hero-eyebrow landing-hero-eyebrow-desktop">
             <svg className="landing-hero-feather" viewBox="0 0 24 24" aria-hidden width="22" height="22">

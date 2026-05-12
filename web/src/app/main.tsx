@@ -18,6 +18,15 @@ const LandingPage = lazy(() =>
 
 applyAppearance(loadAppearance());
 
+// Pause animations + background work when the tab is hidden. Toggles a body
+// class that CSS uses to halt keyframes; visibility-aware intervals also gate
+// on document.hidden so they don't repaint the DOM in the background.
+function syncTabHiddenClass() {
+  document.body.classList.toggle("tab-hidden", document.hidden);
+}
+syncTabHiddenClass();
+document.addEventListener("visibilitychange", syncTabHiddenClass);
+
 function readLandingDismissed(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY_LANDING_DISMISSED) === "1";
