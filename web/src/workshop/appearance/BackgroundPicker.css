@@ -801,6 +801,23 @@
   }
 }
 
+/* Tablet scroll fix: every interactive descendant must let a vertical drag
+   pass through to the modal scroller. Without this, taps on chips/swatches/
+   icon buttons swallow the pan-y gesture and the modal feels stuck. */
+.bg-picker button,
+.bg-picker label,
+.bg-creator button,
+.bg-creator label,
+.bg-creator input,
+.bg-color-editor button,
+.bg-color-editor label,
+.style-modal .appearance-field,
+.style-modal .appearance-field > button,
+.style-modal .appearance-field > label,
+.style-modal .appearance-field > select {
+  touch-action: pan-y;
+}
+
 .persistence-banner {
   display: flex;
   flex-wrap: wrap;

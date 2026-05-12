@@ -3666,9 +3666,9 @@
 }
 
 @media (prefers-color-scheme: light) {
-  .editor-panel,
-  .results,
-  .privacy {
+  html:not([data-workshop-bg]) .editor-panel,
+  html:not([data-workshop-bg]) .results,
+  html:not([data-workshop-bg]) .privacy {
     box-shadow: var(--shadow-1);
     /* Slightly warmer panel background for a Word/document feel */
     background: color-mix(in srgb, var(--surface) 94%, #fefffe);
