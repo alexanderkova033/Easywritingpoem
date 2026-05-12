@@ -619,3 +619,25 @@ body.tab-hidden *::before,
 body.tab-hidden *::after {
   animation-play-state: paused !important;
 }
+
+/* Soft mobile perf: on touch + narrow viewports, slow always-on infinite
+   ambient backgrounds (themes, landing aurora) to ~half speed. Keeps the
+   visual character but halves the per-second compositor work. Discrete UI
+   animations (button hover, modal enter) are left untouched. */
+@media (hover: none) and (pointer: coarse) and (max-width: 899px) {
+  html[data-workshop-bg] body::before,
+  html[data-workshop-bg] body::after {
+    animation-duration: 96s !important;
+  }
+}
+
+/* Pause heavy ambient backdrops while the editor is focused. .is-editor-typing
+   is toggled by PoemBodyEditor on focusin/focusout. Frees GPU/compositor budget
+   for caret + text layout during keystrokes. Only fires on touch where the gain
+   matters; desktop machines have headroom and the animation cue is nicer. */
+@media (hover: none) and (pointer: coarse) {
+  html.is-editor-typing[data-workshop-bg] body::before,
+  html.is-editor-typing[data-workshop-bg] body::after {
+    animation-play-state: paused;
+  }
+}

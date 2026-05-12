@@ -401,38 +401,62 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     });
   }, [revisions]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setLibrary((prev) => {
-        const next = upsertActivePoem(prev, {
-          title,
-          body: bodyLiveRef.current,
-          form: formNote,
-          spellMode,
-        });
-        if (!saveLibrary(next)) {
-          setPersistenceError(DRAFT_STORAGE_MSG);
-          return prev;
-        }
-        setPersistenceError((p) => (p === DRAFT_STORAGE_MSG ? null : p));
-        setSavedFlash(true);
-        setLastSavedAt(Date.now());
-        // Re-check storage fullness on every save so we warn promptly
-        if (!storageNearlyFullRef.current && isLocalStorageNearlyFull()) {
-          storageNearlyFullRef.current = true;
-          setStorageNearlyFull(true);
-          setPersistenceError("Browser storage is nearly full. Export a backup now to avoid losing work.");
-        }
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
-          setSavedFlash(false);
-          saveTimer.current = null;
-        }, 900);
-        return next;
+  // Bumped to 1500ms (was 500ms) so JSON.stringify + localStorage.setItem
+  // doesn't fire mid-keystroke on slow phones. Flushed on blur/visibilitychange/
+  // beforeunload (see effect below) so no work is lost on exit.
+  const persistActiveDraft = useCallback(() => {
+    setLibrary((prev) => {
+      const next = upsertActivePoem(prev, {
+        title,
+        body: bodyLiveRef.current,
+        form: formNote,
+        spellMode,
       });
-    }, 500);
+      if (!saveLibrary(next)) {
+        setPersistenceError(DRAFT_STORAGE_MSG);
+        return prev;
+      }
+      setPersistenceError((p) => (p === DRAFT_STORAGE_MSG ? null : p));
+      setSavedFlash(true);
+      setLastSavedAt(Date.now());
+      if (!storageNearlyFullRef.current && isLocalStorageNearlyFull()) {
+        storageNearlyFullRef.current = true;
+        setStorageNearlyFull(true);
+        setPersistenceError("Browser storage is nearly full. Export a backup now to avoid losing work.");
+      }
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        setSavedFlash(false);
+        saveTimer.current = null;
+      }, 900);
+      return next;
+    });
+  }, [title, formNote, spellMode]);
+
+  const persistRef = useRef(persistActiveDraft);
+  persistRef.current = persistActiveDraft;
+
+  useEffect(() => {
+    const t = setTimeout(() => persistRef.current(), 1500);
     return () => clearTimeout(t);
   }, [title, body, formNote, spellMode, activePoemId]);
+
+  // Flush pending save synchronously when user leaves the page or backgrounds
+  // the tab. Covers: tab close, navigation, mobile app-switch, screen lock.
+  useEffect(() => {
+    const flush = () => persistRef.current();
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   const lines = useMemo(() => linesFromBody(body), [body]);
   const heavyLines = useMemo(() => linesFromBody(heavyBody), [heavyBody]);

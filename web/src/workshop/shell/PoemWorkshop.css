@@ -85,10 +85,16 @@
 }
 
 /*
- * Touch-device perf: disable backdrop-filter on all UI chrome.
- * It causes compositor jank on mid-range phones. Solid backgrounds fill in.
+ * Touch-device perf: soften backdrop-filter on UI chrome.
+ *
+ * Tier 1 — touch + narrow (phones): drop blur entirely. Mid-range phones
+ *   composite blurred surfaces on every frame underneath them, which causes
+ *   keystroke jank. Solid backgrounds fill in.
+ * Tier 2 — touch + tablet (≥600px): keep blur but cut the radius. Tablets
+ *   have more GPU headroom than phones but still less than desktops, so a
+ *   small blur looks better than none without the full cost.
  */
-@media (hover: none) and (pointer: coarse) {
+@media (hover: none) and (pointer: coarse) and (max-width: 599px) {
   .topbar,
   .drawer,
   .modal,
@@ -101,6 +107,22 @@
   .privacy {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) and (min-width: 600px) {
+  .topbar,
+  .drawer,
+  .modal,
+  .overlay-center,
+  .workshop-rail,
+  .tools-panel,
+  .tools-sticky-head,
+  .tools-reopen-fab,
+  .draggable-handle,
+  .privacy {
+    backdrop-filter: blur(4px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(4px) saturate(1.05) !important;
   }
 }
 

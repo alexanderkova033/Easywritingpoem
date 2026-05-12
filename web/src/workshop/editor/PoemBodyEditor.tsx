@@ -804,6 +804,31 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     return () => { applyRewriteHandler.fn = null; };
   }, [props.onApplyRewriteAtCursor]);
 
+  // Pause ambient body animations while the editor is focused. CSS rule in
+  // index.css gates on `html.is-editor-typing` so only the heavy backdrops
+  // pause on touch — discrete UI animations still run.
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest(".cm-editor")) {
+        document.documentElement.classList.add("is-editor-typing");
+      }
+    };
+    const onFocusOut = (e: FocusEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest(".cm-editor")) {
+        document.documentElement.classList.remove("is-editor-typing");
+      }
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      document.documentElement.classList.remove("is-editor-typing");
+    };
+  }, []);
+
   // Expose a synchronous cursor-line getter so callers can decide whether to
   // peek/jump based on where the cursor already is.
   useEffect(() => {
