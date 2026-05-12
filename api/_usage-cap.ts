@@ -6,39 +6,32 @@
  *   2. Global, per-UTC-day cap (default $5.00) — kill switch for the whole app.
  *   3. Per-IP, per-endpoint cooldown (5 s default, 60 s for heavy analysis).
  *
- * State is kept in module-level Maps. That works while the Lambda container is
- * warm and silently resets on cold-start. For true enforcement migrate this to
- * Vercel KV / Upstash Redis — see docs/PLANS.md (P0).
- *
- * "Per user" really means "per IP" today; there is no auth (PLANS.md P1).
+ * State lives in Vercel KV when configured, falling back to a process-local
+ * Map in local dev. With KV enabled the counters are durable across cold
+ * starts and shared across all concurrent warm containers.
  */
 
-const PER_IP_MONTHLY_CAP_CENTS = 200;   // $2.00
-const GLOBAL_DAILY_CAP_CENTS   = 500;   // $5.00
+import { kvGetNumber, kvIncrBy, kvSetPxIfAbsent } from "./_kv";
+
+const PER_IP_MONTHLY_CAP_CENTS = 200;
+const GLOBAL_DAILY_CAP_CENTS = 500;
 
 const DEFAULT_COOLDOWN_MS = 5_000;
-// Heavy-endpoint cooldowns scale with model cost/latency.
-// fast  (nano)    → 60s
-// normal(mini)    → 120s
-// thinking(gpt-5) → 180s
 const ANALYZE_COOLDOWN_BY_MODEL_MS: Record<string, number> = {
   "gpt-5-nano": 60_000,
   "gpt-5-mini": 120_000,
-  "gpt-5":      180_000,
+  "gpt-5": 180_000,
 };
 const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
 
-/**
- * Model pricing in cents per 1M tokens. Values are conservative — round up
- * rather than down so the cap protects us when pricing shifts.
- * Update when OpenAI pricing changes; missing models fall back to the most
- * expensive entry.
- */
-interface ModelPrice { inCentsPerMTok: number; outCentsPerMTok: number; }
+interface ModelPrice {
+  inCentsPerMTok: number;
+  outCentsPerMTok: number;
+}
 const MODEL_PRICING: Record<string, ModelPrice> = {
-  "gpt-5-nano": { inCentsPerMTok: 5,    outCentsPerMTok: 40   },
-  "gpt-5-mini": { inCentsPerMTok: 25,   outCentsPerMTok: 200  },
-  "gpt-5":      { inCentsPerMTok: 125,  outCentsPerMTok: 1000 },
+  "gpt-5-nano": { inCentsPerMTok: 5, outCentsPerMTok: 40 },
+  "gpt-5-mini": { inCentsPerMTok: 25, outCentsPerMTok: 200 },
+  "gpt-5": { inCentsPerMTok: 125, outCentsPerMTok: 1000 },
 };
 const FALLBACK_PRICE: ModelPrice = MODEL_PRICING["gpt-5"]!;
 
@@ -57,16 +50,10 @@ export function estimateCostCents(
 ): number {
   const p = priceFor(model);
   const cents =
-    (promptTokens     * p.inCentsPerMTok)  / 1_000_000 +
+    (promptTokens * p.inCentsPerMTok) / 1_000_000 +
     (completionTokens * p.outCentsPerMTok) / 1_000_000;
-  return Math.ceil(cents * 100) / 100; // keep 2 decimal cents of resolution
+  return Math.ceil(cents * 100) / 100;
 }
-
-// --- Storage ----------------------------------------------------------------
-
-const ipMonthSpend  = new Map<string, number>();         // key: `${ip}:${YYYY-MM}` → cents
-const globalDaySpend = new Map<string, number>();        // key: YYYY-MM-DD → cents
-const cooldownAt    = new Map<string, number>();         // key: `${ip}:${endpoint}` → next-allowed-at ms
 
 function normalizeIp(rawIp: string | string[] | undefined): string {
   if (!rawIp) return "";
@@ -81,7 +68,17 @@ function dayKey(d = new Date()): string {
   return `${monthKey(d)}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
-// --- Kill switch ------------------------------------------------------------
+function globalDayKvKey(day: string): string {
+  return `spend:global:${day}`;
+}
+
+function ipMonthKvKey(ip: string, month: string): string {
+  return `spend:ip:${ip}:${month}`;
+}
+
+function cooldownKvKey(ip: string, endpoint: string): string {
+  return `cooldown:${ip}:${endpoint}`;
+}
 
 export interface PrecheckResult {
   ok: boolean;
@@ -108,30 +105,26 @@ function block(
     ip: "",
     status,
     retryAfterSec,
-    body: retryAfterSec > 0
-      ? { error, retryAfterSec, reason }
-      : { error, reason },
+    body:
+      retryAfterSec > 0
+        ? { error, retryAfterSec, reason }
+        : { error, reason },
   };
 }
 
-/**
- * Run before each OpenAI call. Returns either `{ok:true}` or a structured
- * block describing why the request was rejected. Caller forwards the block
- * to the HTTP response.
- */
-export function precheckSpend(opts: PrecheckOpts): PrecheckResult {
+export async function precheckSpend(
+  opts: PrecheckOpts,
+): Promise<PrecheckResult> {
   if (process.env.OPENAI_DISABLED === "true") {
     return block(503, "kill-switch", "AI features are temporarily disabled.", 0);
   }
 
   const ip = normalizeIp(opts.rawIp);
 
-  // No IP header → local dev / direct invocation. Allow.
   if (!ip) return { ok: true, ip: "", status: 200, retryAfterSec: 0, body: null };
 
-  // Global daily kill switch.
   const day = dayKey();
-  const globalCents = globalDaySpend.get(day) ?? 0;
+  const globalCents = await kvGetNumber(globalDayKvKey(day));
   if (globalCents >= GLOBAL_DAILY_CAP_CENTS) {
     return block(
       503,
@@ -141,9 +134,8 @@ export function precheckSpend(opts: PrecheckOpts): PrecheckResult {
     );
   }
 
-  // Per-IP monthly cap.
   const month = monthKey();
-  const ipCents = ipMonthSpend.get(`${ip}:${month}`) ?? 0;
+  const ipCents = await kvGetNumber(ipMonthKvKey(ip, month));
   if (ipCents >= PER_IP_MONTHLY_CAP_CENTS) {
     return block(
       402,
@@ -153,21 +145,20 @@ export function precheckSpend(opts: PrecheckOpts): PrecheckResult {
     );
   }
 
-  // Cooldown.
   const cooldownMs = opts.cooldownMs ?? DEFAULT_COOLDOWN_MS;
-  const cdKey = `${ip}:${opts.endpoint}`;
-  const nextAt = cooldownAt.get(cdKey) ?? 0;
-  const now = Date.now();
-  if (now < nextAt) {
-    const retryAfterSec = Math.max(1, Math.ceil((nextAt - now) / 1000));
+  const installed = await kvSetPxIfAbsent(
+    cooldownKvKey(ip, opts.endpoint),
+    Date.now() + cooldownMs,
+    cooldownMs,
+  );
+  if (!installed) {
     return block(
       429,
       "cooldown",
-      `Please wait ${retryAfterSec}s before retrying this action.`,
-      retryAfterSec,
+      `Please wait a moment before retrying this action.`,
+      Math.ceil(cooldownMs / 1000),
     );
   }
-  cooldownAt.set(cdKey, now + cooldownMs);
 
   return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
 }
@@ -175,7 +166,9 @@ export function precheckSpend(opts: PrecheckOpts): PrecheckResult {
 export function cooldownFor(endpoint: string, model?: string): number {
   if (endpoint === "analyze" || endpoint === "compare") {
     if (!model) return ANALYZE_COOLDOWN_FALLBACK_MS;
-    if (ANALYZE_COOLDOWN_BY_MODEL_MS[model] != null) return ANALYZE_COOLDOWN_BY_MODEL_MS[model]!;
+    if (ANALYZE_COOLDOWN_BY_MODEL_MS[model] != null) {
+      return ANALYZE_COOLDOWN_BY_MODEL_MS[model]!;
+    }
     for (const key of Object.keys(ANALYZE_COOLDOWN_BY_MODEL_MS)) {
       if (model.startsWith(key)) return ANALYZE_COOLDOWN_BY_MODEL_MS[key]!;
     }
@@ -184,27 +177,30 @@ export function cooldownFor(endpoint: string, model?: string): number {
   return DEFAULT_COOLDOWN_MS;
 }
 
-/**
- * After a successful OpenAI call, charge the actual cost against both
- * the per-IP monthly counter and the global daily counter.
- */
-export function recordSpend(
+export async function recordSpend(
   ip: string,
   model: string,
   promptTokens: number,
   completionTokens: number,
-): { ipCents: number; globalCents: number; cost: number } {
+): Promise<{ ipCents: number; globalCents: number; cost: number }> {
   const cost = estimateCostCents(model, promptTokens, completionTokens);
+  const costWhole = Math.max(1, Math.ceil(cost));
+
   const day = dayKey();
-  const newGlobal = (globalDaySpend.get(day) ?? 0) + cost;
-  globalDaySpend.set(day, newGlobal);
+  const newGlobal = await kvIncrBy(
+    globalDayKvKey(day),
+    costWhole,
+    secondsUntilNextUtcMidnight() * 1000,
+  );
 
   let newIp = 0;
   if (ip) {
     const month = monthKey();
-    const key = `${ip}:${month}`;
-    newIp = (ipMonthSpend.get(key) ?? 0) + cost;
-    ipMonthSpend.set(key, newIp);
+    newIp = await kvIncrBy(
+      ipMonthKvKey(ip, month),
+      costWhole,
+      secondsUntilNextUtcMonth() * 1000,
+    );
   }
   return { ipCents: newIp, globalCents: newGlobal, cost };
 }
@@ -212,11 +208,9 @@ export function recordSpend(
 export function getCaps() {
   return {
     perIpMonthlyCapCents: PER_IP_MONTHLY_CAP_CENTS,
-    globalDailyCapCents:  GLOBAL_DAILY_CAP_CENTS,
+    globalDailyCapCents: GLOBAL_DAILY_CAP_CENTS,
   };
 }
-
-// --- Time helpers -----------------------------------------------------------
 
 function secondsUntilNextUtcMidnight(): number {
   const now = new Date();
@@ -224,13 +218,24 @@ function secondsUntilNextUtcMidnight(): number {
     now.getUTCFullYear(),
     now.getUTCMonth(),
     now.getUTCDate() + 1,
-    0, 0, 0, 0,
+    0,
+    0,
+    0,
+    0,
   );
   return Math.ceil((next - now.getTime()) / 1000);
 }
 
 function secondsUntilNextUtcMonth(): number {
   const now = new Date();
-  const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0);
+  const next = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth() + 1,
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
   return Math.ceil((next - now.getTime()) / 1000);
 }

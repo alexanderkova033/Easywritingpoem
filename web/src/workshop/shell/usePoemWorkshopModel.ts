@@ -59,9 +59,11 @@ import {
 import {
   loadWorkshopGoals,
   saveWorkshopGoals,
+} from "@/workshop/goals/storage";
+import {
   type WorkshopGoals,
   FORM_PRESETS,
-} from "@/workshop/library/workshop-goals";
+} from "@/workshop/goals/types";
 import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
 import { loadEnglishWordlist } from "@/spellcheck/wordlist";
 import type { SpellHit } from "@/spellcheck/scan";
@@ -70,20 +72,20 @@ import {
   BODY_TO_REACT_DEBOUNCE_MS,
   SPELL_ANALYSIS_DEBOUNCE_MS,
 } from "@/spellcheck/spell-timing";
-import { evaluateGoals } from "@/workshop/analysis/goal-metrics";
+import { evaluateGoals } from "@/workshop/goals/metrics";
 import { linesFromBody } from "@/workshop/analysis/lines-from-body";
 import {
   computeDocumentStats,
   computeQuickDocumentStats,
 } from "@/workshop/analysis/line-stats";
-import { loadStressLexicon } from "@/workshop/analysis/cmu-stress-lexicon";
+import { loadStressLexicon } from "@/workshop/meter/cmu-stress-lexicon";
 import {
   meterHintsForBody,
   summarizeMeterCoverage,
-} from "@/workshop/analysis/meter-hints";
+} from "@/workshop/meter/meter-hints";
 import { useHeavyAnalysis } from "@/workshop/analysis/use-heavy-analysis";
 import { buildPublicationChecklist } from "@/workshop/analysis/publication-checklist";
-import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import {
   focusCharacterRangeInEditor,
   focusLastWordInLine,

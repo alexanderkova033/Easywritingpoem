@@ -14,11 +14,11 @@ import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
 // rendered when the user opens the Page Background modal. Lazy keeps it off
 // the initial workshop bundle.
 const BackgroundPicker = lazy(() =>
-  import("@/workshop/appearance/BackgroundPicker").then((m) => ({ default: m.BackgroundPicker })),
+  import("@/workshop/appearance/backgrounds/BackgroundPicker").then((m) => ({ default: m.BackgroundPicker })),
 );
 import { FirstVisitHint } from "./FirstVisitHint";
 import { SamplePoemBanner } from "./SamplePoemBanner";
-import { RhymeTooltip } from "./RhymeTooltip";
+import { RhymeTooltip } from "@/workshop/rhyme/RhymeTooltip";
 import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "@/workshop/editor/PoemBodyEditor";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
@@ -32,7 +32,7 @@ const WorkshopToolPanels = lazy(() =>
 import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
-import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
+import { FORM_PRESETS } from "@/workshop/goals/types";
 import { loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/ai-analysis-storage";
 // Lazy-load the AI analysis panel — it pulls in the analyze/compare client,
 // chat UI, and rationale renderer, none of which are needed for first paint.
@@ -40,7 +40,8 @@ const AiAnalysis = lazy(() =>
   import("@/workshop/analysis/AiAnalysis").then((m) => ({ default: m.AiAnalysis }))
 );
 import { PublicationChecklistVisual } from "@/workshop/analysis/PublicationChecklistVisual";
-import { recordWriteToday } from "@/workshop/shell/writing-streak";
+import { useWritingStreakOnMount } from "@/workshop/shell/useWritingStreakOnMount";
+import { useVirtualKeyboardClass } from "@/workshop/shell/useVirtualKeyboardClass";
 import { AiSummaryPopover } from "@/workshop/analysis/AiSummaryPopover";
 import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
@@ -67,7 +68,7 @@ import { WorkshopModals } from "./WorkshopModals";
 import { WorkshopBanners } from "./WorkshopBanners";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
-import { endingForBreadth, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -125,16 +126,7 @@ export function PoemWorkshop() {
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
-  // Record a writing streak once per mount when the poem body has substantive
-  // content. Idempotent within the calendar day — costs nothing if already
-  // recorded today. Local-only, no analytics.
-  const streakRecordedRef = useRef(false);
-  useEffect(() => {
-    if (streakRecordedRef.current) return;
-    if (m.body.trim().length < 15) return;
-    streakRecordedRef.current = true;
-    recordWriteToday();
-  }, [m.body]);
+  useWritingStreakOnMount(m.body);
 
   const mainIdeaStorageKey = (poemId: string | undefined) =>
     poemId ? `easy-poems:main-idea:${poemId}` : null;
@@ -390,20 +382,7 @@ export function PoemWorkshop() {
     } catch { return true; }
   })();
 
-  // Hide topbar when virtual keyboard is open
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const handler = () => {
-      const open = vv.height < window.innerHeight * 0.78;
-      document.documentElement.classList.toggle("vp-keyboard-open", open);
-    };
-    vv.addEventListener("resize", handler);
-    return () => {
-      vv.removeEventListener("resize", handler);
-      document.documentElement.classList.remove("vp-keyboard-open");
-    };
-  }, []);
+  useVirtualKeyboardClass();
 
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   // Restore highlights from saved analysis on first mount so reload doesn't

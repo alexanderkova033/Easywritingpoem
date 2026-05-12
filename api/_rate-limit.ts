@@ -1,69 +1,41 @@
 /**
- * Simple in-memory IP-based rate limiter for Vercel serverless functions.
+ * IP-based sliding-window rate limiter.
  *
- * Because each function instance can be reused across several requests while
- * the container is warm, this catches burst abuse within a single warm
- * instance.  It is NOT a distributed rate limiter — if you need hard
- * per-user quotas add Vercel KV or an edge middleware.
+ * Uses Vercel KV when configured so the window is shared across all warm
+ * lambda containers; falls back to a process-local Map in dev.
  */
 
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
+import { kvIncrBy, kvPttl } from "./_kv";
 
-// Module-level store; persists as long as the Lambda container is warm.
-const store = new Map<string, Bucket>();
-
-const WINDOW_MS = 60_000; // 1-minute sliding window
-const MAX_PER_WINDOW = 8; // requests per IP per window
-
-/** Clean up expired buckets to avoid unbounded memory growth. */
-function gc(): void {
-  const now = Date.now();
-  for (const [key, bucket] of store) {
-    if (now >= bucket.resetAt) store.delete(key);
-  }
-}
+const WINDOW_MS = 60_000;
+const MAX_PER_WINDOW = 8;
 
 function normalizeIp(rawIp: string | string[] | undefined): string {
   if (!rawIp) return "";
   return Array.isArray(rawIp) ? rawIp[0]! : rawIp.split(",")[0]!.trim();
 }
 
-/**
- * Returns true if the request is allowed, false if the IP is over limit.
- * Pass the raw value of the `x-forwarded-for` (or similar) header.
- */
-export function checkRateLimit(rawIp: string | string[] | undefined): boolean {
-  // Always allow when running locally (no IP header).
-  if (!rawIp) return true;
+function bucketKey(ip: string): string {
+  return `rl:${ip}`;
+}
 
+/** True if the request is allowed; false if the IP is over its limit. */
+export async function checkRateLimit(
+  rawIp: string | string[] | undefined,
+): Promise<boolean> {
+  if (!rawIp) return true;
   const ip = normalizeIp(rawIp);
   if (!ip) return true;
-
-  const now = Date.now();
-
-  // Periodic GC (every ~50 calls on average).
-  if (Math.random() < 0.02) gc();
-
-  const bucket = store.get(ip);
-  if (!bucket || now >= bucket.resetAt) {
-    store.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-
-  if (bucket.count >= MAX_PER_WINDOW) return false;
-
-  bucket.count++;
-  return true;
+  const count = await kvIncrBy(bucketKey(ip), 1, WINDOW_MS);
+  return count <= MAX_PER_WINDOW;
 }
 
 /** Seconds until the IP's window resets. 0 if no active bucket. */
-export function getRateLimitRetrySec(rawIp: string | string[] | undefined): number {
+export async function getRateLimitRetrySec(
+  rawIp: string | string[] | undefined,
+): Promise<number> {
   const ip = normalizeIp(rawIp);
   if (!ip) return 0;
-  const bucket = store.get(ip);
-  if (!bucket) return 0;
-  return Math.max(0, Math.ceil((bucket.resetAt - Date.now()) / 1000));
+  const ms = await kvPttl(bucketKey(ip));
+  return Math.max(0, Math.ceil(ms / 1000));
 }

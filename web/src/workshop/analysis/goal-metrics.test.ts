@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateGoals } from "./goal-metrics";
+import { evaluateGoals } from "@/workshop/goals/metrics";
 import type { DocumentStats } from "./line-stats";
 
 function stats(partial: Partial<DocumentStats> & Pick<DocumentStats, "lines">): DocumentStats {

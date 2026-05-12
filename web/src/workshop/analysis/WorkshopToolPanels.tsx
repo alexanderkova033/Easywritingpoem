@@ -2,16 +2,16 @@ import type { ChangeEvent, KeyboardEvent, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
-import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
-import { FORM_PRESETS } from "@/workshop/library/workshop-goals";
+import type { WorkshopGoals } from "@/workshop/goals/types";
+import { FORM_PRESETS } from "@/workshop/goals/types";
 import {
   ALL_GOAL_KEYS,
   hasAnyGoalSet,
 } from "@/workshop/goals/types";
-import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
+import type { GoalEvaluation } from "@/workshop/goals/metrics";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
-import type { RhymeCluster } from "@/workshop/analysis/rhyme-hints";
+import type { RhymeCluster } from "@/workshop/rhyme/hints";
 import type { StanzaClusterGroup } from "@/workshop/rhyme/hints";
 import type {
   RepeatedWord,
@@ -21,7 +21,7 @@ import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type {
   LineMeterHint,
-} from "@/workshop/analysis/meter-hints";
+} from "@/workshop/meter/meter-hints";
 import { downloadTextFile } from "@/workshop/library/export-poem";
 import {
   addToPersonalDictionary,
@@ -31,7 +31,7 @@ import {
   removeFromPersonalDictionary,
 } from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
-import { RhymeFinder } from "./RhymeFinder";
+import { RhymeFinder } from "@/workshop/rhyme/RhymeFinder";
 import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { StuckHelper } from "./StuckHelper";
 import { IdeasNotebook } from "@/workshop/goals/IdeasNotebook";
@@ -41,7 +41,7 @@ import {
   type CompareSnapshotOption,
 } from "./RevisionCompareSection";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
-import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import type { RhymeBreadth } from "@/workshop/rhyme/scheme";
 import {
   LINES_TABLE_MAX,
   METER_TABLE_MAX,

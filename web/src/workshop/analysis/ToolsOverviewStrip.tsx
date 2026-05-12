@@ -1,6 +1,6 @@
 import type { QuickDocumentStats } from "@/workshop/analysis/line-stats";
-import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
-import type { MeterCoverageSummary } from "@/workshop/analysis/meter-hints";
+import type { GoalEvaluation } from "@/workshop/goals/metrics";
+import type { MeterCoverageSummary } from "@/workshop/meter/meter-hints";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
 

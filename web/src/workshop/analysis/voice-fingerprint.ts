@@ -7,7 +7,7 @@
  */
 
 import { loadOrCreateLibrary, type PoemRecord } from "@/workshop/library/local-draft-library";
-import { countSyllablesInLine } from "@/workshop/analysis/syllables";
+import { countSyllablesInLine } from "@/workshop/meter/syllables";
 
 const IMAGERY_BUCKETS: Array<{ label: string; words: string[] }> = [
   { label: "water imagery",   words: ["river", "sea", "ocean", "wave", "tide", "rain", "lake", "pond", "shore", "stream", "salt", "drowning", "current", "harbor"] },

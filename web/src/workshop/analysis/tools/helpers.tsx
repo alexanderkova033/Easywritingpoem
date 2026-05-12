@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
-import type { LineStressSource } from "@/workshop/analysis/meter-hints";
+import type { LineStressSource } from "@/workshop/meter/meter-hints";
 
 export const LINES_TABLE_MAX = 400;
 export const METER_TABLE_MAX = 400;

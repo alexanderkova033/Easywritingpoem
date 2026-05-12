@@ -1,4 +1,4 @@
-import { normalizeWordToken, wordSpansInLine, wordsInLine } from "./tokenize";
+import { normalizeWordToken, wordSpansInLine, wordsInLine } from "@/workshop/meter/tokenize";
 
 const STOP = new Set(
   [

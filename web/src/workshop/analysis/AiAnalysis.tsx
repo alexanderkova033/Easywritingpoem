@@ -10,7 +10,7 @@ import {
   type PoemAnalysis,
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
-import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
+import type { WorkshopGoals } from "@/workshop/goals/types";
 import { computeVoiceFingerprint } from "@/workshop/analysis/voice-fingerprint";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";

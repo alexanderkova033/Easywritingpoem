@@ -6,7 +6,7 @@ import {
   stressPatternForWord,
   stressPatternForWordHeuristic,
   summarizeMeterCoverage,
-} from "./meter-hints";
+} from "@/workshop/meter/meter-hints";
 
 describe("meter-hints", () => {
   it("marks single-syllable function words weak (heuristic)", () => {

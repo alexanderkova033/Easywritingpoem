@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
-import { countSyllablesInLine } from "@/workshop/analysis/syllables";
+import { countSyllablesInLine } from "@/workshop/meter/syllables";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import "./SelectionSuggestPopover.css";
 

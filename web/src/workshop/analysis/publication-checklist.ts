@@ -1,5 +1,5 @@
 import type { DocumentStats } from "./line-stats";
-import type { GoalEvaluation } from "./goal-metrics";
+import type { GoalEvaluation } from "@/workshop/goals/metrics";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 
 export type ChecklistIcon = "lines" | "title" | "spell" | "goals";

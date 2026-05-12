@@ -23,7 +23,7 @@ import {
   stanzaGroupsFromScheme,
 } from "@/workshop/rhyme/hints";
 import type { RhymeCluster, StanzaClusterGroup } from "@/workshop/rhyme/hints";
-import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { detectInternalRhymes } from "@/workshop/rhyme/internal-rhymes";
 import type { InternalRhymeMark } from "@/workshop/rhyme/internal-rhymes";
 

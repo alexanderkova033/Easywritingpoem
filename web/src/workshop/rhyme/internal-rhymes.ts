@@ -1,5 +1,5 @@
 import { wordSpansInLine, normalizeWordToken } from "@/workshop/meter/tokenize";
-import { endingForBreadth, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
+import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 
 export interface InternalRhymeMark {
   /** 1-based line number. */

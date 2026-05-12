@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   lightAssonanceClusters,
   lightConsonanceClusters,
-} from "./rhyme-hints";
+} from "@/workshop/rhyme/hints";
 
 describe("lightAssonanceClusters", () => {
   it("groups lines with the same vowel-letter sequence in the last word", () => {

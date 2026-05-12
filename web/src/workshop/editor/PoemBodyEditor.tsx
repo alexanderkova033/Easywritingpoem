@@ -6,7 +6,7 @@ import { typewriterExtension, setTypewriterEnabled } from "@/workshop/editor/typ
 import { diffOverlayField, setDiffSnapshot } from "@/workshop/editor/diff-overlay";
 import "@/workshop/editor/diff-overlay.css";
 import { highlightSelectionMatches, search } from "@codemirror/search";
-import { countSyllablesInLine } from "@/workshop/analysis/syllables";
+import { countSyllablesInLine } from "@/workshop/meter/syllables";
 import type { MutableRefObject } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CodeMirror, { ExternalChange } from "@uiw/react-codemirror";

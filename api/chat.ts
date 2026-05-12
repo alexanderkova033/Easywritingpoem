@@ -18,8 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!checkRateLimit(req.headers["x-forwarded-for"])) {
-    const retryAfterSec = getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+  if (!(await checkRateLimit(req.headers["x-forwarded-for"]))) {
+    const retryAfterSec = await getRateLimitRetrySec(req.headers["x-forwarded-for"]);
     if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
     return res.status(429).json({
       error: "Too many requests — please wait a moment.",
@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const spend = precheckSpend({
+  const spend = await precheckSpend({
     rawIp: req.headers["x-forwarded-for"],
     endpoint: "chat",
     cooldownMs: cooldownFor("chat"),
@@ -111,6 +111,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!result) return;
 
-  recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
   return res.status(200).json({ reply: result.content });
 }

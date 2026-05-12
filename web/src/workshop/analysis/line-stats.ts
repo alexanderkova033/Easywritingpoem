@@ -1,5 +1,5 @@
-import { countSyllablesInLine } from "./syllables";
-import { wordsInLine } from "./tokenize";
+import { countSyllablesInLine } from "@/workshop/meter/syllables";
+import { wordsInLine } from "@/workshop/meter/tokenize";
 
 /** Typical aloud pace for poetry (words per minute), for a rough reading-time hint. */
 export const POETRY_READING_WPM = 130;

@@ -72,9 +72,24 @@ The build process (`npm run build`) checks that `cmu-stress.txt` is newer than `
 - Feature can be disabled entirely by not setting `OPENAI_API_KEY` in Vercel environment variables. The UI shows a clear "not configured" notice.
 - Rate limiting (`api/_rate-limit.ts`) is in-memory per Vercel function instance; suitable for low traffic.
 
-**For production scale:** Replace in-memory rate limiting with Vercel KV or Edge Middleware for distributed limiting across function instances.
+**Rate limiting + usage caps use Vercel KV.** [`api/_rate-limit.ts`](../api/_rate-limit.ts) and [`api/_usage-cap.ts`](../api/_usage-cap.ts) read and write counters through [`api/_kv.ts`](../api/_kv.ts), which targets Vercel KV when `KV_REST_API_URL` + `KV_REST_API_TOKEN` are present and falls back to a process-local Map in local dev. With KV configured, sliding-window IP limits, per-IP monthly $ caps, and the global daily kill switch all survive cold starts and are shared across concurrent warm containers.
 
 **Common OpenAI call logic** is shared in [`api/_openai.ts`](../api/_openai.ts) and used by both `/api/analyze` and `/api/compare`.
+
+### 4a. Two backends in the repo — `api/` is the production path
+
+There are two server-side trees:
+
+- [`api/`](../api/) — Vercel serverless functions. **This is the production path.** [easywritingpoem.org](https://www.easywritingpoem.org) routes `/api/*` here.
+- [`server/`](../server/) — a standalone Express app (`server/index.ts`, `server/presentation/http/create-app.ts`). Not deployed; useful only if you want to run the API outside Vercel for local debugging.
+
+**Why the split exists:** historical experimentation. The two trees are not kept in sync — `server/` is missing the rate limiter, usage caps, and recent endpoint additions. Treat `api/` as authoritative; do not assume parity.
+
+**Open decision (tracked for future cleanup):** either
+1. Delete `server/` entirely and rely on `vercel dev` for local API work, or
+2. Move endpoint logic into shared modules and make `api/*.ts` thin Vercel adapters around `createApp()` so dev and prod hit the same code path.
+
+Until that decision is made, **all new endpoint work goes in `api/`**.
 
 ---
 
