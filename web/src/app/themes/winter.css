@@ -1,4 +1,4 @@
-/* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
+﻿/* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
 html[data-workshop-bg="winter"] {
   color-scheme: light;
   --bg: #edf2f8;
@@ -22,13 +22,13 @@ html[data-workshop-bg="winter"] {
   --shine-mid: rgba(160, 200, 240, 0.05);
   --after-blend: multiply;
   --after-opacity: 0.22;
-  --after-animation: studio-light-soft 58s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 167.6s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
 }
 html[data-workshop-bg="winter"] body::before {
-  animation: ambient-drift 175s ease-in-out infinite alternate;
+  animation: ambient-drift 297.5s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 130% 110% at 14% 22%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 110% 95% at 86% 18%, var(--ambient-b), transparent 70%),
@@ -78,7 +78,7 @@ html[data-workshop-bg="winter"]::after {
   background-repeat: repeat, repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: winter-snowfall 60s linear infinite;
+  animation: winter-snowfall 102s linear infinite;
 }
 
 @keyframes winter-snowfall {

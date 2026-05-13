@@ -1,22 +1,22 @@
-html[data-workshop-bg="forest"] {
+﻿html[data-workshop-bg="forest"] {
   color-scheme: dark;
-  --bg: #06120c;
-  --surface: #0d1a14;
-  --surface-2: #102018;
+  --bg: #030906;
+  --surface: #07120d;
+  --surface-2: #0a1812;
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
-  --border: #256648;
+  --border: #1c4a33;
   --text: #ddf5ea;
-  --muted: #7eb89a;
-  --accent: #5ec995;
+  --muted: #6ea888;
+  --accent: #4eb586;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9aa1;
-  --net-line: rgba(130, 225, 175, 0.040);
-  --ambient-a: rgba(42, 168, 108, 0.092);
-  --ambient-b: rgba(28, 98, 75, 0.075);
-  --ambient-c: rgba(64, 148, 118, 0.065);
-  --ambient-d: rgba(85, 170, 135, 0.052);
+  --net-line: rgba(130, 225, 175, 0.030);
+  --ambient-a: rgba(42, 168, 108, 0.060);
+  --ambient-b: rgba(28, 98, 75, 0.050);
+  --ambient-c: rgba(64, 148, 118, 0.042);
+  --ambient-d: rgba(85, 170, 135, 0.034);
   --shine-top: rgba(105, 235, 170, 0.055);
   --shine-mid: rgba(52, 150, 108, 0.042);
   --after-opacity: 0.48;
@@ -25,7 +25,7 @@ html[data-workshop-bg="forest"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 48%, transparent);
 }
 html[data-workshop-bg="forest"] body::before {
-  animation: ambient-drift 120s ease-in-out infinite alternate;
+  animation: ambient-drift 204s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
@@ -33,7 +33,7 @@ html[data-workshop-bg="forest"] body::before {
     radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
     /* Mossy forest floor */
     radial-gradient(ellipse 130% 55% at 50% 100%, color-mix(in srgb, #2a6a40 22%, transparent), transparent 60%),
-    /* Bright canopy break — single strong light beam center */
+    /* Bright canopy break â€” single strong light beam center */
     radial-gradient(ellipse 35% 80% at 50% 0%, color-mix(in srgb, #c8f0a0 14%, transparent), transparent 58%),
     radial-gradient(ellipse 18% 60% at 50% 4%, color-mix(in srgb, #e8ffc0 18%, transparent), transparent 55%),
     /* Soft secondary shaft */
@@ -41,9 +41,9 @@ html[data-workshop-bg="forest"] body::before {
     /* Dappled diagonal shafts */
     repeating-linear-gradient(122deg, transparent, transparent 36px, color-mix(in srgb, #b8e890 4%, transparent) 36px, color-mix(in srgb, #b8e890 4%, transparent) 38px),
     repeating-linear-gradient(108deg, transparent, transparent 58px, color-mix(in srgb, var(--accent) 2.2%, transparent) 58px, color-mix(in srgb, var(--accent) 2.2%, transparent) 60px),
-    /* Deep top vignette — canopy ceiling */
+    /* Deep top vignette â€” canopy ceiling */
     radial-gradient(ellipse 100% 35% at 50% 0%, color-mix(in srgb, #03100a 65%, transparent), transparent 62%),
-    /* Tree canopy silhouette at top — denser */
+    /* Tree canopy silhouette at top â€” denser */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='180' viewBox='0 0 480 180'%3E%3Cpath fill='%23061a10' fill-opacity='0.62' d='M0 0 Q18 32 0 62L0 0zM480 0 Q462 32 480 62L480 0z'/%3E%3Cpath fill='%2308221a' fill-opacity='0.55' d='M0 0 Q60 40 38 75 Q22 96 0 88L0 0zM480 0 Q420 40 442 75 Q458 96 480 88L480 0z'/%3E%3Cpath fill='%230a2820' fill-opacity='0.40' d='M0 0V52 Q22 30 48 48 Q72 64 96 44 Q120 22 146 46 Q172 70 198 42 Q222 18 248 44 Q274 70 300 40 Q326 14 352 44 Q378 72 406 42 Q432 16 460 44 Q474 58 480 50V0Z'/%3E%3C/svg%3E"),
     /* Hero: large fern frond mid-left */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='340' viewBox='0 0 260 340'%3E%3Cpath fill='none' stroke='%23306a40' stroke-opacity='0.28' stroke-width='2' stroke-linecap='round' d='M30 320 Q40 240 70 175 Q105 100 175 35'/%3E%3Cg stroke='%23306a40' stroke-opacity='0.20' stroke-width='1.1' fill='none' stroke-linecap='round'%3E%3Cpath d='M65 250 Q40 245 22 258'/%3E%3Cpath d='M58 220 Q32 215 14 226'/%3E%3Cpath d='M70 200 Q98 195 116 184'/%3E%3Cpath d='M82 165 Q110 158 126 144'/%3E%3Cpath d='M62 175 Q38 170 22 178'/%3E%3Cpath d='M98 130 Q126 122 142 110'/%3E%3Cpath d='M78 138 Q54 134 38 142'/%3E%3Cpath d='M118 96 Q146 88 162 78'/%3E%3Cpath d='M96 102 Q72 100 56 106'/%3E%3Cpath d='M140 64 Q166 58 182 50'/%3E%3Cpath d='M116 68 Q92 68 78 74'/%3E%3C/g%3E%3C/svg%3E"),
@@ -82,5 +82,5 @@ html[data-workshop-bg="forest"]::after {
   background-repeat: no-repeat, no-repeat, no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: firefly-glow 48s ease-in-out infinite;
+  animation: firefly-glow 81.6s ease-in-out infinite;
 }

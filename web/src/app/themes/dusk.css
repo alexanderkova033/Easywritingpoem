@@ -1,8 +1,8 @@
-/* ---- Amber dusk: twilight sky — indigo zenith fading to amber horizon ---- */
-/* ---- Amber dusk: the five minutes after sunset — violet zenith, amber horizon, warm silhouettes ---- */
+﻿/* ---- Amber dusk: twilight sky â€” indigo zenith fading to amber horizon ---- */
+/* ---- Amber dusk: the five minutes after sunset â€” violet zenith, amber horizon, warm silhouettes ---- */
 html[data-workshop-bg="dusk"] {
   color-scheme: dark;
-  /* Warm dark base — deep burgundy-brown, not blue-black */
+  /* Warm dark base â€” deep burgundy-brown, not blue-black */
   --bg: #0d0608;
   --surface: #160c0e;
   --surface-2: #1e1012;
@@ -28,16 +28,16 @@ html[data-workshop-bg="dusk"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 68%, transparent);
 }
 html[data-workshop-bg="dusk"] body::before {
-  animation: ember-drift 130s ease-in-out infinite;
+  animation: ember-drift 221s ease-in-out infinite;
   background-image:
     /* Ambient mesh */
     radial-gradient(ellipse 150% 130% at 20% 30%, var(--ambient-a), transparent 70%),
     radial-gradient(ellipse 130% 110% at 80% 15%, var(--ambient-b), transparent 68%),
     radial-gradient(ellipse 160% 140% at 50% 95%, var(--ambient-c), transparent 74%),
     radial-gradient(ellipse 120% 100% at 65% 58%, var(--ambient-d), transparent 66%),
-    /* Deep violet zenith — the sky directly overhead as stars emerge */
+    /* Deep violet zenith â€” the sky directly overhead as stars emerge */
     radial-gradient(ellipse 120% 72% at 50% 0%, rgba(22, 8, 55, 0.88), transparent 68%),
-    /* Amber-to-magenta band across mid-sky — the twilight gradient */
+    /* Amber-to-magenta band across mid-sky â€” the twilight gradient */
     linear-gradient(180deg,
       transparent 0%,
       rgba(120, 40, 80, 0.18) 42%,
@@ -45,13 +45,13 @@ html[data-workshop-bg="dusk"] body::before {
       rgba(230, 105, 20, 0.22) 86%,
       transparent 100%
     ),
-    /* Golden horizon glow — widest, most feathered */
+    /* Golden horizon glow â€” widest, most feathered */
     radial-gradient(ellipse 140% 48% at 50% 100%, rgba(215, 95, 18, 0.30), transparent 58%),
-    /* The sun — a bright spot just under the horizon line */
+    /* The sun â€” a bright spot just under the horizon line */
     radial-gradient(ellipse 22% 14% at 50% 100%, rgba(255, 175, 50, 0.55), transparent 50%),
     /* Warm orange corona around sun */
     radial-gradient(ellipse 55% 25% at 50% 100%, rgba(240, 130, 30, 0.22), transparent 55%),
-    /* Crepuscular rays — subtle diagonal streaks of light */
+    /* Crepuscular rays â€” subtle diagonal streaks of light */
     repeating-linear-gradient(
       -12deg,
       transparent,
@@ -59,9 +59,9 @@ html[data-workshop-bg="dusk"] body::before {
       rgba(220, 110, 25, 0.025) 38px,
       rgba(220, 110, 25, 0.025) 40px
     ),
-    /* Detailed treeline silhouette — firs, pines, and bare branches */
+    /* Detailed treeline silhouette â€” firs, pines, and bare branches */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='200' viewBox='0 0 480 200'%3E%3Cpath fill='%23080308' d='M0 200V140 L6 128 10 140 14 118 18 135 22 108 28 132 34 115 38 138 42 100 48 128 54 105 60 130 66 92 72 125 76 108 82 130 88 95 94 122 100 105 106 128 112 98 118 125 124 108 130 132 136 112 142 136 148 118 154 140 160 105 166 132 172 115 178 138 184 108 190 135 196 118 202 138 208 100 214 128 220 110 226 135 232 95 238 125 244 108 250 130 256 98 262 125 268 112 274 134 280 108 286 132 292 115 298 138 304 105 310 130 316 118 322 140 328 108 334 132 340 115 346 138 352 100 358 128 364 112 370 134 376 105 382 130 388 115 394 138 400 108 406 132 412 95 418 125 424 108 430 130 436 98 442 125 448 110 454 132 460 105 466 128 472 115 478 136 480 120 V200z'/%3E%3Cpath fill='%230c040a' d='M0 200V158 L8 148 16 158 22 145 30 156 38 148 46 158 54 150 62 160 70 152 80 162 88 154 98 162 108 155 118 163 128 156 138 165 148 157 158 163 168 156 178 164 188 157 200 164 210 158 220 165 230 158 242 164 252 157 264 164 274 156 284 163 296 156 308 164 318 157 330 163 342 156 354 164 364 156 376 163 388 157 400 164 412 156 424 163 436 156 448 163 460 156 472 162 480 158 V200z'/%3E%3C/svg%3E"),
-    /* First stars — warm-tinted, fading in from zenith */
+    /* First stars â€” warm-tinted, fading in from zenith */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='260'%3E%3Ccircle cx='38' cy='22' r='0.9' fill='%23ffd8b0' fill-opacity='0.55'/%3E%3Ccircle cx='95' cy='15' r='0.7' fill='%23ffe0c0' fill-opacity='0.50'/%3E%3Ccircle cx='152' cy='30' r='1.0' fill='%23ffd0a0' fill-opacity='0.48'/%3E%3Ccircle cx='210' cy='18' r='0.7' fill='%23ffc898' fill-opacity='0.44'/%3E%3Ccircle cx='268' cy='26' r='0.8' fill='%23ffd8b0' fill-opacity='0.40'/%3E%3Ccircle cx='58' cy='50' r='0.6' fill='%23ffe0c0' fill-opacity='0.35'/%3E%3Ccircle cx='122' cy='44' r='0.7' fill='%23ffd0a8' fill-opacity='0.30'/%3E%3Ccircle cx='185' cy='58' r='0.8' fill='%23ffc8a0' fill-opacity='0.28'/%3E%3Ccircle cx='245' cy='42' r='0.6' fill='%23ffd8b8' fill-opacity='0.25'/%3E%3Ccircle cx='300' cy='55' r='0.7' fill='%23ffc898' fill-opacity='0.22'/%3E%3Ccircle cx='18' cy='78' r='0.5' fill='%23ffe0c0' fill-opacity='0.18'/%3E%3Ccircle cx='165' cy='72' r='0.6' fill='%23ffd0b0' fill-opacity='0.15'/%3E%3C/svg%3E");
   background-size:
     155% 155%, 145% 145%, 165% 165%, 140% 140%,
@@ -97,7 +97,7 @@ html[data-workshop-bg="dusk"]::after {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
-  animation: ember-glow-pulse 18s ease-in-out infinite alternate;
+  animation: ember-glow-pulse 30.6s ease-in-out infinite alternate;
 }
 
 @keyframes ember-glow-pulse {

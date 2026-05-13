@@ -1,4 +1,4 @@
-/* ---- Park afternoon: dappled light, green canopy, warm air ---- */
+﻿/* ---- Park afternoon: dappled light, green canopy, warm air ---- */
 html[data-workshop-bg="park"] {
   color-scheme: light;
   --bg: #edf4e6;
@@ -22,23 +22,23 @@ html[data-workshop-bg="park"] {
   --shine-mid: rgba(140, 200, 90, 0.040);
   --after-blend: multiply;
   --after-opacity: 0.22;
-  --after-animation: studio-light-soft 65s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 187.8s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
 }
 html[data-workshop-bg="park"] body::before {
-  animation: ambient-drift 170s ease-in-out infinite alternate;
+  animation: ambient-drift 289s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 200% 130% at 5% 10%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 200% 130% at 95% 75%, var(--ambient-b), transparent 70%),
-    /* Afternoon sun warmth — upper right */
+    /* Afternoon sun warmth â€” upper right */
     radial-gradient(ellipse 65% 55% at 88% 6%, color-mix(in srgb, #f8d860 16%, transparent), transparent 56%),
     /* Green canopy wash from top */
     radial-gradient(ellipse 110% 45% at 50% 0%, color-mix(in srgb, #60c030 14%, transparent), transparent 58%),
     /* Warm grass ground */
     radial-gradient(ellipse 130% 50% at 50% 108%, color-mix(in srgb, #78c040 16%, transparent), transparent 55%),
-    /* Dappled light — angled bands */
+    /* Dappled light â€” angled bands */
     repeating-linear-gradient(
       115deg,
       transparent,
@@ -55,7 +55,7 @@ html[data-workshop-bg="park"] body::before {
     ),
     /* A single winding path line to "set" the scene (no bench/lamp clutter) */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Cpath fill='none' stroke='%23305820' stroke-opacity='0.10' stroke-width='1.6' stroke-linecap='round' d='M-20 160 Q60 120 140 108 Q220 96 360 74'/%3E%3Cpath fill='none' stroke='%23386825' stroke-opacity='0.07' stroke-width='1.1' stroke-linecap='round' d='M40 176 Q120 146 200 140 T320 130'/%3E%3C/svg%3E"),
-    /* Midground — park bench right, flower clusters left, secondary path hint */
+    /* Midground â€” park bench right, flower clusters left, secondary path hint */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='320' viewBox='0 0 400 320'%3E%3C!-- Park bench right edge --%3E%3Crect x='338' y='178' width='52' height='7' rx='2.5' fill='%23305820' fill-opacity='0.16'/%3E%3Crect x='338' y='172' width='52' height='5' rx='2' fill='%23284818' fill-opacity='0.12'/%3E%3Crect x='342' y='185' width='5' height='14' rx='1.5' fill='%23305820' fill-opacity='0.13'/%3E%3Crect x='381' y='185' width='5' height='14' rx='1.5' fill='%23305820' fill-opacity='0.13'/%3E%3C!-- Shrub cluster left edge --%3E%3Cellipse cx='18' cy='195' rx='16' ry='10' fill='%23488030' fill-opacity='0.18'/%3E%3Cellipse cx='32' cy='190' rx='12' ry='8' fill='%23508838' fill-opacity='0.15'/%3E%3Ccircle cx='12' cy='186' r='6' fill='%23406828' fill-opacity='0.14'/%3E%3Ccircle cx='28' cy='183' r='5' fill='%234a7830' fill-opacity='0.12'/%3E%3C!-- Small wildflowers mid-left --%3E%3Ccircle cx='44' cy='210' r='2.5' fill='%23f0c840' fill-opacity='0.28'/%3E%3Ccircle cx='54' cy='205' r='2' fill='%23e8b830' fill-opacity='0.22'/%3E%3Ccircle cx='36' cy='218' r='2' fill='%23f8d048' fill-opacity='0.20'/%3E%3Ccircle cx='62' cy='212' r='1.8' fill='%23f0c838' fill-opacity='0.18'/%3E%3C!-- Secondary path hint across mid --%3E%3Cpath fill='none' stroke='%23406030' stroke-opacity='0.07' stroke-width='10' stroke-linecap='round' d='M0 225 Q100 210 200 215 Q300 220 400 208'/%3E%3C!-- Distant tree trunk suggestion far right --%3E%3Crect x='390' y='100' width='10' height='120' rx='4' fill='%23305020' fill-opacity='0.10'/%3E%3Cellipse cx='392' cy='95' rx='22' ry='18' fill='%23488030' fill-opacity='0.09'/%3E%3C!-- Scattered grass tufts --%3E%3Cpath fill='none' stroke='%23488030' stroke-opacity='0.14' stroke-width='1' stroke-linecap='round' d='M78 232 Q80 222 78 215'/%3E%3Cpath fill='none' stroke='%23406828' stroke-opacity='0.11' stroke-width='1' stroke-linecap='round' d='M84 235 Q87 224 85 216'/%3E%3Cpath fill='none' stroke='%23488030' stroke-opacity='0.12' stroke-width='1' stroke-linecap='round' d='M282 228 Q284 218 282 210'/%3E%3Cpath fill='none' stroke='%23406828' stroke-opacity='0.10' stroke-width='1' stroke-linecap='round' d='M290 230 Q293 220 291 213'/%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
@@ -75,10 +75,10 @@ html[data-workshop-bg="park"] body::before {
 html[data-workshop-bg="park"]::after {
   background-image:
     /* Drifting golden sun-dapple spots (much brighter) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg%3E%3Ccircle cx='62' cy='88' r='28' fill='%23fff080' fill-opacity='0.55'/%3E%3Ccircle cx='62' cy='88' r='14' fill='%23ffffa0' fill-opacity='0.72'/%3E%3Ccircle cx='168' cy='62' r='22' fill='%23fff080' fill-opacity='0.50'/%3E%3Ccircle cx='268' cy='128' r='30' fill='%23fff080' fill-opacity='0.55'/%3E%3Ccircle cx='268' cy='128' r='16' fill='%23ffffa0' fill-opacity='0.70'/%3E%3Ccircle cx='358' cy='78' r='22' fill='%23fff080' fill-opacity='0.48'/%3E%3Ccircle cx='108' cy='208' r='20' fill='%23fff080' fill-opacity='0.46'/%3E%3Ccircle cx='208' cy='248' r='26' fill='%23fff080' fill-opacity='0.50'/%3E%3Ccircle cx='208' cy='248' r='13' fill='%23ffffa0' fill-opacity='0.68'/%3E%3Ccircle cx='318' cy='268' r='28' fill='%23fff080' fill-opacity='0.48'/%3E%3Ccircle cx='62' cy='328' r='22' fill='%23fff080' fill-opacity='0.42'/%3E%3Ccircle cx='158' cy='358' r='26' fill='%23fff080' fill-opacity='0.46'/%3E%3Ccircle cx='278' cy='388' r='20' fill='%23fff080' fill-opacity='0.40'/%3E%3Ccircle cx='388' cy='338' r='24' fill='%23fff080' fill-opacity='0.44'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg%3E%3Ccircle cx='62' cy='88' r='28' fill='%23fff080' fill-opacity='0.42'/%3E%3Ccircle cx='62' cy='88' r='14' fill='%23ffffa0' fill-opacity='0.55'/%3E%3Ccircle cx='268' cy='128' r='30' fill='%23fff080' fill-opacity='0.42'/%3E%3Ccircle cx='268' cy='128' r='16' fill='%23ffffa0' fill-opacity='0.55'/%3E%3Ccircle cx='208' cy='248' r='26' fill='%23fff080' fill-opacity='0.38'/%3E%3Ccircle cx='208' cy='248' r='13' fill='%23ffffa0' fill-opacity='0.52'/%3E%3Ccircle cx='318' cy='268' r='28' fill='%23fff080' fill-opacity='0.36'/%3E%3Ccircle cx='158' cy='358' r='26' fill='%23fff080' fill-opacity='0.34'/%3E%3C/g%3E%3C/svg%3E"),
     /* Birds + dragonflies (visible) */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='220' viewBox='0 0 400 220'%3E%3Cg fill='none' stroke='%2318300c' stroke-opacity='0.85' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M48 38 Q56 28 64 38 Q72 28 80 38'/%3E%3Cpath d='M148 60 Q154 52 160 60 Q166 52 172 60'/%3E%3Cpath d='M252 32 Q260 22 268 32 Q276 22 284 32'/%3E%3Cpath d='M338 72 Q344 64 350 72 Q356 64 362 72'/%3E%3Cpath d='M82 102 Q90 94 98 102 Q106 94 114 102'/%3E%3Cpath d='M218 102 Q226 92 234 102 Q242 92 250 102'/%3E%3C/g%3E%3Cg transform='translate(322 158)'%3E%3Cg fill='%23a0e0ff' fill-opacity='0.85'%3E%3Cellipse cx='-2' cy='-2' rx='12' ry='4' transform='rotate(20 -2 -2)'/%3E%3Cellipse cx='2' cy='2' rx='12' ry='4' transform='rotate(-20 2 2)'/%3E%3Cellipse cx='-2' cy='4' rx='9' ry='3' transform='rotate(40 -2 4)'/%3E%3Cellipse cx='2' cy='-4' rx='9' ry='3' transform='rotate(-40 2 -4)'/%3E%3C/g%3E%3Crect x='-1' y='-1' width='14' height='1.6' rx='0.5' fill='%23284818'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Foreground band — bench + fountain + flower beds + path (much more visible) */
+    /* Foreground band â€” bench + fountain + flower beds + path (much more visible) */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='220' viewBox='0 0 480 220'%3E%3C!-- Path --%3E%3Cpath fill='none' stroke='%23a8906c' stroke-opacity='0.62' stroke-width='22' stroke-linecap='round' d='M0 200 Q80 188 160 182 Q240 176 320 182 Q400 188 480 196'/%3E%3Cpath fill='none' stroke='%23c8b088' stroke-opacity='0.35' stroke-width='12' stroke-linecap='round' d='M0 200 Q80 188 160 182 Q240 176 320 182 Q400 188 480 196'/%3E%3C!-- Fountain --%3E%3Cellipse cx='240' cy='170' rx='40' ry='12' fill='%23305820' fill-opacity='0.78'/%3E%3Cellipse cx='240' cy='170' rx='40' ry='12' fill='none' stroke='%23182808' stroke-opacity='0.55' stroke-width='1.8'/%3E%3Cellipse cx='240' cy='168' rx='28' ry='8' fill='%2398c8e0' fill-opacity='0.78'/%3E%3Ccircle cx='240' cy='158' r='3' fill='%23305820' fill-opacity='0.90'/%3E%3Cline x1='240' y1='158' x2='240' y2='138' stroke='%23305820' stroke-opacity='0.85' stroke-width='2.5'/%3E%3Cellipse cx='240' cy='136' rx='9' ry='4' fill='none' stroke='%23305820' stroke-opacity='0.80' stroke-width='1.8'/%3E%3Cpath fill='none' stroke='%2380c8f0' stroke-opacity='0.85' stroke-width='2' stroke-linecap='round' d='M236 138 Q230 124 234 110 M244 138 Q250 124 246 110'/%3E%3C!-- Bench --%3E%3Cg fill='%23805020' fill-opacity='0.90' stroke='%23402810' stroke-opacity='0.70' stroke-width='1'%3E%3Crect x='378' y='168' width='80' height='8' rx='2'/%3E%3Crect x='378' y='158' width='80' height='6' rx='2'/%3E%3Crect x='384' y='176' width='6' height='18' rx='1.5'/%3E%3Crect x='446' y='176' width='6' height='18' rx='1.5'/%3E%3Crect x='378' y='132' width='4' height='32' rx='1.5'/%3E%3Crect x='454' y='132' width='4' height='32' rx='1.5'/%3E%3C/g%3E%3C!-- Flower bed left --%3E%3Cellipse cx='50' cy='184' rx='44' ry='14' fill='%23386828' fill-opacity='0.78'/%3E%3Cg%3E%3Ccircle cx='18' cy='176' r='5' fill='%23ff80a0'/%3E%3Ccircle cx='18' cy='176' r='2.2' fill='%23c03060'/%3E%3Ccircle cx='34' cy='170' r='5' fill='%23ffd060'/%3E%3Ccircle cx='34' cy='170' r='2' fill='%23c08820'/%3E%3Ccircle cx='52' cy='176' r='5' fill='%23c0a0ff'/%3E%3Ccircle cx='52' cy='176' r='2.2' fill='%237848c0'/%3E%3Ccircle cx='70' cy='172' r='5' fill='%23ffb0d0'/%3E%3Ccircle cx='70' cy='172' r='2' fill='%23c03060'/%3E%3Ccircle cx='86' cy='178' r='4' fill='%23ffe060'/%3E%3Ccircle cx='86' cy='178' r='1.8' fill='%23c08820'/%3E%3C/g%3E%3C!-- Flower bed right (around fountain) --%3E%3Cg%3E%3Ccircle cx='150' cy='192' r='5' fill='%23ff80a0'/%3E%3Ccircle cx='150' cy='192' r='2.2' fill='%23c03060'/%3E%3Ccircle cx='168' cy='196' r='4.5' fill='%23ffd060'/%3E%3Ccircle cx='168' cy='196' r='2' fill='%23c08820'/%3E%3Ccircle cx='310' cy='196' r='5' fill='%23c0a0ff'/%3E%3Ccircle cx='310' cy='196' r='2.2' fill='%237848c0'/%3E%3Ccircle cx='330' cy='194' r='4.5' fill='%23ffb0d0'/%3E%3Ccircle cx='330' cy='194' r='2' fill='%23c03060'/%3E%3C/g%3E%3C!-- Grass tufts --%3E%3Cg fill='none' stroke='%23386828' stroke-opacity='0.62' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M118 200 Q120 188 118 178'/%3E%3Cpath d='M124 202 Q127 188 125 178'/%3E%3Cpath d='M355 204 Q357 192 355 182'/%3E%3Cpath d='M362 206 Q364 192 362 182'/%3E%3C/g%3E%3C/svg%3E"),
     /* Distant green canopy haze */
     radial-gradient(ellipse 130% 24% at 50% 0%, color-mix(in srgb, #68b830 20%, transparent), transparent 60%);
@@ -87,7 +87,7 @@ html[data-workshop-bg="park"]::after {
   background-repeat: repeat, repeat-x, repeat-x, no-repeat;
   mix-blend-mode: normal;
   opacity: 1;
-  animation: park-dapple 90s ease-in-out infinite alternate;
+  animation: park-dapple 153s ease-in-out infinite alternate;
 }
 
 @keyframes park-dapple {

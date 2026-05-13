@@ -1,4 +1,4 @@
-html[data-workshop-bg="dawn"] {
+﻿html[data-workshop-bg="dawn"] {
   color-scheme: light;
   --bg: #f4ecef;
   --surface: #f9f5f7;
@@ -21,13 +21,13 @@ html[data-workshop-bg="dawn"] {
   --shine-mid: rgba(210, 150, 175, 0.042);
   --after-blend: multiply;
   --after-opacity: 0.32;
-  --after-animation: studio-light-soft 70s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 202.3s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
 }
 html[data-workshop-bg="dawn"] body::before {
-  animation: ambient-drift 130s ease-in-out infinite alternate;
+  animation: ambient-drift 221s ease-in-out infinite alternate;
   background-image:
     radial-gradient(
       ellipse 120% 100% at 14% 28%,
@@ -59,7 +59,7 @@ html[data-workshop-bg="dawn"] body::before {
       color-mix(in srgb, #fff 14%, transparent),
       transparent 55%
     ),
-    /* Soft sunbloom — replaces conic rays */
+    /* Soft sunbloom â€” replaces conic rays */
     radial-gradient(
       ellipse 65% 35% at 50% -8%,
       color-mix(in srgb, var(--accent) 7%, transparent),
@@ -70,7 +70,7 @@ html[data-workshop-bg="dawn"] body::before {
       color-mix(in srgb, #fff 22%, transparent),
       transparent 42%
     ),
-    /* Dawn sky gradient — deep lavender zenith fading to warm rose-gold horizon */
+    /* Dawn sky gradient â€” deep lavender zenith fading to warm rose-gold horizon */
     linear-gradient(
       180deg,
       color-mix(in srgb, #6040b8 16%, transparent) 0%,

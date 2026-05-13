@@ -1,13 +1,13 @@
-html[data-workshop-bg="dark"] {
+﻿html[data-workshop-bg="dark"] {
   color-scheme: dark;
-  --bg: #1f1f1f;
-  --surface: #2d2d2d;
-  --surface-2: #383838;
-  --surface-elevated: #404040;
-  --border: #4a4a4a;
-  --text: #ededed;
-  --muted: #a0a0a0;
-  --accent: #4a9eff;
+  --bg: #121212;
+  --surface: #1c1c1c;
+  --surface-2: #262626;
+  --surface-elevated: #2e2e2e;
+  --border: #3a3a3a;
+  --text: #e8e8e8;
+  --muted: #969696;
+  --accent: #b8a684;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 30%, var(--surface));
   --selection-fg: var(--text);
@@ -19,7 +19,7 @@ html[data-workshop-bg="dark"] {
   --ambient-d: rgba(0, 0, 0, 0.10);
   --shine-top: rgba(255, 255, 255, 0.03);
   --shine-mid: rgba(255, 255, 255, 0.015);
-  --after-opacity: 0.55;
+  --after-opacity: 0.40;
   --shadow-1: 0 2px 8px color-mix(in srgb, #000 40%, transparent);
   --shadow-2: 0 4px 14px color-mix(in srgb, #000 50%, transparent);
   --shadow-3: 0 10px 32px color-mix(in srgb, #000 60%, transparent);
@@ -36,31 +36,31 @@ html[data-workshop-bg="dark"] body::before {
   animation: none;
 }
 
-/* Slow ambient color drift — green/blue/purple/teal tint pools shifting across desk. */
+/* Slow ambient color drift â€” green/blue/purple/teal tint pools shifting across desk. */
 html[data-workshop-bg="dark"]::after {
   background-image:
-    radial-gradient(ellipse 70% 55% at 20% 25%, color-mix(in srgb, #3aa970 24%, transparent), transparent 70%),
-    radial-gradient(ellipse 65% 50% at 82% 30%, color-mix(in srgb, #4a9eff 22%, transparent), transparent 70%),
-    radial-gradient(ellipse 75% 60% at 30% 82%, color-mix(in srgb, #a070e8 20%, transparent), transparent 72%),
-    radial-gradient(ellipse 60% 50% at 78% 78%, color-mix(in srgb, #2cb0c8 22%, transparent), transparent 70%);
+    radial-gradient(ellipse 70% 55% at 20% 25%, color-mix(in srgb, #3aa970 18%, transparent), transparent 70%),
+    radial-gradient(ellipse 65% 50% at 82% 30%, color-mix(in srgb, #d4a574 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 75% 60% at 30% 82%, color-mix(in srgb, #a070e8 15%, transparent), transparent 72%),
+    radial-gradient(ellipse 60% 50% at 78% 78%, color-mix(in srgb, #c87878 16%, transparent), transparent 70%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: var(--after-opacity);
-  animation: dark-ambient-drift 90s ease-in-out infinite;
+  animation: dark-ambient-drift 153s ease-in-out infinite;
 }
 
 @keyframes dark-ambient-drift {
-  0%   { filter: hue-rotate(0deg);   opacity: 0.55; }
-  12%  { filter: hue-rotate(30deg);  opacity: 0.60; }
+  0%   { filter: hue-rotate(0deg);   opacity: 0.40; }
+  12%  { filter: hue-rotate(30deg);  opacity: 0.45; }
   22%  { filter: hue-rotate(45deg);  opacity: 0;    }
   30%  { filter: hue-rotate(60deg);  opacity: 0;    }
-  42%  { filter: hue-rotate(-20deg); opacity: 0.55; }
-  55%  { filter: hue-rotate(-40deg); opacity: 0.50; }
+  42%  { filter: hue-rotate(-20deg); opacity: 0.40; }
+  55%  { filter: hue-rotate(-40deg); opacity: 0.36; }
   64%  { filter: hue-rotate(-10deg); opacity: 0;    }
   72%  { filter: hue-rotate(20deg);  opacity: 0;    }
-  85%  { filter: hue-rotate(50deg);  opacity: 0.58; }
-  100% { filter: hue-rotate(0deg);   opacity: 0.55; }
+  85%  { filter: hue-rotate(50deg);  opacity: 0.42; }
+  100% { filter: hue-rotate(0deg);   opacity: 0.40; }
 }
 
 html[data-backdrop-motion="off"][data-workshop-bg="dark"]::after {

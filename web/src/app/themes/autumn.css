@@ -1,4 +1,4 @@
-/* ---- Autumn: warm dark amber, falling leaves ---- */
+﻿/* ---- Autumn: warm dark amber, falling leaves ---- */
 html[data-workshop-bg="autumn"] {
   color-scheme: dark;
   --bg: #120a04;
@@ -26,7 +26,7 @@ html[data-workshop-bg="autumn"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
 }
 html[data-workshop-bg="autumn"] body::before {
-  animation: ember-drift 130s ease-in-out infinite alternate;
+  animation: ember-drift 221s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),
     radial-gradient(ellipse 200% 130% at 95% 75%, color-mix(in srgb, var(--ambient-b) 80%, var(--ambient-d)), transparent 68%),
@@ -87,7 +87,7 @@ html[data-workshop-bg="autumn"]::after {
   background-repeat: repeat, no-repeat, no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: autumn-drift 70s linear infinite;
+  animation: autumn-drift 119s linear infinite;
 }
 
 @keyframes autumn-drift {

@@ -7,28 +7,13 @@ import {
   useRef,
   useState,
   useTransition,
-  type ChangeEvent,
 } from "react";
 import { isLocalStorageNearlyFull } from "@/shared/platform/browser-storage";
 import { diffPoemLines } from "@/workshop/library/diff-lines";
 import {
-  buildMarkdownPoem,
-  buildPlainTextTitleBody,
-  copyTextToClipboard,
-  downloadDocxFile,
-  downloadHtmlFile,
-  downloadPdfFile,
-  downloadPngFile,
-  downloadTextFile,
-  exportFilename,
-} from "@/workshop/library/export-poem";
-import { stripFormatMarkers } from "@/workshop/editor/format-marks";
-import {
-  buildWorkshopExportJson,
   duplicateActivePoem,
   duplicatePoemById as duplicatePoemByIdInLib,
   loadOrCreateLibrary,
-  mergeImportedPoems,
   newBlankPoemAfter,
   poemById,
   removePoem,
@@ -38,10 +23,8 @@ import {
   type DraftLibrary,
 } from "@/workshop/library/local-draft-library";
 import {
-  loadDraftMetaMap,
   saveDraftMetaMap,
   upsertDraftMeta,
-  type DraftMetaMap,
 } from "@/workshop/library/library-meta";
 import {
   migrateLegacyDraftIfNeeded,
@@ -57,15 +40,9 @@ import {
   type RevisionSnapshot,
 } from "@/workshop/library/revision-snapshots";
 import {
-  loadWorkshopGoals,
-  saveWorkshopGoals,
-} from "@/workshop/goals/storage";
-import {
-  type WorkshopGoals,
-  FORM_PRESETS,
-} from "@/workshop/goals/types";
-import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
-import { loadEnglishWordlist } from "@/spellcheck/wordlist";
+  loadPersonalDictionary,
+  loadSessionIgnores,
+} from "@/spellcheck/personal-dictionary";
 import type { SpellHit } from "@/spellcheck/scan";
 import { spellHitsFromText } from "@/spellcheck/scan";
 import {
@@ -78,7 +55,6 @@ import {
   computeDocumentStats,
   computeQuickDocumentStats,
 } from "@/workshop/analysis/line-stats";
-import { loadStressLexicon } from "@/workshop/meter/cmu-stress-lexicon";
 import {
   meterHintsForBody,
   summarizeMeterCoverage,
@@ -99,15 +75,17 @@ import {
   compareBodyForId,
   formatRelativeSnapshotWhen,
   formatSnapshotWhen,
-  parseGoalInput,
   type ToolTab,
 } from "@/workshop/shell/workshop-helpers";
-
 import {
   STORAGE_KEY_LAST_EXPORT_AT,
   STORAGE_KEY_LAST_TOOL_TAB,
   STORAGE_KEY_SAMPLE_DISMISSED,
 } from "@/shared/storage-keys";
+import { useDictionaries } from "./hooks/useDictionaries";
+import { useGoalsState } from "./hooks/useGoalsState";
+import { useDraftMeta } from "./hooks/useDraftMeta";
+import { useExportActions } from "./hooks/useExportActions";
 
 export const SAMPLE_POEM_TITLE = "The Candle";
 export const SAMPLE_POEM_BODY =
@@ -126,14 +104,6 @@ function readLastExportAt(): string | null {
     return localStorage.getItem(LAST_EXPORT_KEY);
   } catch {
     return null;
-  }
-}
-
-function recordExportAt() {
-  try {
-    localStorage.setItem(LAST_EXPORT_KEY, new Date().toISOString());
-  } catch {
-    /* ignore */
   }
 }
 
@@ -165,15 +135,12 @@ function readSessionToolTab(): ToolTab {
   } catch {
     /* sessionStorage unavailable */
   }
-  // First-time visitors land on Suggest so they immediately have something to do
   if (!readFirstVisitHintDismissed()) return "suggest";
   return "issues";
 }
 
 const DRAFT_STORAGE_MSG =
   "Could not save your drafts to this browser (storage may be full or blocked).";
-const GOALS_STORAGE_MSG =
-  "Could not save your writing goals to browser storage.";
 const SNAPSHOT_SAVE_MSG =
   "Could not save the snapshot (browser storage may be full or blocked).";
 const SNAPSHOT_DELETE_MSG =
@@ -184,17 +151,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     migrateLegacyDraftIfNeeded();
     return loadOrCreateLibrary();
   });
-  const [meta, setMeta] = useState<DraftMetaMap>(() => loadDraftMetaMap());
   const [title, setTitle] = useState("");
   const [formNote, setFormNote] = useState("");
   const [body, setBody] = useState("");
-  /** Bumped when the poem body is replaced outside the editor (load draft, restore snapshot). */
   const [bodySyncNonce, setBodySyncNonce] = useState(0);
   const [samplePoemActive, setSamplePoemActive] = useState(false);
-  /** Latest body from CodeMirror; React `body` may trail by {@link BODY_TO_REACT_DEBOUNCE_MS}. */
   const bodyLiveRef = useRef("");
   const bodyToReactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Debounced copy of `body` for expensive sidebar tools (meter, rhyme, repeats). */
   const [heavyBody, setHeavyBody] = useState("");
   const [spellMode, setSpellMode] = useState<SpellMode>("permissive");
   const [savedFlash, setSavedFlash] = useState(false);
@@ -209,15 +172,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const [showExportReminder, setShowExportReminder] = useState(false);
   const [spellHitsState, setSpellHitsState] = useState<SpellHit[]>([]);
   const [, startSpellTransition] = useTransition();
-  const [wordlist, setWordlist] = useState<Set<string> | null>(null);
-  const [wordlistErr, setWordlistErr] = useState<string | null>(null);
-  const [stressLexicon, setStressLexicon] = useState<Map<
-    string,
-    string
-  > | null>(null);
-  const [stressLexiconErr, setStressLexiconErr] = useState<string | null>(
-    null,
-  );
   const [spellBump, setSpellBump] = useState(0);
   const [spellNavIndex, setSpellNavIndex] = useState(0);
   const [revisions, setRevisions] = useState<RevisionSnapshot[]>([]);
@@ -225,26 +179,14 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const [lastAiScore, setLastAiScore] = useState<number | null>(null);
   const [compareLeftId, setCompareLeftId] = useState(COMPARE_CURRENT_ID);
   const [compareRightId, setCompareRightId] = useState(COMPARE_CURRENT_ID);
-  const [compareViewMode, setCompareViewMode] = useState<"side" | "diff">(
-    "side",
-  );
-  const [goals, setGoals] = useState<WorkshopGoals>(() => loadWorkshopGoals());
-  const [copyExportFlash, setCopyExportFlash] = useState(false);
-  const [quickCopyFlash, setQuickCopyFlash] = useState(false);
-  const [snapshotFlash, setSnapshotFlash] = useState<
-    "saved" | "duplicate" | null
-  >(null);
+  const [compareViewMode, setCompareViewMode] = useState<"side" | "diff">("side");
+  const [snapshotFlash, setSnapshotFlash] = useState<"saved" | "duplicate" | null>(null);
   const snapshotFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [exportErr, setExportErr] = useState<string | null>(null);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
   const [jumpBump, setJumpBump] = useState(0);
-  const copyExportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const quickCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
-  const [toolTab, setToolTabInner] = useState<ToolTab>(() =>
-    readSessionToolTab(),
-  );
+  const [toolTab, setToolTabInner] = useState<ToolTab>(() => readSessionToolTab());
   const setToolTab = useCallback((t: ToolTab) => {
     setToolTabInner(t);
     try {
@@ -253,9 +195,38 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
       /* ignore */
     }
   }, []);
-  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const activePoemId = library.activeId;
+
+  // === Extracted hooks ===
+  const { wordlist, wordlistErr, retryWordlist, stressLexicon, stressLexiconErr } =
+    useDictionaries();
+
+  const clearPersistenceErrorIfMatches = useCallback((msg: string) => {
+    setPersistenceError((prev) => (prev === msg ? null : prev));
+  }, []);
+
+  const {
+    goals,
+    updateGoal,
+    setGoalValue,
+    setRhymeSchemeGoal,
+    setRhymeSchemePerStanza,
+    resetGoals,
+    setSyllablePattern,
+    toggleGoalSoft,
+    applyGoalPreset,
+  } = useGoalsState(setPersistenceError, clearPersistenceErrorIfMatches);
+
+  const {
+    meta,
+    setMeta,
+    poemOptions,
+    setDraftLabel,
+    togglePinned,
+    setDraftTags,
+    setDraftArchived,
+  } = useDraftMeta(library);
 
   const workshopStateRef = useRef({
     title,
@@ -327,68 +298,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     if (wordlist) setSpellBump((n) => n + 1);
   }, [wordlist]);
 
-  const [wordlistRetryBump, setWordlistRetryBump] = useState(0);
-
-  const retryWordlist = () => setWordlistRetryBump((n) => n + 1);
-
-  useEffect(() => {
-    setWordlistErr(null);
-    // Defer the 2.7MB wordlist fetch + parse until the browser is idle so it
-    // doesn't compete with first paint or initial editor mount.
-    const run = () => {
-      void loadEnglishWordlist()
-        .then((w) => {
-          setWordlist(w);
-          setWordlistErr(null);
-        })
-        .catch((e) => {
-          const msg = e instanceof Error ? e.message : "Could not load word list.";
-          setWordlistErr(msg);
-        });
-    };
-    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    const cic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
-    if (typeof ric === "function") {
-      const id = ric(run, { timeout: 2000 });
-      return () => { if (typeof cic === "function") cic(id); };
-    }
-    const t = window.setTimeout(run, 800);
-    return () => window.clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wordlistRetryBump]);
-
-  useEffect(() => {
-    const run = () => {
-      void loadStressLexicon()
-        .then((m) => {
-          setStressLexicon(m);
-          setStressLexiconErr(null);
-        })
-        .catch((e) => {
-          setStressLexicon(null);
-          setStressLexiconErr(
-            e instanceof Error ? e.message : "Could not load stress dictionary.",
-          );
-        });
-    };
-    const ric = (window as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    const cic = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
-    if (typeof ric === "function") {
-      const id = ric(run, { timeout: 2500 });
-      return () => { if (typeof cic === "function") cic(id); };
-    }
-    const t = window.setTimeout(run, 1200);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    if (!saveWorkshopGoals(goals)) {
-      setPersistenceError(GOALS_STORAGE_MSG);
-      return;
-    }
-    setPersistenceError((prev) => (prev === GOALS_STORAGE_MSG ? null : prev));
-  }, [goals]);
-
   useEffect(() => {
     setCompareLeftId((left) => {
       if (left === COMPARE_CURRENT_ID) return left;
@@ -401,9 +310,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     });
   }, [revisions]);
 
-  // Bumped to 1500ms (was 500ms) so JSON.stringify + localStorage.setItem
-  // doesn't fire mid-keystroke on slow phones. Flushed on blur/visibilitychange/
-  // beforeunload (see effect below) so no work is lost on exit.
   const persistActiveDraft = useCallback(() => {
     setLibrary((prev) => {
       const next = upsertActivePoem(prev, {
@@ -441,8 +347,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     return () => clearTimeout(t);
   }, [title, body, formNote, spellMode, activePoemId]);
 
-  // Flush pending save synchronously when user leaves the page or backgrounds
-  // the tab. Covers: tab close, navigation, mobile app-switch, screen lock.
   useEffect(() => {
     const flush = () => persistRef.current();
     const onVisibility = () => {
@@ -472,9 +376,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     () => meterHintsForBody(heavyBody, stressLexicon),
     [heavyBody, stressLexicon],
   );
-  // All heavyLines-derived analyses run off-main-thread via a Web Worker.
-  // Bundled into one request so the worker round-trips once per heavyBody
-  // change instead of N times. Hook handles race protection.
   const heavy = useHeavyAnalysis(
     heavyLines,
     rhymeBreadth,
@@ -490,9 +391,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const repeated = repetition.words;
   const clicheHits = heavy.clicheHits;
   const internalRhymes = heavy.internalRhymes;
-  // Fast path: rhyme scheme on the non-debounced `lines` so the editor's
-  // rhyme ribbons + scheme letters update with low latency. Stays on the
-  // main thread — same input rate as the editor itself.
   const rhymeScheme = useMemo(
     () => detectRhymeScheme(lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks),
     [lines, rhymeBreadth, manualRhymeLinks, manualRhymeUnlinks],
@@ -506,6 +404,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     () => summarizeMeterCoverage(meterHints, heavyDocStats),
     [meterHints, heavyDocStats],
   );
+
   useEffect(() => {
     if (!wordlist) {
       startSpellTransition(() => setSpellHitsState([]));
@@ -707,7 +606,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     setRevisions(loadRevisions(lib.activeId));
     setBodySyncNonce((n) => n + 1);
 
-    // Inject sample poem for first-time visitors with an empty draft
     if (!readFirstVisitHintDismissed() && !isSampleDismissed() && !p.body.trim()) {
       setSamplePoemActive(true);
       setTitle(SAMPLE_POEM_TITLE);
@@ -738,7 +636,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
         return;
       }
       setLibrary(next);
-      // Update last-opened metadata (best effort).
       setMeta((prev) => {
         const patched = upsertDraftMeta(prev, poemId, {
           lastOpenedAt: new Date().toISOString(),
@@ -748,7 +645,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
       });
       applyLoadedPoem(next);
     },
-    [activePoemId, library, title, formNote, spellMode, applyLoadedPoem],
+    [activePoemId, library, title, formNote, spellMode, applyLoadedPoem, setMeta],
   );
 
   const newPoem = useCallback(() => {
@@ -851,74 +748,10 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     applyLoadedPoem,
   ]);
 
-  const exportWorkshopBackup = useCallback(() => {
-    const json = buildWorkshopExportJson({
-      poems: library.poems,
-      revisionsForPoem: loadRevisions,
-    });
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadTextFile(`easy-poems-backup-${stamp}.json`, json);
-    recordExportAt();
-    setShowExportReminder(false);
-  }, [library.poems]);
-
-  const triggerImportBackup = useCallback(() => {
-    importInputRef.current?.click();
-  }, []);
-
-  const onImportBackupFile = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const text = typeof reader.result === "string" ? reader.result : "";
-        const { title: t, body: b, formNote: f, spellMode: sm, library: lib } =
-          workshopStateRef.current;
-        const flushed = upsertActivePoem(lib, {
-          title: t,
-          body: b,
-          form: f,
-          spellMode: sm,
-        });
-        if (!saveLibrary(flushed)) {
-          setPersistenceError(DRAFT_STORAGE_MSG);
-          return;
-        }
-        const merged = mergeImportedPoems(flushed, text);
-        if ("error" in merged) {
-          setImportNoticeKind("error");
-          setImportNotice(merged.error);
-          return;
-        }
-        if (!saveLibrary(merged.lib)) {
-          setPersistenceError(DRAFT_STORAGE_MSG);
-          return;
-        }
-        setImportNoticeKind("success");
-        setImportNotice(`Imported ${merged.added} poem(s).`);
-        setLibrary(merged.lib);
-        applyLoadedPoem(merged.lib);
-      };
-      reader.onerror = () => {
-        setImportNoticeKind("error");
-        setImportNotice("Could not read the file. Check that it is a valid text file and try again.");
-      };
-      reader.onabort = () => {
-        setImportNoticeKind("error");
-        setImportNotice("File read was cancelled.");
-      };
-      reader.readAsText(file, "utf-8");
-    },
-    [applyLoadedPoem],
-  );
-
   const dismissImportNotice = useCallback(() => {
     setImportNotice(null);
   }, []);
 
-  // Check export reminder + storage quota once on mount
   useEffect(() => {
     setShowExportReminder(checkExportReminderDue(library));
     if (isLocalStorageNearlyFull()) {
@@ -934,6 +767,37 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
   const dismissExportReminder = useCallback(() => {
     setShowExportReminder(false);
   }, []);
+
+  // === Export actions hook (downloads / copy / import) ===
+  const {
+    copyExportFlash,
+    quickCopyFlash,
+    exportErr,
+    importInputRef,
+    onDownloadTxt,
+    onDownloadMd,
+    onDownloadDocx,
+    onDownloadPdf,
+    onDownloadHtml,
+    onDownloadPng,
+    onCopyMarkdown,
+    onQuickCopyPlain,
+    exportWorkshopBackup,
+    triggerImportBackup,
+    onImportBackupFile,
+  } = useExportActions({
+    title,
+    formNote,
+    bodyLiveRef,
+    library,
+    workshopStateRef,
+    setLibrary,
+    setPersistenceError,
+    setImportNotice,
+    setImportNoticeKind,
+    applyLoadedPoem,
+    setShowExportReminder,
+  });
 
   const saveSnapshot = useCallback(() => {
     const result = addRevision(activePoemId, revisions, {
@@ -971,7 +835,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     });
   }, [activePoemId, revisions, title, formNote, snapshotLabel, lastAiScore]);
 
-  // Auto-snapshot every 10 minutes when the poem body has actually changed
   const lastAutoSnapshotBodyRef = useRef<string>("");
   useEffect(() => {
     const AUTO_INTERVAL_MS = 10 * 60 * 1000;
@@ -1035,8 +898,6 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     view.focus();
   }, []);
 
-  /** If the line at the cursor has any word, replace its last word with `text`.
-   * Otherwise insert `text` at the cursor. */
   const replaceEndWordOrInsert = useCallback((text: string) => {
     const view = editorViewRef.current;
     if (!view) return;
@@ -1173,258 +1034,9 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     [revisions],
   );
 
-  const onDownloadTxt = useCallback(() => {
-    const cleanBody = stripFormatMarkers(bodyLiveRef.current);
-    const text = buildPlainTextTitleBody(
-      title,
-      formNote.trim() || undefined,
-      cleanBody,
-    );
-    downloadTextFile(exportFilename(title, "txt", cleanBody), text);
-    recordExportAt();
-  }, [title, formNote]);
-
-  const onDownloadMd = useCallback(() => {
-    // Keep **bold** (valid markdown) but strip __underline__ (no markdown equivalent)
-    const cleanBody = bodyLiveRef.current.replace(/__(.+?)__/g, "$1");
-    const text = buildMarkdownPoem(
-      title,
-      formNote.trim() || undefined,
-      cleanBody,
-    );
-    downloadTextFile(exportFilename(title, "md", cleanBody), text);
-    recordExportAt();
-  }, [title, formNote]);
-
-  const onCopyMarkdown = useCallback(async () => {
-    const cleanBody = bodyLiveRef.current.replace(/__(.+?)__/g, "$1");
-    const text = buildMarkdownPoem(
-      title,
-      formNote.trim() || undefined,
-      cleanBody,
-    );
-    try {
-      await copyTextToClipboard(text);
-      setCopyExportFlash(true);
-      if (copyExportTimer.current) clearTimeout(copyExportTimer.current);
-      copyExportTimer.current = setTimeout(() => {
-        setCopyExportFlash(false);
-        copyExportTimer.current = null;
-      }, 1200);
-    } catch {
-      setPersistenceError("Could not copy to clipboard. Check browser permissions.");
-    }
-  }, [title, formNote]);
-
-  const onQuickCopyPlain = useCallback(async () => {
-    try {
-      await copyTextToClipboard(stripFormatMarkers(bodyLiveRef.current));
-      setQuickCopyFlash(true);
-      if (quickCopyTimer.current) clearTimeout(quickCopyTimer.current);
-      quickCopyTimer.current = setTimeout(() => {
-        setQuickCopyFlash(false);
-        quickCopyTimer.current = null;
-      }, 1200);
-    } catch {
-      setPersistenceError("Could not copy to clipboard. Check browser permissions.");
-    }
-  }, []);
-
-  const onDownloadDocx = useCallback(async () => {
-    setExportErr(null);
-    try {
-      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
-      await downloadDocxFile(
-        exportFilename(title, "docx", cleanBody),
-        title,
-        formNote.trim() || undefined,
-        cleanBody,
-      );
-      recordExportAt();
-    } catch (e) {
-      setExportErr(
-        e instanceof Error ? e.message : "Could not build the Word file.",
-      );
-    }
-  }, [title, formNote]);
-
-  const onDownloadPdf = useCallback(async () => {
-    setExportErr(null);
-    try {
-      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
-      await downloadPdfFile(
-        exportFilename(title, "pdf", cleanBody),
-        title,
-        formNote.trim() || undefined,
-        cleanBody,
-      );
-      recordExportAt();
-    } catch (e) {
-      setExportErr(
-        e instanceof Error ? e.message : "Could not build the PDF.",
-      );
-    }
-  }, [title, formNote]);
-
-  const onDownloadHtml = useCallback(async () => {
-    setExportErr(null);
-    try {
-      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
-      await downloadHtmlFile(
-        exportFilename(title, "html", cleanBody),
-        title,
-        formNote.trim() || undefined,
-        cleanBody,
-      );
-      recordExportAt();
-    } catch (e) {
-      setExportErr(
-        e instanceof Error ? e.message : "Could not build the HTML file.",
-      );
-    }
-  }, [title, formNote]);
-
-  const onDownloadPng = useCallback(async () => {
-    setExportErr(null);
-    try {
-      const cleanBody = stripFormatMarkers(bodyLiveRef.current);
-      await downloadPngFile(
-        exportFilename(title, "png", cleanBody),
-        title,
-        formNote.trim() || undefined,
-        cleanBody,
-      );
-      recordExportAt();
-    } catch (e) {
-      setExportErr(
-        e instanceof Error ? e.message : "Could not build the image.",
-      );
-    }
-  }, [title, formNote]);
-
-  const updateGoal =
-    (key: keyof WorkshopGoals) => (e: ChangeEvent<HTMLInputElement>) => {
-      const v = parseGoalInput(e.target.value);
-      setGoals((g) => ({ ...g, [key]: v }));
-    };
-
-  const setGoalValue = useCallback(
-    (key: keyof WorkshopGoals, value: number | undefined) => {
-      setGoals((g) => ({ ...g, [key]: value }));
-    },
-    [],
-  );
-
-  const setRhymeSchemeGoal = useCallback((scheme: string | undefined) => {
-    setGoals((g) => ({ ...g, targetRhymeScheme: scheme }));
-  }, []);
-
-  const setRhymeSchemePerStanza = useCallback((perStanza: boolean) => {
-    setGoals((g) => ({
-      ...g,
-      targetRhymeSchemePerStanza: perStanza ? true : undefined,
-    }));
-  }, []);
-
-  const resetGoals = useCallback(() => {
-    setGoals({});
-  }, []);
-
-  const setSyllablePattern = useCallback((pattern: number[] | undefined) => {
-    setGoals((g) => ({ ...g, syllablePattern: pattern, preset: undefined }));
-  }, []);
-
-  const toggleGoalSoft = useCallback((key: string) => {
-    setGoals((g) => {
-      const soft = new Set(g.softGoals ?? []);
-      if (soft.has(key)) soft.delete(key); else soft.add(key);
-      return { ...g, softGoals: soft.size > 0 ? [...soft] : undefined };
-    });
-  }, []);
-
-  const applyGoalPreset = useCallback((presetKey: string | null) => {
-    if (presetKey === null) {
-      setGoals((g) => ({ softGoals: g.softGoals }));
-      return;
-    }
-    const preset = FORM_PRESETS.find((p) => p.key === presetKey);
-    if (preset) {
-      setGoals((g) => ({
-        ...preset.goals,
-        preset: presetKey,
-        softGoals: g.softGoals,
-      }));
-    }
-  }, []);
-
   const onSpellPersistenceError = useCallback((message: string) => {
     setPersistenceError(message);
   }, []);
-
-  const poemOptions = useMemo(() => {
-    const labelFor = (p: (typeof library.poems)[0]) =>
-      meta[p.id]?.label?.trim() || p.title.trim() || "Untitled";
-    return library.poems
-      .slice()
-      .filter(
-        (p) =>
-          !meta[p.id]?.archived || p.id === library.activeId,
-      )
-      .sort((a, b) => {
-        const ma = meta[a.id] ?? {};
-        const mb = meta[b.id] ?? {};
-        const pa = ma.pinned ? 1 : 0;
-        const pb = mb.pinned ? 1 : 0;
-        if (pa !== pb) return pb - pa;
-        const oa = ma.lastOpenedAt ? new Date(ma.lastOpenedAt).getTime() : 0;
-        const ob = mb.lastOpenedAt ? new Date(mb.lastOpenedAt).getTime() : 0;
-        if (oa !== ob) return ob - oa;
-        return (
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        );
-      })
-      .map((p) => ({
-        id: p.id,
-        label: labelFor(p),
-        archived: Boolean(meta[p.id]?.archived),
-      }));
-  }, [library.poems, library.activeId, meta]);
-
-  const setDraftLabel = useCallback((poemId: string, label: string) => {
-    setMeta((prev) => {
-      const patched = upsertDraftMeta(prev, poemId, { label });
-      void saveDraftMetaMap(patched);
-      return patched;
-    });
-  }, []);
-
-  const togglePinned = useCallback((poemId: string) => {
-    setMeta((prev) => {
-      const pinned = Boolean(prev[poemId]?.pinned);
-      const patched = upsertDraftMeta(prev, poemId, { pinned: !pinned });
-      void saveDraftMetaMap(patched);
-      return patched;
-    });
-  }, []);
-
-  const setDraftTags = useCallback((poemId: string, tags: string[]) => {
-    setMeta((prev) => {
-      const patched = upsertDraftMeta(prev, poemId, { tags });
-      void saveDraftMetaMap(patched);
-      return patched;
-    });
-  }, []);
-
-  const setDraftArchived = useCallback(
-    (poemId: string, archived: boolean) => {
-      setMeta((prev) => {
-        const patched = upsertDraftMeta(prev, poemId, { archived });
-        void saveDraftMetaMap(patched);
-        return patched;
-      });
-    },
-    [],
-  );
 
   const clearSamplePoem = useCallback(() => {
     try { localStorage.setItem(STORAGE_KEY_SAMPLE_DISMISSED, "1"); } catch { /* ignore */ }
