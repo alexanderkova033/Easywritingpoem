@@ -206,7 +206,17 @@ body::before,
 body::after {
   content: "";
   position: fixed;
-  inset: 0;
+  /* Pin to LARGE viewport so URL-bar hide/show on mobile doesn't resize the
+     backdrop — `inset: 0` ties to the small viewport, which jitters as the
+     browser chrome retracts. lvh/lvw are the largest possible viewport
+     (chrome hidden); the backdrop stays the same size always.
+     Fallbacks: 100vh/100vw for browsers without lvh support. */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  width: 100lvw;
+  height: 100lvh;
   pointer-events: none;
   z-index: -1;
 }

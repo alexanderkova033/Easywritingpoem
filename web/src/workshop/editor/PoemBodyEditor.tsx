@@ -904,7 +904,10 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         theme="none"
         extensions={extensions}
         onChange={(v) => {
-          setLocalValue(v);
+          // Don't setLocalValue here: localValue is only used to feed
+          // external resyncs (bodySyncNonce). CodeMirror owns the doc
+          // internally during typing, so updating React state on every
+          // keystroke caused a full PoemBodyEditor rerender per char.
           props.onLiveBody(v);
         }}
         onCreateEditor={(view) => {
