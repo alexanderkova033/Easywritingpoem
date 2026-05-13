@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
+import { gibberishGuard } from "./_gibberish";
 
 const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Return JSON only (no fences). Keys:
 overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; pick the most useful across that range), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
@@ -147,6 +148,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+
+  const gib = await gibberishGuard({
+    rawIp: req.headers["x-forwarded-for"],
+    text: `${title}\n${lines.join("\n")}\n${changesText}`,
+    apiKey,
+  });
+  if (!gib.ok) {
+    if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
+    return res.status(gib.status).json(gib.body);
+  }
 
   const spend = await precheckSpend({
     rawIp: req.headers["x-forwarded-for"],

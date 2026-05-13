@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
+import { gibberishGuard } from "./_gibberish";
 
 const SYSTEM_PROMPT = `You are a thoughtful poetry editor and writing coach. The user has just written a poem and received AI feedback on it. They want to have a conversation with you about their poem — asking questions, getting clarification on feedback, brainstorming ideas, or exploring craft.
 
@@ -76,6 +77,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const totalPoemChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
   if (totalPoemChars > 20_000) {
     return res.status(400).json({ error: "Poem too long (max 20000 characters)." });
+  }
+
+  const gib = await gibberishGuard({
+    rawIp: req.headers["x-forwarded-for"],
+    text: `${message}\n${title}\n${lines.join("\n")}`,
+    apiKey,
+  });
+  if (!gib.ok) {
+    if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
+    return res.status(gib.status).json(gib.body);
   }
 
   // First turn carries the poem in the system message; subsequent turns rely

@@ -9,6 +9,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
+import { gibberishGuard } from "./_gibberish";
 
 const HARSHNESS_PERSONAS: Record<string, string> = {
   baby:    "a kind, encouraging reader who celebrates effort and only mentions one very obvious improvement gently",
@@ -174,6 +175,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const totalChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
   if (totalChars > MAX_TOTAL_CHARS) {
     return res.status(400).json({ error: `Poem too long (max ${MAX_TOTAL_CHARS} characters).` });
+  }
+
+  const gib = await gibberishGuard({
+    rawIp: req.headers["x-forwarded-for"],
+    text: `${title}\n${lines.join("\n")}`,
+    apiKey,
+  });
+  if (!gib.ok) {
+    if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
+    return res.status(gib.status).json(gib.body);
   }
 
   const result = await callOpenAI(

@@ -8,6 +8,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
+import { gibberishGuard } from "./_gibberish";
 
 type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
 
@@ -99,6 +100,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (lines.length > 500) {
     return res.status(400).json({ error: "Too many lines (max 500)." });
+  }
+
+  // Skip the gibberish guard for `idea`/`spark` types — the user may have
+  // nothing typed at all and is asking for a starting concept.
+  if (suggestType !== "idea" && suggestType !== "spark") {
+    const guardText = [title, lines.join("\n"), targetLine ?? "", context]
+      .filter(Boolean)
+      .join("\n");
+    if (guardText.length >= 40) {
+      const gib = await gibberishGuard({
+        rawIp: req.headers["x-forwarded-for"],
+        text: guardText,
+        apiKey,
+      });
+      if (!gib.ok) {
+        if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
+        return res.status(gib.status).json(gib.body);
+      }
+    }
   }
 
   const result = await callOpenAI(

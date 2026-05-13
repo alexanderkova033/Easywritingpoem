@@ -9,6 +9,11 @@ import {
   downloadPngFile,
   downloadTextFile,
   exportFilename,
+  isDirectoryPickerSupported,
+  pickExportDirectory,
+  savePoemToDirectory,
+  writeTextToDirectory,
+  type FolderSaveFormats,
 } from "@/workshop/library/export-poem";
 import { stripFormatMarkers } from "@/workshop/editor/format-marks";
 import {
@@ -195,6 +200,116 @@ export function useExportActions(input: ExportActionsInput) {
     }
   }, [title, formNote, bodyLiveRef]);
 
+  const [folderSaveFlash, setFolderSaveFlash] = useState<string | null>(null);
+  const folderSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashFolderSave = useCallback((msg: string) => {
+    setFolderSaveFlash(msg);
+    if (folderSaveTimer.current) clearTimeout(folderSaveTimer.current);
+    folderSaveTimer.current = setTimeout(() => {
+      setFolderSaveFlash(null);
+      folderSaveTimer.current = null;
+    }, 2500);
+  }, []);
+
+  const folderPickerSupported = isDirectoryPickerSupported();
+
+  const saveCurrentPoemToFolder = useCallback(
+    async (formats: FolderSaveFormats) => {
+      setExportErr(null);
+      if (!isDirectoryPickerSupported()) {
+        setExportErr(
+          "This browser does not support saving to a folder. Use Chrome, Edge, or Opera on desktop.",
+        );
+        return;
+      }
+      const dir = await pickExportDirectory();
+      if (!dir) return;
+      try {
+        const cleanBody = stripFormatMarkers(bodyLiveRef.current);
+        const written = await savePoemToDirectory(dir, {
+          title,
+          formNote: formNote.trim() || undefined,
+          body: cleanBody,
+          formats,
+        });
+        recordExportAt();
+        flashFolderSave(
+          written.length === 1
+            ? `Saved ${written[0]} to ${dir.name} ✓`
+            : `Saved ${written.length} files to ${dir.name} ✓`,
+        );
+      } catch (e) {
+        setExportErr(
+          e instanceof Error
+            ? `Folder save failed: ${e.message}`
+            : "Folder save failed.",
+        );
+      }
+    },
+    [title, formNote, bodyLiveRef, flashFolderSave],
+  );
+
+  const saveAllPoemsToFolder = useCallback(
+    async (formats: FolderSaveFormats) => {
+      setExportErr(null);
+      if (!isDirectoryPickerSupported()) {
+        setExportErr(
+          "This browser does not support saving to a folder. Use Chrome, Edge, or Opera on desktop.",
+        );
+        return;
+      }
+      const dir = await pickExportDirectory();
+      if (!dir) return;
+      try {
+        const state = workshopStateRef.current;
+        const flushed = upsertActivePoem(state.library, {
+          title: state.title,
+          body: state.body,
+          form: state.formNote,
+          spellMode: state.spellMode,
+        });
+        let totalFiles = 0;
+        for (const poem of flushed.poems) {
+          const cleanBody = stripFormatMarkers(poem.body);
+          const written = await savePoemToDirectory(dir, {
+            title: poem.title,
+            formNote: poem.form?.trim() || undefined,
+            body: cleanBody,
+            formats,
+          });
+          totalFiles += written.length;
+        }
+        if (formats.json) {
+          const json = buildWorkshopExportJson({
+            poems: flushed.poems,
+            revisionsForPoem: loadRevisions,
+          });
+          const stamp = new Date().toISOString().slice(0, 10);
+          await writeTextToDirectory(
+            dir,
+            `easy-poems-backup-${stamp}.json`,
+            json,
+          );
+          totalFiles += 1;
+        }
+        recordExportAt();
+        flashFolderSave(
+          `Saved ${totalFiles} file${totalFiles === 1 ? "" : "s"} (${flushed.poems.length} poem${
+            flushed.poems.length === 1 ? "" : "s"
+          }) to ${dir.name} ✓`,
+        );
+      } catch (e) {
+        setExportErr(
+          e instanceof Error
+            ? `Folder save failed: ${e.message}`
+            : "Folder save failed.",
+        );
+      }
+    },
+    [workshopStateRef, flashFolderSave],
+  );
+
   const exportWorkshopBackup = useCallback(() => {
     const json = buildWorkshopExportJson({
       poems: library.poems,
@@ -274,5 +389,9 @@ export function useExportActions(input: ExportActionsInput) {
     exportWorkshopBackup,
     triggerImportBackup,
     onImportBackupFile,
+    folderPickerSupported,
+    folderSaveFlash,
+    saveCurrentPoemToFolder,
+    saveAllPoemsToFolder,
   };
 }

@@ -371,3 +371,129 @@ export async function downloadPngFile(
 export async function copyTextToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text);
 }
+
+interface ShowDirectoryPickerOpts {
+  mode?: "read" | "readwrite";
+  id?: string;
+  startIn?: string;
+}
+
+interface ExtendedWindow extends Window {
+  showDirectoryPicker?: (
+    opts?: ShowDirectoryPickerOpts,
+  ) => Promise<FileSystemDirectoryHandle>;
+}
+
+export function isDirectoryPickerSupported(): boolean {
+  if (typeof window === "undefined") return false;
+  return typeof (window as ExtendedWindow).showDirectoryPicker === "function";
+}
+
+export async function pickExportDirectory(): Promise<FileSystemDirectoryHandle | null> {
+  if (!isDirectoryPickerSupported()) return null;
+  try {
+    const picker = (window as ExtendedWindow).showDirectoryPicker!;
+    return await picker({ mode: "readwrite", id: "easy-poems-export", startIn: "documents" });
+  } catch (e) {
+    if (
+      e instanceof DOMException &&
+      (e.name === "AbortError" || e.name === "NotAllowedError")
+    ) {
+      return null;
+    }
+    throw e;
+  }
+}
+
+async function writeHandle(
+  dir: FileSystemDirectoryHandle,
+  filename: string,
+  data: Blob | string,
+): Promise<void> {
+  const fileHandle = await dir.getFileHandle(filename, { create: true });
+  const writable = await (
+    fileHandle as FileSystemFileHandle & {
+      createWritable: () => Promise<FileSystemWritableFileStream>;
+    }
+  ).createWritable();
+  try {
+    await writable.write(data);
+  } finally {
+    await writable.close();
+  }
+}
+
+export async function writeTextToDirectory(
+  dir: FileSystemDirectoryHandle,
+  filename: string,
+  text: string,
+): Promise<void> {
+  await writeHandle(dir, filename, text);
+}
+
+export async function writeBlobToDirectory(
+  dir: FileSystemDirectoryHandle,
+  filename: string,
+  blob: Blob,
+): Promise<void> {
+  await writeHandle(dir, filename, blob);
+}
+
+export interface FolderSaveFormats {
+  txt?: boolean;
+  md?: boolean;
+  html?: boolean;
+  docx?: boolean;
+  pdf?: boolean;
+  png?: boolean;
+  json?: boolean;
+}
+
+export async function savePoemToDirectory(
+  dir: FileSystemDirectoryHandle,
+  args: {
+    title: string;
+    formNote: string | undefined;
+    body: string;
+    formats: FolderSaveFormats;
+    baseFilename?: string;
+  },
+): Promise<string[]> {
+  const written: string[] = [];
+  const { title, formNote, body, formats } = args;
+  const base =
+    args.baseFilename ??
+    exportFilename(title, "txt", body).replace(/\.txt$/, "");
+
+  if (formats.txt) {
+    const name = `${base}.txt`;
+    await writeTextToDirectory(dir, name, buildPlainTextTitleBody(title, formNote, body));
+    written.push(name);
+  }
+  if (formats.md) {
+    const name = `${base}.md`;
+    await writeTextToDirectory(dir, name, buildMarkdownPoem(title, formNote, body));
+    written.push(name);
+  }
+  if (formats.html) {
+    const name = `${base}.html`;
+    await writeTextToDirectory(dir, name, buildPoemHtml(title, formNote, body));
+    written.push(name);
+  }
+  if (formats.docx) {
+    const name = `${base}.docx`;
+    await writeBlobToDirectory(dir, name, await buildPoemDocxBlob(title, formNote, body));
+    written.push(name);
+  }
+  if (formats.pdf) {
+    const name = `${base}.pdf`;
+    await writeBlobToDirectory(dir, name, await buildPoemPdfBlob(title, formNote, body));
+    written.push(name);
+  }
+  if (formats.png) {
+    const name = `${base}.png`;
+    await writeBlobToDirectory(dir, name, await buildPoemPngBlob(title, formNote, body));
+    written.push(name);
+  }
+  return written;
+}
