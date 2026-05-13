@@ -3792,11 +3792,11 @@
   html[data-workshop-bg="summer"],
   html[data-workshop-bg="park"]
 ) .editor-meta-grid {
-  border-bottom-color: color-mix(in srgb, var(--border) 22%, #000 18%);
+  border-bottom-color: color-mix(in srgb, var(--border) 14%, #000 10%);
 }
 @media (prefers-color-scheme: light) {
   html:not([data-workshop-bg]) .editor-meta-grid {
-    border-bottom-color: color-mix(in srgb, var(--border) 22%, #000 18%);
+    border-bottom-color: color-mix(in srgb, var(--border) 14%, #000 10%);
   }
 }
 
@@ -3888,7 +3888,7 @@
   html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .editor-meta-grid {
-  border-bottom-color: color-mix(in srgb, var(--border) 18%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--border) 10%, transparent);
 }
 
 /* Default-dark fallback: when no workshop-bg is set and the OS prefers dark. */
@@ -3901,7 +3901,7 @@
     border-color: color-mix(in srgb, var(--border) 55%, transparent);
   }
   html:not([data-workshop-bg]) .editor-meta-grid {
-    border-bottom-color: color-mix(in srgb, var(--border) 18%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--border) 10%, transparent);
   }
 }
 
@@ -3918,7 +3918,7 @@
   gap: 0.55rem 0.85rem;
   padding-bottom: 0.65rem;
   margin-bottom: 0.25rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 28%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 14%, transparent);
 }
 
 .editor-stack {
