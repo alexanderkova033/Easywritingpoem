@@ -800,6 +800,25 @@ export function PoemWorkshop() {
     };
   }, [isFocusMode]);
 
+  // Browser back exits focus mode: push a sentinel history entry on enter so
+  // the back button (or Android system back, swipe-back gesture) pops out of
+  // focus instead of leaving the workshop entirely.
+  useEffect(() => {
+    if (!isFocusMode) return;
+    const STATE_KEY = "easywriting:focusMode";
+    window.history.pushState({ [STATE_KEY]: true }, "");
+    const onPop = () => setIsFocusMode(false);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      // If we still own the sentinel entry (user exited via UI, not back btn),
+      // pop it so history isn't polluted with focus-mode entries.
+      if (window.history.state && (window.history.state as Record<string, unknown>)[STATE_KEY]) {
+        window.history.back();
+      }
+    };
+  }, [isFocusMode]);
+
   // Fade-on-idle: in focus mode, only physical pointer activity reveals the
   // chrome. Typing keeps the writing trance — mouse must actually move (or
   // scroll/click) for the topbar/toolbar to fade back in.

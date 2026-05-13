@@ -3726,24 +3726,24 @@
   html[data-workshop-bg="summer"],
   html[data-workshop-bg="park"]
 ) .privacy {
-  border-color: color-mix(in srgb, var(--border) 60%, #000 40%);
+  border-color: color-mix(in srgb, var(--border) 45%, #000 55%);
 }
 
 @media (prefers-color-scheme: light) {
   html:not([data-workshop-bg]) .editor-panel,
   html:not([data-workshop-bg]) .results,
   html:not([data-workshop-bg]) .privacy {
-    border-color: color-mix(in srgb, var(--border) 60%, #000 40%);
+    border-color: color-mix(in srgb, var(--border) 45%, #000 55%);
   }
 
   html:not([data-workshop-bg]) .editor-panel {
     box-shadow: 0 4px 18px color-mix(in srgb, #000 12%, transparent);
-    border-color: color-mix(in srgb, var(--border) 50%, #000 50%);
+    border-color: color-mix(in srgb, var(--border) 35%, #000 65%);
   }
 
   html:not([data-workshop-bg]) .tools-panel,
   html:not([data-workshop-bg]) .rhyme-panel {
-    border-color: color-mix(in srgb, var(--border) 55%, #000 45%);
+    border-color: color-mix(in srgb, var(--border) 40%, #000 60%);
   }
 }
 
@@ -3756,7 +3756,7 @@
   html[data-workshop-bg="summer"],
   html[data-workshop-bg="park"]
 ) .editor-panel {
-  border-color: color-mix(in srgb, var(--border) 50%, #000 50%);
+  border-color: color-mix(in srgb, var(--border) 35%, #000 65%);
   box-shadow: 0 4px 20px color-mix(in srgb, #000 14%, transparent);
 }
 
@@ -3778,7 +3778,131 @@
   html[data-workshop-bg="summer"],
   html[data-workshop-bg="park"]
 ) .rhyme-panel {
-  border-color: color-mix(in srgb, var(--border) 55%, #000 45%);
+  border-color: color-mix(in srgb, var(--border) 40%, #000 60%);
+}
+
+/* Stronger panel frames on light backgrounds — also tighten the editor's
+   internal meta-grid divider so the title/form row reads as a clear section. */
+:where(
+  html[data-workshop-bg="paper"],
+  html[data-workshop-bg="dawn"],
+  html[data-workshop-bg="parchment"],
+  html[data-workshop-bg="winter"],
+  html[data-workshop-bg="spring"],
+  html[data-workshop-bg="summer"],
+  html[data-workshop-bg="park"]
+) .editor-meta-grid {
+  border-bottom-color: color-mix(in srgb, var(--border) 45%, #000 55%);
+}
+@media (prefers-color-scheme: light) {
+  html:not([data-workshop-bg]) .editor-meta-grid {
+    border-bottom-color: color-mix(in srgb, var(--border) 45%, #000 55%);
+  }
+}
+
+/* Weaker panel frames on dark backgrounds — pull the border toward the panel
+   surface so the frame whispers instead of cutting into the dim canvas. */
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .editor-panel,
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .results,
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .privacy,
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .tools-panel,
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .rhyme-panel {
+  border-color: color-mix(in srgb, var(--border) 55%, transparent);
+}
+:where(
+  html[data-workshop-bg="aurora"],
+  html[data-workshop-bg="autumn"],
+  html[data-workshop-bg="crimson"],
+  html[data-workshop-bg="dark"],
+  html[data-workshop-bg="dusk"],
+  html[data-workshop-bg="forest"],
+  html[data-workshop-bg="night"],
+  html[data-workshop-bg="ocean"],
+  html[data-workshop-bg="rain"],
+  html[data-workshop-bg="slate"],
+  html[data-workshop-bg="stone"],
+  html[data-workshop-bg="studio"]
+) .editor-meta-grid {
+  border-bottom-color: color-mix(in srgb, var(--border) 35%, transparent);
+}
+
+/* Default-dark fallback: when no workshop-bg is set and the OS prefers dark. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-workshop-bg]) .editor-panel,
+  html:not([data-workshop-bg]) .results,
+  html:not([data-workshop-bg]) .privacy,
+  html:not([data-workshop-bg]) .tools-panel,
+  html:not([data-workshop-bg]) .rhyme-panel {
+    border-color: color-mix(in srgb, var(--border) 55%, transparent);
+  }
+  html:not([data-workshop-bg]) .editor-meta-grid {
+    border-bottom-color: color-mix(in srgb, var(--border) 35%, transparent);
+  }
 }
 
 .row {

@@ -268,7 +268,7 @@
   position: fixed;
   top: 0.6rem;
   left: 0.6rem;
-  z-index: 50;
+  z-index: 70;
   display: inline-flex;
   align-items: center;
   justify-content: center;
