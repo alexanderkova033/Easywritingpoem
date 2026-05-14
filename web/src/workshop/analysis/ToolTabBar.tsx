@@ -153,7 +153,6 @@ export function LiveSectionTitle({ children }: { children: ReactNode }) {
     <h3 className="tool-heading-live">
       <span className="live-dot" aria-hidden />
       <span className="tool-heading-live-text">{children}</span>
-      <span className="live-badge">From draft</span>
     </h3>
   );
 }

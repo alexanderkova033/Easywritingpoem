@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { canonicaliseRhymeScheme } from "@/workshop/goals/types";
 import { JumpLineList, NumberInput, SoftPill } from "./shared";
 
@@ -271,22 +271,84 @@ interface RhymeSchemePreset {
   label: string;
   value: string;
   hint: string;
+  example: string[];
   perStanza?: boolean;
 }
 
 const RHYME_SCHEME_PRESETS: RhymeSchemePreset[] = [
-  { label: "None", value: "", hint: "No rhyme-scheme goal" },
-  { label: "AABB", value: "AABB", hint: "Couplets (per stanza)", perStanza: true },
-  { label: "ABAB", value: "ABAB", hint: "Alternating quatrain (per stanza)", perStanza: true },
-  { label: "ABBA", value: "ABBA", hint: "Enclosed rhyme (per stanza)", perStanza: true },
-  { label: "AABBA", value: "AABBA", hint: "Limerick" },
-  { label: "Ballad", value: "ABCB", hint: "Ballad stanza (per stanza)", perStanza: true },
+  {
+    label: "None",
+    value: "",
+    hint: "No rhyme-scheme goal",
+    example: [],
+  },
+  {
+    label: "AABB",
+    value: "AABB",
+    hint: "Couplets — pairs rhyme in turn",
+    example: ["roses are red (A)", "violets are blue (A)", "sugar is sweet (B)", "and so are you (B)"],
+    perStanza: true,
+  },
+  {
+    label: "ABAB",
+    value: "ABAB",
+    hint: "Alternating — odd lines rhyme, even lines rhyme",
+    example: ["the silver moon (A)", "in soft night air (B)", "rose high in June (A)", "without a care (B)"],
+    perStanza: true,
+  },
+  {
+    label: "ABBA",
+    value: "ABBA",
+    hint: "Enclosed — outer pair frames inner pair",
+    example: ["the cat sat down (A)", "beside the dog (B)", "atop a log (B)", "in sleepy town (A)"],
+    perStanza: true,
+  },
+  {
+    label: "AABBA",
+    value: "AABBA",
+    hint: "Limerick — two long, two short, one long",
+    example: ["a poet who lived in Peru (A)", "wrote poems that rarely were true (A)", "he scribbled all night (B)", "by candle and light (B)", "and laughed at his odd point of view (A)"],
+  },
+  {
+    label: "Ballad",
+    value: "ABCB",
+    hint: "Ballad — lines 2 and 4 rhyme; 1 and 3 free",
+    example: ["the wind came down (A)", "across the moor (B)", "she stood alone (C)", "beside the door (B)"],
+    perStanza: true,
+  },
   {
     label: "Sonnet",
     value: "ABABCDCDEFEFGG",
-    hint: "Shakespearean sonnet (full)",
+    hint: "Shakespearean sonnet — 3 quatrains + final couplet",
+    example: ["Shall I compare thee to a summer's day? (A)", "Thou art more lovely and more temperate: (B)", "Rough winds do shake the darling buds of May, (A)", "And summer's lease hath all too short a date. (B)", "… (C, D, C, D)", "… (E, F, E, F)", "So long lives this and this gives life to thee. (G)", "So long as men can breathe or eyes can see, (G)"],
   },
 ];
+
+const LETTER_HUES = [200, 30, 320, 140, 260, 0, 180, 60, 280, 100];
+function letterColor(letter: string, alpha = 1): string {
+  if (!letter) return "transparent";
+  const idx = (letter.charCodeAt(0) - 65 + 26) % 26;
+  const hue = LETTER_HUES[idx % LETTER_HUES.length]!;
+  return `hsla(${hue}, 65%, 55%, ${alpha})`;
+}
+
+function nextLetter(current: string, pattern: string[]): string {
+  const used = new Set(pattern.filter(Boolean));
+  let maxCode = 64;
+  for (const c of used) {
+    const code = c.charCodeAt(0);
+    if (code > maxCode) maxCode = code;
+  }
+  const palette: string[] = [];
+  for (let c = 65; c <= maxCode + 1 && c <= 90; c++) {
+    palette.push(String.fromCharCode(c));
+  }
+  if (palette.length === 0) palette.push("A");
+  if (!current) return palette[0]!;
+  const idx = palette.indexOf(current);
+  if (idx < 0) return palette[0]!;
+  return palette[(idx + 1) % palette.length]!;
+}
 
 export function RhymeSchemeCard({
   target,
@@ -307,13 +369,41 @@ export function RhymeSchemeCard({
   isSoft: boolean;
   onToggleSoft: () => void;
 }) {
+  const slots = useMemo(() => {
+    const canon = canonicaliseRhymeScheme(target);
+    return canon ? canon.split("") : [];
+  }, [target]);
+
+  const [exampleFor, setExampleFor] = useState<string | null>(null);
+  const [showCustom, setShowCustom] = useState(false);
   const [custom, setCustom] = useState(target);
   useEffect(() => {
     setCustom(target);
   }, [target]);
 
-  const canonCustom = canonicaliseRhymeScheme(custom);
+  const commitSlots = (next: string[]) => {
+    const joined = next.join("");
+    const canon = canonicaliseRhymeScheme(joined);
+    onSet(canon || undefined);
+  };
+  const cycleSlot = (i: number) => {
+    const cur = slots[i] ?? "";
+    const nl = nextLetter(cur, slots);
+    const next = slots.slice();
+    next[i] = nl;
+    commitSlots(next);
+  };
+  const addSlot = () => {
+    const cur = slots[slots.length - 1] ?? "";
+    const nl = cur ? nextLetter(cur, slots) : "A";
+    commitSlots([...slots, nl]);
+  };
+  const removeSlot = () => {
+    if (slots.length === 0) return;
+    commitSlots(slots.slice(0, -1));
+  };
 
+  const canonCustom = canonicaliseRhymeScheme(custom);
   const commitCustom = () => {
     const canon = canonicaliseRhymeScheme(custom);
     onSet(canon || undefined);
@@ -327,6 +417,13 @@ export function RhymeSchemeCard({
       : matches === false
         ? "goal-card--over"
         : "";
+
+  const activePreset = RHYME_SCHEME_PRESETS.find(
+    (p) =>
+      p.value &&
+      target === p.value &&
+      !!p.perStanza === perStanza,
+  );
 
   return (
     <div className={`goal-card goal-card--scheme ${statusClass}`}>
@@ -345,95 +442,261 @@ export function RhymeSchemeCard({
         ) : null}
       </div>
 
+      <p className="goal-scheme-blurb muted small">
+        Each letter is a rhyme group. Lines sharing a letter rhyme together.
+      </p>
+
       <div className="goal-scheme-chips" role="group" aria-label="Rhyme scheme presets">
         {RHYME_SCHEME_PRESETS.map((p) => {
           const active =
             target === p.value && (!!p.perStanza === perStanza || p.value === "");
+          const hasExample = p.example.length > 0;
           return (
-            <button
+            <span
               key={p.label}
-              type="button"
-              className={`goal-scheme-chip${active ? " is-active" : ""}`}
-              title={p.hint}
-              onClick={() => {
-                if (!p.value) {
-                  onSet(undefined);
-                  onSetPerStanza(false);
-                  return;
-                }
-                onSet(p.value);
-                onSetPerStanza(!!p.perStanza);
-              }}
+              className="goal-scheme-chip-wrap"
+              onMouseLeave={() => setExampleFor((s) => (s === p.label ? null : s))}
             >
-              {p.label}
-            </button>
+              <button
+                type="button"
+                className={`goal-scheme-chip${active ? " is-active" : ""}`}
+                title={p.hint}
+                onClick={() => {
+                  if (!p.value) {
+                    onSet(undefined);
+                    onSetPerStanza(false);
+                    return;
+                  }
+                  onSet(p.value);
+                  onSetPerStanza(!!p.perStanza);
+                }}
+                onMouseEnter={() => hasExample && setExampleFor(p.label)}
+                onFocus={() => hasExample && setExampleFor(p.label)}
+                onBlur={() => setExampleFor(null)}
+              >
+                {p.label}
+              </button>
+              {exampleFor === p.label && hasExample ? (
+                <div className="goal-scheme-example" role="tooltip">
+                  <div className="goal-scheme-example-title">{p.hint}</div>
+                  <ol className="goal-scheme-example-lines">
+                    {p.example.map((ln, idx) => {
+                      const m = ln.match(/\(([A-Z])\)$/);
+                      const letter = m?.[1] ?? "";
+                      const text = ln.replace(/\s*\([A-Z]\)$/, "");
+                      return (
+                        <li key={idx}>
+                          <span className="goal-scheme-example-text">{text}</span>
+                          {letter ? (
+                            <span
+                              className="goal-scheme-example-tag"
+                              style={{
+                                background: letterColor(letter, 0.18),
+                                color: letterColor(letter, 1),
+                                borderColor: letterColor(letter, 0.45),
+                              }}
+                            >
+                              {letter}
+                            </span>
+                          ) : null}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              ) : null}
+            </span>
           );
         })}
       </div>
 
-      <div className="goal-scheme-custom">
-        <input
-          type="text"
-          className="goal-scheme-input"
-          value={custom}
-          placeholder="Custom pattern (e.g. ABBA)"
-          spellCheck={false}
-          onChange={(e) => setCustom(e.target.value.toUpperCase())}
-          onBlur={commitCustom}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commitCustom();
-            }
-          }}
-          aria-label="Custom rhyme scheme"
-        />
-        {canonCustom && canonCustom !== target ? (
+      <div className="goal-scheme-builder">
+        <div className="goal-scheme-builder-label">
+          {activePreset?.label ?? "Pattern"}
+          {slots.length > 0 ? (
+            <span className="goal-scheme-builder-hint muted small">
+              Click a slot to change its letter
+            </span>
+          ) : null}
+        </div>
+        <div className="goal-scheme-slots" role="group" aria-label="Rhyme pattern slots">
+          {slots.length === 0 ? (
+            <span className="goal-scheme-slots-empty muted small">
+              Add slots or pick a preset above.
+            </span>
+          ) : (
+            slots.map((letter, i) => (
+              <button
+                key={i}
+                type="button"
+                className="goal-scheme-slot"
+                onClick={() => cycleSlot(i)}
+                style={{
+                  background: letterColor(letter, 0.16),
+                  borderColor: letterColor(letter, 0.55),
+                  color: letterColor(letter, 1),
+                }}
+                title={`Line ${i + 1} · group ${letter} — click to cycle`}
+                aria-label={`Slot ${i + 1}: ${letter}`}
+              >
+                <span className="goal-scheme-slot-num">{i + 1}</span>
+                <span className="goal-scheme-slot-letter">{letter || "·"}</span>
+              </button>
+            ))
+          )}
           <button
             type="button"
-            className="linkish goal-scheme-apply"
-            onClick={commitCustom}
+            className="goal-scheme-slot-btn"
+            onClick={addSlot}
+            title="Add a line slot"
+            aria-label="Add slot"
           >
-            Apply
+            +
           </button>
-        ) : null}
+          {slots.length > 0 ? (
+            <button
+              type="button"
+              className="goal-scheme-slot-btn goal-scheme-slot-btn--minus"
+              onClick={removeSlot}
+              title="Remove last slot"
+              aria-label="Remove last slot"
+            >
+              −
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {hasGoal ? (
-        <label className="goal-scheme-perstanza" title="Repeat pattern within each stanza independently">
-          <input
-            type="checkbox"
-            checked={perStanza}
-            onChange={(e) => onSetPerStanza(e.target.checked)}
-          />
-          <span>Apply per stanza</span>
-        </label>
+        <div
+          className="goal-scheme-scope"
+          role="radiogroup"
+          aria-label="How the pattern applies"
+        >
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!perStanza}
+            className={`goal-scheme-scope-btn${!perStanza ? " is-active" : ""}`}
+            onClick={() => onSetPerStanza(false)}
+            title="Pattern spans the whole poem"
+          >
+            Whole poem
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={perStanza}
+            className={`goal-scheme-scope-btn${perStanza ? " is-active" : ""}`}
+            onClick={() => onSetPerStanza(true)}
+            title="Pattern repeats inside each stanza"
+          >
+            Each stanza
+          </button>
+        </div>
       ) : null}
 
       {hasGoal && schemePerLine.length > 0 ? (
-        <ul className="goal-scheme-lines" aria-label="Line-by-line rhyme comparison">
-          {schemePerLine.map((row) => (
-            <li
-              key={row.line}
-              className={`goal-scheme-line${row.matches ? " is-match" : " is-miss"}`}
-            >
-              <span className="goal-scheme-line-num">{row.line}</span>
-              <span className="goal-scheme-line-detected">
-                {row.detected || "·"}
-              </span>
-              <span className="goal-scheme-line-arrow" aria-hidden>
-                →
-              </span>
-              <span className="goal-scheme-line-expected">
-                {row.expected || "·"}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className="goal-scheme-preview">
+          <div className="goal-scheme-preview-head muted small">
+            Your end-words · colour = rhyme group
+          </div>
+          <ul className="goal-scheme-preview-list" aria-label="Detected end-words by rhyme group">
+            {schemePerLine.map((row) => {
+              const detLetter = row.detected || "";
+              const expLetter = row.expected || "";
+              return (
+                <li
+                  key={row.line}
+                  className={`goal-scheme-preview-row${row.matches ? " is-match" : " is-miss"}`}
+                  style={{
+                    borderLeftColor: letterColor(detLetter, 0.7),
+                  }}
+                >
+                  <span className="goal-scheme-preview-num">{row.line}</span>
+                  <span
+                    className="goal-scheme-preview-word"
+                    style={{ color: letterColor(detLetter, 1) }}
+                  >
+                    {row.endWord || "—"}
+                  </span>
+                  <span
+                    className="goal-scheme-preview-tag"
+                    style={{
+                      background: letterColor(detLetter, 0.18),
+                      borderColor: letterColor(detLetter, 0.5),
+                      color: letterColor(detLetter, 1),
+                    }}
+                    title={`Detected group ${detLetter || "—"}`}
+                  >
+                    {detLetter || "·"}
+                  </span>
+                  {expLetter ? (
+                    <>
+                      <span className="goal-scheme-preview-arrow" aria-hidden>
+                        →
+                      </span>
+                      <span
+                        className={`goal-scheme-preview-tag goal-scheme-preview-tag--target${row.matches ? " is-match" : " is-miss"}`}
+                        style={{
+                          background: letterColor(expLetter, 0.12),
+                          borderColor: letterColor(expLetter, 0.5),
+                          color: letterColor(expLetter, 1),
+                        }}
+                        title={`Wanted group ${expLetter}`}
+                      >
+                        {expLetter}
+                      </span>
+                    </>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       ) : hasGoal ? (
         <p className="muted small goal-scheme-empty">
-          Write a few lines to see how they line up against {target}.
+          Write a few lines — they'll appear here colour-coded.
         </p>
+      ) : null}
+
+      <div className="goal-scheme-custom-toggle">
+        <button
+          type="button"
+          className="linkish goal-scheme-custom-toggle-btn"
+          onClick={() => setShowCustom((s) => !s)}
+        >
+          {showCustom ? "Hide" : "Type custom pattern"}
+        </button>
+      </div>
+      {showCustom ? (
+        <div className="goal-scheme-custom">
+          <input
+            type="text"
+            className="goal-scheme-input"
+            value={custom}
+            placeholder="e.g. ABBA"
+            spellCheck={false}
+            onChange={(e) => setCustom(e.target.value.toUpperCase())}
+            onBlur={commitCustom}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitCustom();
+              }
+            }}
+            aria-label="Custom rhyme scheme"
+          />
+          {canonCustom && canonCustom !== target ? (
+            <button
+              type="button"
+              className="linkish goal-scheme-apply"
+              onClick={commitCustom}
+            >
+              Apply
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="goal-card-footer">

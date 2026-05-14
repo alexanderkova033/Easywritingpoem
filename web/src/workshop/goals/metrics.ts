@@ -1,4 +1,5 @@
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
+import { lastWordInLine } from "@/workshop/meter/tokenize";
 import { canonicaliseRhymeScheme, type WorkshopGoals } from "./types";
 
 export interface SchemeLineCompare {
@@ -9,6 +10,8 @@ export interface SchemeLineCompare {
   /** Canonical expected letter for this line (empty if pattern length doesn't cover it). */
   expected: string;
   matches: boolean;
+  /** Actual end-word for this line — used for visual rhyme preview. */
+  endWord: string;
 }
 
 export interface GoalEvaluation {
@@ -245,11 +248,14 @@ export function evaluateGoals(
       // to make comparison consistent.
       const detLetter = detectedCanon[i] ?? "";
       const expLetter = expectedCanon[i] ?? "";
+      const text = stats.lines[origIdx]?.text ?? "";
+      const endWord = lastWordInLine(text) ?? "";
       return {
         line: origIdx + 1,
         detected: detLetter || det,
         expected: expLetter || exp,
         matches: detLetter === expLetter && detLetter !== "",
+        endWord,
       };
     });
 

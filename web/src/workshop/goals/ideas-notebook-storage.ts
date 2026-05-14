@@ -4,11 +4,22 @@ import {
 } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_IDEAS_NOTEBOOK } from "@/shared/storage-keys";
 
+export type IdeaMood = "neutral" | "warm" | "cool" | "tender" | "dark";
+
+export const IDEA_MOOD_OPTIONS: { mood: IdeaMood; label: string }[] = [
+  { mood: "neutral", label: "Neutral" },
+  { mood: "warm", label: "Warm" },
+  { mood: "cool", label: "Cool" },
+  { mood: "tender", label: "Tender" },
+  { mood: "dark", label: "Dark" },
+];
+
 export interface IdeaEntry {
   id: string;
   text: string;
   done: boolean;
   createdAt: number;
+  mood?: IdeaMood;
 }
 
 const MAX_TEXT_LEN = 500;
@@ -38,7 +49,16 @@ export function loadIdeas(): IdeaEntry[] {
           typeof o.createdAt === "number" && Number.isFinite(o.createdAt)
             ? o.createdAt
             : Date.now();
-        return { id, text: text.slice(0, MAX_TEXT_LEN), done, createdAt };
+        const moodRaw = typeof o.mood === "string" ? (o.mood as string) : "";
+        const mood: IdeaMood | undefined =
+          moodRaw === "warm" ||
+          moodRaw === "cool" ||
+          moodRaw === "tender" ||
+          moodRaw === "dark" ||
+          moodRaw === "neutral"
+            ? (moodRaw as IdeaMood)
+            : undefined;
+        return { id, text: text.slice(0, MAX_TEXT_LEN), done, createdAt, mood };
       })
       .filter((x): x is IdeaEntry => x !== null);
   } catch {
@@ -56,12 +76,13 @@ export function saveIdeas(list: IdeaEntry[]): boolean {
   );
 }
 
-export function createIdea(text: string): IdeaEntry {
+export function createIdea(text: string, mood?: IdeaMood): IdeaEntry {
   return {
     id: makeId(),
     text: text.slice(0, MAX_TEXT_LEN),
     done: false,
     createdAt: Date.now(),
+    mood,
   };
 }
 

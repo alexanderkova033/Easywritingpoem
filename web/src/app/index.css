@@ -370,6 +370,17 @@ html[data-backdrop-motion="off"] body::after {
   animation: none !important;
 }
 
+/* Pause backdrop animations while a full-viewport scrim is mounted (modals,
+   drawer, tour). GPU stops compositing the animated layers; the moment the
+   overlay unmounts the rule lifts and animation resumes from its paused
+   frame, so soon-visible motion picks up seamlessly. */
+html:has(.overlay) body::before,
+html:has(.overlay) body::after,
+html:has(.spotlight-overlay) body::before,
+html:has(.spotlight-overlay) body::after {
+  animation-play-state: paused;
+}
+
 /* Manual power toggle (data-backdrop-power="low|very-low" set by JS) */
 html[data-backdrop-power="low"] {
   --grain-opacity: 0.024;

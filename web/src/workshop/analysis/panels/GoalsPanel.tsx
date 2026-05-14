@@ -46,6 +46,10 @@ export function GoalsPanel({
         <span className="tool-heading-you-text">Goals</span>
       </h3>
 
+      <IdeasNotebook />
+
+      <div className="goals-panel-divider" aria-hidden="true" />
+
       <div className="goal-presets-row">
         <div className="goal-presets" role="group" aria-label="Form presets">
           {FORM_PRESETS.map((p) => {
@@ -179,8 +183,6 @@ export function GoalsPanel({
       hasAnyGoalSet(goals) ? (
         <p className="goal-on-target">✓ All goals met</p>
       ) : null}
-
-      <IdeasNotebook />
     </div>
   );
 }
