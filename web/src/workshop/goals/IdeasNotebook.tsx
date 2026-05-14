@@ -99,7 +99,6 @@ export function IdeasNotebook() {
       // Only allow reorder within same done bucket.
       if (src.done !== tgt.done) return;
       const sIdx = ideas.indexOf(src);
-      const tIdx = ideas.indexOf(tgt);
       const next = ideas.slice();
       next.splice(sIdx, 1);
       const insertAt = next.indexOf(tgt);
