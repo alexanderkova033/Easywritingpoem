@@ -13,7 +13,9 @@ const FUNCTION_WORDS = new Set([
   "below", "again", "once", "also",
 ]);
 
-export type LineStressSource = "lexicon" | "mixed" | "heuristic";
+export type LineStressSource = "lexicon" | "mixed" | "heuristic" | "manual";
+
+export type ManualStressOverrides = Readonly<Record<string, string>>;
 
 export interface LineMeterHint {
   lineNumber: number;
@@ -43,30 +45,71 @@ export function stressPatternForWordHeuristic(raw: string): string {
 function stressPatternFromLexiconToken(
   raw: string,
   lexicon: ReadonlyMap<string, string> | null,
-): { pattern: string; hit: boolean } {
+  overrides: ManualStressOverrides | null = null,
+): { pattern: string; hit: boolean; manual: boolean } {
   const w = normalizeWordForLex(raw);
-  if (!w) return { pattern: "", hit: false };
+  if (!w) return { pattern: "", hit: false, manual: false };
+  const override = overrides?.[w];
+  if (override) return { pattern: override, hit: true, manual: true };
   const direct = lexicon?.get(w);
-  if (direct) return { pattern: direct, hit: true };
+  if (direct) return { pattern: direct, hit: true, manual: false };
   if (w.includes("-")) {
     const parts = w.split("-").filter(Boolean);
     let acc = "";
     let any = false;
+    let manualAny = false;
     for (const p of parts) {
+      const pOverride = overrides?.[p];
+      if (pOverride) { acc += pOverride; any = true; manualAny = true; continue; }
       const pat = lexicon?.get(p);
       if (pat) { acc += pat; any = true; }
       else acc += stressPatternForWordHeuristic(p);
     }
-    return { pattern: acc, hit: any };
+    return { pattern: acc, hit: any, manual: manualAny };
   }
-  return { pattern: stressPatternForWordHeuristic(raw), hit: false };
+  return { pattern: stressPatternForWordHeuristic(raw), hit: false, manual: false };
 }
 
 export function stressPatternForWord(
   raw: string,
   lexicon: ReadonlyMap<string, string> | null,
+  overrides: ManualStressOverrides | null = null,
 ): string {
-  return stressPatternFromLexiconToken(raw, lexicon).pattern;
+  return stressPatternFromLexiconToken(raw, lexicon, overrides).pattern;
+}
+
+export interface WordPatternSegment {
+  /** Raw word as it appears in the line (including punctuation/case). */
+  word: string;
+  /** Lowercased, stripped form used as override key. */
+  normalized: string;
+  /** Per-syllable pattern (combination of '/' and 'x'). */
+  pattern: string;
+  /** Inclusive start position of this word's pattern in the line-level stressPattern. */
+  start: number;
+  /** Exclusive end position of this word's pattern in the line-level stressPattern. */
+  end: number;
+  /** True when stress came from a manual override. */
+  manual: boolean;
+}
+
+/** Walk one line and return per-word stress segments aligned to the concatenated line pattern. */
+export function wordPatternsForLine(
+  text: string,
+  lexicon: ReadonlyMap<string, string> | null,
+  overrides: ManualStressOverrides | null = null,
+): WordPatternSegment[] {
+  const words = wordsInLine(text);
+  const out: WordPatternSegment[] = [];
+  let cursor = 0;
+  for (const w of words) {
+    const { pattern, manual } = stressPatternFromLexiconToken(w, lexicon, overrides);
+    const normalized = normalizeWordForLex(w);
+    const start = cursor;
+    cursor += pattern.length;
+    out.push({ word: w, normalized, pattern, start, end: cursor, manual });
+  }
+  return out;
 }
 
 export function iambicFitPercentForPattern(pattern: string): number | null {
@@ -79,8 +122,9 @@ export function iambicFitPercentForPattern(pattern: string): number | null {
   return Math.round((100 * matched) / pattern.length);
 }
 
-function classifyLineStressSource(hits: number, total: number): LineStressSource {
+function classifyLineStressSource(hits: number, total: number, manualHits: number): LineStressSource {
   if (total <= 0) return "heuristic";
+  if (manualHits > 0) return "manual";
   if (hits === total) return "lexicon";
   if (hits > 0) return "mixed";
   return "heuristic";
@@ -89,6 +133,7 @@ function classifyLineStressSource(hits: number, total: number): LineStressSource
 export function meterHintsForBody(
   body: string,
   lexicon: ReadonlyMap<string, string> | null,
+  overrides: ManualStressOverrides | null = null,
 ): LineMeterHint[] {
   const rawLines = body.split("\n");
   const out: LineMeterHint[] = [];
@@ -98,17 +143,19 @@ export function meterHintsForBody(
     let stressPattern = "";
     let lexHits = 0;
     let lexTotal = 0;
+    let manualHits = 0;
     for (const w of words) {
-      const { pattern, hit } = stressPatternFromLexiconToken(w, lexicon);
+      const { pattern, hit, manual } = stressPatternFromLexiconToken(w, lexicon, overrides);
       stressPattern += pattern;
       if (normalizeWordForLex(w)) {
         lexTotal++;
         if (hit) lexHits++;
+        if (manual) manualHits++;
       }
     }
     const syllables = countSyllablesInLine(text);
     const iambicFitPercent = iambicFitPercentForPattern(stressPattern);
-    const stressSource = classifyLineStressSource(lexHits, lexTotal);
+    const stressSource = classifyLineStressSource(lexHits, lexTotal, manualHits);
     out.push({ lineNumber: i + 1, syllables, stressPattern, iambicFitPercent, stressSource });
   }
   return out;
@@ -132,7 +179,7 @@ export function summarizeMeterCoverage(
     if (text.trim() === "") continue;
     nonEmptyLines++;
     const src = hints[i]!.stressSource;
-    if (src === "lexicon") lexiconLines++;
+    if (src === "lexicon" || src === "manual") lexiconLines++;
     else if (src === "mixed") mixedLines++;
     else heuristicLines++;
   }

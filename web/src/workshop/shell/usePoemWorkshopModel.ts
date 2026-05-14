@@ -58,6 +58,7 @@ import {
 import {
   meterHintsForBody,
   summarizeMeterCoverage,
+  type ManualStressOverrides,
 } from "@/workshop/meter/meter-hints";
 import { useHeavyAnalysis } from "@/workshop/analysis/use-heavy-analysis";
 import { buildPublicationChecklist } from "@/workshop/analysis/publication-checklist";
@@ -146,7 +147,12 @@ const SNAPSHOT_SAVE_MSG =
 const SNAPSHOT_DELETE_MSG =
   "Could not update snapshots in browser storage.";
 
-export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manualRhymeLinks: string[] = [], manualRhymeUnlinks: string[] = []) {
+export function usePoemWorkshopModel(
+  rhymeBreadth: RhymeBreadth = "near",
+  manualRhymeLinks: string[] = [],
+  manualRhymeUnlinks: string[] = [],
+  manualStressOverrides: ManualStressOverrides = {},
+) {
   const [library, setLibrary] = useState<DraftLibrary>(() => {
     migrateLegacyDraftIfNeeded();
     return loadOrCreateLibrary();
@@ -373,8 +379,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     [heavyBody],
   );
   const meterHints = useMemo(
-    () => meterHintsForBody(heavyBody, stressLexicon),
-    [heavyBody, stressLexicon],
+    () => meterHintsForBody(heavyBody, stressLexicon, manualStressOverrides),
+    [heavyBody, stressLexicon, manualStressOverrides],
   );
   const heavy = useHeavyAnalysis(
     heavyLines,
@@ -1122,6 +1128,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near", manual
     quickDocStats,
     docStats,
     meterHints,
+    stressLexicon,
     stressLexiconReady: Boolean(stressLexicon),
     stressLexiconErr,
     rhymeClusters,

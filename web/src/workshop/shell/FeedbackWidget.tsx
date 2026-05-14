@@ -58,6 +58,7 @@ export function FeedbackWidget() {
         onClick={openModal}
         aria-label="Share feedback about easywriting-poem"
       >
+        <span className="feedback-inline-btn-icon" aria-hidden="true">💬</span>
         Send feedback
       </button>
 

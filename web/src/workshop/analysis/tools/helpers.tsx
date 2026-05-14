@@ -6,12 +6,14 @@ export const LINES_TABLE_MAX = 400;
 export const METER_TABLE_MAX = 400;
 
 export function meterStressSourceMark(s: LineStressSource): string {
+  if (s === "manual") return "✎";
   if (s === "lexicon") return "✓";
   if (s === "mixed") return "~";
   return "—";
 }
 
 export function meterStressSourceHint(s: LineStressSource): string {
+  if (s === "manual") return "Manually adjusted stress for one or more words";
   if (s === "lexicon") return "Stress from CMU dictionary for this line";
   if (s === "mixed") return "Mixed dictionary + heuristic stress";
   return "Heuristic stress (word not in CMU list or invented)";

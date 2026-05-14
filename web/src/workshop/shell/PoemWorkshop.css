@@ -7749,3 +7749,150 @@ button.snap-dupes-strip:hover {
   grid-column: 1 / -1;
   margin-top: 0.45rem;
 }
+
+/* ── Meter manual stress override editing ────────────────────────────────── */
+
+.meter-edit-toggle {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.22rem 0.55rem;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  margin-left: auto;
+}
+
+.meter-edit-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  border-color: var(--accent);
+}
+
+.meter-edit-toggle.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #fff);
+}
+
+.meter-edit-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.meter-edit-hint {
+  margin: 0.1rem 0 0.55rem;
+}
+
+.tool-block-meter.is-editing .meter-bar-row {
+  cursor: default;
+}
+
+.tool-block-meter.is-editing .meter-bar-row:hover {
+  background: transparent;
+}
+
+.meter-bar-beats .meter-word-group {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 0 3px;
+  border-radius: 4px;
+  border: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.meter-bar-beats .meter-word-group.is-manual {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.meter-beat-btn {
+  appearance: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+  width: 9px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.08s ease, opacity 0.13s ease;
+}
+
+.meter-beat-btn.meter-beat-s {
+  height: 1rem;
+  background: var(--accent);
+  opacity: 0.82;
+}
+
+.meter-beat-btn.meter-beat-u {
+  height: 0.45rem;
+  background: var(--muted);
+  opacity: 0.45;
+}
+
+.meter-beat-btn:hover {
+  transform: scaleY(1.12);
+  opacity: 1;
+}
+
+.meter-beat-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.meter-overrides {
+  margin-top: 0.7rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+}
+
+.meter-overrides-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.meter-overrides-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.meter-override-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.18rem 0.3rem;
+  border-radius: 6px;
+}
+
+.meter-override-row:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.meter-override-word {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 5rem;
+}
+
+.meter-override-pattern {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1 1 auto;
+  height: 1.05rem;
+}

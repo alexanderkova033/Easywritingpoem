@@ -49,9 +49,26 @@ export interface GibberishSignals {
   wordLikeRatio: number;
   dominantCharRatio: number;
   averageWordLen: number;
+  maxConsonantRun: number;
+  tokensWithLongConsonantRun: number;
 }
 
 const VOWEL_RE = /[aeiouyAEIOUY]/;
+const CONSONANT_RE = /[a-zA-Z]/;
+
+function maxConsonantRunIn(token: string): number {
+  let run = 0;
+  let best = 0;
+  for (const ch of token) {
+    if (CONSONANT_RE.test(ch) && !VOWEL_RE.test(ch)) {
+      run++;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  return best;
+}
 
 export function computeGibberishSignals(text: string): GibberishSignals {
   const length = text.length;
@@ -73,15 +90,23 @@ export function computeGibberishSignals(text: string): GibberishSignals {
   let longestTokenVowelless = false;
   let wordLike = 0;
   let totalLen = 0;
+  let maxRun = 0;
+  let tokensWithLongRun = 0;
   for (const t of tokens) {
     totalLen += t.length;
     if (t.length > longestToken) {
       longestToken = t.length;
       longestTokenVowelless = !VOWEL_RE.test(t);
     }
+    const run = maxConsonantRunIn(t);
+    if (run > maxRun) maxRun = run;
+    if (run >= 4) tokensWithLongRun++;
     const hasAlpha = /[a-zA-Z]/.test(t);
     const passesShape =
-      t.length >= 1 && t.length <= 22 && (t.length <= 3 || VOWEL_RE.test(t));
+      t.length >= 1 &&
+      t.length <= 22 &&
+      (t.length <= 3 || VOWEL_RE.test(t)) &&
+      run < 5;
     if (hasAlpha && passesShape) wordLike++;
   }
   return {
@@ -94,6 +119,8 @@ export function computeGibberishSignals(text: string): GibberishSignals {
     wordLikeRatio: tokens.length ? wordLike / tokens.length : 1,
     dominantCharRatio: nonSpace ? dominant / nonSpace : 0,
     averageWordLen: tokens.length ? totalLen / tokens.length : 0,
+    maxConsonantRun: maxRun,
+    tokensWithLongConsonantRun: tokensWithLongRun,
   };
 }
 
@@ -104,7 +131,7 @@ export type GibberishVerdict =
 
 export function classifyGibberish(s: GibberishSignals): GibberishVerdict {
   // Very short input — leave it alone; the user may be drafting one line.
-  if (s.length < 40) return { kind: "ok" };
+  if (s.length < 20) return { kind: "ok" };
 
   if (s.longestToken >= 25 && s.longestTokenVowelless) {
     return { kind: "block", reason: "long-vowelless-token" };
@@ -112,7 +139,7 @@ export function classifyGibberish(s: GibberishSignals): GibberishVerdict {
   if (s.length >= 60 && s.dominantCharRatio >= 0.6) {
     return { kind: "block", reason: "single-char-spam" };
   }
-  if (s.totalTokens >= 8 && s.wordLikeRatio < 0.2) {
+  if (s.length >= 40 && s.totalTokens >= 8 && s.wordLikeRatio < 0.2) {
     return { kind: "block", reason: "low-word-like-ratio" };
   }
   if (s.length >= 80 && s.alphaRatio < 0.35) {
@@ -122,10 +149,15 @@ export function classifyGibberish(s: GibberishSignals): GibberishVerdict {
     return { kind: "block", reason: "mega-word-tokens" };
   }
 
+  // Borderline — defer to the cheap LLM check so false positives are
+  // impossible from heuristics alone. The LLM gets the final say.
   const borderline =
+    s.maxConsonantRun >= 6 ||
+    s.tokensWithLongConsonantRun >= 3 ||
     (s.totalTokens >= 8 && s.wordLikeRatio < 0.45) ||
     (s.length >= 200 && s.wordLikeRatio < 0.55) ||
-    (s.length >= 80 && s.alphaRatio < 0.5);
+    (s.length >= 80 && s.alphaRatio < 0.5) ||
+    (s.length >= 20 && s.tokensWithLongConsonantRun >= 2 && s.wordLikeRatio < 0.7);
 
   if (borderline) return { kind: "ask-llm", reason: "borderline" };
   return { kind: "ok" };

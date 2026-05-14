@@ -69,6 +69,7 @@ import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
+import { useManualStressOverrides } from "@/workshop/meter/stress-storage";
 import { useGlobalKeyboardShortcuts } from "./hooks/useGlobalKeyboardShortcuts";
 import { ExportModal } from "./ExportModal";
 import { ShortcutsModal } from "./ShortcutsModal";
@@ -118,7 +119,13 @@ export function PoemWorkshop() {
 
   const manualRhymeLinks = useManualRhymeLinks();
   const manualRhymeUnlinks = useManualRhymeUnlinks();
-  const m = usePoemWorkshopModel(rhymeBreadth, manualRhymeLinks.links, manualRhymeUnlinks.unlinks);
+  const manualStress = useManualStressOverrides();
+  const m = usePoemWorkshopModel(
+    rhymeBreadth,
+    manualRhymeLinks.links,
+    manualRhymeUnlinks.unlinks,
+    manualStress.overrides,
+  );
   const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
@@ -2308,6 +2315,10 @@ export function PoemWorkshop() {
             manualRhymeUnlinks={manualRhymeUnlinks.unlinks}
             onAddManualRhymeUnlink={manualRhymeUnlinks.addUnlink}
             onRemoveManualRhymeUnlink={manualRhymeUnlinks.removeUnlink}
+            stressLexicon={m.stressLexicon}
+            manualStressOverrides={manualStress.overrides}
+            onSetStressOverride={manualStress.setOverride}
+            onRemoveStressOverride={manualStress.removeOverride}
           />
           </Suspense>
 

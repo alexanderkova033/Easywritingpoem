@@ -13,7 +13,7 @@ import type {
 } from "@/workshop/analysis/repeated-words";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
-import type { LineMeterHint } from "@/workshop/meter/meter-hints";
+import type { LineMeterHint, ManualStressOverrides } from "@/workshop/meter/meter-hints";
 import { StuckHelper } from "./StuckHelper";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
 import {
@@ -114,6 +114,10 @@ export interface WorkshopToolPanelsProps {
   manualRhymeUnlinks?: string[];
   onAddManualRhymeUnlink?: (a: string, b: string) => void;
   onRemoveManualRhymeUnlink?: (key: string) => void;
+  stressLexicon: ReadonlyMap<string, string> | null;
+  manualStressOverrides: ManualStressOverrides;
+  onSetStressOverride: (word: string, pattern: string) => void;
+  onRemoveStressOverride: (word: string) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -170,6 +174,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           stressLexiconErr={props.stressLexiconErr}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
+          poemLines={props.poemLines}
+          stressLexicon={props.stressLexicon}
+          manualStressOverrides={props.manualStressOverrides}
+          onSetStressOverride={props.onSetStressOverride}
+          onRemoveStressOverride={props.onRemoveStressOverride}
         />
       ) : null}
 
