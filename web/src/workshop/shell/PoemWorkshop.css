@@ -5411,6 +5411,286 @@
   margin: 0.15rem 0 0;
 }
 
+/* visual rhyme scheme builder */
+
+.goal-scheme-blurb {
+  margin: 0 0 0.35rem;
+}
+
+.goal-scheme-chip-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.goal-scheme-example {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--muted));
+  border-radius: 8px;
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, #000 35%, transparent);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.goal-scheme-example-title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+}
+
+.goal-scheme-example-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.goal-scheme-example-lines li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.goal-scheme-example-text {
+  flex: 1;
+  color: var(--text);
+  font-style: italic;
+}
+
+.goal-scheme-example-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.goal-scheme-builder {
+  margin: 0.5rem 0 0.25rem;
+  padding: 0.55rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--border) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+}
+
+.goal-scheme-builder-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goal-scheme-builder-hint {
+  font-weight: 400;
+}
+
+.goal-scheme-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.goal-scheme-slots-empty {
+  padding: 0.3rem 0;
+}
+
+.goal-scheme-slot {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 0.25rem 0.4rem;
+  border: 1.5px solid;
+  border-radius: 7px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.12s ease;
+}
+
+.goal-scheme-slot:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.goal-scheme-slot-num {
+  font-size: 0.6rem;
+  opacity: 0.65;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.goal-scheme-slot-letter {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.goal-scheme-slot-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, border-style 0.12s ease;
+}
+
+.goal-scheme-slot-btn:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-style: solid;
+}
+
+.goal-scheme-slot-btn--minus {
+  border-color: color-mix(in srgb, var(--muted) 60%, var(--border));
+  color: var(--muted);
+}
+.goal-scheme-slot-btn--minus:hover {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+
+.goal-scheme-scope {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--surface, var(--bg));
+  margin: 0.4rem 0 0;
+}
+
+.goal-scheme-scope-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.goal-scheme-scope-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.goal-scheme-preview {
+  margin: 0.55rem 0 0;
+  padding: 0.5rem 0.55rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--border) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+
+.goal-scheme-preview-head {
+  margin: 0 0 0.4rem;
+}
+
+.goal-scheme-preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.goal-scheme-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.4rem;
+  border-radius: 6px;
+  border-left: 3px solid;
+  background: var(--surface, var(--bg));
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.goal-scheme-preview-row.is-miss {
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface, var(--bg)));
+}
+
+.goal-scheme-preview-num {
+  font-size: 0.66rem;
+  opacity: 0.6;
+  font-weight: 600;
+  min-width: 1.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-scheme-preview-word {
+  flex: 1;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.goal-scheme-preview-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 0.35rem;
+  border-radius: 5px;
+  border: 1px solid;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.goal-scheme-preview-tag--target.is-miss {
+  outline: 1px dashed var(--danger);
+  outline-offset: 1px;
+}
+
+.goal-scheme-preview-arrow {
+  opacity: 0.45;
+  font-size: 0.78rem;
+}
+
+.goal-scheme-custom-toggle {
+  margin-top: 0.4rem;
+}
+
+.goal-scheme-custom-toggle-btn {
+  font-size: 0.74rem;
+}
+
 /* ── Soft hints list ─────────────────────────────────────────────────────── */
 
 .goal-soft-hints {
