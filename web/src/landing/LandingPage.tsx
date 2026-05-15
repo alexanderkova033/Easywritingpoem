@@ -104,8 +104,8 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             <span className="landing-headline-accent">See it analyzed — live.</span>
           </h1>
           <p className="landing-sub">
-            Rhyme scheme, syllable counts, and meter update as you type.
-            AI suggestions when you're stuck. No account. Your words stay private.
+            Rhyme, syllables, meter — live as you type.
+            AI when you're stuck. No sign-up. Your words stay in your browser.
           </p>
 
           {/* Live typing demo — mirrors actual editor layout */}
@@ -115,8 +115,14 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
               <span className="landing-demo-grid" />
               <div className="landing-demo-statusbar">
                 <span className="landing-demo-live"><span className="landing-demo-livedot" />LIVE</span>
-                <span className="landing-demo-status-meta">analyzing…</span>
-                <span className="landing-demo-status-meta landing-demo-status-meta-right">8/8/8/8</span>
+                <span className="landing-demo-status-stack">
+                  <span className="landing-demo-status-meta landing-demo-status-analyzing">analyzing<span className="landing-demo-dots" aria-hidden /></span>
+                  <span className="landing-demo-status-meta landing-demo-status-done">✓ ABAB · iambic tetrameter</span>
+                </span>
+                <span className="landing-demo-score-pop" aria-label="AI score">
+                  <span className="landing-demo-score-label">SCORE</span>
+                  <span className="landing-demo-score-num">97</span>
+                </span>
               </div>
               <div className="landing-demo-line">
                 <span className="landing-demo-text landing-demo-text-1">The candle burns in winter's grip,</span>
@@ -157,7 +163,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
               <span className="landing-cta-short">Try it free →</span>
             </button>
           </div>
-          <p className="landing-hero-reassurance">Free · Saves in your browser · No sign-up · Private</p>
+          <p className="landing-hero-reassurance">Free · Private · No sign-up</p>
 
           {/* Subtle daily prompt + streak strip — only shown if user has used the app before */}
           {(streak.count > 0 || dailyPrompt) && (
