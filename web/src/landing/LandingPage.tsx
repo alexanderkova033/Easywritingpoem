@@ -71,34 +71,51 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             AI suggestions when you're stuck. No account. Your words stay private.
           </p>
 
-          {/* Live typing demo */}
+          {/* Live typing demo — mirrors actual editor layout */}
           <div className="landing-demo" aria-hidden>
             <div className="landing-demo-editor">
+              <span className="landing-demo-scanline" />
+              <span className="landing-demo-grid" />
+              <div className="landing-demo-statusbar">
+                <span className="landing-demo-live"><span className="landing-demo-livedot" />LIVE</span>
+                <span className="landing-demo-status-meta">analyzing…</span>
+                <span className="landing-demo-status-meta landing-demo-status-meta-right">8/8/8/8</span>
+              </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-text landing-demo-text-1">The candle burns in winter's grip,</span>
                 <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-1">A</span>
+                <span className="landing-demo-text landing-demo-text-1">The candle burns in winter's grip,</span>
+                <span className="landing-demo-bar landing-demo-bar-1" />
                 <span className="landing-demo-syl landing-demo-syl-1">8</span>
               </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-text landing-demo-text-2">and shadows stretch across the floor.</span>
                 <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-2">B</span>
+                <span className="landing-demo-text landing-demo-text-2">and shadows stretch across the floor.</span>
+                <span className="landing-demo-bar landing-demo-bar-2" />
                 <span className="landing-demo-syl landing-demo-syl-2">8</span>
               </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-text landing-demo-text-3">A moth has pressed its paper wing</span>
                 <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-3">A</span>
+                <span className="landing-demo-text landing-demo-text-3">A moth has pressed its paper wing</span>
+                <span className="landing-demo-bar landing-demo-bar-3" />
                 <span className="landing-demo-syl landing-demo-syl-3">8</span>
               </div>
               <div className="landing-demo-line landing-demo-line-typing">
+                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-4">B</span>
                 <span className="landing-demo-text landing-demo-text-4">against the cold and frosted door.</span>
                 <span className="landing-demo-cursor" />
-                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-4">B</span>
+                <span className="landing-demo-bar landing-demo-bar-4" />
                 <span className="landing-demo-syl landing-demo-syl-4">8</span>
               </div>
+              {/* Rhyme connector arcs */}
+              <svg className="landing-demo-arcs" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden>
+                <path className="landing-demo-arc landing-demo-arc-a" d="M 10 18 Q 4 41, 10 64" />
+                <path className="landing-demo-arc landing-demo-arc-b" d="M 10 41 Q 4 64, 10 87" />
+              </svg>
             </div>
             <div className="landing-demo-labels">
               <span className="landing-demo-label-tag">Rhyme: ABAB</span>
               <span className="landing-demo-label-tag">8 syllables / line</span>
+              <span className="landing-demo-label-tag landing-demo-label-meter">Meter: iambic tetrameter</span>
             </div>
           </div>
 
@@ -133,24 +150,57 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       <section className="landing-preview" id="how-it-works" aria-label="App preview">
         <h2 className="landing-section-title">What it looks like</h2>
         <div className="lp-shell" aria-hidden>
-          {/* Topbar */}
+          <span className="lp-shell-scanline" />
+          {/* Topbar — matches WorkshopTopbarHeader */}
           <div className="lp-topbar">
-            <span className="lp-brand">easywriting <span className="lp-brand-badge">poem</span></span>
-            <span className="lp-draft-pill">The Candle</span>
-            <span className="lp-stat">42 words</span>
-            <span className="lp-save">● Saved</span>
+            <span className="lp-brand">
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
+                <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" />
+              </svg>
+              easywriting <span className="lp-brand-badge">poem</span>
+            </span>
+            <span className="lp-draft-pill">The Candle ▾</span>
+            <span className="lp-stat">42 words · 6 lines</span>
+            <span className="lp-stat-chip">
+              <span className="lp-stat-chip-dot" />
+              AI <span className="lp-stat-chip-num">82</span>
+            </span>
+            <span className="lp-stat-chip lp-stat-chip-rhyme">
+              <span className="lp-rhyme-mini lp-rhyme-mini-a" />
+              <span className="lp-rhyme-mini lp-rhyme-mini-b" />
+              <span className="lp-rhyme-mini lp-rhyme-mini-a" />
+              <span className="lp-rhyme-mini lp-rhyme-mini-b" />
+            </span>
+            <span className="lp-save"><span className="lp-save-dot" />Saved</span>
           </div>
           {/* 3-column grid */}
           <div className="lp-grid">
-            {/* Rail */}
+            {/* Rail — real labels with glyphs */}
             <div className="lp-rail">
-              <div className="lp-rail-btn lp-rail-btn-guide">Guide</div>
-              <div className="lp-rail-btn">Lib</div>
-              <div className="lp-rail-btn">Export</div>
+              {[
+                { glyph: "◧", label: "Tools" },
+                { glyph: "❏", label: "Library" },
+                { glyph: "✦", label: "Style" },
+                { glyph: "◐", label: "Bg" },
+                { glyph: "↗", label: "Export", primary: true },
+                { glyph: "◉", label: "Focus" },
+                { glyph: "?", label: "Guide", active: true },
+              ].map((b) => (
+                <div
+                  key={b.label}
+                  className={`lp-rail-btn${b.active ? " lp-rail-btn-guide" : ""}${b.primary ? " lp-rail-btn-primary" : ""}`}
+                >
+                  <span className="lp-rail-glyph">{b.glyph}</span>
+                  <span className="lp-rail-label">{b.label}</span>
+                </div>
+              ))}
             </div>
-            {/* Editor */}
+            {/* Editor — badge LEFT gutter, syllable+rhythm RIGHT */}
             <div className="lp-editor">
-              <div className="lp-title-field">The Candle</div>
+              <div className="lp-editor-meta">
+                <span className="lp-title-field">The Candle</span>
+                <span className="lp-form-tag">sonnet</span>
+              </div>
               <div className="lp-poem-lines">
                 {[
                   { text: "The candle burns in winter's grip,", badge: "A", syl: 8 },
@@ -162,39 +212,48 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
                   { text: "its wax grows thin, its circle bright.", badge: "D", syl: 8 },
                 ].map((row, i) => (
                   <div key={i} className="lp-poem-row">
+                    <span className="lp-rhyme-gutter">
+                      {row.badge && <span className={`lp-rhyme-badge lp-rhyme-${row.badge.toLowerCase()}`}>{row.badge}</span>}
+                    </span>
                     <span className="lp-poem-text">{row.text}</span>
-                    {row.badge && <span className={`lp-rhyme-badge lp-rhyme-${row.badge.toLowerCase()}`}>{row.badge}</span>}
-                    {row.syl != null && <span className="lp-syl">{row.syl}</span>}
+                    {row.syl != null && (
+                      <span className="lp-syl-wrap">
+                        <span className="lp-syl-bar" style={{ width: `${(row.syl / 10) * 28}px` }} />
+                        <span className="lp-syl">{row.syl}</span>
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
-            {/* Tools */}
+            {/* Tools — real tab names */}
             <div className="lp-tools">
               <div className="lp-tools-tabs">
                 <span className="lp-ttab">Queue</span>
-                <span className="lp-ttab lp-ttab-active">Sound</span>
+                <span className="lp-ttab">Meter</span>
+                <span className="lp-ttab lp-ttab-active">Rhyme</span>
                 <span className="lp-ttab">Ideas</span>
               </div>
               <div className="lp-tools-inner">
-                <div className="lp-tool-heading">Rhyme scheme</div>
+                <div className="lp-tool-heading">End-rhyme clusters</div>
                 <div className="lp-rhyme-rows">
-                  {[["A","grip / wing"],["B","floor / door"],["C","last"],["D","bright"]].map(([label, words]) => (
+                  {[["A","grip · wing"],["B","floor · door"],["C","last"],["D","bright"]].map(([label, words]) => (
                     <div key={label} className="lp-rhyme-row">
                       <span className={`lp-rhyme-badge lp-rhyme-${label.toLowerCase()}`}>{label}</span>
                       <span className="lp-rhyme-words">{words}</span>
                     </div>
                   ))}
                 </div>
-                <div className="lp-tool-heading" style={{ marginTop: "0.8rem" }}>Meter</div>
+                <div className="lp-tool-heading" style={{ marginTop: "0.9rem" }}>Stress pattern</div>
                 <div className="lp-meter-rows">
-                  {[8,8,8,8].map((n,i) => (
+                  {["◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •"].map((p,i) => (
                     <div key={i} className="lp-meter-row">
-                      <span className="lp-meter-bar" style={{ width: `${(n/10)*100}%` }} />
-                      <span className="lp-meter-num">{n}</span>
+                      <span className="lp-meter-pattern">{p}</span>
+                      <span className="lp-meter-num">8</span>
                     </div>
                   ))}
                 </div>
+                <div className="lp-meter-fit">iambic fit · <span className="lp-meter-fit-num">96%</span></div>
               </div>
             </div>
           </div>

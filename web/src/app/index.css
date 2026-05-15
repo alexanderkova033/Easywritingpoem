@@ -693,18 +693,11 @@ html[data-backdrop-power="very-low"] .tools-sticky-head {
   background: color-mix(in srgb, var(--surface) 96%, var(--bg)) !important;
 }
 
-/* 2. Simplify body::before — keep the two strongest ambient washes for color
-      depth, drop SVG textures, lamp pools, secondary washes, and grid lines.
-      Also kill the full-viewport saturate/brightness filter and the drift
-      animation. ~80% of the layer cost gone; theme color identity preserved. */
+/* 2. Keep theme painting intact — only kill the costly per-frame work:
+      drift animation, full-viewport saturate/brightness filter, transforms,
+      will-change hint. Painted SVG layers (silhouettes, foliage, etc.)
+      stay visible since their cost is one-time rasterisation, not per-frame. */
 html[data-backdrop-power="very-low"] body::before {
-  background-image:
-    radial-gradient(ellipse 130% 110% at 18% 26%, var(--ambient-a), transparent 72%),
-    radial-gradient(ellipse 110% 100% at 84% 24%, var(--ambient-b), transparent 70%),
-    radial-gradient(ellipse 140% 120% at 50% 94%, var(--ambient-c), transparent 76%) !important;
-  background-size: 160% 160%, 155% 155%, 170% 170% !important;
-  background-position: 0% 0%, 100% 0%, 50% 100% !important;
-  background-repeat: no-repeat !important;
   filter: none !important;
   transform: none !important;
   animation: none !important;

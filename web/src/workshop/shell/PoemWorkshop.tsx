@@ -10,11 +10,14 @@ import {
 } from "@/workshop/appearance/appearance";
 import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields";
 import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
+import { lazyWithReload } from "@/app/lazy-with-reload";
 // BackgroundPicker pulls in the full AI theme generator + ColorEditor; only
 // rendered when the user opens the Page Background modal. Lazy keeps it off
 // the initial workshop bundle.
-const BackgroundPicker = lazy(() =>
-  import("@/workshop/appearance/backgrounds/BackgroundPicker").then((m) => ({ default: m.BackgroundPicker })),
+const BackgroundPicker = lazy(
+  lazyWithReload(() =>
+    import("@/workshop/appearance/backgrounds/BackgroundPicker").then((m) => ({ default: m.BackgroundPicker })),
+  ),
 );
 import { FirstVisitHint } from "./FirstVisitHint";
 import { SamplePoemBanner } from "./SamplePoemBanner";
@@ -26,8 +29,10 @@ import { useToolTabListKeyboard } from "@/workshop/analysis/useToolTabListKeyboa
 import { useWorkshopToolHotkeys } from "@/workshop/analysis/useWorkshopToolHotkeys";
 // Lazy-load the full tools panel — it pulls in all tool components (rhyme, syllables,
 // spell, stats, suggest, etc.) which would otherwise inflate the critical-path bundle.
-const WorkshopToolPanels = lazy(() =>
-  import("@/workshop/analysis/WorkshopToolPanels").then((m) => ({ default: m.WorkshopToolPanels }))
+const WorkshopToolPanels = lazy(
+  lazyWithReload(() =>
+    import("@/workshop/analysis/WorkshopToolPanels").then((m) => ({ default: m.WorkshopToolPanels })),
+  ),
 );
 import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
@@ -36,8 +41,10 @@ import { FORM_PRESETS } from "@/workshop/goals/types";
 import { loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/ai-analysis-storage";
 // Lazy-load the AI analysis panel — it pulls in the analyze/compare client,
 // chat UI, and rationale renderer, none of which are needed for first paint.
-const AiAnalysis = lazy(() =>
-  import("@/workshop/analysis/AiAnalysis").then((m) => ({ default: m.AiAnalysis }))
+const AiAnalysis = lazy(
+  lazyWithReload(() =>
+    import("@/workshop/analysis/AiAnalysis").then((m) => ({ default: m.AiAnalysis })),
+  ),
 );
 import { useWritingStreakOnMount } from "@/workshop/shell/useWritingStreakOnMount";
 import { useVirtualKeyboardClass } from "@/workshop/shell/useVirtualKeyboardClass";

@@ -74,6 +74,24 @@
   isolation: isolate;
 }
 
+/* Faint dot grid backplate — adds techy texture under aurora */
+.landing-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--accent) 28%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+  background-position: 0 0;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .landing-hero-inner {
   max-width: 640px;
   display: flex;
@@ -83,6 +101,52 @@
   gap: 1.5rem;
   position: relative;
   z-index: 2;
+}
+
+/* Scale up hero on big screens — default sizes look lost in viewport */
+@media (min-width: 1280px) {
+  .landing-hero {
+    padding: 9rem 1.5rem 7rem;
+  }
+  .landing-hero-inner {
+    max-width: 820px;
+    gap: 1.8rem;
+  }
+  .landing-headline {
+    font-size: clamp(3.6rem, 5.4vw, 5.6rem);
+  }
+  .landing-sub {
+    font-size: 1.25rem;
+    max-width: 620px;
+  }
+  .landing-demo {
+    max-width: 640px;
+  }
+  .landing-demo-editor {
+    font-size: 1.05rem;
+    padding: 1.5rem 1.7rem;
+  }
+  .landing-btn-lg {
+    font-size: 1.2rem;
+    padding: 1rem 2.4rem;
+    min-height: 3.2rem;
+  }
+}
+
+@media (min-width: 1680px) {
+  .landing-hero-inner {
+    max-width: 960px;
+  }
+  .landing-headline {
+    font-size: clamp(4.4rem, 5vw, 6.4rem);
+  }
+  .landing-sub {
+    font-size: 1.35rem;
+    max-width: 700px;
+  }
+  .landing-demo {
+    max-width: 720px;
+  }
 }
 
 /* ── Aurora gradient blobs ── */
@@ -343,7 +407,7 @@
   background: color-mix(in srgb, var(--surface) 92%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: 14px;
-  padding: 1.2rem 1.3rem;
+  padding: 0.85rem 1.1rem 1.1rem 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -356,12 +420,122 @@
     0 2px 8px color-mix(in srgb, var(--accent) 15%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Subtle grid pattern — techy backplate */
+.landing-demo-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 12%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 30%, transparent 80%);
+  z-index: 0;
+}
+
+/* Scan line sweep across editor — feels like live analysis */
+.landing-demo-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 70px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 45%,
+    color-mix(in srgb, var(--accent) 38%, transparent) 50%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 55%,
+    transparent 100%
+  );
+  filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  animation: demo-scan 5.5s ease-in-out 5s infinite;
+}
+
+@keyframes demo-scan {
+  0%   { transform: translateY(-70px); opacity: 0; }
+  10%  { opacity: 0.9; }
+  60%  { opacity: 0.9; }
+  70%  { transform: translateY(260px); opacity: 0; }
+  100% { transform: translateY(260px); opacity: 0; }
+}
+
+/* Status bar — LIVE indicator + analyzing meta */
+.landing-demo-statusbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.15rem 0.15rem 0.6rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--accent) 25%, var(--border));
+  font-family: var(--font-metric, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-demo-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, #d95f5f 18%, var(--bg));
+  color: color-mix(in srgb, #d95f5f 95%, var(--text));
+  font-weight: 800;
+}
+
+.landing-demo-livedot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d95f5f;
+  box-shadow: 0 0 6px #d95f5f;
+  animation: demo-live-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes demo-live-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+.landing-demo-status-meta {
+  color: var(--muted);
+  font-weight: 600;
+  opacity: 0.75;
+  animation: demo-status-dots 1.8s steps(4, end) infinite;
+}
+
+.landing-demo-status-meta-right {
+  margin-left: auto;
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+  opacity: 0.85;
+  animation: none;
+}
+
+@keyframes demo-status-dots {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.9; }
 }
 
 .landing-demo-line {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   padding: 0.22rem 0;
   min-height: 1.65rem;
 }
@@ -371,6 +545,90 @@
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* Rhythm bar to the left of syllable count — mirrors editor widget */
+.landing-demo-bar {
+  width: 22px;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 70%, transparent),
+    color-mix(in srgb, var(--accent) 35%, transparent)
+  );
+  opacity: 0;
+  flex-shrink: 0;
+  transform-origin: left center;
+}
+
+.landing-demo-bar-1 { animation: demo-bar-fill 0.5s ease 1.1s both, demo-bar-pulse 4s ease-in-out 2s infinite; }
+.landing-demo-bar-2 { animation: demo-bar-fill 0.5s ease 2.25s both, demo-bar-pulse 4s ease-in-out 3.2s infinite; }
+.landing-demo-bar-3 { animation: demo-bar-fill 0.5s ease 3.3s both, demo-bar-pulse 4s ease-in-out 4.4s infinite; }
+.landing-demo-bar-4 { animation: demo-bar-fill 0.5s ease 4.45s both, demo-bar-pulse 4s ease-in-out 5.6s infinite; }
+
+@keyframes demo-bar-fill {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 0.7; }
+}
+
+@keyframes demo-bar-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+
+/* SVG rhyme connector arcs — visualize ABAB pattern */
+.landing-demo-arcs {
+  position: absolute;
+  left: 4px;
+  top: 2.3rem;
+  bottom: 1rem;
+  width: 14px;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.landing-demo-arc {
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 4 6;
+  opacity: 0;
+}
+
+.landing-demo-arc-a {
+  stroke: color-mix(in srgb, #5b9be0 85%, transparent);
+  animation: demo-arc-in 0.6s ease 3.6s forwards, demo-arc-flow 6s linear 3.6s infinite;
+}
+
+.landing-demo-arc-b {
+  stroke: color-mix(in srgb, #5fba7d 85%, transparent);
+  animation: demo-arc-in 0.6s ease 4.7s forwards, demo-arc-flow 6s linear 4.7s infinite;
+}
+
+@keyframes demo-arc-in {
+  from { opacity: 0; stroke-dashoffset: 30; }
+  to   { opacity: 0.7; stroke-dashoffset: 0; }
+}
+
+@keyframes demo-arc-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -40; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-demo-scanline,
+  .landing-demo-livedot,
+  .landing-demo-status-meta,
+  .landing-demo-bar-1,
+  .landing-demo-bar-2,
+  .landing-demo-bar-3,
+  .landing-demo-bar-4,
+  .landing-demo-arc-a,
+  .landing-demo-arc-b { animation: none; }
+  .landing-demo-bar { opacity: 0.7; transform: scaleX(1); }
+  .landing-demo-arc { opacity: 0.6; }
 }
 
 /* Typewriter reveal — each line appears in sequence */
@@ -426,13 +684,15 @@
 }
 
 .landing-demo-badge-a {
-  background: color-mix(in srgb, #4c8eff 28%, var(--bg));
-  color: color-mix(in srgb, #4c8eff 95%, var(--text));
+  background: color-mix(in srgb, #5fba7d 28%, var(--bg));
+  color: color-mix(in srgb, #5fba7d 95%, var(--text));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #5fba7d 35%, transparent) inset;
 }
 
 .landing-demo-badge-b {
-  background: color-mix(in srgb, #27ae60 28%, var(--bg));
-  color: color-mix(in srgb, #27ae60 95%, var(--text));
+  background: color-mix(in srgb, #5b9be0 28%, var(--bg));
+  color: color-mix(in srgb, #5b9be0 95%, var(--text));
+  box-shadow: 0 0 0 1px color-mix(in srgb, #5b9be0 35%, transparent) inset;
 }
 
 .landing-demo-badge-1 { animation: demo-fade-in 0.35s ease 1.15s both; }
@@ -475,6 +735,13 @@
   padding: 0.2rem 0.6rem;
   border-radius: 99px;
   letter-spacing: 0.01em;
+  font-family: var(--font-metric, ui-monospace, monospace);
+}
+
+.landing-demo-label-meter {
+  color: color-mix(in srgb, #5b9be0 90%, var(--text));
+  background: color-mix(in srgb, #5b9be0 10%, var(--surface));
+  border-color: color-mix(in srgb, #5b9be0 28%, var(--border));
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
@@ -608,6 +875,40 @@
   background: var(--bg);
   font-size: 0.76rem;
   font-family: var(--font-ui);
+  position: relative;
+  isolation: isolate;
+}
+
+/* Periodic scan-line sweep across whole shell — techy live feel */
+.lp-shell-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 110px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 18%, transparent) 50%,
+    transparent 100%
+  );
+  filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+  animation: lp-scan 9s ease-in-out 2s infinite;
+}
+
+@keyframes lp-scan {
+  0%   { transform: translateY(-110px); opacity: 0; }
+  8%   { opacity: 0.7; }
+  55%  { opacity: 0.7; }
+  65%  { transform: translateY(420px); opacity: 0; }
+  100% { transform: translateY(420px); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-shell-scanline { animation: none; }
 }
 
 /* Topbar strip */
@@ -626,9 +927,66 @@
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   flex-shrink: 0;
 }
+
+.lp-brand svg {
+  flex-shrink: 0;
+}
+
+/* Topbar stat chip (AI score, rhyme scheme dots) */
+.lp-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 60%, var(--bg));
+  border: 1px solid var(--border);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  font-family: var(--font-metric, ui-monospace, monospace);
+}
+
+.lp-stat-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ai-score-high, #5fba7d);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ai-score-high, #5fba7d) 70%, transparent);
+  animation: lp-chip-dot-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes lp-chip-dot-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.25); }
+}
+
+.lp-stat-chip-num {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.lp-stat-chip-rhyme {
+  padding: 0.18rem 0.5rem;
+  gap: 0.18rem;
+}
+
+.lp-rhyme-mini {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+
+.lp-rhyme-mini-a { background: #5fba7d; }
+.lp-rhyme-mini-b { background: #5b9be0; }
 
 .lp-brand-badge {
   font-size: 0.55rem;
@@ -664,22 +1022,39 @@
   font-size: 0.7rem;
   font-weight: 600;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-/* 3-column grid */
+.lp-save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 80%, transparent);
+  animation: lp-save-blink 2.6s ease-in-out infinite;
+}
+
+@keyframes lp-save-blink {
+  0%, 100% { opacity: 1; }
+  60%      { opacity: 0.35; }
+}
+
+/* 3-column grid — wider rail to fit real labels */
 .lp-grid {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1.3fr) minmax(200px, 300px);
-  min-height: 340px;
+  grid-template-columns: 58px minmax(0, 1.25fr) minmax(210px, 320px);
+  min-height: 380px;
 }
 
 /* Rail */
 .lp-rail {
   border-right: 1px solid var(--border);
-  padding: 0.6rem 0.35rem;
+  padding: 0.6rem 0.4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   background: color-mix(in srgb, var(--surface) 82%, var(--bg));
 }
 
@@ -688,11 +1063,29 @@
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--muted);
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 700;
   text-align: center;
-  padding: 0.45rem 0.15rem 0.35rem;
-  letter-spacing: 0.03em;
+  padding: 0.4rem 0.15rem 0.32rem;
+  letter-spacing: 0.04em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+  text-transform: uppercase;
+}
+
+.lp-rail-glyph {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--text) 70%, var(--muted));
+  line-height: 1;
+}
+
+.lp-rail-label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .lp-rail-btn-guide {
@@ -701,13 +1094,33 @@
   color: var(--accent);
 }
 
+.lp-rail-btn-guide .lp-rail-glyph { color: var(--accent); }
+
+.lp-rail-btn-primary {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 25%, var(--bg)), color-mix(in srgb, var(--accent) 10%, var(--bg)));
+  color: var(--accent);
+}
+
+.lp-rail-btn-primary .lp-rail-glyph { color: var(--accent); }
+
 /* Editor */
 .lp-editor {
-  padding: 0.8rem 0.7rem 0.8rem 0.9rem;
+  padding: 0.85rem 0.75rem 0.85rem 0.6rem;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+  position: relative;
+}
+
+.lp-editor-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 .lp-title-field {
@@ -715,8 +1128,19 @@
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text);
-  padding-bottom: 0.35rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.lp-form-tag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  padding: 0.1em 0.45em;
+  border-radius: 4px;
+  font-family: var(--font-metric, ui-monospace, monospace);
 }
 
 .lp-poem-lines {
@@ -728,20 +1152,48 @@
 .lp-poem-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 1.45rem;
+  gap: 0.5rem;
+  min-height: 1.5rem;
   padding: 0.08rem 0;
+}
+
+/* Left gutter where rhyme-scheme letters live in real editor */
+.lp-rhyme-gutter {
+  width: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .lp-poem-text {
   flex: 1;
   font-family: var(--font-poem, serif);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text);
   line-height: 1.45;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Right syllable widget — bar + count, mirrors PoemBodyEditor */
+.lp-syl-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.lp-syl-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 65%, transparent),
+    color-mix(in srgb, var(--accent) 30%, transparent)
+  );
+  opacity: 0.6;
 }
 
 .lp-rhyme-badge {
@@ -752,10 +1204,11 @@
   flex-shrink: 0;
 }
 
-.lp-rhyme-a { background: color-mix(in srgb, #4c8eff 28%, var(--bg)); color: color-mix(in srgb, #4c8eff 95%, var(--text)); }
-.lp-rhyme-b { background: color-mix(in srgb, #27ae60 28%, var(--bg)); color: color-mix(in srgb, #27ae60 95%, var(--text)); }
-.lp-rhyme-c { background: color-mix(in srgb, #e67e22 28%, var(--bg)); color: color-mix(in srgb, #e67e22 95%, var(--text)); }
-.lp-rhyme-d { background: color-mix(in srgb, #9b59b6 28%, var(--bg)); color: color-mix(in srgb, #9b59b6 95%, var(--text)); }
+/* Real-app 6-color rhyme palette */
+.lp-rhyme-a { background: color-mix(in srgb, #5fba7d 24%, var(--bg)); color: color-mix(in srgb, #5fba7d 95%, var(--text)); box-shadow: 0 0 0 1px color-mix(in srgb, #5fba7d 35%, transparent) inset; }
+.lp-rhyme-b { background: color-mix(in srgb, #5b9be0 24%, var(--bg)); color: color-mix(in srgb, #5b9be0 95%, var(--text)); box-shadow: 0 0 0 1px color-mix(in srgb, #5b9be0 35%, transparent) inset; }
+.lp-rhyme-c { background: color-mix(in srgb, #e0995b 24%, var(--bg)); color: color-mix(in srgb, #e0995b 95%, var(--text)); box-shadow: 0 0 0 1px color-mix(in srgb, #e0995b 35%, transparent) inset; }
+.lp-rhyme-d { background: color-mix(in srgb, #b07be0 24%, var(--bg)); color: color-mix(in srgb, #b07be0 95%, var(--text)); box-shadow: 0 0 0 1px color-mix(in srgb, #b07be0 35%, transparent) inset; }
 
 .lp-syl {
   font-size: 0.58rem;
@@ -851,6 +1304,36 @@
   font-size: 0.6rem;
   font-family: var(--font-metric, monospace);
   color: var(--muted);
+  margin-left: auto;
+}
+
+/* Stress pattern dots — ◦ unstressed, • stressed */
+.lp-meter-pattern {
+  font-family: var(--font-metric, ui-monospace, monospace);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  color: color-mix(in srgb, var(--accent) 70%, var(--text));
+  line-height: 1;
+}
+
+.lp-meter-fit {
+  margin-top: 0.7rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-metric, ui-monospace, monospace);
+}
+
+.lp-meter-fit-num {
+  color: var(--ai-score-high, #5fba7d);
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 /* Hide on very small screens */

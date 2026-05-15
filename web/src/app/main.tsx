@@ -6,14 +6,19 @@ import { applyAppearance, loadAppearance } from "@/workshop/appearance/appearanc
 import { HoverHintsProvider } from "@/workshop/hints/HoverHintsContext";
 import { ToastProvider } from "@/shared/toast/ToastContext";
 import { ErrorBoundary } from "@/app/ErrorBoundary";
+import { clearChunkReloadFlag, lazyWithReload } from "@/app/lazy-with-reload";
 import { STORAGE_KEY_LANDING_DISMISSED } from "@/shared/storage-keys";
 import "@/app/index.css";
 
-const PoemWorkshop = lazy(() =>
-  import("@/workshop/shell/PoemWorkshop").then((m) => ({ default: m.PoemWorkshop })),
+const PoemWorkshop = lazy(
+  lazyWithReload(() =>
+    import("@/workshop/shell/PoemWorkshop").then((m) => ({ default: m.PoemWorkshop })),
+  ),
 );
-const LandingPage = lazy(() =>
-  import("@/landing/LandingPage").then((m) => ({ default: m.LandingPage })),
+const LandingPage = lazy(
+  lazyWithReload(() =>
+    import("@/landing/LandingPage").then((m) => ({ default: m.LandingPage })),
+  ),
 );
 
 applyAppearance(loadAppearance());
@@ -113,6 +118,10 @@ function readLandingDismissed(): boolean {
 
 function App() {
   const [showWorkshop, setShowWorkshop] = useState(readLandingDismissed);
+
+  useEffect(() => {
+    clearChunkReloadFlag();
+  }, []);
 
   // Push a history entry when entering the workshop so the browser Back button
   // returns to the landing page instead of leaving the site.
