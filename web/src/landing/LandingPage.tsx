@@ -211,6 +211,8 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         </div>
       </section>
 
+      {/* Lower zone — visually distinct band: app preview + concepts + footer CTA */}
+      <div className="landing-lower">
       {/* App preview mockup */}
       <section
         className="landing-preview"
@@ -436,6 +438,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
           Open the workshop — it's free →
         </button>
       </section>
+      </div>
     </div>
   );
 }
