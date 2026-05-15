@@ -103,64 +103,54 @@
   z-index: 2;
 }
 
-/* Scale up hero on big screens — make it command the viewport */
-@media (min-width: 1100px) {
+/* Scale up hero on big screens — command the viewport */
+@media (min-width: 900px) {
   .landing-hero {
-    padding: 8rem 2rem 6rem;
+    padding: 7rem 2rem 5rem;
   }
   .landing-hero-inner {
-    max-width: 880px;
-    gap: 1.9rem;
+    max-width: 820px;
+    gap: 1.8rem;
   }
   .landing-headline {
-    font-size: clamp(4rem, 6.2vw, 5.8rem);
+    font-size: clamp(3.8rem, 7vw, 5.4rem);
   }
   .landing-sub {
-    font-size: 1.2rem;
-    max-width: 640px;
+    font-size: 1.18rem;
+    max-width: 620px;
   }
   .landing-demo {
-    max-width: 680px;
-  }
-  .landing-demo-editor {
-    font-size: 1.05rem;
-    padding: 1.2rem 1.5rem 1.5rem;
-  }
-  .landing-btn,
-  .landing-btn-lg {
-    font-size: 1.15rem;
-    padding: 0.95rem 2.2rem;
-    min-height: 3.1rem;
+    max-width: 700px;
   }
 }
 
-@media (min-width: 1400px) {
+@media (min-width: 1200px) {
   .landing-hero {
-    padding: 9rem 2rem 7rem;
+    padding: 8rem 2.5rem 6rem;
   }
   .landing-hero-inner {
-    max-width: 1080px;
-    gap: 2.1rem;
+    max-width: 1100px;
+    gap: 2rem;
   }
   .landing-headline {
-    font-size: clamp(5.5rem, 6.4vw, 7.2rem);
+    font-size: clamp(5.5rem, 7.5vw, 7.4rem);
     letter-spacing: -0.04em;
-    line-height: 1.04;
+    line-height: 1.02;
   }
   .landing-sub {
-    font-size: 1.35rem;
-    line-height: 1.65;
-    max-width: 720px;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    max-width: 760px;
   }
   .landing-demo {
-    max-width: 800px;
+    max-width: 880px;
   }
   .landing-demo-editor {
-    font-size: 1.15rem;
-    padding: 1.4rem 1.8rem 1.7rem;
+    font-size: 1.2rem;
+    padding: 1.5rem 1.9rem 1.8rem;
   }
   .landing-demo-statusbar {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
   }
   .landing-btn,
   .landing-btn-lg {
@@ -169,30 +159,60 @@
     min-height: 3.4rem;
   }
   .landing-brand-name {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
   }
 }
 
-@media (min-width: 1700px) {
+@media (min-width: 1500px) {
   .landing-hero {
-    padding: 10rem 2rem 8rem;
+    padding: 9rem 3rem 7rem;
   }
   .landing-hero-inner {
-    max-width: 1240px;
+    max-width: 1360px;
+    gap: 2.3rem;
   }
   .landing-headline {
-    font-size: clamp(6.5rem, 6vw, 8.4rem);
+    font-size: clamp(7rem, 8vw, 9.4rem);
+    letter-spacing: -0.045em;
   }
   .landing-sub {
-    font-size: 1.45rem;
-    max-width: 780px;
+    font-size: 1.55rem;
+    max-width: 840px;
   }
   .landing-demo {
-    max-width: 880px;
+    max-width: 1000px;
   }
   .landing-demo-editor {
-    font-size: 1.25rem;
-    padding: 1.6rem 2rem 1.8rem;
+    font-size: 1.3rem;
+    padding: 1.7rem 2.2rem 2rem;
+  }
+  .landing-btn,
+  .landing-btn-lg {
+    font-size: 1.35rem;
+    padding: 1.25rem 3rem;
+    min-height: 3.7rem;
+  }
+}
+
+@media (min-width: 1800px) {
+  .landing-hero {
+    padding: 10rem 3rem 8rem;
+  }
+  .landing-hero-inner {
+    max-width: 1560px;
+  }
+  .landing-headline {
+    font-size: clamp(8rem, 8vw, 11rem);
+  }
+  .landing-sub {
+    font-size: 1.7rem;
+    max-width: 920px;
+  }
+  .landing-demo {
+    max-width: 1140px;
+  }
+  .landing-demo-editor {
+    font-size: 1.45rem;
   }
 }
 
@@ -1784,10 +1804,321 @@
    App preview v2 — matches real PoemWorkshop layout
    ───────────────────────────────────────────────────────────────────────── */
 
-.landing-preview { max-width: 1200px; }
+.landing-preview {
+  max-width: 1200px;
+  position: relative;
+  isolation: isolate;
+  padding: 5rem 1.5rem 5rem;
+}
 
 @media (min-width: 1400px) {
-  .landing-preview { max-width: 1360px; }
+  .landing-preview { max-width: 1360px; padding: 6rem 2rem 6rem; }
+}
+
+/* ── Preview backplate: aurora + grid + animated node flow ── */
+.landing-preview-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.landing-preview-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: center center;
+  opacity: 0.12;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 25%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 25%, transparent 75%);
+}
+
+.landing-preview-aurora {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  mix-blend-mode: screen;
+}
+
+.landing-preview-aurora-1 {
+  width: 45vw;
+  height: 45vw;
+  top: -15%;
+  left: -10%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 75%, transparent), transparent 65%);
+  animation: lpv-aurora-1 26s ease-in-out infinite alternate;
+}
+
+.landing-preview-aurora-2 {
+  width: 38vw;
+  height: 38vw;
+  bottom: -10%;
+  right: -8%;
+  background: radial-gradient(circle, color-mix(in srgb, #6b8cff 75%, transparent), transparent 65%);
+  animation: lpv-aurora-2 32s ease-in-out infinite alternate;
+}
+
+.landing-preview-aurora-3 {
+  width: 32vw;
+  height: 32vw;
+  top: 40%;
+  left: 45%;
+  background: radial-gradient(circle, color-mix(in srgb, #c490e8 70%, transparent), transparent 65%);
+  animation: lpv-aurora-3 36s ease-in-out infinite alternate;
+}
+
+@keyframes lpv-aurora-1 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(5vw, 4vh) scale(1.1); }
+}
+
+@keyframes lpv-aurora-2 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-6vw, -3vh) scale(1.08); }
+}
+
+@keyframes lpv-aurora-3 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-4vw, 5vh) scale(1.12); }
+}
+
+/* Node-flow SVG — n8n-style connector lines */
+.landing-preview-nodes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.lpn-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 60%, transparent);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 8;
+  opacity: 0;
+}
+
+.landing-preview[data-revealed="true"] .lpn-line {
+  animation: lpn-line-in 1.4s ease-out forwards, lpn-line-flow 8s linear infinite;
+}
+
+.landing-preview[data-revealed="true"] .lpn-line-2 { animation-delay: 0.25s, 1.4s; }
+.landing-preview[data-revealed="true"] .lpn-line-3 { animation-delay: 0.5s, 1.7s; }
+
+@keyframes lpn-line-in {
+  from { opacity: 0; stroke-dashoffset: 80; }
+  to   { opacity: 0.55; stroke-dashoffset: 0; }
+}
+
+@keyframes lpn-line-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -120; }
+}
+
+.lpn-node {
+  fill: var(--accent);
+  opacity: 0;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+
+.landing-preview[data-revealed="true"] .lpn-node {
+  animation: lpn-node-in 0.4s ease-out forwards, lpn-node-pulse 3.2s ease-in-out infinite;
+}
+
+.landing-preview[data-revealed="true"] .lpn-node-1 { animation-delay: 0.2s, 1.2s; }
+.landing-preview[data-revealed="true"] .lpn-node-2 { animation-delay: 0.6s, 1.6s; }
+.landing-preview[data-revealed="true"] .lpn-node-3 { animation-delay: 1s, 2s; }
+.landing-preview[data-revealed="true"] .lpn-node-4 { animation-delay: 0.35s, 1.3s; }
+.landing-preview[data-revealed="true"] .lpn-node-5 { animation-delay: 0.75s, 1.8s; }
+.landing-preview[data-revealed="true"] .lpn-node-6 { animation-delay: 1.15s, 2.2s; }
+
+@keyframes lpn-node-in {
+  from { opacity: 0; transform: scale(0); transform-origin: center; }
+  to   { opacity: 0.85; transform: scale(1); }
+}
+
+@keyframes lpn-node-pulse {
+  0%, 100% { opacity: 0.55; r: 4; }
+  50%      { opacity: 1;    r: 5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-preview-aurora-1,
+  .landing-preview-aurora-2,
+  .landing-preview-aurora-3,
+  .lpn-line,
+  .lpn-node { animation: none !important; }
+  .lpn-line { opacity: 0.5; }
+  .lpn-node { opacity: 0.7; }
+}
+
+/* ── Preview reveal: shell drops in, sections stagger ── */
+.landing-preview .lp-shell {
+  opacity: 0;
+  transform: translateY(24px) scale(0.97);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-preview[data-revealed="true"] .lp-shell {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.landing-preview .landing-section-title {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.6s ease 0.05s, transform 0.6s ease 0.05s;
+}
+
+.landing-preview[data-revealed="true"] .landing-section-title {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-preview .landing-preview-caption {
+  opacity: 0;
+  transition: opacity 0.6s ease 0.9s;
+}
+
+.landing-preview[data-revealed="true"] .landing-preview-caption {
+  opacity: 1;
+}
+
+/* Inside-shell staggered reveals once shell lands */
+.landing-preview .lp-topbar,
+.landing-preview .lp-rail,
+.landing-preview .lp-editor,
+.landing-preview .lp-tools,
+.landing-preview .lp-ai {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.landing-preview[data-revealed="true"] .lp-topbar { opacity: 1; transform: none; transition-delay: 0.35s; }
+.landing-preview[data-revealed="true"] .lp-rail   { opacity: 1; transform: none; transition-delay: 0.5s; }
+.landing-preview[data-revealed="true"] .lp-editor { opacity: 1; transform: none; transition-delay: 0.6s; }
+.landing-preview[data-revealed="true"] .lp-tools  { opacity: 1; transform: none; transition-delay: 0.75s; }
+.landing-preview[data-revealed="true"] .lp-ai     { opacity: 1; transform: none; transition-delay: 0.9s; }
+
+/* Poem rows type in one by one once editor visible */
+.landing-preview .lp-poem-body .lp-poem-row {
+  opacity: 0;
+  transform: translateX(-6px);
+}
+
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row {
+  animation: lp-row-in 0.45s ease forwards;
+}
+
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(1) { animation-delay: 1.0s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(2) { animation-delay: 1.15s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(3) { animation-delay: 1.3s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(4) { animation-delay: 1.45s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(5) { animation-delay: 1.6s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(6) { animation-delay: 1.75s; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(7) { animation-delay: 1.9s; }
+
+@keyframes lp-row-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Rhyme badges pop in slightly after their row */
+.landing-preview .lp-poem-body .lp-rhyme-badge {
+  opacity: 0;
+  transform: scale(0.6);
+  transform-origin: center;
+}
+
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(1) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 1.25s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(2) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 1.4s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(3) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 1.55s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(4) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 1.7s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(6) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 2s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(7) .lp-rhyme-badge { animation: lp-badge-in 0.35s ease 2.15s forwards; }
+
+@keyframes lp-badge-in {
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Syllable bars fill from 0 → width once row lands */
+.landing-preview .lp-poem-body .lp-syl-bar {
+  transform: scaleX(0);
+  transform-origin: left center;
+  opacity: 0;
+}
+
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(1) .lp-syl-bar { animation: lp-bar-in 0.5s ease 1.3s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(2) .lp-syl-bar { animation: lp-bar-in 0.5s ease 1.45s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(3) .lp-syl-bar { animation: lp-bar-in 0.5s ease 1.6s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(4) .lp-syl-bar { animation: lp-bar-in 0.5s ease 1.75s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(6) .lp-syl-bar { animation: lp-bar-in 0.5s ease 2.05s forwards; }
+.landing-preview[data-revealed="true"] .lp-poem-body .lp-poem-row:nth-child(7) .lp-syl-bar { animation: lp-bar-in 0.5s ease 2.2s forwards; }
+
+@keyframes lp-bar-in {
+  to { opacity: 0.7; transform: scaleX(1); }
+}
+
+/* Revision queue cards slide in from right */
+.landing-preview .lp-rqueue .lp-rcard {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.landing-preview[data-revealed="true"] .lp-rqueue .lp-rcard:nth-of-type(1) { animation: lp-rcard-in 0.5s ease 1.6s forwards; }
+.landing-preview[data-revealed="true"] .lp-rqueue .lp-rcard:nth-of-type(2) { animation: lp-rcard-in 0.5s ease 1.8s forwards; }
+
+@keyframes lp-rcard-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* AI Analysis controls fade up */
+.landing-preview .lp-ai-chip,
+.landing-preview .lp-ai-toggle,
+.landing-preview .lp-ai-select,
+.landing-preview .lp-ai-read {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.landing-preview[data-revealed="true"] .lp-ai-toggle { animation: lp-ctrl-in 0.4s ease 1.4s forwards; }
+.landing-preview[data-revealed="true"] .lp-ai-select { animation: lp-ctrl-in 0.4s ease 1.5s forwards; }
+.landing-preview[data-revealed="true"] .lp-ai-chip:nth-of-type(3) { animation: lp-ctrl-in 0.4s ease 1.6s forwards; }
+.landing-preview[data-revealed="true"] .lp-ai-chip-active            { animation: lp-ctrl-in 0.4s ease 1.7s forwards; }
+.landing-preview[data-revealed="true"] .lp-ai-chip:nth-of-type(5) { animation: lp-ctrl-in 0.4s ease 1.8s forwards; }
+.landing-preview[data-revealed="true"] .lp-ai-read   { animation: lp-ctrl-in 0.4s ease 1.95s forwards; }
+
+@keyframes lp-ctrl-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-preview .lp-shell,
+  .landing-preview .landing-section-title,
+  .landing-preview .lp-topbar,
+  .landing-preview .lp-rail,
+  .landing-preview .lp-editor,
+  .landing-preview .lp-tools,
+  .landing-preview .lp-ai,
+  .landing-preview .lp-poem-body .lp-poem-row,
+  .landing-preview .lp-poem-body .lp-rhyme-badge,
+  .landing-preview .lp-poem-body .lp-syl-bar,
+  .landing-preview .lp-rqueue .lp-rcard,
+  .landing-preview .lp-ai-chip,
+  .landing-preview .lp-ai-toggle,
+  .landing-preview .lp-ai-select,
+  .landing-preview .lp-ai-read,
+  .landing-preview .landing-preview-caption {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }
 
 /* Shell: tighter, darker, more app-like */

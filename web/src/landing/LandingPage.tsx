@@ -4,7 +4,9 @@ import { getCurrentStreak, getDailyPrompt } from "@/workshop/shell/writing-strea
 
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
+  const previewRef = useRef<HTMLElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
+  const [previewRevealed, setPreviewRevealed] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
 
@@ -14,6 +16,22 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
     const observer = new IntersectionObserver(
       ([entry]) => setStickyVisible(!entry.isIntersecting),
       { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPreviewRevealed(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -147,7 +165,31 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       </section>
 
       {/* App preview mockup */}
-      <section className="landing-preview" id="how-it-works" aria-label="App preview">
+      <section
+        className="landing-preview"
+        id="how-it-works"
+        aria-label="App preview"
+        ref={previewRef}
+        data-revealed={previewRevealed ? "true" : "false"}
+      >
+        {/* Backplate: aurora + grid + drifting nodes */}
+        <div className="landing-preview-bg" aria-hidden>
+          <span className="landing-preview-grid" />
+          <span className="landing-preview-aurora landing-preview-aurora-1" />
+          <span className="landing-preview-aurora landing-preview-aurora-2" />
+          <span className="landing-preview-aurora landing-preview-aurora-3" />
+          <svg className="landing-preview-nodes" viewBox="0 0 1200 600" preserveAspectRatio="none">
+            <path className="lpn-line lpn-line-1" d="M 80 120 Q 300 60, 520 180 T 1120 240" />
+            <path className="lpn-line lpn-line-2" d="M 60 380 Q 280 460, 540 360 T 1140 420" />
+            <path className="lpn-line lpn-line-3" d="M 200 80 Q 400 240, 700 200 T 1100 80" />
+            <circle className="lpn-node lpn-node-1" cx="80" cy="120" r="4" />
+            <circle className="lpn-node lpn-node-2" cx="520" cy="180" r="4" />
+            <circle className="lpn-node lpn-node-3" cx="1120" cy="240" r="4" />
+            <circle className="lpn-node lpn-node-4" cx="60" cy="380" r="4" />
+            <circle className="lpn-node lpn-node-5" cx="540" cy="360" r="4" />
+            <circle className="lpn-node lpn-node-6" cx="1140" cy="420" r="4" />
+          </svg>
+        </div>
         <h2 className="landing-section-title">What it looks like</h2>
         <div className="lp-shell" aria-hidden>
           <span className="lp-shell-scanline" />
