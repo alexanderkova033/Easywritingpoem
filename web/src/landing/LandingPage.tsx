@@ -39,6 +39,13 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
   return (
     <div className="landing-root">
+      {/* Full-page backdrop: extends behind hero + preview seamlessly */}
+      <div className="landing-bg" aria-hidden>
+        <span className="landing-bg-grid" />
+        <span className="landing-bg-aurora landing-bg-aurora-1" />
+        <span className="landing-bg-aurora landing-bg-aurora-2" />
+        <span className="landing-bg-aurora landing-bg-aurora-3" />
+      </div>
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
         <svg className="landing-sticky-logo" viewBox="0 0 24 24" aria-hidden width="20" height="20">
@@ -64,14 +71,26 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
           <span className="landing-aurora-blob landing-aurora-blob-2" />
           <span className="landing-aurora-blob landing-aurora-blob-3" />
         </div>
-        <div className="landing-floaters" aria-hidden>
-          <span className="landing-floater landing-floater-1">moonlight</span>
-          <span className="landing-floater landing-floater-2">whisper</span>
-          <span className="landing-floater landing-floater-3">ember</span>
-          <span className="landing-floater landing-floater-4">silver</span>
-          <span className="landing-floater landing-floater-5">drift</span>
-          <span className="landing-floater landing-floater-6">hush</span>
-        </div>
+        <svg className="landing-constellation" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden>
+          {/* Connecting paths (drawn behind nodes) */}
+          <path className="lc-link lc-link-1" d="M 180 170 L 410 320" />
+          <path className="lc-link lc-link-2" d="M 410 320 L 250 540" />
+          <path className="lc-link lc-link-3" d="M 250 540 L 480 680" />
+          <path className="lc-link lc-link-4" d="M 1220 200 L 1410 380" />
+          <path className="lc-link lc-link-5" d="M 1410 380 L 1180 540" />
+          <path className="lc-link lc-link-6" d="M 1180 540 L 1320 760" />
+          <path className="lc-link lc-link-7" d="M 410 320 L 1220 200" />
+          <path className="lc-link lc-link-8" d="M 480 680 L 1180 540" />
+          {/* Nodes */}
+          <circle className="lc-dot lc-dot-1" cx="180" cy="170" r="3" />
+          <circle className="lc-dot lc-dot-2" cx="410" cy="320" r="4" />
+          <circle className="lc-dot lc-dot-3" cx="250" cy="540" r="3" />
+          <circle className="lc-dot lc-dot-4" cx="480" cy="680" r="3.5" />
+          <circle className="lc-dot lc-dot-5" cx="1220" cy="200" r="3.5" />
+          <circle className="lc-dot lc-dot-6" cx="1410" cy="380" r="3" />
+          <circle className="lc-dot lc-dot-7" cx="1180" cy="540" r="4" />
+          <circle className="lc-dot lc-dot-8" cx="1320" cy="760" r="3" />
+        </svg>
         <div className="landing-hero-inner">
           <div className="landing-hero-eyebrow landing-hero-eyebrow-desktop">
             <svg className="landing-hero-feather" viewBox="0 0 24 24" aria-hidden width="22" height="22">
@@ -100,35 +119,30 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
                 <span className="landing-demo-status-meta landing-demo-status-meta-right">8/8/8/8</span>
               </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-1">A</span>
                 <span className="landing-demo-text landing-demo-text-1">The candle burns in winter's grip,</span>
                 <span className="landing-demo-bar landing-demo-bar-1" />
                 <span className="landing-demo-syl landing-demo-syl-1">8</span>
+                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-1">A</span>
               </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-2">B</span>
                 <span className="landing-demo-text landing-demo-text-2">and shadows stretch across the floor.</span>
                 <span className="landing-demo-bar landing-demo-bar-2" />
                 <span className="landing-demo-syl landing-demo-syl-2">8</span>
+                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-2">B</span>
               </div>
               <div className="landing-demo-line">
-                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-3">A</span>
                 <span className="landing-demo-text landing-demo-text-3">A moth has pressed its paper wing</span>
                 <span className="landing-demo-bar landing-demo-bar-3" />
                 <span className="landing-demo-syl landing-demo-syl-3">8</span>
+                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-3">A</span>
               </div>
               <div className="landing-demo-line landing-demo-line-typing">
-                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-4">B</span>
                 <span className="landing-demo-text landing-demo-text-4">against the cold and frosted door.</span>
                 <span className="landing-demo-cursor" />
                 <span className="landing-demo-bar landing-demo-bar-4" />
                 <span className="landing-demo-syl landing-demo-syl-4">8</span>
+                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-4">B</span>
               </div>
-              {/* Rhyme connector arcs */}
-              <svg className="landing-demo-arcs" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden>
-                <path className="landing-demo-arc landing-demo-arc-a" d="M 10 18 Q 4 41, 10 64" />
-                <path className="landing-demo-arc landing-demo-arc-b" d="M 10 41 Q 4 64, 10 87" />
-              </svg>
             </div>
             <div className="landing-demo-labels">
               <span className="landing-demo-label-tag">Rhyme: ABAB</span>
@@ -172,24 +186,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         ref={previewRef}
         data-revealed={previewRevealed ? "true" : "false"}
       >
-        {/* Backplate: aurora + grid + drifting nodes */}
-        <div className="landing-preview-bg" aria-hidden>
-          <span className="landing-preview-grid" />
-          <span className="landing-preview-aurora landing-preview-aurora-1" />
-          <span className="landing-preview-aurora landing-preview-aurora-2" />
-          <span className="landing-preview-aurora landing-preview-aurora-3" />
-          <svg className="landing-preview-nodes" viewBox="0 0 1200 600" preserveAspectRatio="none">
-            <path className="lpn-line lpn-line-1" d="M 80 120 Q 300 60, 520 180 T 1120 240" />
-            <path className="lpn-line lpn-line-2" d="M 60 380 Q 280 460, 540 360 T 1140 420" />
-            <path className="lpn-line lpn-line-3" d="M 200 80 Q 400 240, 700 200 T 1100 80" />
-            <circle className="lpn-node lpn-node-1" cx="80" cy="120" r="4" />
-            <circle className="lpn-node lpn-node-2" cx="520" cy="180" r="4" />
-            <circle className="lpn-node lpn-node-3" cx="1120" cy="240" r="4" />
-            <circle className="lpn-node lpn-node-4" cx="60" cy="380" r="4" />
-            <circle className="lpn-node lpn-node-5" cx="540" cy="360" r="4" />
-            <circle className="lpn-node lpn-node-6" cx="1140" cy="420" r="4" />
-          </svg>
-        </div>
         <h2 className="landing-section-title">What it looks like</h2>
         <div className="lp-shell" aria-hidden>
           <span className="lp-shell-scanline" />
