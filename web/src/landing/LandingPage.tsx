@@ -151,57 +151,86 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         <h2 className="landing-section-title">What it looks like</h2>
         <div className="lp-shell" aria-hidden>
           <span className="lp-shell-scanline" />
-          {/* Topbar — matches WorkshopTopbarHeader */}
+          {/* Topbar */}
           <div className="lp-topbar">
-            <span className="lp-brand">
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
-                <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" />
-              </svg>
-              easywriting <span className="lp-brand-badge">poem</span>
-            </span>
-            <span className="lp-draft-pill">The Candle ▾</span>
-            <span className="lp-stat">42 words · 6 lines</span>
-            <span className="lp-stat-chip">
-              <span className="lp-stat-chip-dot" />
-              AI <span className="lp-stat-chip-num">82</span>
-            </span>
-            <span className="lp-stat-chip lp-stat-chip-rhyme">
-              <span className="lp-rhyme-mini lp-rhyme-mini-a" />
-              <span className="lp-rhyme-mini lp-rhyme-mini-b" />
-              <span className="lp-rhyme-mini lp-rhyme-mini-a" />
-              <span className="lp-rhyme-mini lp-rhyme-mini-b" />
-            </span>
-            <span className="lp-save"><span className="lp-save-dot" />Saved</span>
+            <div className="lp-topbar-left">
+              <span className="lp-brand">
+                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
+                  <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="currentColor" />
+                </svg>
+                easywriting<span className="lp-brand-badge">poem</span>
+              </span>
+              <span className="lp-draft-pill">
+                <span className="lp-draft-tag">DRAFT</span>
+                <span className="lp-draft-name">The Candle</span>
+                <span className="lp-draft-caret">▾</span>
+                <span className="lp-draft-plus">+</span>
+              </span>
+            </div>
+            <div className="lp-topbar-right">
+              <span className="lp-stat">42 words · 6 lines</span>
+              <span className="lp-save"><span className="lp-save-dot" />Saved</span>
+              <span className="lp-topbar-icons">
+                <span className="lp-tbi">≡</span>
+                <span className="lp-tbi">◐</span>
+                <span className="lp-tbi">⌕</span>
+                <span className="lp-tbi">⋯</span>
+              </span>
+            </div>
           </div>
           {/* 3-column grid */}
           <div className="lp-grid">
-            {/* Rail — real labels with glyphs */}
+            {/* Rail — icon-only square buttons */}
             <div className="lp-rail">
               {[
-                { glyph: "◧", label: "Tools" },
-                { glyph: "❏", label: "Library" },
-                { glyph: "✦", label: "Style" },
-                { glyph: "◐", label: "Bg" },
-                { glyph: "↗", label: "Export", primary: true },
-                { glyph: "◉", label: "Focus" },
-                { glyph: "?", label: "Guide", active: true },
+                { glyph: "Aa", title: "Style" },
+                { glyph: "❏", title: "Library" },
+                { glyph: "↑", title: "Export" },
+                { glyph: "⛶", title: "Focus" },
+                { glyph: "?", title: "Guide", active: true },
               ].map((b) => (
                 <div
-                  key={b.label}
-                  className={`lp-rail-btn${b.active ? " lp-rail-btn-guide" : ""}${b.primary ? " lp-rail-btn-primary" : ""}`}
+                  key={b.title}
+                  className={`lp-rail-btn${b.active ? " lp-rail-btn-active" : ""}`}
+                  title={b.title}
                 >
                   <span className="lp-rail-glyph">{b.glyph}</span>
-                  <span className="lp-rail-label">{b.label}</span>
                 </div>
               ))}
             </div>
-            {/* Editor — badge LEFT gutter, syllable+rhythm RIGHT */}
+            {/* Editor */}
             <div className="lp-editor">
-              <div className="lp-editor-meta">
-                <span className="lp-title-field">The Candle</span>
-                <span className="lp-form-tag">sonnet</span>
+              {/* Title + Main idea fields side-by-side */}
+              <div className="lp-fields">
+                <div className="lp-field">
+                  <span className="lp-field-label">Title</span>
+                  <div className="lp-field-input">The Candle</div>
+                </div>
+                <div className="lp-field">
+                  <span className="lp-field-label">Main idea <span className="lp-field-opt">(optional)</span></span>
+                  <div className="lp-field-input lp-field-input-placeholder">e.g. the feeling of leaving home for the first time</div>
+                </div>
               </div>
-              <div className="lp-poem-lines">
+              {/* Poem header row with format toolbar */}
+              <div className="lp-poem-header">
+                <span className="lp-poem-label">Poem</span>
+                <span className="lp-format-toolbar">
+                  <span className="lp-fmt-btn lp-fmt-bold">B</span>
+                  <span className="lp-fmt-btn lp-fmt-under">U</span>
+                  <span className="lp-fmt-sep" />
+                  <span className="lp-fmt-text">Size</span>
+                  <span className="lp-fmt-select">Med ▾</span>
+                  <span className="lp-fmt-sep" />
+                  <span className="lp-fmt-btn lp-fmt-mono">'syl</span>
+                  <span className="lp-fmt-btn lp-fmt-mono">AB</span>
+                  <span className="lp-fmt-btn lp-fmt-mono">A·A</span>
+                  <span className="lp-fmt-sep" />
+                  <span className="lp-fmt-btn">¶</span>
+                  <span className="lp-fmt-btn lp-fmt-focus">◉</span>
+                </span>
+              </div>
+              {/* Line-numbered poem body */}
+              <div className="lp-poem-body">
                 {[
                   { text: "The candle burns in winter's grip,", badge: "A", syl: 8 },
                   { text: "and shadows stretch across the floor.", badge: "B", syl: 8 },
@@ -212,10 +241,11 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
                   { text: "its wax grows thin, its circle bright.", badge: "D", syl: 8 },
                 ].map((row, i) => (
                   <div key={i} className="lp-poem-row">
+                    <span className="lp-line-num">{i + 1}</span>
                     <span className="lp-rhyme-gutter">
                       {row.badge && <span className={`lp-rhyme-badge lp-rhyme-${row.badge.toLowerCase()}`}>{row.badge}</span>}
                     </span>
-                    <span className="lp-poem-text">{row.text}</span>
+                    <span className="lp-poem-text">{row.text || " "}</span>
                     {row.syl != null && (
                       <span className="lp-syl-wrap">
                         <span className="lp-syl-bar" style={{ width: `${(row.syl / 10) * 28}px` }} />
@@ -226,35 +256,73 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
                 ))}
               </div>
             </div>
-            {/* Tools — real tab names */}
+            {/* Tools panel */}
             <div className="lp-tools">
+              <div className="lp-tools-header">
+                <span className="lp-tools-title">Tools</span>
+                <span className="lp-analyse-btn">+ Analyse</span>
+              </div>
+              <div className="lp-tools-sections">
+                <span className="lp-tsection lp-tsection-active">OVERVIEW</span>
+                <span className="lp-tsection">SOUND</span>
+                <span className="lp-tsection">SUGGEST</span>
+              </div>
               <div className="lp-tools-tabs">
-                <span className="lp-ttab">Queue</span>
-                <span className="lp-ttab">Meter</span>
-                <span className="lp-ttab lp-ttab-active">Rhyme</span>
-                <span className="lp-ttab">Ideas</span>
+                {[
+                  { glyph: "⊙", label: "Queue", active: true },
+                  { glyph: "M", label: "Spell" },
+                  { glyph: "≡", label: "Lines" },
+                  { glyph: "◎", label: "Goals" },
+                  { glyph: "◰", label: "Snaps" },
+                ].map((t) => (
+                  <span key={t.label} className={`lp-ttab${t.active ? " lp-ttab-active" : ""}`}>
+                    <span className="lp-ttab-glyph">{t.glyph}</span>
+                    <span className="lp-ttab-label">{t.label}</span>
+                  </span>
+                ))}
               </div>
               <div className="lp-tools-inner">
-                <div className="lp-tool-heading">End-rhyme clusters</div>
-                <div className="lp-rhyme-rows">
-                  {[["A","grip · wing"],["B","floor · door"],["C","last"],["D","bright"]].map(([label, words]) => (
-                    <div key={label} className="lp-rhyme-row">
-                      <span className={`lp-rhyme-badge lp-rhyme-${label.toLowerCase()}`}>{label}</span>
-                      <span className="lp-rhyme-words">{words}</span>
+                <div className="lp-rqueue">
+                  <div className="lp-rqueue-title"><span className="lp-rqueue-dot" />Revision queue</div>
+                  <div className="lp-rqueue-group">
+                    <span className="lp-rqueue-soon">● Soon <span className="lp-rqueue-count">2</span></span>
+                  </div>
+                  {[
+                    { tag: "CHECKLIST", title: "At least one non-empty line", body: "Add your poem before publishing.", action: "Lines" },
+                    { tag: "CHECKLIST", title: "Title set", body: "Optional for some venues; still useful when sharing.", action: "Add title" },
+                  ].map((c, i) => (
+                    <div key={i} className="lp-rcard">
+                      <span className="lp-rcard-tag">{c.tag}</span>
+                      <div className="lp-rcard-body">
+                        <span className="lp-rcard-title">{c.title}</span>
+                        <span className="lp-rcard-desc">{c.body}</span>
+                      </div>
+                      <span className="lp-rcard-action">{c.action}</span>
                     </div>
                   ))}
                 </div>
-                <div className="lp-tool-heading" style={{ marginTop: "0.9rem" }}>Stress pattern</div>
-                <div className="lp-meter-rows">
-                  {["◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •","◦ • ◦ • ◦ • ◦ •"].map((p,i) => (
-                    <div key={i} className="lp-meter-row">
-                      <span className="lp-meter-pattern">{p}</span>
-                      <span className="lp-meter-num">8</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="lp-meter-fit">iambic fit · <span className="lp-meter-fit-num">96%</span></div>
               </div>
+              <div className="lp-tools-footer">
+                <span className="lp-kbd">?</span>shortcuts <span className="lp-kbd lp-kbd-w">⌘K</span>commands
+              </div>
+            </div>
+          </div>
+          {/* Bottom AI Analysis panel */}
+          <div className="lp-ai">
+            <div className="lp-ai-header">
+              <span className="lp-ai-title">✦ AI Analysis</span>
+              <span className="lp-ai-caret">▴</span>
+            </div>
+            <div className="lp-ai-controls">
+              <span className="lp-ai-toggle"><span className="lp-ai-toggle-thumb">100</span>Score</span>
+              <span className="lp-ai-select">Fast ▾</span>
+              <span className="lp-ai-chip">♡ Gentle</span>
+              <span className="lp-ai-chip lp-ai-chip-active">✦ Honest</span>
+              <span className="lp-ai-chip">⚡ Critic</span>
+              <span className="lp-ai-read">+ Read poem</span>
+            </div>
+            <div className="lp-ai-desc">
+              Reads your poem and returns a warm reaction, strengths, weaknesses, the strongest line, and line-level suggestions.
             </div>
           </div>
         </div>
