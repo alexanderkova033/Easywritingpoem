@@ -90,11 +90,11 @@
   inset: 0;
   background-image: radial-gradient(
     circle,
-    color-mix(in srgb, var(--accent) 62%, transparent) 1.1px,
-    transparent 1.8px
+    color-mix(in srgb, var(--accent) 48%, transparent) 1px,
+    transparent 1.6px
   );
   background-size: 30px 30px;
-  opacity: 0.32;
+  opacity: 0.22;
   /* Fade grid toward bottom — feels like ground plane receding */
   mask-image: linear-gradient(180deg, #000 10%, transparent 90%);
   -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent 90%);
@@ -184,16 +184,19 @@
 
 /* ── Lower zone — calm panel below atmospheric hero ─────────────────────── */
 .landing-lower {
-  /* Full viewport bleed — override parent flex `align-items: center` */
+  /* Full-bleed: width = viewport, negative margins escape #root padding */
   width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   align-self: stretch;
   max-width: 100vw;
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Subtle bg tint — slightly darker than hero, no hard seam */
-  background: color-mix(in srgb, var(--bg) 92%, #000);
+  text-align: center;
+  /* Slightly stronger tint so the panel is clearly demarcated */
+  background: color-mix(in srgb, var(--bg) 84%, #000);
   margin-top: clamp(3rem, 6vw, 5rem);
   z-index: 0;
 }
@@ -208,7 +211,7 @@
   height: 120px;
   background: linear-gradient(180deg,
     transparent 0%,
-    color-mix(in srgb, var(--bg) 92%, #000) 100%);
+    color-mix(in srgb, var(--bg) 84%, #000) 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -504,8 +507,10 @@
   font-weight: 800;
   line-height: 1.04;
   letter-spacing: -0.035em;
-  color: var(--text);
+  color: color-mix(in srgb, var(--text) 92%, transparent);
   text-wrap: balance;
+  /* Soft halo blur — adds depth without making text hard to read */
+  text-shadow: 0 0 14px color-mix(in srgb, var(--text) 16%, transparent);
 }
 
 .landing-headline-accent {
@@ -539,22 +544,23 @@
   margin: 0;
   font-size: clamp(0.95rem, 1.05vw, 1.25rem);
   line-height: 1.55;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--muted) 88%, transparent);
   max-width: min(62ch, 720px);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--muted) 12%, transparent);
 }
 
 .landing-ctas {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 
 .landing-hero-reassurance {
-  margin: 0;
-  font-size: 0.8rem;
-  color: color-mix(in srgb, var(--muted) 65%, transparent);
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--muted) 55%, transparent);
   letter-spacing: 0.02em;
 }
 
@@ -1040,15 +1046,15 @@
   border: none;
   cursor: pointer;
   font: inherit;
-  font-size: clamp(1rem, 1vw, 1.35rem);
+  font-size: clamp(0.92rem, 0.85vw, 1.05rem);
   font-weight: 650;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  padding: clamp(0.7rem, 0.9vw, 1.25rem) clamp(1.6rem, 2vw, 3rem);
-  min-height: clamp(2.85rem, 3.2vw, 3.8rem);
+  border-radius: 9px;
+  padding: 0.6rem 1.2rem;
+  min-height: 2.5rem;
   transition: background 0.16s ease, border-color 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
 }
 
@@ -1099,8 +1105,8 @@
 }
 
 .landing-btn-lg {
-  font-size: 1.1rem;
-  padding: 0.85rem 2rem;
+  font-size: 1rem;
+  padding: 0.72rem 1.5rem;
 }
 
 /* ── Section titles ───────────────────────────────────────────────────────── */
