@@ -184,7 +184,10 @@
 
 /* ── Lower zone — calm panel below atmospheric hero ─────────────────────── */
 .landing-lower {
-  width: 100%;
+  /* Full viewport bleed — override parent flex `align-items: center` */
+  width: 100vw;
+  align-self: stretch;
+  max-width: 100vw;
   position: relative;
   display: flex;
   flex-direction: column;
