@@ -5,10 +5,36 @@ import { getCurrentStreak, getDailyPrompt } from "@/workshop/shell/writing-strea
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
   const previewRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
   const [previewRevealed, setPreviewRevealed] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
+
+  // Scroll-driven parallax — writes --landing-scroll-y (in px) to root.
+  // Aurora layers use it via transform for depth.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      root.style.setProperty("--landing-scroll-y", `${window.scrollY}`);
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   useEffect(() => {
     const el = heroRef.current;
@@ -38,13 +64,14 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
   }, []);
 
   return (
-    <div className="landing-root">
+    <div className="landing-root" ref={rootRef}>
       {/* Full-page backdrop: extends behind hero + preview seamlessly */}
       <div className="landing-bg" aria-hidden>
         <span className="landing-bg-grid" />
         <span className="landing-bg-aurora landing-bg-aurora-1" />
         <span className="landing-bg-aurora landing-bg-aurora-2" />
         <span className="landing-bg-aurora landing-bg-aurora-3" />
+        <span className="landing-bg-floor" />
       </div>
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>

@@ -74,10 +74,14 @@
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  /* Calmer ambient wash — lower saturation; ground darker than sky */
   background:
-    radial-gradient(ellipse 80% 60% at 20% 15%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
-    radial-gradient(ellipse 70% 55% at 85% 80%, color-mix(in srgb, #6b8cff 22%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 50% 50%, color-mix(in srgb, #c490e8 16%, transparent), transparent 75%),
+    radial-gradient(ellipse 70% 50% at 22% 12%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 82% 18%, color-mix(in srgb, #6b8cff 10%, transparent), transparent 75%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bg) 100%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 96%, #000) 65%,
+      color-mix(in srgb, var(--bg) 90%, #000) 100%),
     var(--bg);
 }
 
@@ -86,68 +90,96 @@
   inset: 0;
   background-image: radial-gradient(
     circle,
-    color-mix(in srgb, var(--accent) 55%, transparent) 1px,
+    color-mix(in srgb, var(--accent) 45%, transparent) 1px,
     transparent 1.6px
   );
-  background-size: 28px 28px;
-  opacity: 0.35;
+  background-size: 32px 32px;
+  opacity: 0.18;
+  /* Fade grid toward bottom — feels like ground plane receding */
+  mask-image: linear-gradient(180deg, #000 10%, transparent 90%);
+  -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent 90%);
+  transform: translateY(calc(var(--landing-scroll-y, 0) * 0.15px));
+  will-change: transform;
 }
 
 .landing-bg-aurora {
   position: absolute;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.65;
-  mix-blend-mode: screen;
+  filter: blur(110px);
+  opacity: 0.32;
   will-change: transform;
 }
 
+/* Parallax — each aurora translates at its own rate driven by scroll var.
+   Layered with own keyframe drift via nested transform on inner-content trick
+   isn't possible, so we keep drift idle and use scroll for motion. */
 .landing-bg-aurora-1 {
-  width: 65vw;
-  height: 65vw;
-  top: -15vw;
-  left: -20vw;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 90%, transparent), transparent 55%);
-  animation: lbg-aurora-1 28s ease-in-out infinite alternate;
+  width: 48vw;
+  height: 48vw;
+  top: -10vw;
+  left: -14vw;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 85%, transparent), transparent 60%);
+  transform: translate3d(0, calc(var(--landing-scroll-y, 0) * -0.18px), 0);
 }
 
 .landing-bg-aurora-2 {
-  width: 60vw;
-  height: 60vw;
-  top: 10vh;
-  right: -20vw;
-  background: radial-gradient(circle, color-mix(in srgb, #6b8cff 85%, transparent), transparent 55%);
-  animation: lbg-aurora-2 34s ease-in-out infinite alternate;
+  width: 42vw;
+  height: 42vw;
+  top: 8vh;
+  right: -12vw;
+  background: radial-gradient(circle, color-mix(in srgb, #6b8cff 80%, transparent), transparent 60%);
+  transform: translate3d(0, calc(var(--landing-scroll-y, 0) * -0.32px), 0);
+  opacity: 0.26;
 }
 
 .landing-bg-aurora-3 {
-  width: 55vw;
-  height: 55vw;
-  bottom: -15vw;
-  left: 20vw;
-  background: radial-gradient(circle, color-mix(in srgb, #c490e8 80%, transparent), transparent 55%);
-  animation: lbg-aurora-3 38s ease-in-out infinite alternate;
+  width: 40vw;
+  height: 40vw;
+  bottom: -8vw;
+  left: 22vw;
+  background: radial-gradient(circle, color-mix(in srgb, #c490e8 75%, transparent), transparent 60%);
+  transform: translate3d(0, calc(var(--landing-scroll-y, 0) * -0.48px), 0);
+  opacity: 0.22;
 }
 
-@keyframes lbg-aurora-1 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(8vw, 5vh) scale(1.15); }
+/* Horizon "floor" — bottom-anchored darker band suggests ground plane,
+   gives content something to sit on instead of floating in void */
+.landing-bg-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 38vh;
+  background:
+    linear-gradient(180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 40%,
+      color-mix(in srgb, #000 22%, transparent) 100%);
+  pointer-events: none;
+  transform: translateY(calc(var(--landing-scroll-y, 0) * -0.08px));
+  will-change: transform;
 }
 
-@keyframes lbg-aurora-2 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-7vw, 8vh) scale(1.18); }
-}
-
-@keyframes lbg-aurora-3 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-6vw, -6vh) scale(1.12); }
+.landing-bg-floor::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--accent) 35%, transparent) 50%,
+    transparent 100%);
+  opacity: 0.4;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .landing-bg-aurora-1,
   .landing-bg-aurora-2,
-  .landing-bg-aurora-3 { animation: none; }
+  .landing-bg-aurora-3,
+  .landing-bg-grid,
+  .landing-bg-floor { transform: none; }
 }
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
@@ -279,12 +311,18 @@
   z-index: 1;
   pointer-events: none;
   overflow: visible;
+  /* Fade dots toward bottom — sky thins to ground */
+  mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
+  /* Light parallax so sky lags behind foreground while scrolling */
+  transform: translateY(calc(var(--landing-scroll-y, 0) * -0.12px));
+  will-change: transform;
 }
 
 .lc-link {
   fill: none;
-  stroke: color-mix(in srgb, var(--accent) 55%, transparent);
-  stroke-width: 1;
+  stroke: color-mix(in srgb, var(--accent) 38%, transparent);
+  stroke-width: 0.8;
   stroke-dasharray: 3 7;
   opacity: 0;
   animation: lc-link-in 1.6s ease-out forwards, lc-link-flow 12s linear infinite;
@@ -301,7 +339,7 @@
 
 @keyframes lc-link-in {
   from { opacity: 0; stroke-dashoffset: 80; }
-  to   { opacity: 0.5; stroke-dashoffset: 0; }
+  to   { opacity: 0.32; stroke-dashoffset: 0; }
 }
 
 @keyframes lc-link-flow {
@@ -312,7 +350,7 @@
 .lc-dot {
   fill: var(--accent);
   opacity: 0;
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 70%, transparent));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 50%, transparent));
   animation: lc-dot-in 0.45s ease-out forwards, lc-dot-pulse 4s ease-in-out infinite;
 }
 
@@ -327,12 +365,12 @@
 
 @keyframes lc-dot-in {
   from { opacity: 0; transform: scale(0); transform-origin: center; }
-  to   { opacity: 0.85; transform: scale(1); }
+  to   { opacity: 0.55; transform: scale(1); }
 }
 
 @keyframes lc-dot-pulse {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 1; }
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.7; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -455,25 +493,42 @@
   position: relative;
 }
 
+/* Soft accent halo behind card — subtle, no longer pulsing distractingly */
 .landing-demo::before {
   content: "";
   position: absolute;
-  inset: -18px;
+  inset: -14px;
   border-radius: 22px;
   background: radial-gradient(
-    ellipse at 50% 40%,
-    color-mix(in srgb, var(--accent) 30%, transparent) 0%,
+    ellipse at 50% 35%,
+    color-mix(in srgb, var(--accent) 18%, transparent) 0%,
     transparent 70%
   );
-  filter: blur(20px);
-  z-index: -1;
-  opacity: 0.7;
-  animation: demo-halo-pulse 5s ease-in-out infinite;
+  filter: blur(18px);
+  z-index: -2;
+  opacity: 0.55;
+  animation: demo-halo-pulse 7s ease-in-out infinite;
+}
+
+/* Ground-cast shadow — elliptical blur beneath card anchors it to floor */
+.landing-demo::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -28px;
+  height: 36px;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, #000 40%, transparent) 0%,
+    transparent 70%);
+  filter: blur(10px);
+  z-index: -3;
+  pointer-events: none;
 }
 
 @keyframes demo-halo-pulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50%      { opacity: 0.85; transform: scale(1.03); }
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.65; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -481,7 +536,7 @@
 }
 
 .landing-demo-editor {
-  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   border-radius: 14px;
   padding: clamp(0.85rem, 1.4vw, 1.8rem) clamp(1.1rem, 1.6vw, 2.2rem);
@@ -491,10 +546,12 @@
   font-family: var(--font-poem);
   font-size: clamp(0.95rem, 1.1vw, 1.4rem);
   text-align: left;
+  /* Layered shadow: tight contact + soft long-cast = grounded */
   box-shadow:
     0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
-    0 8px 32px color-mix(in srgb, #000 22%, transparent),
-    0 2px 8px color-mix(in srgb, var(--accent) 15%, transparent);
+    0 2px 4px color-mix(in srgb, #000 30%, transparent),
+    0 12px 28px color-mix(in srgb, #000 28%, transparent),
+    0 32px 60px color-mix(in srgb, #000 22%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   position: relative;
@@ -1005,12 +1062,33 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 48px color-mix(in srgb, #000 22%, transparent);
+  /* Stacked shadow grounds shell against floor backdrop */
+  box-shadow:
+    0 2px 6px color-mix(in srgb, #000 28%, transparent),
+    0 16px 36px color-mix(in srgb, #000 26%, transparent),
+    0 40px 80px color-mix(in srgb, #000 22%, transparent);
   background: var(--bg);
   font-size: 0.76rem;
   font-family: var(--font-ui);
   position: relative;
   isolation: isolate;
+}
+
+/* Cast shadow under shell — long ellipse on "floor" anchors it */
+.landing-preview { position: relative; }
+.landing-preview::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 2rem;
+  height: 40px;
+  background: radial-gradient(ellipse at center,
+    color-mix(in srgb, #000 35%, transparent) 0%,
+    transparent 70%);
+  filter: blur(14px);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Subtle perimeter glow on shell — no slide effect */
