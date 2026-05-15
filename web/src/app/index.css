@@ -641,6 +641,11 @@ body.tab-hidden *::after {
   animation-play-state: paused !important;
 }
 
+/* Idle slowdown is implemented in main.tsx via Web Animations API
+   (playbackRate = 0.5 on body::before / body::after when idle, back to 1
+   on activity). No CSS hook needed — keeping the data-user-idle attribute
+   purely as a debugging affordance. */
+
 /* Soft mobile perf: on touch + narrow viewports, slow always-on infinite
    ambient backgrounds (themes, landing aurora) to ~half speed. Keeps the
    visual character but halves the per-second compositor work. Discrete UI
@@ -661,4 +666,75 @@ body.tab-hidden *::after {
   html.is-editor-typing[data-workshop-bg] body::after {
     animation-play-state: paused;
   }
+}
+
+/* ======================================================
+   Light performance preset (data-backdrop-power="very-low")
+   ------------------------------------------------------
+   Strips the costliest GPU work while preserving theme colors,
+   surface contrast, and ambient depth. User opts in via the
+   Performance panel; Balanced and Full are untouched.
+
+   Saved per frame:
+     - Fullwidth backdrop-filter blur on topbar / drawer / modals
+     - 9 stacked gradients + SVG textures on body::before
+     - Fullscreen mix-blend grain overlay
+     - 60px blur radius on landing aurora blobs
+   ====================================================== */
+
+/* 1. Kill backdrop-filter on large chrome surfaces. Solid surface color
+      keeps glass feel via border + shadow; the blur was the expensive bit. */
+html[data-backdrop-power="very-low"] .topbar,
+html[data-backdrop-power="very-low"] .drawer,
+html[data-backdrop-power="very-low"] .modal,
+html[data-backdrop-power="very-low"] .tools-sticky-head {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: color-mix(in srgb, var(--surface) 96%, var(--bg)) !important;
+}
+
+/* 2. Simplify body::before — keep the two strongest ambient washes for color
+      depth, drop SVG textures, lamp pools, secondary washes, and grid lines.
+      Also kill the full-viewport saturate/brightness filter and the drift
+      animation. ~80% of the layer cost gone; theme color identity preserved. */
+html[data-backdrop-power="very-low"] body::before {
+  background-image:
+    radial-gradient(ellipse 130% 110% at 18% 26%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 100% at 84% 24%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 94%, var(--ambient-c), transparent 76%) !important;
+  background-size: 160% 160%, 155% 155%, 170% 170% !important;
+  background-position: 0% 0%, 100% 0%, 50% 100% !important;
+  background-repeat: no-repeat !important;
+  filter: none !important;
+  transform: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* 3. Drop fullscreen grain overlay. mix-blend-mode: overlay forces a
+      compositor pass over the whole viewport every paint. */
+html[data-backdrop-power="very-low"]::before {
+  opacity: 0 !important;
+}
+
+/* 4. Calm landing aurora — reduce blur radius (60px → 24px) and freeze
+      drift. Blobs stay visible; per-frame compositor cost collapses. */
+html[data-backdrop-power="very-low"] .landing-aurora {
+  filter: blur(24px) !important;
+  opacity: 0.42 !important;
+}
+html[data-backdrop-power="very-low"] .landing-aurora-blob-1,
+html[data-backdrop-power="very-low"] .landing-aurora-blob-2,
+html[data-backdrop-power="very-low"] .landing-aurora-blob-3 {
+  animation: none !important;
+  will-change: auto !important;
+}
+
+/* 5. Belt-and-braces: when Light is on AND tab is hidden, also stop any
+      remaining transitions (already covered by body.tab-hidden, this just
+      removes a small jank window if the user switches back mid-fade). */
+html[data-backdrop-power="very-low"] body.tab-hidden *,
+html[data-backdrop-power="very-low"] body.tab-hidden *::before,
+html[data-backdrop-power="very-low"] body.tab-hidden *::after {
+  transition: none !important;
 }

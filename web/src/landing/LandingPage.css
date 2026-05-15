@@ -148,6 +148,17 @@
   .landing-aurora-blob-3 { animation: none; }
 }
 
+/* Hero offscreen — pause aurora drift + floater animations. The hero
+   IntersectionObserver in LandingPage.tsx sets data-offscreen="true" once
+   the hero is fully out of view. Invisible animations cost nothing
+   visually but still drive compositor work; pausing them is free win. */
+.landing-hero[data-offscreen="true"] .landing-aurora-blob-1,
+.landing-hero[data-offscreen="true"] .landing-aurora-blob-2,
+.landing-hero[data-offscreen="true"] .landing-aurora-blob-3,
+.landing-hero[data-offscreen="true"] .landing-floater {
+  animation-play-state: paused;
+}
+
 /* ── Floating ambient words ── */
 .landing-floaters {
   position: absolute;

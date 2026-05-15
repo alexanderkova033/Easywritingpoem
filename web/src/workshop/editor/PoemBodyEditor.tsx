@@ -857,7 +857,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       // so the auto-shrink rarely fires, and the measurement cost is the single
       // biggest source of typing lag on iPad.
       ...(IS_TOUCH_DEVICE ? [] : [lineFontScaleField, lineFontScalePlugin]),
-      EditorView.contentAttributes.of({ spellcheck: "true" }),
+      EditorView.contentAttributes.of({ spellcheck: "false" }),
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
       search({ top: true }),
       highlightSelectionMatches(),

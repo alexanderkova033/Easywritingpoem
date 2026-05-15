@@ -36,7 +36,11 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       </header>
 
       {/* Hero */}
-      <section className="landing-hero" ref={heroRef}>
+      <section
+        className="landing-hero"
+        ref={heroRef}
+        data-offscreen={stickyVisible ? "true" : "false"}
+      >
         <div className="landing-aurora" aria-hidden>
           <span className="landing-aurora-blob landing-aurora-blob-1" />
           <span className="landing-aurora-blob landing-aurora-blob-2" />

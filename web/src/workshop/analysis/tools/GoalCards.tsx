@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { canonicaliseRhymeScheme } from "@/workshop/goals/types";
 import { JumpLineList, NumberInput, SoftPill } from "./shared";
 
@@ -319,8 +320,16 @@ const RHYME_SCHEME_PRESETS: RhymeSchemePreset[] = [
   {
     label: "Sonnet",
     value: "ABABCDCDEFEFGG",
-    hint: "Shakespearean sonnet — 3 quatrains + final couplet",
-    example: ["Shall I compare thee to a summer's day? (A)", "Thou art more lovely and more temperate: (B)", "Rough winds do shake the darling buds of May, (A)", "And summer's lease hath all too short a date. (B)", "… (C, D, C, D)", "… (E, F, E, F)", "So long lives this and this gives life to thee. (G)", "So long as men can breathe or eyes can see, (G)"],
+    hint: "Shakespearean sonnet — 3 quatrains + couplet",
+    example: [
+      "quatrain 1 (A)",
+      "quatrain 1 (B)",
+      "quatrain 1 (A)",
+      "quatrain 1 (B)",
+      "quatrains 2-3 follow CDCD, EFEF",
+      "final couplet (G)",
+      "final couplet (G)",
+    ],
   },
 ];
 
@@ -375,6 +384,19 @@ export function RhymeSchemeCard({
   }, [target]);
 
   const [exampleFor, setExampleFor] = useState<string | null>(null);
+  const [examplePos, setExamplePos] = useState<{ left: number; top: number } | null>(null);
+  const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const openExample = (label: string) => {
+    const el = chipRefs.current[label];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setExamplePos({ left: rect.left, top: rect.bottom + 6 });
+    setExampleFor(label);
+  };
+  const closeExample = (label: string) => {
+    setExampleFor((s) => (s === label ? null : s));
+  };
   const [showCustom, setShowCustom] = useState(false);
   const [custom, setCustom] = useState(target);
   useEffect(() => {
@@ -452,60 +474,30 @@ export function RhymeSchemeCard({
             target === p.value && (!!p.perStanza === perStanza || p.value === "");
           const hasExample = p.example.length > 0;
           return (
-            <span
+            <button
               key={p.label}
-              className="goal-scheme-chip-wrap"
-              onMouseLeave={() => setExampleFor((s) => (s === p.label ? null : s))}
+              ref={(el) => {
+                chipRefs.current[p.label] = el;
+              }}
+              type="button"
+              className={`goal-scheme-chip${active ? " is-active" : ""}`}
+              title={p.hint}
+              onClick={() => {
+                if (!p.value) {
+                  onSet(undefined);
+                  onSetPerStanza(false);
+                  return;
+                }
+                onSet(p.value);
+                onSetPerStanza(!!p.perStanza);
+              }}
+              onMouseEnter={() => hasExample && openExample(p.label)}
+              onMouseLeave={() => closeExample(p.label)}
+              onFocus={() => hasExample && openExample(p.label)}
+              onBlur={() => closeExample(p.label)}
             >
-              <button
-                type="button"
-                className={`goal-scheme-chip${active ? " is-active" : ""}`}
-                title={p.hint}
-                onClick={() => {
-                  if (!p.value) {
-                    onSet(undefined);
-                    onSetPerStanza(false);
-                    return;
-                  }
-                  onSet(p.value);
-                  onSetPerStanza(!!p.perStanza);
-                }}
-                onMouseEnter={() => hasExample && setExampleFor(p.label)}
-                onFocus={() => hasExample && setExampleFor(p.label)}
-                onBlur={() => setExampleFor(null)}
-              >
-                {p.label}
-              </button>
-              {exampleFor === p.label && hasExample ? (
-                <div className="goal-scheme-example" role="tooltip">
-                  <div className="goal-scheme-example-title">{p.hint}</div>
-                  <ol className="goal-scheme-example-lines">
-                    {p.example.map((ln, idx) => {
-                      const m = ln.match(/\(([A-Z])\)$/);
-                      const letter = m?.[1] ?? "";
-                      const text = ln.replace(/\s*\([A-Z]\)$/, "");
-                      return (
-                        <li key={idx}>
-                          <span className="goal-scheme-example-text">{text}</span>
-                          {letter ? (
-                            <span
-                              className="goal-scheme-example-tag"
-                              style={{
-                                background: letterColor(letter, 0.18),
-                                color: letterColor(letter, 1),
-                                borderColor: letterColor(letter, 0.45),
-                              }}
-                            >
-                              {letter}
-                            </span>
-                          ) : null}
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              ) : null}
-            </span>
+              {p.label}
+            </button>
           );
         })}
       </div>
@@ -713,6 +705,51 @@ export function RhymeSchemeCard({
       {hasGoal && matches === true ? (
         <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
       ) : null}
+
+      {exampleFor && examplePos
+        ? (() => {
+            const preset = RHYME_SCHEME_PRESETS.find((x) => x.label === exampleFor);
+            if (!preset || preset.example.length === 0) return null;
+            const maxLeft = Math.max(
+              8,
+              Math.min(examplePos.left, window.innerWidth - 340),
+            );
+            return createPortal(
+              <div
+                className="goal-scheme-example"
+                role="tooltip"
+                style={{ left: maxLeft, top: examplePos.top }}
+              >
+                <div className="goal-scheme-example-title">{preset.hint}</div>
+                <ol className="goal-scheme-example-lines">
+                  {preset.example.map((ln, idx) => {
+                    const m = ln.match(/\(([A-Z](?:,\s*[A-Z])*)\)$/);
+                    const letter = m?.[1]?.split(",")[0]?.trim() ?? "";
+                    const text = ln.replace(/\s*\([A-Z,\s]+\)$/, "");
+                    return (
+                      <li key={idx}>
+                        <span className="goal-scheme-example-text">{text}</span>
+                        {letter ? (
+                          <span
+                            className="goal-scheme-example-tag"
+                            style={{
+                              background: letterColor(letter, 0.18),
+                              color: letterColor(letter, 1),
+                              borderColor: letterColor(letter, 0.45),
+                            }}
+                          >
+                            {m?.[1] ?? letter}
+                          </span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>,
+              document.body,
+            );
+          })()
+        : null}
     </div>
   );
 }

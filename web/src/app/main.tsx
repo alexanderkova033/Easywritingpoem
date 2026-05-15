@@ -27,6 +27,82 @@ function syncTabHiddenClass() {
 syncTabHiddenClass();
 document.addEventListener("visibilitychange", syncTabHiddenClass);
 
+// Idle slowdown — after no user input for IDLE_MS, halve the playback rate
+// of the ambient body::before / body::after animations (drift continues but
+// at 2x slower). On the next input event, restore rate to 1 instantly.
+//
+// Uses Web Animations API rather than CSS toggling so the slowdown works
+// per-theme without touching each theme's animation declaration. The drift
+// is the only thing affected — UI transitions, modal animations, AI
+// streaming, typing, and React state are untouched.
+//
+// Listeners are passive + capture so they cannot block scroll or be
+// cancelled by stopPropagation inside the app.
+const IDLE_MS = 60_000;
+const IDLE_RATE = 0.5;
+let idleTimer: number | undefined;
+let isIdle = false;
+let currentRate = 1;
+
+function applyAmbientRate(rate: number) {
+  currentRate = rate;
+  for (const anim of document.getAnimations()) {
+    const effect = anim.effect;
+    if (!(effect instanceof KeyframeEffect)) continue;
+    if (effect.target !== document.body) continue;
+    const pseudo = effect.pseudoElement;
+    if (pseudo !== "::before" && pseudo !== "::after") continue;
+    anim.playbackRate = rate;
+  }
+}
+
+function markActive() {
+  if (isIdle) {
+    isIdle = false;
+    document.documentElement.removeAttribute("data-user-idle");
+    applyAmbientRate(1);
+  }
+  if (idleTimer !== undefined) window.clearTimeout(idleTimer);
+  idleTimer = window.setTimeout(() => {
+    isIdle = true;
+    document.documentElement.setAttribute("data-user-idle", "");
+    applyAmbientRate(IDLE_RATE);
+  }, IDLE_MS);
+}
+
+const IDLE_EVENTS = [
+  "pointermove",
+  "pointerdown",
+  "keydown",
+  "wheel",
+  "touchstart",
+  "scroll",
+] as const;
+for (const ev of IDLE_EVENTS) {
+  window.addEventListener(ev, markActive, { passive: true, capture: true });
+}
+// Visibility flip back from hidden also counts as activity — user just
+// returned to the tab and should see the live backdrop immediately.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) markActive();
+});
+
+// Theme switches replace the body::before / body::after Animation objects
+// (new animation-name → new Animation instance at default rate 1). When that
+// happens while we're idle, reapply the current rate on the next frame so
+// the new theme's drift inherits the slowdown.
+const htmlEl = document.documentElement;
+const themeObserver = new MutationObserver(() => {
+  if (currentRate === 1) return;
+  requestAnimationFrame(() => applyAmbientRate(currentRate));
+});
+themeObserver.observe(htmlEl, {
+  attributes: true,
+  attributeFilter: ["data-workshop-bg"],
+});
+
+markActive();
+
 function readLandingDismissed(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY_LANDING_DISMISSED) === "1";

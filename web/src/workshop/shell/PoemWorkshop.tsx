@@ -1467,7 +1467,7 @@ export function PoemWorkshop() {
             aria-labelledby="bg-modal-title"
           >
             <div className="modal-head">
-              <h2 id="bg-modal-title" className="modal-title">Page Background</h2>
+              <h2 id="bg-modal-title" className="modal-title">Page Background &amp; Performance</h2>
               <button type="button" className="small-btn" onClick={() => setIsBackgroundOpen(false)}>
                 Close
               </button>
@@ -1479,9 +1479,6 @@ export function PoemWorkshop() {
                 onChange={setAppearance}
               />
             </Suspense>
-            <div className="modal-note">
-              <strong>Background settings</strong> (strength + motion + low‑power)
-            </div>
             <BackdropFormFields appearance={appearance} onChange={setAppearance} />
           </section>
         </div>

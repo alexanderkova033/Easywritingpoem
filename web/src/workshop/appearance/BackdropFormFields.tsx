@@ -1,20 +1,62 @@
-import type { ChangeEvent } from "react";
 import type {
   AppearanceSettings,
   BackdropMotionSetting,
   BackdropPowerSetting,
 } from "./appearance";
 
-function powerLabel(power: BackdropPowerSetting): string {
-  return power === "off"
-    ? "Backdrop power: Off"
-    : power === "low"
-      ? "Backdrop power: Low"
-      : "Backdrop power: Very low";
+type QualityId = "light" | "balanced" | "full";
+
+interface QualityPreset {
+  id: QualityId;
+  glyph: string;
+  label: string;
+  sub: string;
+  hint: string;
+  power: BackdropPowerSetting;
+  motion: BackdropMotionSetting;
 }
 
-function cyclePower(power: BackdropPowerSetting): BackdropPowerSetting {
-  return power === "off" ? "low" : power === "low" ? "very-low" : "off";
+const QUALITY_PRESETS: QualityPreset[] = [
+  {
+    id: "light",
+    glyph: "⚡",
+    label: "Light",
+    sub: "Easiest on battery",
+    hint: "Calm, static backdrop. Best for laptops, older devices, or long sessions.",
+    power: "very-low",
+    motion: "off",
+  },
+  {
+    id: "balanced",
+    glyph: "◐",
+    label: "Balanced",
+    sub: "Recommended",
+    hint: "Softened effects with gentle motion. Follows your system reduce-motion setting.",
+    power: "low",
+    motion: "system",
+  },
+  {
+    id: "full",
+    glyph: "✦",
+    label: "Full",
+    sub: "Most beautiful",
+    hint: "Every layer, every animation. Uses more GPU.",
+    power: "off",
+    motion: "on",
+  },
+];
+
+function detectQuality(
+  power: BackdropPowerSetting,
+  motion: BackdropMotionSetting,
+): QualityId {
+  const match = QUALITY_PRESETS.find(
+    (p) => p.power === power && p.motion === motion,
+  );
+  if (match) return match.id;
+  if (power === "very-low" || motion === "off") return "light";
+  if (power === "low") return "balanced";
+  return "full";
 }
 
 export function BackdropFormFields(props: {
@@ -22,43 +64,86 @@ export function BackdropFormFields(props: {
   onChange: (next: AppearanceSettings) => void;
 }) {
   const { appearance, onChange } = props;
+  const active = detectQuality(appearance.backdropPower, appearance.backdropMotion);
+  const activePreset = QUALITY_PRESETS.find((p) => p.id === active)!;
 
-  const onMotion = (e: ChangeEvent<HTMLSelectElement>) => {
+  const selectQuality = (preset: QualityPreset) => {
     onChange({
       ...appearance,
-      backdropMotion: e.target.value as BackdropMotionSetting,
+      backdropPower: preset.power,
+      backdropMotion: preset.motion,
+    });
+  };
+
+  const motionOn = appearance.backdropMotion !== "off";
+  const toggleMotion = () => {
+    onChange({
+      ...appearance,
+      backdropMotion: motionOn ? "off" : "on",
     });
   };
 
   return (
-    <div className="appearance-fields" aria-label="Backdrop options">
-      <label className="appearance-field">
-        Backdrop motion
-        <select value={appearance.backdropMotion} onChange={onMotion}>
-          <option value="system">System</option>
-          <option value="on">On</option>
-          <option value="off">Off</option>
-        </select>
-      </label>
-
-      <div className="appearance-field">
-        Backdrop power
-        <button
-          type="button"
-          className={`small-btn ${appearance.backdropPower !== "off" ? "is-selected" : ""}`}
-          onClick={() =>
-            onChange({
-              ...appearance,
-              backdropPower: cyclePower(appearance.backdropPower),
-            })
-          }
-          aria-pressed={appearance.backdropPower !== "off"}
-        >
-          {powerLabel(appearance.backdropPower)}
-        </button>
-        <span className="muted small">Click to cycle: Off → Low → Very low.</span>
+    <div className="perf-panel" role="group" aria-label="Performance">
+      <div className="perf-panel-head">
+        <span className="perf-panel-icon" aria-hidden="true">⚡</span>
+        <div className="perf-panel-heading">
+          <h3 className="perf-panel-title">Performance</h3>
+          <p className="perf-panel-sub">
+            Lower the visual load if scrolling stutters, the fan kicks in, or
+            you’re on battery.
+          </p>
+        </div>
       </div>
+
+      <div
+        className="perf-quality"
+        role="radiogroup"
+        aria-label="Visual quality"
+      >
+        {QUALITY_PRESETS.map((p) => {
+          const selected = p.id === active;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              className={`perf-quality-tile${selected ? " is-selected" : ""}`}
+              onClick={() => selectQuality(p)}
+              title={p.hint}
+            >
+              <span className="perf-quality-glyph" aria-hidden="true">
+                {p.glyph}
+              </span>
+              <span className="perf-quality-label">{p.label}</span>
+              <span className="perf-quality-sub">{p.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="perf-quality-hint">{activePreset.hint}</p>
+
+      <label className="perf-toggle">
+        <span className="perf-toggle-text">
+          <strong>Animated background</strong>
+          <span className="muted small">
+            Drifting gradients and ambient effects
+          </span>
+        </span>
+        <span className="perf-toggle-switch">
+          <input
+            type="checkbox"
+            checked={motionOn}
+            onChange={toggleMotion}
+            aria-label="Animated background"
+          />
+          <span className="perf-toggle-track" aria-hidden="true">
+            <span className="perf-toggle-thumb" />
+          </span>
+        </span>
+      </label>
     </div>
   );
 }
-

@@ -5423,12 +5423,12 @@
 }
 
 .goal-scheme-example {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 50;
+  position: fixed;
+  z-index: 9999;
   min-width: 220px;
-  max-width: 320px;
+  max-width: min(320px, calc(100vw - 1rem));
+  max-height: 220px;
+  overflow-y: auto;
   padding: 0.55rem 0.7rem;
   background: var(--surface, var(--bg));
   border: 1px solid color-mix(in srgb, var(--border) 80%, var(--muted));
@@ -5437,6 +5437,7 @@
   font-size: 0.78rem;
   line-height: 1.35;
   pointer-events: none;
+  scrollbar-gutter: stable;
 }
 
 .goal-scheme-example-title {
@@ -7274,6 +7275,18 @@
 .workshop-rail,
 .ai-analysis-section {
   border: 1px solid color-mix(in srgb, var(--accent, #5fba7d) 22%, var(--border));
+}
+
+/* Universal perf win — scope layout/style recalc to inside each panel.
+   Browser can skip cascading work outside the container when only one
+   panel changes (typing in editor, AI streaming, rail toggle).
+   `layout style` only — NOT `paint`, since popovers/dropdowns rendered
+   inside panels would otherwise be clipped. Zero visual change. */
+.editor-panel,
+.tools-panel,
+.workshop-rail,
+.ai-analysis-section {
+  contain: layout style;
 }
 
 /* ======================================================
