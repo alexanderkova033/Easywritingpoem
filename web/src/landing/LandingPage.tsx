@@ -2,6 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import "./LandingPage.css";
 import { getCurrentStreak, getDailyPrompt } from "@/workshop/shell/writing-streak";
 
+// Pool of ambient poetry words. Six visible at a time; each slot cycles to the
+// next pool entry when its drift animation iterates, so variety grows without
+// increasing on-screen density.
+const FLOATER_POOL = [
+  "moonlight", "whisper", "ember", "silver", "drift", "hush",
+  "velvet", "linger", "amber", "glimmer", "frost", "echo",
+  "tender", "quiet", "fade", "stillness", "shimmer", "gossamer",
+  "ash", "thrum", "petal", "dusk",
+];
+
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
   const previewRef = useRef<HTMLElement>(null);
@@ -10,6 +20,27 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const [previewRevealed, setPreviewRevealed] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
+  const [floaters, setFloaters] = useState<string[]>(() => FLOATER_POOL.slice(0, 6));
+  const poolCursor = useRef(6);
+
+  const swapFloater = (slot: number) => {
+    setFloaters((prev) => {
+      const next = [...prev];
+      const visible = new Set(prev);
+      visible.delete(prev[slot]);
+      let pick = FLOATER_POOL[poolCursor.current % FLOATER_POOL.length];
+      poolCursor.current += 1;
+      // Avoid picking a word already shown in another slot
+      let guard = 0;
+      while (visible.has(pick) && guard < FLOATER_POOL.length) {
+        pick = FLOATER_POOL[poolCursor.current % FLOATER_POOL.length];
+        poolCursor.current += 1;
+        guard += 1;
+      }
+      next[slot] = pick;
+      return next;
+    });
+  };
 
   // Scroll-driven parallax — writes --landing-scroll-y (in px) to root.
   // Aurora layers use it via transform for depth.
@@ -97,6 +128,17 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
           <span className="landing-aurora-blob landing-aurora-blob-1" />
           <span className="landing-aurora-blob landing-aurora-blob-2" />
           <span className="landing-aurora-blob landing-aurora-blob-3" />
+        </div>
+        <div className="landing-floaters" aria-hidden>
+          {floaters.map((word, i) => (
+            <span
+              key={i}
+              className={`landing-floater landing-floater-${i + 1}`}
+              onAnimationIteration={() => swapFloater(i)}
+            >
+              {word}
+            </span>
+          ))}
         </div>
         <svg className="landing-constellation" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden>
           {/* Connecting paths (drawn behind nodes) */}

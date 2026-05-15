@@ -361,6 +361,49 @@
   animation-play-state: paused;
 }
 
+/* ── Floating ambient words ── */
+.landing-floaters {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.landing-floater {
+  position: absolute;
+  font-family: var(--font-poem, serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: color-mix(in srgb, var(--accent) 55%, var(--muted));
+  opacity: 0;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+.landing-floater-1 { top: 18%; left: 6%;  font-size: 1.4rem; animation: floater-drift 18s ease-in-out 0.2s infinite; }
+.landing-floater-2 { top: 60%; left: 9%;  font-size: 1.05rem; animation: floater-drift 22s ease-in-out 2.5s infinite; }
+.landing-floater-3 { top: 32%; right: 7%; font-size: 1.25rem; animation: floater-drift 20s ease-in-out 1.2s infinite; }
+.landing-floater-4 { top: 72%; right: 5%; font-size: 1.1rem;  animation: floater-drift 24s ease-in-out 3.8s infinite; }
+.landing-floater-5 { top: 8%;  right: 28%; font-size: 0.95rem; animation: floater-drift 19s ease-in-out 5s infinite; }
+.landing-floater-6 { top: 85%; left: 38%; font-size: 1rem;   animation: floater-drift 23s ease-in-out 6.5s infinite; }
+
+@keyframes floater-drift {
+  0%   { opacity: 0; transform: translateY(20px); }
+  15%  { opacity: 0.7; }
+  85%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-60px); }
+}
+
+@media (max-width: 680px) {
+  .landing-floater { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-floater { display: none; }
+}
+
 /* ── Constellation overlay (replaces floating words) ── */
 .landing-constellation {
   position: absolute;
