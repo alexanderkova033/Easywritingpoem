@@ -162,6 +162,12 @@ const syllableCountPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
     private lastActiveLine = -2;
+    // Per-line text cache — typing on one line reuses every other line's
+    // memoised count instead of recomputing all N lines per keystroke. Combined
+    // with the module-level lineCache in syllables.ts, a steady-state rebuild
+    // for a 50-line poem is N hash lookups, not N word-tokenisations.
+    private lineTexts: string[] = [];
+    private lineCounts: number[] = [];
     constructor(view: EditorView) {
       this.lastActiveLine = activeLineNumber(view);
       this.decorations = this.build(view);
@@ -171,14 +177,10 @@ const syllableCountPlugin = ViewPlugin.fromClass(
       // only side effect is hiding the active-line widget. Worth the trade-off
       // to keep typing fluid on iPad. Doc changes still rebuild.
       if (IS_TOUCH_DEVICE) {
-        if (update.docChanged) {
-          this.lastActiveLine = activeLineNumber(update.view);
-          this.decorations = this.build(update.view);
-        }
+        if (update.docChanged) this.decorations = this.build(update.view);
         return;
       }
       if (update.docChanged) {
-        this.lastActiveLine = activeLineNumber(update.view);
         this.decorations = this.build(update.view);
         return;
       }
@@ -187,27 +189,40 @@ const syllableCountPlugin = ViewPlugin.fromClass(
         // the same line don't affect which widget is filtered out.
         const next = activeLineNumber(update.view);
         if (next === this.lastActiveLine) return;
-        this.lastActiveLine = next;
         this.decorations = this.build(update.view);
       }
     }
     build(view: EditorView): DecorationSet {
-      // Active line under the cursor — skip its widget so the count doesn't
-      // shift the text while the user is writing on that line.
       const sel = view.state.selection.main;
       const activeLineNo = view.hasFocus
         ? view.state.doc.lineAt(sel.head).number
         : -1;
-      // First pass: collect counts on all non-empty lines to find max for bar scaling.
+      this.lastActiveLine = activeLineNo;
+      const doc = view.state.doc;
+      const lineCount = doc.lines;
+      // Resize per-line caches and recompute only lines whose text changed.
+      if (this.lineTexts.length !== lineCount) {
+        this.lineTexts.length = lineCount;
+        this.lineCounts.length = lineCount;
+      }
       const counts: { lineNo: number; to: number; count: number }[] = [];
-      for (let i = 1; i <= view.state.doc.lines; i++) {
-        const line = view.state.doc.line(i);
-        if (!line.text.trim()) continue;
-        const count = countSyllablesInLine(line.text);
-        if (count === 0) continue;
+      let maxCount = 1;
+      for (let i = 1; i <= lineCount; i++) {
+        const line = doc.line(i);
+        const text = line.text;
+        const idx = i - 1;
+        let count: number;
+        if (this.lineTexts[idx] === text) {
+          count = this.lineCounts[idx]!;
+        } else {
+          count = text.trim() ? countSyllablesInLine(text) : 0;
+          this.lineTexts[idx] = text;
+          this.lineCounts[idx] = count;
+        }
+        if (count <= 0) continue;
+        if (count > maxCount) maxCount = count;
         counts.push({ lineNo: i, to: line.to, count });
       }
-      const maxCount = counts.reduce((m, c) => Math.max(m, c.count), 1);
       const decos = counts
         .filter(({ lineNo }) => lineNo !== activeLineNo)
         .map(({ to, count }) =>

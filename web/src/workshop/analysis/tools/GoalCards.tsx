@@ -386,6 +386,9 @@ export function RhymeSchemeCard({
   const [exampleFor, setExampleFor] = useState<string | null>(null);
   const [examplePos, setExamplePos] = useState<{ left: number; top: number } | null>(null);
   const chipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [paletteSlot, setPaletteSlot] = useState<number | null>(null);
+  const [palettePos, setPalettePos] = useState<{ left: number; top: number } | null>(null);
+  const slotRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const openExample = (label: string) => {
     const el = chipRefs.current[label];
@@ -408,12 +411,21 @@ export function RhymeSchemeCard({
     const canon = canonicaliseRhymeScheme(joined);
     onSet(canon || undefined);
   };
-  const cycleSlot = (i: number) => {
-    const cur = slots[i] ?? "";
-    const nl = nextLetter(cur, slots);
+  const setSlotLetter = (i: number, letter: string) => {
     const next = slots.slice();
-    next[i] = nl;
+    next[i] = letter;
     commitSlots(next);
+  };
+  const openPalette = (i: number) => {
+    const el = slotRefs.current[i];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setPalettePos({ left: rect.left, top: rect.bottom + 6 });
+    setPaletteSlot(i);
+  };
+  const closePalette = () => {
+    setPaletteSlot(null);
+    setPalettePos(null);
   };
   const addSlot = () => {
     const cur = slots[slots.length - 1] ?? "";
@@ -424,6 +436,41 @@ export function RhymeSchemeCard({
     if (slots.length === 0) return;
     commitSlots(slots.slice(0, -1));
   };
+  const setLineCount = (n: number) => {
+    if (!Number.isFinite(n) || n < 0) return;
+    const capped = Math.min(40, Math.max(0, Math.floor(n)));
+    if (capped === slots.length) return;
+    if (capped < slots.length) {
+      commitSlots(slots.slice(0, capped));
+      return;
+    }
+    const next = slots.slice();
+    while (next.length < capped) {
+      const cur = next[next.length - 1] ?? "";
+      next.push(cur ? nextLetter(cur, next) : "A");
+    }
+    commitSlots(next);
+  };
+
+  const usedLetters = useMemo(() => {
+    const set = new Set<string>();
+    for (const l of slots) if (l) set.add(l);
+    return Array.from(set).sort();
+  }, [slots]);
+
+  useEffect(() => {
+    if (paletteSlot === null) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      const slotEl = slotRefs.current[paletteSlot];
+      if (slotEl && target && slotEl.contains(target)) return;
+      const pal = document.getElementById("goal-scheme-palette");
+      if (pal && target && pal.contains(target)) return;
+      closePalette();
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [paletteSlot]);
 
   const canonCustom = canonicaliseRhymeScheme(custom);
   const commitCustom = () => {
@@ -504,32 +551,69 @@ export function RhymeSchemeCard({
 
       <div className="goal-scheme-builder">
         <div className="goal-scheme-builder-label">
-          {activePreset?.label ?? "Pattern"}
-          {slots.length > 0 ? (
-            <span className="goal-scheme-builder-hint muted small">
-              Click a slot to change its letter
-            </span>
-          ) : null}
+          <span>{activePreset?.label ?? "Pattern"}</span>
+          <span className="goal-scheme-linecount">
+            <span className="muted small">Lines</span>
+            <button
+              type="button"
+              className="goal-scheme-linecount-btn"
+              onClick={() => setLineCount(slots.length - 1)}
+              disabled={slots.length === 0}
+              aria-label="One fewer line"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              className="goal-scheme-linecount-input"
+              min={0}
+              max={40}
+              value={slots.length}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                if (!Number.isNaN(v)) setLineCount(v);
+              }}
+              aria-label="Number of lines"
+            />
+            <button
+              type="button"
+              className="goal-scheme-linecount-btn"
+              onClick={() => setLineCount(slots.length + 1)}
+              aria-label="One more line"
+            >
+              +
+            </button>
+          </span>
         </div>
+        {slots.length > 0 ? (
+          <p className="goal-scheme-builder-hint muted small">
+            Click a slot to pick its rhyme group. Same letter = same rhyme.
+          </p>
+        ) : null}
         <div className="goal-scheme-slots" role="group" aria-label="Rhyme pattern slots">
           {slots.length === 0 ? (
             <span className="goal-scheme-slots-empty muted small">
-              Add slots or pick a preset above.
+              Set a line count or pick a preset above.
             </span>
           ) : (
             slots.map((letter, i) => (
               <button
                 key={i}
+                ref={(el) => {
+                  slotRefs.current[i] = el;
+                }}
                 type="button"
-                className="goal-scheme-slot"
-                onClick={() => cycleSlot(i)}
+                className={`goal-scheme-slot${paletteSlot === i ? " is-open" : ""}`}
+                onClick={() => (paletteSlot === i ? closePalette() : openPalette(i))}
                 style={{
                   background: letterColor(letter, 0.16),
                   borderColor: letterColor(letter, 0.55),
                   color: letterColor(letter, 1),
                 }}
-                title={`Line ${i + 1} · group ${letter} — click to cycle`}
-                aria-label={`Slot ${i + 1}: ${letter}`}
+                title={`Line ${i + 1} · group ${letter || "—"} — click to choose`}
+                aria-label={`Slot ${i + 1}: ${letter || "blank"}`}
+                aria-haspopup="true"
+                aria-expanded={paletteSlot === i}
               >
                 <span className="goal-scheme-slot-num">{i + 1}</span>
                 <span className="goal-scheme-slot-letter">{letter || "·"}</span>
@@ -705,6 +789,84 @@ export function RhymeSchemeCard({
       {hasGoal && matches === true ? (
         <p className="goal-card-extra goal-card-extra--ok">✓ Scheme matches</p>
       ) : null}
+
+      {paletteSlot !== null && palettePos
+        ? (() => {
+            const i = paletteSlot;
+            const current = slots[i] ?? "";
+            const newLetter = nextLetter(
+              usedLetters[usedLetters.length - 1] ?? "",
+              slots,
+            );
+            const maxLeft = Math.max(
+              8,
+              Math.min(palettePos.left, window.innerWidth - 260),
+            );
+            return createPortal(
+              <div
+                id="goal-scheme-palette"
+                className="goal-scheme-palette"
+                role="dialog"
+                aria-label={`Choose rhyme group for line ${i + 1}`}
+                style={{ left: maxLeft, top: palettePos.top }}
+              >
+                <div className="goal-scheme-palette-title muted small">
+                  Line {i + 1} — rhymes with:
+                </div>
+                <div className="goal-scheme-palette-grid">
+                  {usedLetters.map((L) => {
+                    const linesWith = slots
+                      .map((l, idx) => (l === L ? idx + 1 : 0))
+                      .filter(Boolean);
+                    const active = L === current;
+                    return (
+                      <button
+                        key={L}
+                        type="button"
+                        className={`goal-scheme-palette-btn${active ? " is-active" : ""}`}
+                        onClick={() => {
+                          setSlotLetter(i, L);
+                          closePalette();
+                        }}
+                        style={{
+                          background: letterColor(L, 0.16),
+                          borderColor: letterColor(L, 0.6),
+                          color: letterColor(L, 1),
+                        }}
+                        title={`Group ${L} — line(s) ${linesWith.join(", ") || "none yet"}`}
+                      >
+                        <span className="goal-scheme-palette-letter">{L}</span>
+                        <span className="goal-scheme-palette-lines">
+                          {linesWith.length > 0
+                            ? `L${linesWith.join(",")}`
+                            : "—"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    className="goal-scheme-palette-btn goal-scheme-palette-btn--new"
+                    onClick={() => {
+                      setSlotLetter(i, newLetter);
+                      closePalette();
+                    }}
+                    title="Start a new rhyme group"
+                    style={{
+                      background: letterColor(newLetter, 0.1),
+                      borderColor: letterColor(newLetter, 0.5),
+                      color: letterColor(newLetter, 1),
+                    }}
+                  >
+                    <span className="goal-scheme-palette-letter">+{newLetter}</span>
+                    <span className="goal-scheme-palette-lines">new</span>
+                  </button>
+                </div>
+              </div>,
+              document.body,
+            );
+          })()
+        : null}
 
       {exampleFor && examplePos
         ? (() => {

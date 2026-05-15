@@ -1,0 +1,138 @@
+/* ---- Meter controls ---- */
+.meter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+
+.meter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.meter-toggle input {
+  accent-color: var(--accent);
+}
+
+.meter-threshold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+/* ── Meter visual stress bars ─────────────────────────────────────────────── */
+
+.meter-bar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.meter-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0.45rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.13s ease;
+}
+
+.meter-bar-row:hover {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.meter-bar-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.meter-bar-line-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 1.6rem;
+  flex-shrink: 0;
+  font-family: var(--font-metric);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-bar-beats {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 1.15rem;
+  overflow: hidden;
+}
+
+.meter-beat {
+  flex-shrink: 0;
+  width: 5px;
+  border-radius: 2px;
+}
+
+.meter-beat-s {
+  height: 1rem;
+  background: var(--accent);
+  opacity: 0.8;
+}
+
+.meter-beat-u {
+  height: 0.42rem;
+  background: var(--muted);
+  opacity: 0.38;
+}
+
+.meter-beat-gap {
+  flex-shrink: 0;
+  width: 3px;
+}
+
+.meter-bar-empty {
+  font-size: 0.78rem;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.meter-bar-fit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-metric);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.4rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.meter-fit-high { color: var(--ai-score-high, #5fba7d); }
+.meter-fit-mid  { color: var(--muted); }
+.meter-fit-low  { color: var(--ai-score-low, #d95f5f); }
+.meter-fit-none { color: var(--muted); opacity: 0.4; }
+
+.meter-bar-src {
+  font-size: 0.7rem;
+  color: var(--muted);
+  opacity: 0.55;
+  min-width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  font-family: var(--font-metric);
+}

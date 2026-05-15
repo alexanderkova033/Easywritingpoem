@@ -60,7 +60,9 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED } from "@/shared/storage-keys";
+import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
+import { useSheetDrag } from "./hooks/useSheetDrag";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
@@ -79,6 +81,9 @@ import {
   useHoverHintsSettings,
 } from "@/workshop/hints/HoverHintsContext";
 import "./PoemWorkshop.css";
+import "./PoemWorkshop.meter.css";
+import "./PoemWorkshop.rhyme.css";
+import "./PoemWorkshop.snapshot.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
 
 function endWordOfLineRaw(line: string | undefined): string {
@@ -208,7 +213,6 @@ export function PoemWorkshop() {
     if (v) setMobileSheetSnap("half");
     setMobileTab(v ? "tools" : "write");
   };
-  const sheetDragRef = useRef<{ pointerId: number; startY: number; startSnap: "half" | "full"; currentY: number } | null>(null);
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
   const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
@@ -219,150 +223,18 @@ export function PoemWorkshop() {
     setAllTabsExpanded(true);
   };
 
-  const DEFAULT_TOOLS_W = 380;
-  const DEFAULT_RAIL_W  = 64;
-  const SNAP_PX = 36; // snap to 0 when dragged this narrow
-
-  const [toolsPanelWidth, setToolsPanelWidth] = useState(() => {
-    try {
-      const v = parseInt(localStorage.getItem(STORAGE_KEY_TOOLS_WIDTH) ?? "", 10);
-      if (v >= 0 && v <= 1200) return v;
-    } catch { /* ignore */ }
-    return DEFAULT_TOOLS_W;
-  });
-
-  const [railWidth, setRailWidth] = useState(() => {
-    try {
-      const v = parseInt(localStorage.getItem(STORAGE_KEY_RAIL_WIDTH) ?? "", 10);
-      if (v >= 0 && v <= 320) return v;
-    } catch { /* ignore */ }
-    return DEFAULT_RAIL_W;
-  });
-
-  // Cheap path used during pointermove drags — touches only the DOM, never
-  // React state. Avoids re-rendering the whole workshop tree on every frame.
-  // The collapsed class is toggled here so the FAB CSS still flips at w === 0
-  // without going through React; React state catches up on pointerup.
-  const applyToolsWLive = useCallback((w: number) => {
-    const el = workshopGridRef.current;
-    if (!el) return;
-    el.style.setProperty("--tools-col", `${w}px`);
-    el.classList.toggle("tools-collapsed", w === 0);
-  }, []);
-
-  const applyRailWLive = useCallback((w: number) => {
-    const el = workshopGridRef.current;
-    if (!el) return;
-    el.style.setProperty("--rail-col", `${w}px`);
-    el.classList.toggle("rail-collapsed", w === 0);
-  }, []);
-
-  const applyToolsW = useCallback((w: number) => {
-    applyToolsWLive(w);
-    setToolsPanelWidth(w);
-  }, [applyToolsWLive]);
-
-  const applyRailW = useCallback((w: number) => {
-    applyRailWLive(w);
-    setRailWidth(w);
-  }, [applyRailWLive]);
-
-  const saveToolsW = useCallback((w: number) => {
-    try { localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(w)); } catch { /* ignore */ }
-  }, []);
-
-  const saveRailW = useCallback((w: number) => {
-    try { localStorage.setItem(STORAGE_KEY_RAIL_WIDTH, String(w)); } catch { /* ignore */ }
-  }, []);
-
-  const resetLayout = useCallback(() => {
-    applyToolsW(DEFAULT_TOOLS_W);
-    applyRailW(DEFAULT_RAIL_W);
-    saveToolsW(DEFAULT_TOOLS_W);
-    saveRailW(DEFAULT_RAIL_W);
-  }, [applyToolsW, applyRailW, saveToolsW, saveRailW]);
-
-  const MIN_EDITOR_W = 240; // minimum editor column width (px)
-  const GAP_PX = Math.round(1.55 * parseFloat(getComputedStyle(document.documentElement).fontSize || "16"));
-
-  const handleResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const target = e.currentTarget;
-    const pointerId = e.pointerId;
-    try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
-    const startX = e.clientX;
-    const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
-    let rafId = 0;
-    let pendingW = startW;
-    const onMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId) return;
-      const raw = startW - (ev.clientX - startX); // drag left → wider
-      const currentRail = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
-      const maxW = Math.min(
-        window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2,
-        window.innerWidth - MIN_EDITOR_W - GAP_PX * 2,
-      );
-      pendingW = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
-        applyToolsWLive(pendingW);
-      });
-    };
-    const onUp = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId) return;
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", onUp);
-      target.removeEventListener("pointercancel", onUp);
-      try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
-      if (rafId) cancelAnimationFrame(rafId);
-      // Commit final width to React state + persist. State update once per drag,
-      // not once per pointermove.
-      const finalW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10);
-      setToolsPanelWidth(finalW);
-      saveToolsW(finalW);
-    };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", onUp);
-    target.addEventListener("pointercancel", onUp);
-  }, [applyToolsWLive, saveToolsW]);
-
-  const handleRailResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const target = e.currentTarget;
-    const pointerId = e.pointerId;
-    try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
-    const startX = e.clientX;
-    const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
-    let rafId = 0;
-    let pendingW = startW;
-    const onMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId) return;
-      const raw = startW + (ev.clientX - startX); // drag right → wider
-      const currentTools = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
-      const maxW = window.innerWidth - currentTools - MIN_EDITOR_W - GAP_PX * 2;
-      pendingW = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
-        applyRailWLive(pendingW);
-      });
-    };
-    const onUp = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId) return;
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", onUp);
-      target.removeEventListener("pointercancel", onUp);
-      try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
-      if (rafId) cancelAnimationFrame(rafId);
-      const finalW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10);
-      setRailWidth(finalW);
-      saveRailW(finalW);
-    };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", onUp);
-    target.addEventListener("pointercancel", onUp);
-  }, [applyRailWLive, saveRailW]);
+  const {
+    workshopGridRef,
+    toolsPanelWidth,
+    railWidth,
+    applyToolsW,
+    applyRailW,
+    saveToolsW,
+    saveRailW,
+    resetLayout,
+    handleResizeStart,
+    handleRailResizeStart,
+  } = usePanelLayout();
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
   // Fully hide the title bar to maximise writing space
@@ -612,7 +484,6 @@ export function PoemWorkshop() {
   const [sessionWordGoal, setSessionWordGoal] = useState<number | null>(null);
   const [showGoalInput, setShowGoalInput] = useState(false);
   const [goalInputVal, setGoalInputVal] = useState("");
-  const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
   );
@@ -623,54 +494,12 @@ export function PoemWorkshop() {
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
 
-  const handleSheetDragStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (window.innerWidth > 899) return;
-    e.preventDefault();
-    const target = e.currentTarget;
-    try { target.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-    sheetDragRef.current = {
-      pointerId: e.pointerId,
-      startY: e.clientY,
-      startSnap: mobileSheetSnap,
-      currentY: e.clientY,
-    };
-    target.classList.add("is-dragging");
-  }, [mobileSheetSnap]);
-
-  const handleSheetDragMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const drag = sheetDragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    drag.currentY = e.clientY;
-    const dy = e.clientY - drag.startY;
-    const panel = toolsPanelRef.current;
-    if (!panel) return;
-    const vh = window.innerHeight;
-    const baseTop = drag.startSnap === "full" ? vh * 0.08 : vh * 0.50;
-    const liveTop = Math.max(vh * 0.05, Math.min(vh, baseTop + dy));
-    panel.style.setProperty("--sheet-top", `${liveTop}px`);
-  }, []);
-
-  const handleSheetDragEnd = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    const drag = sheetDragRef.current;
-    if (!drag || drag.pointerId !== e.pointerId) return;
-    const target = e.currentTarget;
-    try { target.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-    target.classList.remove("is-dragging");
-    sheetDragRef.current = null;
-    const dy = drag.currentY - drag.startY;
-    const vh = window.innerHeight;
-    const baseTop = drag.startSnap === "full" ? vh * 0.08 : vh * 0.50;
-    const finalTop = baseTop + dy;
-    const panel = toolsPanelRef.current;
-    if (panel) panel.style.removeProperty("--sheet-top");
-    if (finalTop > vh * 0.78) {
-      setMobileToolsExpanded(false);
-    } else if (finalTop < vh * 0.25) {
-      setMobileSheetSnap("full");
-    } else {
-      setMobileSheetSnap("half");
-    }
-  }, []);
+  const { handleSheetDragStart, handleSheetDragMove, handleSheetDragEnd } = useSheetDrag({
+    toolsPanelRef,
+    mobileSheetSnap,
+    setMobileSheetSnap,
+    setMobileToolsExpanded,
+  });
   const editorPanelRef = useRef<HTMLElement | null>(null);
   // Saved scroll positions so switching tabs doesn't reset where you were.
   const editorScrollPos = useRef(0);
