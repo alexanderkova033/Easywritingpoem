@@ -13,7 +13,7 @@
 
 import { kvGetNumber, kvIncrBy, kvSetPxIfAbsent } from "./_kv";
 
-const PER_IP_MONTHLY_CAP_CENTS = 200;
+const PER_IP_MONTHLY_CAP_CENTS = 500;
 const GLOBAL_DAILY_CAP_CENTS = 500;
 
 const DEFAULT_COOLDOWN_MS = 5_000;

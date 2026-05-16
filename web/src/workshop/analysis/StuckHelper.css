@@ -25,13 +25,13 @@
   gap: 0.32rem;
   flex: 1 1 auto;
   justify-content: center;
-  padding: 0.42rem 0.7rem;
+  padding: 0.46rem 0.7rem;
   border-radius: 8px;
   border: 1px solid transparent;
   background: none;
   color: var(--muted);
   font: inherit;
-  font-size: 0.79rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: color 0.14s, background 0.14s, border-color 0.14s, transform 0.1s;
@@ -47,7 +47,8 @@
   color: #fff;
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: translateY(-1px);
 }
 
 .sh-tab-icon {
@@ -59,89 +60,54 @@
 
 .sh-tab.is-active .sh-tab-icon { opacity: 1; }
 
-.sh-tab-label {
-  line-height: 1.1;
+.sh-tab-label { line-height: 1.1; }
+
+/* ── Empty-state preview card ── */
+
+@keyframes sh-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Active mode description ── */
-
-.sh-tab-desc {
-  margin: -0.15rem 0.15rem 0;
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.45;
-  font-style: italic;
-}
-
-/* ── Line picker ── */
-
-.sh-line-picker {
+.sh-empty-card {
+  position: relative;
+  padding: 0.95rem 1rem 0.85rem 1.05rem;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
   display: flex;
   flex-direction: column;
-}
-
-.sh-line-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-  max-height: 10rem;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.28rem;
-  background: var(--bg);
-}
-
-.sh-line-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.38rem 0.55rem;
-  border-radius: 6px;
-  border: 1.5px solid transparent;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 0.83rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
-  width: 100%;
-}
-
-.sh-line-item:hover:not(.is-selected) {
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
-.sh-line-item.is-selected {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
-}
-
-.sh-line-num {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--muted);
-  min-width: 1.4rem;
-  flex-shrink: 0;
-}
-
-.sh-line-text {
-  flex: 1;
-  min-width: 0;
+  gap: 0.3rem;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+.sh-empty-card::before {
+  content: "“";
+  position: absolute;
+  top: -0.6rem;
+  left: 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--accent) 22%, transparent);
+  pointer-events: none;
+  user-select: none;
+}
+
+.sh-empty-quote {
+  margin: 0 0 0 1.1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 0.98rem;
+  color: var(--text);
+  line-height: 1.4;
 }
 
 .sh-empty-hint {
-  margin: 0;
-  padding: 0.5rem 0.6rem;
-  font-size: 0.8rem;
+  margin: 0 0 0 1.1rem;
+  font-size: 0.78rem;
   color: var(--muted);
-  border: 1px dashed var(--border);
-  border-radius: 8px;
-  text-align: center;
+  line-height: 1.45;
 }
 
 /* ── Controls row (note chip + generate) ── */
@@ -317,7 +283,7 @@
 .sh-results {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .sh-results-header {
@@ -325,6 +291,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  padding-left: 0.15rem;
 }
 
 .sh-results-label {
@@ -346,68 +313,71 @@
 .sh-suggestions {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.55rem;
 }
 
-/* ── Suggestion card ── */
+/* ── Verse-style suggestion card (idea / continue / spark) ── */
 
 .sh-suggestion {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem 0.6rem;
-  padding: 0.65rem 0.8rem 0.55rem;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.35rem 0.7rem;
+  padding: 0.75rem 0.9rem 0.6rem 0.85rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
-  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
+  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s, transform 0.14s;
+  opacity: 0;
+  animation: sh-fade-in 0.36s ease-out forwards;
 }
 
 .sh-suggestion:hover {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-left-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 4%, var(--surface));
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-1px);
 }
 
-.sh-suggestion-index {
+.sh-suggestion-numeral {
+  grid-row: 1;
+  grid-column: 1;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  color: var(--accent);
-  font-size: 0.7rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  margin-top: 0.1rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 75%, var(--muted));
+  letter-spacing: 0.03em;
+  padding-top: 0.05rem;
+  user-select: none;
 }
 
 .sh-suggestion-text {
+  grid-row: 1;
   grid-column: 2;
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.98rem;
+  line-height: 1.65;
   color: var(--text);
   white-space: pre-wrap;
   word-break: break-word;
+  font-style: italic;
 }
 
 .sh-suggestion-actions {
+  grid-row: 2;
   grid-column: 2;
   display: flex;
   gap: 0.35rem;
   align-items: center;
   justify-content: flex-end;
-  opacity: 0.55;
-  transition: opacity 0.14s;
-}
-
-.sh-suggestion:hover .sh-suggestion-actions,
-.sh-suggestion:focus-within .sh-suggestion-actions {
-  opacity: 1;
+  margin-top: 0.15rem;
 }
 
 .sh-icon-btn,
@@ -415,20 +385,20 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.26rem 0.55rem;
+  padding: 0.22rem 0.5rem;
   border-radius: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   background: none;
   color: var(--muted);
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   cursor: pointer;
   transition: color 0.12s, border-color 0.12s, background 0.12s;
   white-space: nowrap;
 }
 
 .sh-icon-btn {
-  min-width: 1.85rem;
+  min-width: 1.75rem;
   justify-content: center;
 }
 
@@ -445,7 +415,7 @@
 .sh-apply-btn {
   font-weight: 700;
   color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 .sh-apply-btn:hover {
@@ -459,13 +429,46 @@
   background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 8%, transparent);
 }
 
-.sh-replace-btn {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+/* ── Rhyme chip cloud ── */
+
+.sh-rhyme-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
 }
+
+.sh-rhyme-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.1s;
+  opacity: 0;
+  animation: sh-fade-in 0.3s ease-out forwards;
+}
+
+.sh-rhyme-chip:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.sh-rhyme-chip:active { transform: translateY(0); }
 
 /* ── Mobile ── */
 @media (max-width: 899px) {
-  /* Horizontal scrollable tab strip on mobile */
   .sh-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -486,11 +489,10 @@
 
   .sh-generate-btn { padding: 0.7rem 1rem; font-size: 0.9rem; }
 
-  .sh-icon-btn, .sh-apply-btn { padding: 0.38rem 0.7rem; font-size: 0.82rem; }
-  .sh-icon-btn { min-width: 2.2rem; }
+  .sh-icon-btn, .sh-apply-btn { padding: 0.36rem 0.65rem; font-size: 0.8rem; }
+  .sh-icon-btn { min-width: 2.1rem; }
 
-  .sh-line-item { padding: 0.55rem 0.65rem; min-height: 2.75rem; }
+  .sh-suggestion-text { font-size: 1rem; }
 
-  /* On mobile, always show suggestion actions (no hover) */
-  .sh-suggestion-actions { opacity: 1; }
+  .sh-rhyme-chip { padding: 0.42rem 0.85rem; font-size: 0.9rem; }
 }

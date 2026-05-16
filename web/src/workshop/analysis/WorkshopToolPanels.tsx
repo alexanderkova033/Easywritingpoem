@@ -272,7 +272,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-suggest"
         >
-          <StuckHelper title={props.poemTitle} lines={props.poemLines} onInsert={props.onInsertSuggestion} onReplaceLine={props.onReplaceLine} />
+          <StuckHelper title={props.poemTitle} lines={props.poemLines} onInsert={props.onInsertSuggestion} />
         </div>
       ) : null}
 

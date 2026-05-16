@@ -1,26 +1,56 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useCallback, useRef } from "react";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import "./StuckHelper.css";
 
-type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
+type SuggestType = "idea" | "continue" | "rhyme" | "spark";
 
 interface SuggestResult {
   suggestions: string[];
   rhymes_with?: string;
 }
 
-const TYPE_CONFIG: {
+interface TypeMeta {
   id: SuggestType;
   icon: string;
   label: string;
   desc: string;
-}[] = [
-  { id: "idea",     icon: "💡", label: "Idea",     desc: "Generate a poem concept or starting point." },
-  { id: "continue", icon: "→",  label: "Continue", desc: "What could come next." },
-  { id: "words",    icon: "✦",  label: "Words",    desc: "Vivid alternatives for the wording." },
-  { id: "rhyme",    icon: "♪",  label: "Rhyme",    desc: "Rhymes for your last line." },
-  { id: "spark",    icon: "⚡", label: "Angle",    desc: "Break out of a rut with a new direction." },
-  { id: "line",     icon: "✏",  label: "Fix line", desc: "Rewrite a specific line." },
+  emptyQuote: string;
+  emptyHint: string;
+}
+
+const TYPE_CONFIG: TypeMeta[] = [
+  {
+    id: "idea",
+    icon: "💡",
+    label: "Idea",
+    desc: "Generate a poem concept or starting point.",
+    emptyQuote: "A blank page is a beginning.",
+    emptyHint: "Generate three concrete starting points — scene, mood, opening phrase.",
+  },
+  {
+    id: "continue",
+    icon: "→",
+    label: "Continue",
+    desc: "What could come next.",
+    emptyQuote: "Where does this poem want to go?",
+    emptyHint: "Generate three possible next lines that match your tone.",
+  },
+  {
+    id: "rhyme",
+    icon: "♪",
+    label: "Rhyme",
+    desc: "Rhymes for your last line.",
+    emptyQuote: "Endings echo.",
+    emptyHint: "Generate rhymes for the final word of your poem.",
+  },
+  {
+    id: "spark",
+    icon: "⚡",
+    label: "Angle",
+    desc: "Break out of a rut with a new direction.",
+    emptyQuote: "Try the unexpected.",
+    emptyHint: "Generate three pivots — unusual angles, what-ifs, surprises.",
+  },
 ];
 
 async function fetchSuggestions(
@@ -28,12 +58,11 @@ async function fetchSuggestions(
   lines: string[],
   type: SuggestType,
   context: string,
-  targetLine?: string,
 ): Promise<SuggestResult> {
   const res = await fetch("/api/suggest", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, type, context, targetLine }),
+    body: JSON.stringify({ title, lines, type, context }),
   });
   if (!res.ok) {
     const { message } = await parseAiErrorAndNotify(res, "suggest");
@@ -46,50 +75,29 @@ export interface StuckHelperProps {
   title: string;
   lines: string[];
   onInsert?: (text: string) => void;
-  onReplaceLine?: (lineNum: number, text: string) => void;
 }
 
-export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelperProps) {
+export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
   const [activeType, setActiveType] = useState<SuggestType>(() =>
     lines.some((l) => l.trim().length > 0) ? "continue" : "idea"
   );
   const [context, setContext] = useState("");
-  const [targetLineNum, setTargetLineNum] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SuggestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showContext, setShowContext] = useState(false);
+  const [resultMode, setResultMode] = useState<SuggestType | null>(null);
   const contextInputRef = useRef<HTMLInputElement>(null);
 
-  const nonEmptyLines = useMemo(
-    () => lines
-      .map((text, i) => ({ text, num: i + 1 }))
-      .filter(({ text }) => text.trim().length > 0),
-    [lines],
-  );
-
-  const targetLineText = targetLineNum != null
-    ? (lines[targetLineNum - 1] ?? "")
-    : "";
-
-  const isFirstRender = useRef(true);
-
-  const titleRef   = useRef(title);
-  const linesRef   = useRef(lines);
+  const titleRef = useRef(title);
+  const linesRef = useRef(lines);
   const contextRef = useRef(context);
-  titleRef.current   = title;
-  linesRef.current   = lines;
+  titleRef.current = title;
+  linesRef.current = lines;
   contextRef.current = context;
 
-  useEffect(() => {
-    if (activeType === "line" && targetLineNum == null && nonEmptyLines.length > 0) {
-      setTargetLineNum(nonEmptyLines[nonEmptyLines.length - 1]!.num);
-    }
-  }, [activeType]); // eslint-disable-line
-
-  const handleGenerate = useCallback(async (typeOverride?: SuggestType, targetOverride?: string) => {
-    const suggestType  = typeOverride  ?? activeType;
-    const targetLine   = targetOverride ?? (suggestType === "line" ? targetLineText : undefined);
+  const handleGenerate = useCallback(async () => {
+    const suggestType = activeType;
     setLoading(true);
     setResult(null);
     setError(null);
@@ -99,43 +107,35 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
         linesRef.current,
         suggestType,
         contextRef.current,
-        targetLine,
       );
       setResult(data);
+      setResultMode(suggestType);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [activeType, targetLineText]); // eslint-disable-line
-
-  useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    if (activeType === "line") return;
-    void handleGenerate(activeType);
-  }, [activeType]); // eslint-disable-line
+  }, [activeType]);
 
   const handleSelectMode = useCallback((type: SuggestType) => {
     setActiveType(type);
     setResult(null);
+    setResultMode(null);
     setError(null);
   }, []);
 
   const activeConfig = TYPE_CONFIG.find((c) => c.id === activeType)!;
+  const isRhyme = resultMode === "rhyme";
 
   const resultLabel = () => {
-    if (activeType === "idea")     return "Poem ideas";
-    if (activeType === "words")    return "Word alternatives";
-    if (activeType === "rhyme")    return result?.rhymes_with ? `Rhymes for "${result.rhymes_with}"` : "Rhyme suggestions";
-    if (activeType === "spark")    return "New directions";
-    if (activeType === "line")     return "Line rewrites";
+    if (resultMode === "idea") return "Poem ideas";
+    if (resultMode === "rhyme") return result?.rhymes_with ? `Rhymes with "${result.rhymes_with}"` : "Rhyme suggestions";
+    if (resultMode === "spark") return "New directions";
     return "Continue with…";
   };
 
-  const generateDisabled = loading || (activeType === "line" && !targetLineText.trim());
-
   return (
-    <div className="sh-root">
+    <div className="sh-root" data-mode={activeType}>
       {/* Pill tab strip */}
       <div className="sh-tabs" role="tablist" aria-label="Suggestion mode">
         {TYPE_CONFIG.map(({ id, icon, label, desc }) => (
@@ -154,30 +154,11 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
         ))}
       </div>
 
-      {/* Active mode description */}
-      <p className="sh-tab-desc">{activeConfig.desc}</p>
-
-      {/* Line picker for "Fix a line" */}
-      {activeType === "line" && (
-        <div className="sh-line-picker">
-          {nonEmptyLines.length === 0 ? (
-            <p className="sh-empty-hint">Write a few lines first.</p>
-          ) : (
-            <div className="sh-line-list">
-              {nonEmptyLines.map(({ text, num }) => (
-                <button
-                  key={num}
-                  type="button"
-                  className={`sh-line-item${targetLineNum === num ? " is-selected" : ""}`}
-                  onClick={() => setTargetLineNum(num)}
-                  title={`Line ${num}`}
-                >
-                  <span className="sh-line-num">{num}</span>
-                  <span className="sh-line-text">{text}</span>
-                </button>
-              ))}
-            </div>
-          )}
+      {/* Empty-state preview card — shows before first generate for active mode */}
+      {!loading && !result && !error && (
+        <div className="sh-empty-card" data-mode={activeType}>
+          <p className="sh-empty-quote">{activeConfig.emptyQuote}</p>
+          <p className="sh-empty-hint">{activeConfig.emptyHint}</p>
         </div>
       )}
 
@@ -226,12 +207,10 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
           type="button"
           className="sh-generate-btn"
           onClick={() => void handleGenerate()}
-          disabled={generateDisabled}
+          disabled={loading}
         >
           {loading ? (
             <><span className="sh-btn-spinner" aria-hidden /> Generating…</>
-          ) : activeType === "line" ? (
-            <>↺ Rewrite line</>
           ) : result ? (
             <>↺ Try again</>
           ) : (
@@ -254,42 +233,58 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
       )}
 
       {result && !loading && (
-        <div className="sh-results">
+        <div className="sh-results" data-mode={resultMode ?? activeType}>
           <div className="sh-results-header">
             <span className="sh-results-label">{resultLabel()}</span>
             <span className="sh-results-count">{result.suggestions.length}</span>
           </div>
-          <div className="sh-suggestions">
-            {result.suggestions.map((s, i) => (
-              <SuggestionCard
-                key={i}
-                index={i + 1}
-                text={s}
-                onInsert={onInsert}
-                onReplace={
-                  activeType === "line" && targetLineNum != null && onReplaceLine
-                    ? () => onReplaceLine(targetLineNum, s)
-                    : undefined
-                }
-              />
-            ))}
-          </div>
+
+          {isRhyme ? (
+            <div className="sh-rhyme-cloud">
+              {result.suggestions.map((s, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="sh-rhyme-chip"
+                  style={{ animationDelay: `${i * 40}ms` }}
+                  onClick={() => onInsert?.(s)}
+                  title={onInsert ? "Insert into poem" : s}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="sh-suggestions">
+              {result.suggestions.map((s, i) => (
+                <SuggestionCard
+                  key={i}
+                  index={i + 1}
+                  text={s}
+                  delayMs={i * 60}
+                  onInsert={onInsert}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
 function SuggestionCard({
   index,
   text,
+  delayMs,
   onInsert,
-  onReplace,
 }: {
   index: number;
   text: string;
+  delayMs: number;
   onInsert?: (text: string) => void;
-  onReplace?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -303,22 +298,18 @@ function SuggestionCard({
   }, [text]);
 
   const handleApply = useCallback(() => {
-    if (onReplace) {
-      onReplace();
-    } else if (onInsert) {
+    if (onInsert) {
       onInsert(text.replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
     }
     setApplied(true);
     setTimeout(() => setApplied(false), 1800);
-  }, [onReplace, onInsert, text]);
+  }, [onInsert, text]);
 
-  const canApply = Boolean(onReplace || onInsert);
-  const applyLabel = onReplace ? "Replace" : "Use";
-  const applyTitle = onReplace ? "Replace the selected line in the poem" : "Append to poem";
+  const numeral = ROMAN[index - 1] ?? String(index);
 
   return (
-    <div className="sh-suggestion">
-      <span className="sh-suggestion-index" aria-hidden>{index}</span>
+    <div className="sh-suggestion" style={{ animationDelay: `${delayMs}ms` }}>
+      <span className="sh-suggestion-numeral" aria-hidden>{numeral}</span>
       <p className="sh-suggestion-text">{text}</p>
       <div className="sh-suggestion-actions">
         <button
@@ -330,14 +321,14 @@ function SuggestionCard({
         >
           {copied ? "✓" : "⎘"}
         </button>
-        {canApply && (
+        {onInsert && (
           <button
             type="button"
-            className={`sh-apply-btn${applied ? " is-applied" : ""}${onReplace ? " sh-replace-btn" : ""}`}
+            className={`sh-apply-btn${applied ? " is-applied" : ""}`}
             onClick={handleApply}
-            title={applyTitle}
+            title="Append to poem"
           >
-            {applied ? "✓ Done" : (onReplace ? applyLabel : `↓ ${applyLabel}`)}
+            {applied ? "✓ Done" : "↓ Use"}
           </button>
         )}
       </div>
