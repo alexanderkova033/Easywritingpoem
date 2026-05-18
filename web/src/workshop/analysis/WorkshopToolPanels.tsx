@@ -101,8 +101,10 @@ export interface WorkshopToolPanelsProps {
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
+  onInsertSuggestionAtCursor?: (text: string) => void;
   onInsertWord?: (text: string) => void;
   onReplaceLine?: (lineNum: number, text: string) => void;
+  selectedText?: string | null;
   rhymeBreadth: RhymeBreadth;
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
   cursorLine?: number;
@@ -272,7 +274,14 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-suggest"
         >
-          <StuckHelper title={props.poemTitle} lines={props.poemLines} onInsert={props.onInsertSuggestion} />
+          <StuckHelper
+            title={props.poemTitle}
+            lines={props.poemLines}
+            onInsert={props.onInsertSuggestion}
+            onInsertAtCursor={props.onInsertSuggestionAtCursor}
+            cursorLine={props.cursorLine}
+            selectedText={props.selectedText}
+          />
         </div>
       ) : null}
 

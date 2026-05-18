@@ -110,6 +110,61 @@
   line-height: 1.45;
 }
 
+/* ── Continue-mode anchor indicator ── */
+
+.sh-anchor {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.4rem;
+  padding: 0.32rem 0.6rem 0.32rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 999px;
+}
+
+.sh-anchor-icon { font-size: 0.85rem; line-height: 1; }
+
+/* ── Quick-steer chips ── */
+
+.sh-steer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.sh-steer-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: color 0.12s, border-color 0.12s, background 0.12s, transform 0.1s;
+}
+
+.sh-steer-chip:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.sh-steer-chip.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
 /* ── Controls row (note chip + generate) ── */
 
 .sh-controls {
@@ -278,12 +333,16 @@
 .sh-skel-card:nth-child(2) { animation-delay: 0.12s; height: 3.2rem; }
 .sh-skel-card:nth-child(3) { animation-delay: 0.24s; height: 2.8rem; }
 
-/* ── Results ── */
+/* ── Batch wrapper ── */
 
-.sh-results {
+.sh-batch {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.5rem;
+}
+
+.sh-batch.is-prev {
+  opacity: 0.85;
 }
 
 .sh-results-header {
@@ -292,6 +351,12 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding-left: 0.15rem;
+}
+
+.sh-results-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .sh-results-label {
@@ -310,75 +375,78 @@
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-.sh-suggestions {
+.sh-batch-meta {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sh-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sh-collapse-btn:hover { color: var(--accent); }
+
+/* ── History section ── */
+
+.sh-history {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed var(--hairline);
 }
 
-/* ── Verse-style suggestion card (idea / continue / spark) ── */
-
-.sh-suggestion {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2rem 1fr;
-  gap: 0.35rem 0.7rem;
-  padding: 0.75rem 0.9rem 0.6rem 0.85rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
-  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s, transform 0.14s;
-  opacity: 0;
-  animation: sh-fade-in 0.36s ease-out forwards;
-}
-
-.sh-suggestion:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-left-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 14%, transparent);
-  transform: translateY(-1px);
-}
-
-.sh-suggestion-numeral {
-  grid-row: 1;
-  grid-column: 1;
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: center;
-  font-family: Georgia, "Times New Roman", serif;
-  font-style: italic;
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: color-mix(in srgb, var(--accent) 75%, var(--muted));
-  letter-spacing: 0.03em;
-  padding-top: 0.05rem;
-  user-select: none;
-}
-
-.sh-suggestion-text {
-  grid-row: 1;
-  grid-column: 2;
-  margin: 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 0.98rem;
-  line-height: 1.65;
-  color: var(--text);
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-style: italic;
-}
-
-.sh-suggestion-actions {
-  grid-row: 2;
-  grid-column: 2;
+.sh-history-header {
   display: flex;
-  gap: 0.35rem;
   align-items: center;
-  justify-content: flex-end;
-  margin-top: 0.15rem;
+  justify-content: space-between;
+  padding: 0 0.15rem;
 }
+
+.sh-history-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sh-history-clear {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  transition: color 0.12s, background 0.12s;
+}
+
+.sh-history-clear:hover {
+  color: var(--ai-score-low, #d95f5f);
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 10%, transparent);
+}
+
+/* ── Shared icon / apply buttons ── */
 
 .sh-icon-btn,
 .sh-apply-btn {
@@ -429,7 +497,233 @@
   background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 8%, transparent);
 }
 
-/* ── Rhyme chip cloud ── */
+/* ── Idea cards ── */
+
+.sh-idea-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sh-idea-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.45rem 0.7rem;
+  padding: 0.85rem 0.9rem 0.65rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
+  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s, transform 0.14s;
+  opacity: 0;
+  animation: sh-fade-in 0.36s ease-out forwards;
+}
+
+.sh-idea-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-1px);
+}
+
+.sh-idea-numeral {
+  grid-row: 1;
+  grid-column: 1;
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 75%, var(--muted));
+  letter-spacing: 0.03em;
+  padding-top: 0.1rem;
+  user-select: none;
+}
+
+.sh-idea-body {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sh-idea-head {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: var(--text);
+  font-weight: 600;
+  font-style: italic;
+}
+
+.sh-idea-rest {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+  font-style: italic;
+}
+
+.sh-idea-actions {
+  grid-row: 2;
+  grid-column: 2;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.2rem;
+}
+
+/* ── Continue cards (verse-styled) ── */
+
+.sh-continue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sh-continue-card {
+  position: relative;
+  padding: 0.55rem 0.75rem 0.55rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 75%, var(--surface));
+  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s;
+  opacity: 0;
+  animation: sh-fade-in 0.32s ease-out forwards;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sh-continue-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 3%, var(--surface));
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.sh-continue-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.2rem 0.2rem 0.2rem 0;
+}
+
+.sh-continue-line {
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  align-items: baseline;
+  gap: 0.3rem;
+}
+
+.sh-continue-gutter {
+  font-size: 1rem;
+  color: color-mix(in srgb, var(--accent) 50%, var(--muted));
+  text-align: center;
+  user-select: none;
+  line-height: 1;
+}
+
+.sh-continue-text {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sh-continue-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 0.05rem;
+}
+
+/* ── Spark cards (minimal, big text) ── */
+
+.sh-spark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sh-spark-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.95rem 0.85rem 0.95rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 6%, var(--surface)) 0%,
+    var(--surface) 100%
+  );
+  opacity: 0;
+  animation: sh-fade-in 0.42s ease-out forwards;
+  transition: border-color 0.14s, transform 0.14s, box-shadow 0.14s;
+}
+
+.sh-spark-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.sh-spark-bolt {
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--accent);
+  user-select: none;
+}
+
+.sh-spark-text {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text);
+  letter-spacing: 0.005em;
+}
+
+.sh-spark-copy {
+  align-self: center;
+}
+
+/* ── Rhyme groups + chips ── */
+
+.sh-rhyme-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sh-rhyme-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sh-rhyme-group-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-left: 0.2rem;
+}
 
 .sh-rhyme-cloud {
   display: flex;
@@ -444,7 +738,8 @@
 .sh-rhyme-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.32rem 0.7rem;
+  gap: 0;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   background: color-mix(in srgb, var(--accent) 6%, transparent);
@@ -452,20 +747,48 @@
   font: inherit;
   font-size: 0.86rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.1s;
   opacity: 0;
   animation: sh-fade-in 0.3s ease-out forwards;
+  overflow: hidden;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
 }
 
 .sh-rhyme-chip:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
 }
 
-.sh-rhyme-chip:active { transform: translateY(0); }
+.sh-rhyme-chip-word {
+  padding: 0.32rem 0.5rem 0.32rem 0.75rem;
+  user-select: text;
+}
+
+.sh-rhyme-chip-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 100%;
+  min-height: 1.7rem;
+  padding: 0;
+  border: none;
+  border-left: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.sh-rhyme-chip-action:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.sh-rhyme-chip-action.is-copied {
+  color: var(--ai-score-high, #5fba7d);
+}
 
 /* ── Mobile ── */
 @media (max-width: 899px) {
@@ -487,12 +810,21 @@
 
   .sh-tab-icon { font-size: 1rem; }
 
+  .sh-steer-chip { font-size: 0.78rem; padding: 0.32rem 0.7rem; }
+
   .sh-generate-btn { padding: 0.7rem 1rem; font-size: 0.9rem; }
 
   .sh-icon-btn, .sh-apply-btn { padding: 0.36rem 0.65rem; font-size: 0.8rem; }
   .sh-icon-btn { min-width: 2.1rem; }
 
-  .sh-suggestion-text { font-size: 1rem; }
+  .sh-idea-head { font-size: 1.06rem; }
+  .sh-idea-rest { font-size: 0.96rem; }
 
-  .sh-rhyme-chip { padding: 0.42rem 0.85rem; font-size: 0.9rem; }
+  .sh-continue-text { font-size: 1.04rem; }
+
+  .sh-spark-text { font-size: 1.1rem; }
+
+  .sh-rhyme-chip { font-size: 0.9rem; }
+  .sh-rhyme-chip-word { padding: 0.42rem 0.5rem 0.42rem 0.85rem; }
+  .sh-rhyme-chip-action { width: 2rem; min-height: 2rem; }
 }

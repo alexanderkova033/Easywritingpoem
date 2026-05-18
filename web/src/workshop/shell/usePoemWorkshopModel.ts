@@ -939,6 +939,20 @@ export function usePoemWorkshopModel(
   }, []);
 
   const insertTextAtEnd = useCallback((text: string) => {
+    const view = editorViewRef.current;
+    if (view) {
+      const doc = view.state.doc;
+      const endPos = doc.length;
+      const needsLeadingNewline = endPos > 0 && doc.sliceString(endPos - 1, endPos) !== "\n";
+      const insert = (needsLeadingNewline ? "\n" : "") + text;
+      view.dispatch({
+        changes: { from: endPos, to: endPos, insert },
+        selection: { anchor: endPos + insert.length },
+        scrollIntoView: true,
+      });
+      view.focus();
+      return;
+    }
     if (bodyToReactTimer.current) {
       clearTimeout(bodyToReactTimer.current);
       bodyToReactTimer.current = null;

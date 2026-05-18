@@ -1346,6 +1346,48 @@
   margin: 0.5rem 0 0;
 }
 
+.spell-suggestion-more {
+  font-size: 0.8rem;
+  padding: 0 0.1rem;
+  align-self: baseline;
+  margin-left: 0.15rem;
+  color: var(--muted);
+}
+
+.spell-suggestion-more:hover {
+  color: var(--text);
+}
+
+.spell-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0.15rem 0 0.5rem;
+  padding: 0.1rem 0.1rem 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.spell-summary-count {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.spell-summary-actions {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.spell-summary-link {
+  font-size: 0.82rem;
+  padding: 0;
+}
+
 .spell-sync-note {
   margin: 0 0 0.5rem;
 }
@@ -2282,14 +2324,14 @@
 
 .spell-hit-group {
   position: relative;
-  padding: 0.7rem 0.8rem 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding: 0.6rem 0.75rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   border-left: 3px solid color-mix(in srgb, var(--danger) 55%, var(--border));
   background: color-mix(in srgb, var(--bg) 55%, var(--surface));
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   min-width: 0;
 }
 
@@ -2337,11 +2379,9 @@
 
 .spell-row-aux {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.4rem;
-  margin-top: 0.15rem;
-  padding-top: 0.4rem;
-  border-top: 1px dashed color-mix(in srgb, var(--border) 60%, transparent);
+  margin-top: 0.05rem;
   font-size: 0.76rem;
   color: var(--muted);
 }
@@ -3011,7 +3051,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .editor-panel,
 :where(
   html[data-workshop-bg="paper"],
@@ -3020,7 +3061,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .results,
 :where(
   html[data-workshop-bg="paper"],
@@ -3029,7 +3071,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .privacy {
   border-color: color-mix(in srgb, var(--border) 45%, #000 55%);
 }
@@ -3059,7 +3102,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .editor-panel {
   border-color: color-mix(in srgb, var(--border) 35%, #000 65%);
   box-shadow: 0 4px 20px color-mix(in srgb, #000 14%, transparent);
@@ -3072,7 +3116,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .tools-panel,
 :where(
   html[data-workshop-bg="paper"],
@@ -3081,7 +3126,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .rhyme-panel {
   border-color: color-mix(in srgb, var(--border) 40%, #000 60%);
 }
@@ -3095,7 +3141,8 @@
   html[data-workshop-bg="winter"],
   html[data-workshop-bg="spring"],
   html[data-workshop-bg="summer"],
-  html[data-workshop-bg="park"]
+  html[data-workshop-bg="park"],
+  html[data-workshop-bg="stone"]
 ) .editor-meta-grid {
   border-bottom-color: color-mix(in srgb, var(--border) 14%, #000 10%);
 }
@@ -3118,7 +3165,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .editor-panel,
 :where(
@@ -3132,7 +3178,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .results,
 :where(
@@ -3146,7 +3191,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .privacy,
 :where(
@@ -3160,7 +3204,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .tools-panel,
 :where(
@@ -3174,7 +3217,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .rhyme-panel {
   border-color: color-mix(in srgb, var(--border) 55%, transparent);
@@ -3190,7 +3232,6 @@
   html[data-workshop-bg="ocean"],
   html[data-workshop-bg="rain"],
   html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
   html[data-workshop-bg="studio"]
 ) .editor-meta-grid {
   border-bottom-color: color-mix(in srgb, var(--border) 10%, transparent);

@@ -5,7 +5,9 @@ import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import { downloadTextFile } from "@/workshop/library/export-poem";
 import {
   addToPersonalDictionary,
+  addWordsToPersonalDictionary,
   ignoreWordForSession,
+  ignoreWordsForSession,
   listPersonalDictionaryWords,
   mergePersonalDictionaryFromJson,
   removeFromPersonalDictionary,
@@ -46,11 +48,24 @@ export function SpellPanel({
 }: SpellPanelProps) {
   const [spellListCap, setSpellListCap] = useState(50);
   const [spellReplaceErr, setSpellReplaceErr] = useState<string | null>(null);
+  const [expandedSuggestions, setExpandedSuggestions] = useState<Set<string>>(
+    () => new Set(),
+  );
   const dictImportInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setSpellListCap(50);
+    setExpandedSuggestions(new Set());
   }, [spellHits, spellMode]);
+
+  const toggleSuggestionExpand = (normalized: string) => {
+    setExpandedSuggestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(normalized)) next.delete(normalized);
+      else next.add(normalized);
+      return next;
+    });
+  };
 
   const personalWords = useMemo(
     () => listPersonalDictionaryWords(),
@@ -77,6 +92,19 @@ export function SpellPanel({
     }
     return Array.from(map.values());
   }, [spellHits]);
+
+  const likelyProperNouns = useMemo(() => {
+    const out: string[] = [];
+    for (const g of spellHitGroups) {
+      if (g.hits.length < 2) continue;
+      const allCapitalized = g.hits.every((h) => {
+        const first = h.word[0];
+        return !!first && first === first.toUpperCase() && /[A-Z]/.test(first);
+      });
+      if (allCapitalized) out.push(g.normalized);
+    }
+    return out;
+  }, [spellHitGroups]);
 
   return (
     <div
@@ -134,6 +162,57 @@ export function SpellPanel({
                   {spellReplaceErr}
                 </p>
               ) : null}
+            <div
+              className="spell-summary-bar"
+              role="group"
+              aria-label="Spelling summary and bulk actions"
+            >
+              <span className="spell-summary-count">
+                {spellHitGroups.length} flagged
+              </span>
+              <span className="spell-summary-actions">
+                <button
+                  type="button"
+                  className="linkish spell-summary-link"
+                  title="Skip every flag for this session"
+                  onClick={() => {
+                    const words = spellHitGroups.map((g) => g.normalized);
+                    if (words.length === 0) return;
+                    if (!ignoreWordsForSession(words)) {
+                      onSpellPersistenceError(
+                        "Could not update session spelling skips.",
+                      );
+                      return;
+                    }
+                    refreshSpell();
+                  }}
+                >
+                  Skip all
+                </button>
+                {likelyProperNouns.length > 0 ? (
+                  <>
+                    <span className="spell-aux-sep" aria-hidden="true">·</span>
+                    <button
+                      type="button"
+                      className="linkish spell-summary-link"
+                      title="Add words that appear capitalized 2+ times — usually names"
+                      onClick={() => {
+                        if (!addWordsToPersonalDictionary(likelyProperNouns)) {
+                          onSpellPersistenceError(
+                            "Could not save those words to your dictionary (browser storage blocked or full).",
+                          );
+                          return;
+                        }
+                        refreshSpell();
+                      }}
+                    >
+                      Add {likelyProperNouns.length} likely{" "}
+                      {likelyProperNouns.length === 1 ? "name" : "names"}
+                    </button>
+                  </>
+                ) : null}
+              </span>
+            </div>
             <ul className="spell-hits spell-hits-draft">
               {spellHitGroups.slice(0, spellListCap).map((g) => {
                 const count = g.hits.length;
@@ -162,41 +241,69 @@ export function SpellPanel({
                         ) : null}
                       </span>
                     </div>
-                    {g.suggestions.length > 0 ? (
-                      <div className="spell-suggestion-actions">
-                        {g.suggestions.slice(0, 2).map((sug) => (
-                          <button
-                            key={sug}
-                            type="button"
-                            className="small-btn"
-                            disabled={heavyToolsStale}
-                            title={
-                              heavyToolsStale
-                                ? "Pause typing so the list matches the editor"
-                                : count > 1
-                                  ? `Replace all ${count} with “${sug}”`
-                                  : `Replace with “${sug}”`
-                            }
-                            onClick={() => {
-                              setSpellReplaceErr(null);
-                              const ok =
-                                count > 1
-                                  ? applySpellSuggestionAll(g.normalized, sug)
-                                  : applySpellSuggestion(first, sug);
-                              if (!ok) {
-                                setSpellReplaceErr(
-                                  "Could not replace — wait until tools match your draft (pause typing), then try again.",
-                                );
-                                return;
+                    {g.suggestions.length > 0 ? (() => {
+                      const isExpanded = expandedSuggestions.has(g.normalized);
+                      const maxShown = Math.min(g.suggestions.length, 5);
+                      const visibleLimit = isExpanded ? maxShown : Math.min(maxShown, 2);
+                      const visible = g.suggestions.slice(0, visibleLimit);
+                      const hiddenCount = maxShown - visible.length;
+                      const showFewer = isExpanded && maxShown > 2;
+                      return (
+                        <div className="spell-suggestion-actions">
+                          {visible.map((sug) => (
+                            <button
+                              key={sug}
+                              type="button"
+                              className="small-btn"
+                              disabled={heavyToolsStale}
+                              title={
+                                heavyToolsStale
+                                  ? "Pause typing so the list matches the editor"
+                                  : count > 1
+                                    ? `Replace all ${count} with “${sug}”`
+                                    : `Replace with “${sug}”`
                               }
-                              refreshSpell();
-                            }}
-                          >
-                            {sug}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
+                              onClick={() => {
+                                setSpellReplaceErr(null);
+                                const ok =
+                                  count > 1
+                                    ? applySpellSuggestionAll(g.normalized, sug)
+                                    : applySpellSuggestion(first, sug);
+                                if (!ok) {
+                                  setSpellReplaceErr(
+                                    "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                  );
+                                  return;
+                                }
+                                refreshSpell();
+                              }}
+                            >
+                              {sug}
+                            </button>
+                          ))}
+                          {hiddenCount > 0 ? (
+                            <button
+                              type="button"
+                              className="linkish spell-suggestion-more"
+                              aria-expanded={false}
+                              onClick={() => toggleSuggestionExpand(g.normalized)}
+                              title={`Show ${hiddenCount} more suggestion${hiddenCount === 1 ? "" : "s"}`}
+                            >
+                              +{hiddenCount} more
+                            </button>
+                          ) : showFewer ? (
+                            <button
+                              type="button"
+                              className="linkish spell-suggestion-more"
+                              aria-expanded={true}
+                              onClick={() => toggleSuggestionExpand(g.normalized)}
+                            >
+                              fewer
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })() : null}
                     <div className="spell-row-aux">
                       <button
                         type="button"

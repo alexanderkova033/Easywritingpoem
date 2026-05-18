@@ -1,78 +1,89 @@
-﻿html[data-workshop-bg="stone"] {
-  color-scheme: dark;
-  --bg: #1e1e1c;
-  --surface: #272724;
-  --surface-2: #2e2e2b;
-  --surface-elevated: #323230;
-  --border: #3e3e3a;
-  --text: #e1e1dd;
-  --muted: #888882;
-  --accent: #b0a898;
-  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
-  --selection-bg: color-mix(in srgb, var(--accent) 22%, var(--surface));
+html[data-workshop-bg="stone"] {
+  color-scheme: light;
+  --bg: #ecebe8;
+  --surface: #f6f5f2;
+  --surface-2: #e4e3df;
+  --surface-elevated: #ffffff;
+  --border: #d2d0cb;
+  --text: #2a2d31;
+  --muted: #6a6e74;
+  --accent: #4a5562;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 16%, #dadcdf);
   --selection-fg: var(--text);
-  --danger: #e07070;
-  --net-line: rgba(180, 174, 162, 0.04);
-  --ambient-a: rgba(140, 132, 118, 0.06);
-  --ambient-b: rgba(110, 104, 92, 0.05);
-  --ambient-c: rgba(160, 152, 138, 0.045);
-  --ambient-d: rgba(90, 86, 76, 0.035);
-  --shine-top: rgba(200, 195, 185, 0.05);
-  --shine-mid: rgba(130, 124, 112, 0.03);
-  --after-opacity: 0.40;
-  --after-animation: candle-breathe 80.9s ease-in-out infinite;
-  --shadow-1: 0 3px 14px color-mix(in srgb, #000 38%, transparent);
-  --shadow-2: 0 4px 18px color-mix(in srgb, #000 44%, transparent);
-  --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
+  --danger: #a83a36;
+  --net-line: rgba(50, 55, 65, 0.04);
+  --ambient-a: rgba(180, 185, 195, 0.18);
+  --ambient-b: rgba(160, 168, 180, 0.14);
+  --ambient-c: rgba(210, 212, 216, 0.20);
+  --ambient-d: rgba(140, 150, 165, 0.10);
+  --shine-top: rgba(255, 255, 255, 0.45);
+  --shine-mid: rgba(220, 224, 230, 0.10);
+  --after-blend: screen;
+  --after-opacity: 0.55;
+  --after-animation: marble-glow 168s ease-in-out infinite alternate;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #1a2030 6%, transparent);
+  --shadow-2: 0 6px 22px color-mix(in srgb, #1a2030 8%, transparent);
+  --shadow-3: 0 16px 48px color-mix(in srgb, #1a2030 14%, transparent);
 }
 
-/*
- * Themed backdrop motifs (mesh + symbols). Animation is static so layers stay aligned.
-/* ---- Stone: chiseled slab â€” rune carving, mortar lines, candle-lit corner ---- */
+/* ---- Marble study: polished cool grey slab with white veining and soft sheen ---- */
 html[data-workshop-bg="stone"] body::before {
-  animation: ambient-drift 289s ease-in-out infinite alternate;
+  animation: ambient-drift 318s ease-in-out infinite alternate;
   background-image:
+    /* Cool ambient washes */
     radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
     radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
     radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
-    /* Warm candle pool lower-left */
-    radial-gradient(ellipse 45% 55% at 14% 84%, color-mix(in srgb, #d8a060 12%, transparent), transparent 55%),
-    radial-gradient(ellipse 18% 22% at 14% 84%, color-mix(in srgb, #ffc080 14%, transparent), transparent 60%),
-    /* Cool moon-glow upper-right */
-    radial-gradient(ellipse 40% 40% at 88% 16%, color-mix(in srgb, #a0b0c0 8%, transparent), transparent 58%),
-    /* Diamond lattice (small) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath fill='none' stroke='%23b0a89820' stroke-width='0.6' d='M14 0L28 14L14 28L0 14z'/%3E%3C/svg%3E"),
-    /* Mortar courses â€” horizontal slab divisions */
-    repeating-linear-gradient(0deg, transparent, transparent 64px, color-mix(in srgb, #000 22%, transparent) 64px, color-mix(in srgb, #000 22%, transparent) 65.5px, transparent 65.5px, transparent 66px, color-mix(in srgb, #c0b8a8 5%, transparent) 66px, color-mix(in srgb, #c0b8a8 5%, transparent) 67px),
-    /* Vertical mortar segments (offset brick) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='128' viewBox='0 0 180 128'%3E%3Cline x1='60' y1='0' x2='60' y2='64' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='120' y1='0' x2='120' y2='64' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='30' y1='64' x2='30' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='90' y1='64' x2='90' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3Cline x1='150' y1='64' x2='150' y2='128' stroke='%23000' stroke-opacity='0.22' stroke-width='1.2'/%3E%3C/svg%3E"),
-    /* Crosshatch chisel texture */
-    repeating-linear-gradient(45deg, transparent, transparent 14px, color-mix(in srgb, var(--net-line) 75%, transparent) 14px, color-mix(in srgb, var(--net-line) 75%, transparent) 14.5px);
+    /* Polished highlight — soft window glow upper-right */
+    radial-gradient(ellipse 55% 42% at 86% 8%, color-mix(in srgb, #ffffff 28%, transparent), transparent 65%),
+    radial-gradient(ellipse 32% 24% at 88% 6%, color-mix(in srgb, #ffffff 18%, transparent), transparent 55%),
+    /* Cool reflection from lower-left */
+    radial-gradient(ellipse 45% 38% at 8% 92%, color-mix(in srgb, #c8d2dc 20%, transparent), transparent 62%),
+    /* Primary marble vein — large diagonal sweep */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='900' viewBox='0 0 1400 900'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='1.6' stroke-linecap='round' d='M-20 220 Q160 180 320 260 Q480 340 640 280 Q820 210 980 320 Q1140 420 1320 360 Q1420 330 1500 380'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.32' stroke-width='0.8' stroke-linecap='round' d='M-20 232 Q160 192 320 272 Q480 352 640 292 Q820 222 980 332 Q1140 432 1320 372'/%3E%3Cpath fill='none' stroke='%237a8090' stroke-opacity='0.16' stroke-width='0.7' stroke-linecap='round' d='M-20 248 Q160 210 320 288 Q480 365 640 308 Q820 240 980 348'/%3E%3C/svg%3E"),
+    /* Secondary vein — finer cross-fracture */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1100' height='780' viewBox='0 0 1100 780'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.42' stroke-width='1.1' stroke-linecap='round' d='M120 -20 Q220 140 180 320 Q150 480 260 620 Q340 720 320 820'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.22' stroke-width='0.6' d='M128 -20 Q228 140 188 320 Q158 480 268 620'/%3E%3Cpath fill='none' stroke='%236c7382' stroke-opacity='0.14' stroke-width='0.5' d='M860 -20 Q780 160 820 320 Q860 460 760 580 Q700 660 720 800'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.30' stroke-width='0.9' d='M860 -20 Q780 160 820 320 Q860 460 760 580'/%3E%3C/svg%3E"),
+    /* Capillary veins — short hairline branches */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.28' stroke-width='0.55' stroke-linecap='round' d='M40 110 Q90 124 140 116 M180 220 Q230 232 270 222 M310 86 Q358 96 396 88 M70 360 Q120 372 158 366 M260 420 Q308 432 350 424 M400 280 Q448 292 488 286'/%3E%3Cpath fill='none' stroke='%23596172' stroke-opacity='0.10' stroke-width='0.4' d='M120 60 Q160 80 196 70 M340 180 Q386 202 420 192 M60 250 Q104 268 138 260 M220 320 Q268 340 304 332'/%3E%3C/svg%3E"),
+    /* Mineral speckle — natural surface grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Ccircle cx='28' cy='42' r='0.5' fill='%23404858' fill-opacity='0.22'/%3E%3Ccircle cx='86' cy='78' r='0.4' fill='%23404858' fill-opacity='0.18'/%3E%3Ccircle cx='142' cy='34' r='0.5' fill='%23ffffff' fill-opacity='0.35'/%3E%3Ccircle cx='196' cy='112' r='0.45' fill='%23404858' fill-opacity='0.20'/%3E%3Ccircle cx='52' cy='168' r='0.4' fill='%23ffffff' fill-opacity='0.28'/%3E%3Ccircle cx='118' cy='196' r='0.5' fill='%23404858' fill-opacity='0.18'/%3E%3Ccircle cx='176' cy='216' r='0.4' fill='%23404858' fill-opacity='0.16'/%3E%3Ccircle cx='216' cy='62' r='0.4' fill='%23ffffff' fill-opacity='0.26'/%3E%3C/svg%3E"),
+    /* Whisper-soft net for structure (almost invisible) */
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px);
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     100% 100%, 100% 100%, 100% 100%,
-    28px 28px,
-    100% 66px,
-    180px 128px,
-    100% 100%;
+    1400px 900px,
+    1100px 780px,
+    520px 520px,
+    240px 240px,
+    96px 96px, 96px 96px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 72% 55%,
     0 0, 0 0, 0 0,
-    center center,
+    12% 22%,
+    78% 8%,
+    36% 64%,
     0 0,
-    0 0,
-    0 0;
+    center -1px, center -1px;
 }
 
-/* Stone: flickering candlelight from lower-left corner */
+/* Marble: faint polished highlight that quietly breathes (opacity-only — compositor safe) */
 html[data-workshop-bg="stone"]::after {
   background-image:
-    radial-gradient(ellipse 35% 45% at 14% 84%, color-mix(in srgb, #f0a858 12%, transparent), transparent 60%),
-    radial-gradient(ellipse 15% 18% at 14% 84%, color-mix(in srgb, #ffd090 16%, transparent), transparent 65%);
-  background-size: 100% 100%;
+    radial-gradient(ellipse 42% 36% at 86% 8%, color-mix(in srgb, #ffffff 18%, transparent), transparent 62%),
+    radial-gradient(ellipse 28% 22% at 12% 88%, color-mix(in srgb, #c8d4e0 14%, transparent), transparent 60%);
+  background-size: 100% 100%, 100% 100%;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: candle-breathe 11.9s ease-in-out infinite;
+  animation: marble-glow 168s ease-in-out infinite alternate;
+}
+
+@keyframes marble-glow {
+  0%   { opacity: 0.78; }
+  50%  { opacity: 0.92; }
+  100% { opacity: 0.82; }
 }

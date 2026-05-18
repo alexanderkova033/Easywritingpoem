@@ -204,27 +204,16 @@
 
 .bg-picker-swatch--stone {
   background:
-    /* Diamond lattice cross-hatch */
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 4px,
-      rgba(176, 168, 152, 0.18) 4px,
-      rgba(176, 168, 152, 0.18) 4.5px
-    ),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 4px,
-      rgba(176, 168, 152, 0.13) 4px,
-      rgba(176, 168, 152, 0.13) 4.5px
-    ),
-    /* Candlelight from bottom-right (moved inside swatch) */
-    radial-gradient(ellipse 80% 55% at 88% 88%, rgba(195, 162, 108, 0.38), transparent 55%),
-    /* Cool highlight top-left */
-    radial-gradient(circle at 12% 14%, rgba(210, 208, 200, 0.18), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(180, 175, 165, 0.07), transparent 58%),
-    linear-gradient(158deg, #272724 0%, #1c1c1a 55%, #161614 100%);
+    /* Capillary marble veins (SVG hairlines) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='0.9' stroke-linecap='round' d='M-4 20 Q12 14 24 22 Q36 30 48 22 Q58 16 68 20'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.30' stroke-width='0.5' d='M-4 26 Q12 20 24 28 Q36 36 48 28'/%3E%3Cpath fill='none' stroke='%237a8090' stroke-opacity='0.18' stroke-width='0.5' d='M40 -4 Q44 16 38 32 Q34 46 42 64'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.40' stroke-width='0.6' d='M14 -4 Q18 14 12 28 Q8 42 16 64'/%3E%3C/svg%3E"),
+    /* Polished sheen, upper-right */
+    radial-gradient(ellipse 70% 50% at 80% 12%, rgba(255, 255, 255, 0.42), transparent 62%),
+    /* Cool reflection, lower-left */
+    radial-gradient(ellipse 60% 45% at 12% 88%, rgba(200, 212, 224, 0.30), transparent 60%),
+    /* Soft mid-tone wash */
+    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(220, 222, 226, 0.18), transparent 65%),
+    linear-gradient(158deg, #e8e8e6 0%, #d6d8db 55%, #c4c8ce 100%);
+  background-size: 64px 64px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
 }
 
 .bg-picker-swatch--crimson {

@@ -9,7 +9,7 @@ import {
   type AppearanceSettings,
 } from "@/workshop/appearance/appearance";
 import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields";
-import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
+import { BackdropFormFields, BackdropMotionToggle } from "@/workshop/appearance/BackdropFormFields";
 import { lazyWithReload } from "@/app/lazy-with-reload";
 // BackgroundPicker pulls in the full AI theme generator + ColorEditor; only
 // rendered when the user opens the Page Background modal. Lazy keeps it off
@@ -1308,6 +1308,7 @@ export function PoemWorkshop() {
                 Close
               </button>
             </div>
+            <BackdropMotionToggle appearance={appearance} onChange={setAppearance} />
             <Suspense fallback={<p className="muted small" style={{ padding: "1rem" }}>Loading…</p>}>
               <BackgroundPicker
                 appearance={appearance}
@@ -2135,6 +2136,8 @@ export function PoemWorkshop() {
             poemTitle={m.title}
             poemLines={m.lines}
             onInsertSuggestion={m.insertTextAtEnd}
+            onInsertSuggestionAtCursor={m.insertTextAtCursor}
+            selectedText={selectionText}
             onInsertWord={m.replaceEndWordOrInsert}
             onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
             cursorLine={cursorLine}

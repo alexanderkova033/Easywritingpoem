@@ -72,6 +72,34 @@ export function ignoreWordForSession(word: string): boolean {
   return trySessionStorageSetItem(KEY_IGNORE, JSON.stringify([...s]));
 }
 
+/** Add many words to session-ignore in a single storage write. */
+export function ignoreWordsForSession(words: Iterable<string>): boolean {
+  const s = loadSessionIgnores();
+  let changed = false;
+  for (const word of words) {
+    const w = word.toLowerCase().trim();
+    if (!w || s.has(w)) continue;
+    s.add(w);
+    changed = true;
+  }
+  if (!changed) return true;
+  return trySessionStorageSetItem(KEY_IGNORE, JSON.stringify([...s]));
+}
+
+/** Add many words to the personal dictionary in a single storage write. */
+export function addWordsToPersonalDictionary(words: Iterable<string>): boolean {
+  const s = loadPersonalDictionary();
+  let changed = false;
+  for (const word of words) {
+    const w = word.toLowerCase().trim();
+    if (!w || s.has(w)) continue;
+    s.add(w);
+    changed = true;
+  }
+  if (!changed) return true;
+  return writeJsonSet(KEY_DICT, s);
+}
+
 export type MergePersonalDictionaryResult =
   | { ok: true; added: number; total: number }
   | { ok: false; error: string };
