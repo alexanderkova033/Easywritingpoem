@@ -29,9 +29,9 @@
   --space-3: 0.75rem;
   --space-4: 1rem;
   --space-5: 1.25rem;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 10%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 30%, transparent);

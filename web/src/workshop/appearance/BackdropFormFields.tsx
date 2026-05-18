@@ -113,11 +113,13 @@ export function BackdropFormFields(props: {
               onClick={() => selectQuality(p)}
               title={p.hint}
             >
-              <span className="perf-quality-glyph" aria-hidden="true">
-                {p.glyph}
+              <span className={`perf-quality-swatch perf-quality-swatch--${p.id}`} aria-hidden="true">
+                <span className="perf-quality-glyph">{p.glyph}</span>
               </span>
-              <span className="perf-quality-label">{p.label}</span>
-              <span className="perf-quality-sub">{p.sub}</span>
+              <span className="perf-quality-text">
+                <span className="perf-quality-label">{p.label}</span>
+                <span className="perf-quality-sub">{p.sub}</span>
+              </span>
             </button>
           );
         })}
