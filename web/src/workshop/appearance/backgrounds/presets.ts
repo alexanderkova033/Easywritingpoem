@@ -5,7 +5,7 @@ export const BACKGROUND_OPTIONS = [
   { id: "forest",    label: "Deep forest",   blurb: "Fronds, pine needles, mossy depth.",                              glyph: "❧"  },
   { id: "dawn",      label: "Dawn blush",    blurb: "Rose sunbeams, haze bands, pearlescent highlights.",              glyph: "✦"  },
   { id: "slate",     label: "Cool slate",    blurb: "Hex mesh, cool haze, studio blue.",                               glyph: "⬡"  },
-  { id: "stone",     label: "Marble study",  blurb: "Polished cool grey marble, soft white veining, quiet sheen.",     glyph: "◈"  },
+  { id: "stone",     label: "Stone study",   blurb: "Candle-lit chamber, carved relief, iron sconce, ivy and lichen.", glyph: "◆"  },
   { id: "crimson",   label: "Crimson dusk",  blurb: "Slow ember drift, horizon glow, ash ribbons and sparks.",         glyph: "♦"  },
   { id: "ocean",     label: "Open ocean",    blurb: "Depth haze, caustic diamonds, kelp veils, rising bubbles.",       glyph: "≋"  },
   { id: "aurora",    label: "Aurora",        blurb: "Twin light-curtains, violet-mint wash, moving starfield.",        glyph: "✧"  },

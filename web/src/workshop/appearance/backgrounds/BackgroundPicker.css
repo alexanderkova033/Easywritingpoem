@@ -204,16 +204,19 @@
 
 .bg-picker-swatch--stone {
   background:
-    /* Capillary marble veins (SVG hairlines) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='0.9' stroke-linecap='round' d='M-4 20 Q12 14 24 22 Q36 30 48 22 Q58 16 68 20'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.30' stroke-width='0.5' d='M-4 26 Q12 20 24 28 Q36 36 48 28'/%3E%3Cpath fill='none' stroke='%237a8090' stroke-opacity='0.18' stroke-width='0.5' d='M40 -4 Q44 16 38 32 Q34 46 42 64'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.40' stroke-width='0.6' d='M14 -4 Q18 14 12 28 Q8 42 16 64'/%3E%3C/svg%3E"),
-    /* Polished sheen, upper-right */
-    radial-gradient(ellipse 70% 50% at 80% 12%, rgba(255, 255, 255, 0.42), transparent 62%),
-    /* Cool reflection, lower-left */
-    radial-gradient(ellipse 60% 45% at 12% 88%, rgba(200, 212, 224, 0.30), transparent 60%),
-    /* Soft mid-tone wash */
-    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(220, 222, 226, 0.18), transparent 65%),
-    linear-gradient(158deg, #e8e8e6 0%, #d6d8db 55%, #c4c8ce 100%);
-  background-size: 64px 64px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    /* Tiny carved triskelion hint, mid-left */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23080806' stroke-opacity='0.62' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M32 32 Q32 22 26 22 Q20 22 20 28 Q20 32 24 32'/%3E%3Cpath d='M32 32 Q42 32 42 26 Q42 22 38 22 Q32 22 32 28'/%3E%3Cpath d='M32 32 Q32 42 38 42 Q42 42 42 36 Q42 32 38 32'/%3E%3C/g%3E%3Cg fill='none' stroke='%23e8dcb8' stroke-opacity='0.22' stroke-width='0.5'%3E%3Cpath d='M32 32 Q32 22 26 22 Q20 22 20 28 Q20 32 24 32'/%3E%3Cpath d='M32 32 Q42 32 42 26 Q42 22 38 22 Q32 22 32 28'/%3E%3Cpath d='M32 32 Q32 42 38 42 Q42 42 42 36 Q42 32 38 32'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Diamond lattice chisel hatch */
+    repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(195, 180, 150, 0.14) 4px, rgba(195, 180, 150, 0.14) 4.5px),
+    repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(195, 180, 150, 0.10) 4px, rgba(195, 180, 150, 0.10) 4.5px),
+    /* Warm candle pool lower-left */
+    radial-gradient(ellipse 80% 60% at 14% 88%, rgba(255, 192, 96, 0.42), transparent 58%),
+    radial-gradient(ellipse 36% 28% at 14% 88%, rgba(255, 224, 144, 0.48), transparent 60%),
+    /* Cool moonlight upper-right */
+    radial-gradient(ellipse 50% 38% at 86% 12%, rgba(170, 188, 208, 0.22), transparent 60%),
+    /* Stone slab base */
+    linear-gradient(158deg, #2c2b27 0%, #1f1e1b 55%, #161513 100%);
+  background-size: 64px 64px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
 }
 
 .bg-picker-swatch--crimson {

@@ -1,89 +1,132 @@
+/* ---- Stone study: candle-lit chamber â€” weathered slab, carved relief, iron sconce, ivy, lichen ---- */
 html[data-workshop-bg="stone"] {
-  color-scheme: light;
-  --bg: #ecebe8;
-  --surface: #f6f5f2;
-  --surface-2: #e4e3df;
-  --surface-elevated: #ffffff;
-  --border: #d2d0cb;
-  --text: #2a2d31;
-  --muted: #6a6e74;
-  --accent: #4a5562;
-  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
-  --selection-bg: color-mix(in srgb, var(--accent) 16%, #dadcdf);
+  color-scheme: dark;
+  --bg: #1d1c19;
+  --surface: #282723;
+  --surface-2: #2e2d29;
+  --surface-elevated: #34332f;
+  --border: #46443e;
+  --text: #efe6d3;
+  --muted: #8a857a;
+  --accent: #c8a878;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 24%, var(--surface));
   --selection-fg: var(--text);
-  --danger: #a83a36;
-  --net-line: rgba(50, 55, 65, 0.04);
-  --ambient-a: rgba(180, 185, 195, 0.18);
-  --ambient-b: rgba(160, 168, 180, 0.14);
-  --ambient-c: rgba(210, 212, 216, 0.20);
-  --ambient-d: rgba(140, 150, 165, 0.10);
-  --shine-top: rgba(255, 255, 255, 0.45);
-  --shine-mid: rgba(220, 224, 230, 0.10);
-  --after-blend: screen;
-  --after-opacity: 0.55;
-  --after-animation: marble-glow 168s ease-in-out infinite alternate;
-  --shadow-1: 0 3px 14px color-mix(in srgb, #1a2030 6%, transparent);
-  --shadow-2: 0 6px 22px color-mix(in srgb, #1a2030 8%, transparent);
-  --shadow-3: 0 16px 48px color-mix(in srgb, #1a2030 14%, transparent);
+  --danger: #e07868;
+  --net-line: rgba(195, 180, 150, 0.045);
+  --ambient-a: rgba(150, 138, 110, 0.075);
+  --ambient-b: rgba(118, 108, 90, 0.060);
+  --ambient-c: rgba(170, 156, 122, 0.055);
+  --ambient-d: rgba(95, 88, 74, 0.045);
+  --shine-top: rgba(220, 210, 184, 0.055);
+  --shine-mid: rgba(140, 128, 105, 0.035);
+  --after-blend: normal;
+  --after-opacity: 1;
+  --after-animation: candle-breathe 11.9s ease-in-out infinite;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
+  --shadow-2: 0 6px 22px color-mix(in srgb, #000 50%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 58%, transparent);
 }
 
-/* ---- Marble study: polished cool grey slab with white veining and soft sheen ---- */
 html[data-workshop-bg="stone"] body::before {
-  animation: ambient-drift 318s ease-in-out infinite alternate;
+  animation: ambient-drift 296s ease-in-out infinite alternate;
   background-image:
-    /* Cool ambient washes */
-    radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
-    radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
-    radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
-    radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
-    /* Polished highlight — soft window glow upper-right */
-    radial-gradient(ellipse 55% 42% at 86% 8%, color-mix(in srgb, #ffffff 28%, transparent), transparent 65%),
-    radial-gradient(ellipse 32% 24% at 88% 6%, color-mix(in srgb, #ffffff 18%, transparent), transparent 55%),
-    /* Cool reflection from lower-left */
-    radial-gradient(ellipse 45% 38% at 8% 92%, color-mix(in srgb, #c8d2dc 20%, transparent), transparent 62%),
-    /* Primary marble vein — large diagonal sweep */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1400' height='900' viewBox='0 0 1400 900'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.55' stroke-width='1.6' stroke-linecap='round' d='M-20 220 Q160 180 320 260 Q480 340 640 280 Q820 210 980 320 Q1140 420 1320 360 Q1420 330 1500 380'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.32' stroke-width='0.8' stroke-linecap='round' d='M-20 232 Q160 192 320 272 Q480 352 640 292 Q820 222 980 332 Q1140 432 1320 372'/%3E%3Cpath fill='none' stroke='%237a8090' stroke-opacity='0.16' stroke-width='0.7' stroke-linecap='round' d='M-20 248 Q160 210 320 288 Q480 365 640 308 Q820 240 980 348'/%3E%3C/svg%3E"),
-    /* Secondary vein — finer cross-fracture */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1100' height='780' viewBox='0 0 1100 780'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.42' stroke-width='1.1' stroke-linecap='round' d='M120 -20 Q220 140 180 320 Q150 480 260 620 Q340 720 320 820'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.22' stroke-width='0.6' d='M128 -20 Q228 140 188 320 Q158 480 268 620'/%3E%3Cpath fill='none' stroke='%236c7382' stroke-opacity='0.14' stroke-width='0.5' d='M860 -20 Q780 160 820 320 Q860 460 760 580 Q700 660 720 800'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.30' stroke-width='0.9' d='M860 -20 Q780 160 820 320 Q860 460 760 580'/%3E%3C/svg%3E"),
-    /* Capillary veins — short hairline branches */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='520' height='520' viewBox='0 0 520 520'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-opacity='0.28' stroke-width='0.55' stroke-linecap='round' d='M40 110 Q90 124 140 116 M180 220 Q230 232 270 222 M310 86 Q358 96 396 88 M70 360 Q120 372 158 366 M260 420 Q308 432 350 424 M400 280 Q448 292 488 286'/%3E%3Cpath fill='none' stroke='%23596172' stroke-opacity='0.10' stroke-width='0.4' d='M120 60 Q160 80 196 70 M340 180 Q386 202 420 192 M60 250 Q104 268 138 260 M220 320 Q268 340 304 332'/%3E%3C/svg%3E"),
-    /* Mineral speckle — natural surface grain */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Ccircle cx='28' cy='42' r='0.5' fill='%23404858' fill-opacity='0.22'/%3E%3Ccircle cx='86' cy='78' r='0.4' fill='%23404858' fill-opacity='0.18'/%3E%3Ccircle cx='142' cy='34' r='0.5' fill='%23ffffff' fill-opacity='0.35'/%3E%3Ccircle cx='196' cy='112' r='0.45' fill='%23404858' fill-opacity='0.20'/%3E%3Ccircle cx='52' cy='168' r='0.4' fill='%23ffffff' fill-opacity='0.28'/%3E%3Ccircle cx='118' cy='196' r='0.5' fill='%23404858' fill-opacity='0.18'/%3E%3Ccircle cx='176' cy='216' r='0.4' fill='%23404858' fill-opacity='0.16'/%3E%3Ccircle cx='216' cy='62' r='0.4' fill='%23ffffff' fill-opacity='0.26'/%3E%3C/svg%3E"),
-    /* Whisper-soft net for structure (almost invisible) */
-    linear-gradient(var(--net-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--net-line) 1px, transparent 1px);
+    /* Ambient stone washes */
+    radial-gradient(ellipse 130% 110% at 12% 22%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 95% at 88% 18%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
+    /* Strong candle pool lower-left (floor candle) */
+    radial-gradient(ellipse 46% 56% at 14% 78%, color-mix(in srgb, #f0a040 18%, transparent), transparent 58%),
+    radial-gradient(ellipse 20% 26% at 14% 78%, color-mix(in srgb, #ffc870 28%, transparent), transparent 60%),
+    /* Iron sconce glow upper-right (torch on wall) */
+    radial-gradient(ellipse 30% 42% at 86% 22%, color-mix(in srgb, #f49830 16%, transparent), transparent 58%),
+    radial-gradient(ellipse 14% 20% at 86% 22%, color-mix(in srgb, #ffc060 22%, transparent), transparent 60%),
+    /* Cool moonlight from upper-left window */
+    radial-gradient(ellipse 36% 32% at 10% 8%, color-mix(in srgb, #aabdd0 9%, transparent), transparent 60%),
+    /* Heavy top vignette â€” arched ceiling */
+    radial-gradient(ellipse 100% 30% at 50% 0%, color-mix(in srgb, #050505 60%, transparent), transparent 65%),
+    /* Heavy corner vignettes â€” chamber walls fall to black */
+    radial-gradient(ellipse 55% 55% at 0% 0%, color-mix(in srgb, #050505 30%, transparent), transparent 60%),
+    radial-gradient(ellipse 55% 55% at 100% 100%, color-mix(in srgb, #050505 32%, transparent), transparent 58%),
+    radial-gradient(ellipse 50% 50% at 100% 0%, color-mix(in srgb, #050505 28%, transparent), transparent 58%),
+    radial-gradient(ellipse 50% 50% at 0% 100%, color-mix(in srgb, #050505 24%, transparent), transparent 58%),
+    /* Diamond lattice (small carved chisel pattern) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath fill='none' stroke='%23b0a89818' stroke-width='0.6' d='M14 0L28 14L14 28L0 14z'/%3E%3C/svg%3E"),
+    /* Mortar courses â€” horizontal slab divisions */
+    repeating-linear-gradient(0deg, transparent, transparent 72px, color-mix(in srgb, #000 28%, transparent) 72px, color-mix(in srgb, #000 28%, transparent) 73.5px, transparent 73.5px, transparent 74.5px, color-mix(in srgb, #c0b8a8 5%, transparent) 74.5px, color-mix(in srgb, #c0b8a8 5%, transparent) 75.5px),
+    /* Vertical mortar segments (offset brick) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='148' viewBox='0 0 200 148'%3E%3Cline x1='66' y1='0' x2='66' y2='74' stroke='%23000' stroke-opacity='0.28' stroke-width='1.4'/%3E%3Cline x1='134' y1='0' x2='134' y2='74' stroke='%23000' stroke-opacity='0.28' stroke-width='1.4'/%3E%3Cline x1='32' y1='74' x2='32' y2='148' stroke='%23000' stroke-opacity='0.28' stroke-width='1.4'/%3E%3Cline x1='100' y1='74' x2='100' y2='148' stroke='%23000' stroke-opacity='0.28' stroke-width='1.4'/%3E%3Cline x1='168' y1='74' x2='168' y2='148' stroke='%23000' stroke-opacity='0.28' stroke-width='1.4'/%3E%3C/svg%3E"),
+    /* Crosshatch chisel marks */
+    repeating-linear-gradient(45deg, transparent, transparent 14px, color-mix(in srgb, var(--net-line) 78%, transparent) 14px, color-mix(in srgb, var(--net-line) 78%, transparent) 14.5px),
+    /* Faint carved inscription â€” chiseled Latin strip */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='28' viewBox='0 0 340 28'%3E%3Ctext x='6' y='18' font-family='serif' font-size='14' letter-spacing='2' fill='%23d0c4a8' fill-opacity='0.10'%3EVERBA MANENT SCRIPTA VOLANT%3C/text%3E%3C/svg%3E");
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
-    100% 100%, 100% 100%, 100% 100%,
-    1400px 900px,
-    1100px 780px,
-    520px 520px,
-    240px 240px,
-    96px 96px, 96px 96px;
+    100% 100%, 100% 100%,
+    100% 100%, 100% 100%,
+    100% 100%,
+    100% 30%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%,
+    28px 28px,
+    100% 74px,
+    200px 148px,
+    100% 100%,
+    340px 28px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 72% 55%,
-    0 0, 0 0, 0 0,
-    12% 22%,
-    78% 8%,
-    36% 64%,
+    0 0, 0 0,
+    0 0, 0 0,
     0 0,
-    center -1px, center -1px;
+    50% 0%,
+    0% 0%, 100% 100%, 100% 0%, 0% 100%,
+    center center,
+    0 0,
+    0 0,
+    0 0,
+    66% 14%;
 }
 
-/* Marble: faint polished highlight that quietly breathes (opacity-only — compositor safe) */
+/* Stone: rich illustrated overlay â€” carved relief, iron torch sconce, floor candle, ivy, lichen, arch, leaf */
 html[data-workshop-bg="stone"]::after {
   background-image:
-    radial-gradient(ellipse 42% 36% at 86% 8%, color-mix(in srgb, #ffffff 18%, transparent), transparent 62%),
-    radial-gradient(ellipse 28% 22% at 12% 88%, color-mix(in srgb, #c8d4e0 14%, transparent), transparent 60%);
-  background-size: 100% 100%, 100% 100%;
-  background-repeat: no-repeat;
-  mix-blend-mode: screen;
+    /* Hero: carved relief medallion mid-left â€” triskelion / triple spiral in deep stone */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cdefs%3E%3CradialGradient id='r1' cx='40%25' cy='40%25' r='65%25'%3E%3Cstop offset='0%25' stop-color='%23c4b894' stop-opacity='0.32'/%3E%3Cstop offset='100%25' stop-color='%231a1814' stop-opacity='0.55'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='140' cy='140' r='118' fill='url(%23r1)' stroke='%23080806' stroke-opacity='0.62' stroke-width='2'/%3E%3Ccircle cx='140' cy='140' r='110' fill='none' stroke='%23d8ccaa' stroke-opacity='0.20' stroke-width='0.8'/%3E%3Cg fill='none' stroke='%23080806' stroke-opacity='0.60' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M140 140 Q140 80 110 80 Q80 80 80 110 Q80 140 110 140'/%3E%3Cpath d='M140 140 Q200 140 200 110 Q200 80 170 80 Q140 80 140 110'/%3E%3Cpath d='M140 140 Q140 200 170 200 Q200 200 200 170 Q200 140 170 140'/%3E%3C/g%3E%3Cg fill='none' stroke='%23e8dcb8' stroke-opacity='0.18' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M140 140 Q140 80 110 80 Q80 80 80 110 Q80 140 110 140'/%3E%3Cpath d='M140 140 Q200 140 200 110 Q200 80 170 80 Q140 80 140 110'/%3E%3Cpath d='M140 140 Q140 200 170 200 Q200 200 200 170 Q200 140 170 140'/%3E%3C/g%3E%3Ccircle cx='140' cy='140' r='6' fill='%23080806' fill-opacity='0.62'/%3E%3C/svg%3E"),
+    /* Iron wall sconce + torch flame upper-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='340' viewBox='0 0 180 340'%3E%3Cdefs%3E%3CradialGradient id='tg' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.62'/%3E%3Cstop offset='60%25' stop-color='%23ffa840' stop-opacity='0.24'/%3E%3Cstop offset='100%25' stop-color='%23ff7020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='90' cy='80' r='80' fill='url(%23tg)'/%3E%3Cpath fill='%23ff8a28' d='M90 26 Q72 60 76 100 Q84 130 90 130 Q96 130 104 100 Q108 60 90 26 Z'/%3E%3Cpath fill='%23ffd040' d='M90 46 Q80 72 82 100 Q86 122 90 122 Q94 122 98 100 Q100 72 90 46 Z'/%3E%3Cpath fill='%23ffffff' d='M90 70 Q85 88 86 104 Q88 116 90 116 Q92 116 94 104 Q95 88 90 70 Z'/%3E%3Cline x1='90' y1='124' x2='90' y2='148' stroke='%23241408' stroke-width='2.4'/%3E%3Crect x='78' y='148' width='24' height='42' fill='%23241408' stroke='%23080404' stroke-width='1.5'/%3E%3Cpath fill='%23241408' stroke='%23080404' stroke-width='1.5' d='M60 190 L120 190 L114 208 L66 208 Z'/%3E%3Cpath fill='%23120a06' d='M70 208 L110 208 L114 240 L66 240 Z'/%3E%3Cpath fill='none' stroke='%231a0e08' stroke-width='2' d='M90 240 L90 320 M64 240 Q40 268 50 320 M116 240 Q140 268 130 320'/%3E%3Ccircle cx='90' cy='200' r='3' fill='%23643818'/%3E%3Ccircle cx='78' cy='220' r='2' fill='%23582c10'/%3E%3Ccircle cx='102' cy='220' r='2' fill='%23582c10'/%3E%3C/svg%3E"),
+    /* Floor candle lower-left â€” melted taper in iron holder */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='260' viewBox='0 0 160 260'%3E%3Cdefs%3E%3CradialGradient id='fg' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.55'/%3E%3Cstop offset='60%25' stop-color='%23ffa840' stop-opacity='0.22'/%3E%3Cstop offset='100%25' stop-color='%23ff7020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='80' cy='62' r='62' fill='url(%23fg)'/%3E%3Cpath fill='%23ff8a28' d='M80 22 Q66 46 70 78 Q76 100 80 100 Q84 100 90 78 Q94 46 80 22 Z'/%3E%3Cpath fill='%23ffd040' d='M80 36 Q72 56 74 76 Q78 92 80 92 Q82 92 86 76 Q88 56 80 36 Z'/%3E%3Cpath fill='%23ffffff' d='M80 54 Q76 66 77 80 Q79 88 80 88 Q81 88 83 80 Q84 66 80 54 Z'/%3E%3Cline x1='80' y1='94' x2='80' y2='114' stroke='%23241408' stroke-width='2'/%3E%3Cpath fill='%23d4c4a0' stroke='%2362462a' stroke-width='1.2' d='M64 114 Q60 130 66 144 L94 144 Q100 130 96 114 Z'/%3E%3Cpath fill='%23d4c4a0' stroke='%2362462a' stroke-width='1' d='M62 142 L98 142 L102 220 L58 220 Z'/%3E%3Crect x='62' y='142' width='10' height='78' fill='%23000' fill-opacity='0.16'/%3E%3Cellipse cx='80' cy='222' rx='34' ry='5' fill='%2342322a'/%3E%3Cpath fill='%2342322a' d='M52 222 Q64 240 96 240 Q116 240 108 222 Z'/%3E%3Cellipse cx='80' cy='244' rx='28' ry='4' fill='%23241a14'/%3E%3Cellipse cx='80' cy='256' rx='44' ry='5' fill='%23000' fill-opacity='0.20'/%3E%3C/svg%3E"),
+    /* Ivy creeper descending from upper-left corner */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='420' viewBox='0 0 240 420'%3E%3Cpath fill='none' stroke='%232a4220' stroke-opacity='0.55' stroke-width='2' stroke-linecap='round' d='M20 -10 Q40 40 30 100 Q22 158 56 210 Q86 252 70 308 Q60 360 92 410'/%3E%3Cg fill='%23355024' fill-opacity='0.65' stroke='%231e2e16' stroke-opacity='0.55' stroke-width='0.8'%3E%3Cpath d='M28 36 Q18 30 14 40 Q12 50 22 52 Q34 52 36 42 Z'/%3E%3Cpath d='M42 28 Q52 22 56 32 Q56 44 46 44 Q34 42 36 32 Z'/%3E%3Cpath d='M34 78 Q22 76 20 88 Q22 100 32 100 Q44 96 44 86 Z'/%3E%3Cpath d='M30 116 Q42 110 48 122 Q46 134 36 134 Q24 130 24 120 Z'/%3E%3Cpath d='M40 156 Q28 156 26 168 Q30 180 40 178 Q52 174 50 164 Z'/%3E%3Cpath d='M50 200 Q62 196 66 208 Q62 220 52 218 Q40 214 42 204 Z'/%3E%3Cpath d='M62 248 Q50 246 48 258 Q52 270 62 268 Q74 264 72 254 Z'/%3E%3Cpath d='M78 282 Q90 278 94 290 Q90 302 80 302 Q68 298 70 288 Z'/%3E%3Cpath d='M68 328 Q56 328 54 340 Q58 352 68 350 Q80 346 78 336 Z'/%3E%3Cpath d='M86 372 Q98 368 102 380 Q98 392 88 392 Q76 388 78 378 Z'/%3E%3C/g%3E%3Cg fill='%234a6a32' fill-opacity='0.45'%3E%3Cpath d='M28 38 Q22 36 22 44 Q28 46 32 42 Z'/%3E%3Cpath d='M42 90 Q34 90 32 96 Q40 100 42 96 Z'/%3E%3Cpath d='M56 168 Q48 168 48 176 Q54 178 58 174 Z'/%3E%3Cpath d='M68 260 Q60 260 60 266 Q66 268 70 264 Z'/%3E%3Cpath d='M86 340 Q78 340 78 346 Q84 348 88 344 Z'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Lichen patches on slab â€” mossy circles in muted sage/grey */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='200' viewBox='0 0 340 200'%3E%3Cg fill='%237a8a60' fill-opacity='0.18'%3E%3Ccircle cx='40' cy='80' r='22'/%3E%3Ccircle cx='34' cy='70' r='10'/%3E%3Ccircle cx='52' cy='90' r='8'/%3E%3Ccircle cx='28' cy='92' r='6'/%3E%3C/g%3E%3Cg fill='%238a9870' fill-opacity='0.14'%3E%3Ccircle cx='42' cy='80' r='14'/%3E%3Ccircle cx='52' cy='86' r='5'/%3E%3C/g%3E%3Cg fill='%237a8a60' fill-opacity='0.16'%3E%3Ccircle cx='180' cy='140' r='18'/%3E%3Ccircle cx='192' cy='148' r='8'/%3E%3Ccircle cx='172' cy='128' r='6'/%3E%3C/g%3E%3Cg fill='%238a9870' fill-opacity='0.12'%3E%3Ccircle cx='182' cy='140' r='10'/%3E%3C/g%3E%3Cg fill='%237a8a60' fill-opacity='0.14'%3E%3Ccircle cx='300' cy='90' r='14'/%3E%3Ccircle cx='292' cy='98' r='6'/%3E%3Ccircle cx='310' cy='82' r='5'/%3E%3C/g%3E%3Cg fill='%23606848' fill-opacity='0.18'%3E%3Ccircle cx='110' cy='30' r='9'/%3E%3Ccircle cx='118' cy='38' r='4'/%3E%3Ccircle cx='244' cy='28' r='7'/%3E%3Ccircle cx='80' cy='180' r='10'/%3E%3Ccircle cx='256' cy='180' r='8'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Gothic arch silhouette at top edge */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='180' viewBox='0 0 600 180' preserveAspectRatio='xMidYMin slice'%3E%3Cpath fill='%23050505' fill-opacity='0.72' d='M0 0V180 L0 100 Q0 60 30 60 L100 60 Q140 60 170 30 Q200 0 230 0 L370 0 Q400 0 430 30 Q460 60 500 60 L570 60 Q600 60 600 100 L600 180 L600 0Z'/%3E%3Cg fill='none' stroke='%23241a10' stroke-opacity='0.50' stroke-width='1.5'%3E%3Cpath d='M170 30 L300 0 L430 30'/%3E%3Cpath d='M30 60 L30 178 M570 60 L570 178'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Fallen autumn leaf detail lower-right */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg transform='rotate(28 60 60)'%3E%3Cpath fill='%238a4a20' fill-opacity='0.62' stroke='%23461c08' stroke-opacity='0.55' stroke-width='0.8' d='M60 18 Q44 30 36 50 Q30 70 38 88 Q48 102 60 102 Q72 102 82 88 Q90 70 84 50 Q76 30 60 18 Z'/%3E%3Cpath fill='none' stroke='%23461c08' stroke-opacity='0.55' stroke-width='0.9' d='M60 18 L60 102'/%3E%3Cpath fill='none' stroke='%23461c08' stroke-opacity='0.35' stroke-width='0.5' d='M60 36 Q50 42 44 50 M60 52 Q48 60 40 70 M60 68 Q50 76 44 86 M60 84 Q52 92 48 96 M60 36 Q70 42 76 50 M60 52 Q72 60 80 70 M60 68 Q70 76 76 86 M60 84 Q68 92 72 96'/%3E%3Cpath fill='none' stroke='%23461c08' stroke-opacity='0.55' stroke-width='1.4' d='M60 102 L60 116'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Strong candle glow halo lower-left â€” anchors the floor candle flame */
+    radial-gradient(ellipse 38% 32% at 14% 78%, color-mix(in srgb, #ffc060 16%, transparent), transparent 58%);
+  background-size:
+    280px 280px,
+    180px 340px,
+    160px 260px,
+    240px 420px,
+    340px 200px,
+    600px 180px,
+    120px 120px,
+    100% 100%;
+  background-position:
+    8% 48%,
+    92% 14%,
+    10% 86%,
+    0% 0%,
+    52% 92%,
+    50% 0%,
+    88% 88%,
+    0 0;
+  background-repeat:
+    no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  mix-blend-mode: normal;
   opacity: 1;
-  animation: marble-glow 168s ease-in-out infinite alternate;
-}
-
-@keyframes marble-glow {
-  0%   { opacity: 0.78; }
-  50%  { opacity: 0.92; }
-  100% { opacity: 0.82; }
+  animation: candle-breathe 12.4s ease-in-out infinite;
 }
