@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <g transform="scale(2.7) translate(-5.6 -5.3)">
-    <!-- Quill feather body -->
-    <path d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z" fill="#7a9b7c"/>
+  <g transform="scale(4) translate(-10.5 -8)">
+    <!-- Quill feather body — brighter green for more contrast against dark-mode chips -->
+    <path d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z" fill="#68aa6e"/>
     <!-- Central quill spine -->
     <path d="M21 8L13.5 22" stroke="#0a0f0d" stroke-width="0.85" stroke-linecap="round" opacity="0.5" fill="none"/>
     <!-- Quill tip / nib -->
