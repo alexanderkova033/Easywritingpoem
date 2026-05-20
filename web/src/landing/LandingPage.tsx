@@ -106,11 +106,10 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       </div>
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
-        <svg className="landing-sticky-logo" viewBox="0 0 24 24" aria-hidden width="20" height="20">
-          <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" strokeWidth="0.7" strokeLinejoin="round" />
-          <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" strokeWidth="0.55" strokeLinecap="round" fill="none" />
-          <path d="M11 18L12 21" stroke="#c5e0c8" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="none" stroke="rgba(30,60,35,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
+        <svg className="landing-sticky-logo" viewBox="0 0 32 32" aria-hidden width="20" height="20">
+          <path d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z" fill="#7a9b7c" />
+          <path d="M21 8L13.5 22" stroke="#0a0f0d" strokeWidth="0.85" strokeLinecap="round" opacity="0.5" fill="none" />
+          <path d="M13 23.5L14.5 27" stroke="#d5ddd7" strokeWidth="1.3" strokeLinecap="round" fill="none" />
         </svg>
         <span className="landing-sticky-name">easywriting <span className="landing-brand-badge">poem</span></span>
         <button type="button" className="landing-btn landing-btn-primary landing-sticky-cta" onClick={onEnter}>

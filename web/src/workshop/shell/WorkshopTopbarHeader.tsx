@@ -91,41 +91,31 @@ export function WorkshopTopbarHeader(props: Props) {
             <h1 className="brand-mark">
               <svg
                 className="brand-logo-icon"
-                viewBox="0 0 24 24"
+                viewBox="0 0 32 32"
                 aria-hidden
                 focusable="false"
               >
-                {/* Feather body — vivid accent fill, white stroke for any-bg visibility */}
+                {/* Quill feather body */}
                 <path
-                  d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
-                  fill="#68aa6e"
-                  stroke="white"
-                  strokeWidth="0.7"
-                  strokeLinejoin="round"
+                  d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z"
+                  fill="#7a9b7c"
                 />
-                {/* Quill vein */}
+                {/* Central quill spine */}
                 <path
-                  d="M19 3L12 21"
-                  stroke="rgba(0,0,0,0.18)"
-                  strokeWidth="0.55"
+                  d="M21 8L13.5 22"
+                  stroke="#0a0f0d"
+                  strokeWidth="0.85"
+                  strokeLinecap="round"
+                  opacity="0.5"
+                  fill="none"
+                />
+                {/* Quill tip / nib */}
+                <path
+                  d="M13 23.5L14.5 27"
+                  stroke="#d5ddd7"
+                  strokeWidth="1.3"
                   strokeLinecap="round"
                   fill="none"
-                />
-                {/* Nib highlight */}
-                <path
-                  d="M11 18L12 21"
-                  stroke="#c5e0c8"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                {/* Dark outline for light-background visibility */}
-                <path
-                  d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
-                  fill="none"
-                  stroke="rgba(30,60,35,0.22)"
-                  strokeWidth="0.8"
-                  strokeLinejoin="round"
                 />
               </svg>
               easywriting<span className="brand-product-badge">poem</span>
