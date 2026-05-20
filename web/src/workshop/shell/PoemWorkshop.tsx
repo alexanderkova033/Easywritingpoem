@@ -11,6 +11,11 @@ import {
 import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields";
 import { BackdropFormFields, BackdropMotionToggle } from "@/workshop/appearance/BackdropFormFields";
 import { lazyWithReload } from "@/app/lazy-with-reload";
+import {
+  isPreloadAllChunksEnabled,
+  setPreloadAllChunksEnabled,
+  preloadAllChunksNow,
+} from "@/app/preload-chunks";
 // BackgroundPicker pulls in the full AI theme generator + ColorEditor; only
 // rendered when the user opens the Page Background modal. Lazy keeps it off
 // the initial workshop bundle.
@@ -486,6 +491,7 @@ export function PoemWorkshop() {
     } catch { /* ignore */ }
     return true; // on by default
   });
+  const [preloadAllChunks, setPreloadAllChunksState] = useState(isPreloadAllChunksEnabled);
   const [lineFocusMode, setLineFocusMode] = useState(false);
   const sessionStartRef = useRef(Date.now());
   const [sessionWordGoal, setSessionWordGoal] = useState<number | null>(null);
@@ -1281,6 +1287,25 @@ export function PoemWorkshop() {
                 <span className="appearance-hints-text">
                   <span className="appearance-hints-title">Hover hints</span>
                   <span className="appearance-hints-desc">Show button tooltips on hover (hover devices only).</span>
+                </span>
+              </label>
+              <label className="appearance-hints-toggle">
+                <input
+                  type="checkbox"
+                  checked={preloadAllChunks}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setPreloadAllChunksState(next);
+                    setPreloadAllChunksEnabled(next);
+                    if (next) preloadAllChunksNow();
+                  }}
+                />
+                <span className="appearance-hints-text">
+                  <span className="appearance-hints-title">Load everything up front</span>
+                  <span className="appearance-hints-desc">
+                    Fetch all panels (backgrounds, AI, reading mode, share, export) right after startup
+                    so they keep working if you lose internet. Uses a bit more data on first load.
+                  </span>
                 </span>
               </label>
             </div>

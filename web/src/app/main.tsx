@@ -7,6 +7,7 @@ import { HoverHintsProvider } from "@/workshop/hints/HoverHintsContext";
 import { ToastProvider } from "@/shared/toast/ToastContext";
 import { ErrorBoundary } from "@/app/ErrorBoundary";
 import { clearChunkReloadFlag, lazyWithReload } from "@/app/lazy-with-reload";
+import { schedulePreloadIfEnabled } from "@/app/preload-chunks";
 import { STORAGE_KEY_LANDING_DISMISSED } from "@/shared/storage-keys";
 import "@/app/index.css";
 
@@ -121,6 +122,7 @@ function App() {
 
   useEffect(() => {
     clearChunkReloadFlag();
+    schedulePreloadIfEnabled();
   }, []);
 
   // Push a history entry when entering the workshop so the browser Back button

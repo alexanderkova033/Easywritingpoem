@@ -47,6 +47,10 @@ export const STORAGE_KEY_AI_SCORING_ENABLED = "easy-poems:ai-scoring-enabled";
 // Landing page
 export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";
 
+// Eagerly fetch all lazy code-split chunks at startup so the app keeps
+// working if the user goes offline before opening rarely-used panels.
+export const STORAGE_KEY_PRELOAD_ALL_CHUNKS = "easy-poems:preloadAllChunks";
+
 // Onboarding
 export const STORAGE_KEY_SAMPLE_DISMISSED = "easy-poems:sample-dismissed";
 export const STORAGE_KEY_TABS_EXPANDED = "easy-poems:tabs-expanded";
