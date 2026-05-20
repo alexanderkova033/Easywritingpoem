@@ -1,56 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 88" width="300" height="88">
-  <!-- Feather quill — solid shapes, drawn natively at 88px -->
-
   <!-- Feather body -->
-  <path
-    d="M70 10 C76 14 80 30 60 54 L44 74 L40 80 L36 74 L34 64 C30 46 38 26 70 10 Z"
-    fill="#5fa066"
-  />
+  <path d="M60 22C64 25 65 33 59 42L52 51L50 57L48 51C45 44 46 34 60 22Z" fill="#7a9b7c"/>
+  <!-- Spine -->
+  <path d="M60 22L50 52" stroke="#0a0f0d" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.45"/>
+  <!-- Nib -->
+  <path d="M48 51L50 57" stroke="#c5d4c8" stroke-width="2.2" stroke-linecap="round" fill="none"/>
 
-  <!-- Lighter top half (suggests light catching the leading edge) -->
-  <path
-    d="M70 10 C76 14 80 30 60 54 L55 40 C56 30 56 24 70 10 Z"
-    fill="#7cbf83"
-  />
-
-  <!-- Central spine — bold, clearly visible -->
-  <path
-    d="M70 10 L40 80"
-    stroke="#1f3a22"
-    stroke-width="1.6"
-    stroke-linecap="round"
-    fill="none"
-  />
-
-  <!-- Barbs — left side, bold solid strokes -->
-  <g stroke="#1f3a22" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.55">
-    <path d="M60 25 L50 30"/>
-    <path d="M56 35 L44 40"/>
-    <path d="M52 45 L42 50"/>
-    <path d="M48 55 L42 60"/>
-  </g>
-
-  <!-- Barbs — right side -->
-  <g stroke="#1f3a22" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.55">
-    <path d="M62 22 L70 19"/>
-    <path d="M58 32 L67 30"/>
-    <path d="M55 42 L63 42"/>
-    <path d="M52 52 L58 54"/>
-  </g>
-
-  <!-- Nib highlight — bold mint stroke for the quill tip -->
-  <path
-    d="M36 74 L40 80"
-    stroke="#dceadd"
-    stroke-width="3"
-    stroke-linecap="round"
-    fill="none"
-  />
-
-  <!-- Wordmark: "easywriting" -->
+  <!-- Wordmark — "easywriting" -->
   <text
-    x="100" y="50"
+    x="96" y="50"
     font-family="Georgia, 'Times New Roman', serif"
     font-size="26"
     font-weight="600"
@@ -59,29 +18,17 @@
   >easywriting</text>
 
   <!-- Decorative rule under the wordmark -->
-  <line
-    x1="100" y1="58"
-    x2="232" y2="58"
-    stroke="#5fa066"
-    stroke-width="1.4"
-    stroke-linecap="round"
-    opacity="0.55"
-  />
+  <line x1="96" y1="58" x2="228" y2="58" stroke="#7a9b7c" stroke-width="0.9" opacity="0.55"/>
 
-  <!-- Product badge: "poem" pill, below the rule -->
-  <g transform="translate(100 64)">
-    <rect
-      x="0" y="0" width="50" height="18" rx="5"
-      fill="#e8f1e9"
-      stroke="#5fa066"
-      stroke-width="1.2"
-    />
+  <!-- Product badge — "poem" pill below the rule -->
+  <g transform="translate(96 64)">
+    <rect x="0" y="0" width="50" height="18" rx="5" fill="#eaf0eb" stroke="#7a9b7c" stroke-width="1"/>
     <text
       x="25" y="13"
       font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
       font-size="11"
       font-weight="700"
-      fill="#2d6033"
+      fill="#3d5e41"
       letter-spacing="1"
       text-anchor="middle"
     >POEM</text>
