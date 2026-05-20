@@ -95,28 +95,30 @@ export function WorkshopTopbarHeader(props: Props) {
                 aria-hidden
                 focusable="false"
               >
-                {/* Quill feather body */}
-                <path
-                  d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z"
-                  fill="#7a9b7c"
-                />
-                {/* Central quill spine */}
-                <path
-                  d="M21 8L13.5 22"
-                  stroke="#0a0f0d"
-                  strokeWidth="0.85"
-                  strokeLinecap="round"
-                  opacity="0.5"
-                  fill="none"
-                />
-                {/* Quill tip / nib */}
-                <path
-                  d="M13 23.5L14.5 27"
-                  stroke="#d5ddd7"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                  fill="none"
-                />
+                <g transform="translate(-8.85 -8.5) scale(1.4)">
+                  {/* Quill feather body */}
+                  <path
+                    d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z"
+                    fill="#7a9b7c"
+                  />
+                  {/* Central quill spine */}
+                  <path
+                    d="M21 8L13.5 22"
+                    stroke="#0a0f0d"
+                    strokeWidth="0.85"
+                    strokeLinecap="round"
+                    opacity="0.5"
+                    fill="none"
+                  />
+                  {/* Quill tip / nib */}
+                  <path
+                    d="M13 23.5L14.5 27"
+                    stroke="#d5ddd7"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </g>
               </svg>
               easywriting<span className="brand-product-badge">poem</span>
             </h1>
