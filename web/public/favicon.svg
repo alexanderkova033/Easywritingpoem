@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Rounded square background with padding from edge -->
-  <rect x="4" y="4" width="24" height="24" rx="6" fill="#0a0f0d"/>
-  <!-- Quill feather body (scaled/shifted to sit inside the padded area) -->
-  <path d="M21 8C23.5 9 25 12.5 21 18L16 23.5L14.5 27L13 23.5C10.5 19.5 11.5 14 21 8Z" fill="#7a9b7c"/>
-  <!-- Quill tip / nib -->
-  <path d="M13 23.5L14.5 27" stroke="#d5ddd7" stroke-width="1.3" stroke-linecap="round" fill="none"/>
-  <!-- Central quill spine -->
-  <path d="M21 8L13.5 22" stroke="#0a0f0d" stroke-width="0.85" stroke-linecap="round" opacity="0.5" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Feather body — vivid accent fill, white stroke + dark outline for any-bg visibility -->
+  <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" stroke-width="0.7" stroke-linejoin="round"/>
+  <!-- Quill vein -->
+  <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" stroke-width="0.55" stroke-linecap="round" fill="none"/>
+  <!-- Nib highlight -->
+  <path d="M11 18L12 21" stroke="#c5e0c8" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <!-- Dark outline for light-background visibility -->
+  <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="none" stroke="rgba(30,60,35,0.4)" stroke-width="0.8" stroke-linejoin="round"/>
 </svg>
