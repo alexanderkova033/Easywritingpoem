@@ -49,6 +49,8 @@ html[data-workshop-bg="slate"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360' viewBox='0 0 360 360'%3E%3Cg fill='none' stroke='%2388b8e8' stroke-opacity='0.22' stroke-width='0.8'%3E%3Ccircle cx='180' cy='180' r='130'/%3E%3Ccircle cx='180' cy='180' r='95'/%3E%3Ccircle cx='180' cy='180' r='62'/%3E%3Ccircle cx='180' cy='180' r='3' fill='%2388b8e8' fill-opacity='0.35'/%3E%3Cline x1='40' y1='180' x2='320' y2='180'/%3E%3Cline x1='180' y1='40' x2='180' y2='320'/%3E%3Cline x1='82' y1='82' x2='278' y2='278'/%3E%3Cline x1='82' y1='278' x2='278' y2='82'/%3E%3Cpath d='M180 50 L186 60 L174 60 Z' fill='%2388b8e8' fill-opacity='0.4'/%3E%3Ctext x='192' y='56' font-family='monospace' font-size='9' fill='%2388b8e8' fill-opacity='0.45'%3EN%3C/text%3E%3C/g%3E%3Cg fill='none' stroke='%23a0c8f0' stroke-opacity='0.12' stroke-width='0.5'%3E%3Cpath d='M180 180 L240 100 L280 100 M240 100 L240 60'/%3E%3Cpath d='M180 180 L100 240 L60 240 M100 240 L100 280'/%3E%3C/g%3E%3C/svg%3E"),
     /* Drafting dimension lines + isometric box upper-left */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='200' viewBox='0 0 260 200'%3E%3Cg fill='none' stroke='%2388b8e8' stroke-opacity='0.16' stroke-width='0.7'%3E%3Cpath d='M30 50 L130 50 L180 80 L80 80 Z'/%3E%3Cpath d='M130 50 L130 130 L180 160 L180 80'/%3E%3Cpath d='M30 50 L30 130 L80 160 L80 80'/%3E%3Cpath d='M30 130 L130 130'/%3E%3Cpath stroke-dasharray='3 3' d='M30 30 L130 30 M30 22 L30 38 M130 22 L130 38'/%3E%3Cpath stroke-dasharray='3 3' d='M195 50 L195 130 M190 50 L200 50 M190 130 L200 130'/%3E%3Ctext x='72' y='28' font-family='monospace' font-size='8' fill='%2388b8e8' fill-opacity='0.30'%3E100mm%3C/text%3E%3Ctext x='200' y='95' font-family='monospace' font-size='8' fill='%2388b8e8' fill-opacity='0.30'%3E80mm%3C/text%3E%3C/g%3E%3C/svg%3E"),
+    /* Distant city skyline silhouette + lit windows along bottom */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='140' viewBox='0 0 360 140'%3E%3Cg fill='%23050810' fill-opacity='0.85'%3E%3Crect x='0' y='62' width='32' height='78'/%3E%3Crect x='30' y='48' width='26' height='92'/%3E%3Crect x='54' y='72' width='22' height='68'/%3E%3Crect x='74' y='30' width='34' height='110'/%3E%3Crect x='106' y='58' width='20' height='82'/%3E%3Crect x='124' y='66' width='28' height='74'/%3E%3Crect x='150' y='42' width='24' height='98'/%3E%3Crect x='172' y='56' width='30' height='84'/%3E%3Crect x='200' y='28' width='36' height='112'/%3E%3Crect x='234' y='52' width='22' height='88'/%3E%3Crect x='254' y='68' width='26' height='72'/%3E%3Crect x='278' y='40' width='30' height='100'/%3E%3Crect x='306' y='58' width='24' height='82'/%3E%3Crect x='328' y='72' width='32' height='68'/%3E%3C/g%3E%3Cg fill='%23ffd860' fill-opacity='0.55'%3E%3Crect x='6' y='80' width='2' height='3'/%3E%3Crect x='14' y='92' width='2' height='3'/%3E%3Crect x='22' y='84' width='2' height='3'/%3E%3Crect x='36' y='66' width='2' height='3'/%3E%3Crect x='44' y='80' width='2' height='3'/%3E%3Crect x='44' y='98' width='2' height='3'/%3E%3Crect x='60' y='90' width='2' height='3'/%3E%3Crect x='68' y='102' width='2' height='3'/%3E%3Crect x='82' y='50' width='2' height='3'/%3E%3Crect x='90' y='66' width='2' height='3'/%3E%3Crect x='98' y='80' width='2' height='3'/%3E%3Crect x='90' y='96' width='2' height='3'/%3E%3Crect x='112' y='76' width='2' height='3'/%3E%3Crect x='118' y='92' width='2' height='3'/%3E%3Crect x='132' y='80' width='2' height='3'/%3E%3Crect x='142' y='96' width='2' height='3'/%3E%3Crect x='156' y='62' width='2' height='3'/%3E%3Crect x='164' y='78' width='2' height='3'/%3E%3Crect x='164' y='98' width='2' height='3'/%3E%3Crect x='180' y='74' width='2' height='3'/%3E%3Crect x='188' y='90' width='2' height='3'/%3E%3Crect x='196' y='106' width='2' height='3'/%3E%3Crect x='208' y='50' width='2' height='3'/%3E%3Crect x='216' y='64' width='2' height='3'/%3E%3Crect x='224' y='80' width='2' height='3'/%3E%3Crect x='216' y='96' width='2' height='3'/%3E%3Crect x='240' y='72' width='2' height='3'/%3E%3Crect x='248' y='88' width='2' height='3'/%3E%3Crect x='262' y='88' width='2' height='3'/%3E%3Crect x='268' y='104' width='2' height='3'/%3E%3Crect x='284' y='62' width='2' height='3'/%3E%3Crect x='292' y='78' width='2' height='3'/%3E%3Crect x='300' y='94' width='2' height='3'/%3E%3Crect x='292' y='110' width='2' height='3'/%3E%3Crect x='312' y='76' width='2' height='3'/%3E%3Crect x='320' y='92' width='2' height='3'/%3E%3Crect x='336' y='88' width='2' height='3'/%3E%3Crect x='344' y='104' width='2' height='3'/%3E%3C/g%3E%3C/svg%3E"),
     /* City-lights horizon glow */
     radial-gradient(ellipse 110% 22% at 50% 100%, color-mix(in srgb, #4488cc 9%, transparent), transparent 55%);
   background-size:
@@ -59,6 +61,7 @@ html[data-workshop-bg="slate"] body::before {
     96px 96px, 96px 96px,
     360px 360px,
     260px 200px,
+    360px 140px,
     100% 100%;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 72% 55%,
@@ -68,7 +71,18 @@ html[data-workshop-bg="slate"] body::before {
     0 0, 0 0,
     78% 48%,
     6% 14%,
+    0% 100%,
     0 0;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat,
+    repeat, repeat,
+    repeat, repeat,
+    repeat, repeat,
+    no-repeat,
+    no-repeat,
+    repeat-x,
+    repeat;
 }
 
 /* Slate: faint pulsing schematic â€” periodic surveyor's scan */

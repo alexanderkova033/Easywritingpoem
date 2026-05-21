@@ -283,8 +283,6 @@ body::before {
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
     radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
     radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
-    /* Cool counter-light from lower-left (window) */
-    radial-gradient(ellipse 50% 40% at 8% 88%, color-mix(in srgb, var(--shine-mid) 60%, transparent), transparent 58%),
     /* Soft directional beam from lamp */
     linear-gradient(118deg, transparent 38%, color-mix(in srgb, var(--accent) 4%, transparent) 52%, transparent 64%),
     /* Ink-wash brushstroke watermark */
@@ -297,7 +295,6 @@ body::before {
   background-size:
     100% 100%, 100% 100%,
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
-    100% 100%,
     180% 100%,
     360px 220px,
     320px 180px,
@@ -305,7 +302,6 @@ body::before {
   background-position:
     0 0, 0 0,
     0% 0%, 100% 0%, 50% 100%, 75% 55%,
-    0 0,
     0 0,
     24% 18%,
     50% 92%,

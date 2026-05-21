@@ -42,8 +42,6 @@ html[data-workshop-bg="stone"] body::before {
     /* Iron sconce glow upper-right (torch on wall) */
     radial-gradient(ellipse 30% 42% at 86% 22%, color-mix(in srgb, #f49830 16%, transparent), transparent 58%),
     radial-gradient(ellipse 14% 20% at 86% 22%, color-mix(in srgb, #ffc060 22%, transparent), transparent 60%),
-    /* Cool moonlight from upper-left window */
-    radial-gradient(ellipse 36% 32% at 10% 8%, color-mix(in srgb, #aabdd0 9%, transparent), transparent 60%),
     /* Heavy top vignette â€” arched ceiling */
     radial-gradient(ellipse 100% 30% at 50% 0%, color-mix(in srgb, #050505 60%, transparent), transparent 65%),
     /* Heavy corner vignettes â€” chamber walls fall to black */
@@ -65,7 +63,6 @@ html[data-workshop-bg="stone"] body::before {
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     100% 100%, 100% 100%,
     100% 100%, 100% 100%,
-    100% 100%,
     100% 30%,
     100% 100%, 100% 100%, 100% 100%, 100% 100%,
     28px 28px,
@@ -77,7 +74,6 @@ html[data-workshop-bg="stone"] body::before {
     0% 0%, 100% 0%, 50% 100%, 72% 55%,
     0 0, 0 0,
     0 0, 0 0,
-    0 0,
     50% 0%,
     0% 0%, 100% 100%, 100% 0%, 0% 100%,
     center center,
@@ -87,29 +83,37 @@ html[data-workshop-bg="stone"] body::before {
     66% 14%;
 }
 
-/* Stone: iron torch sconce, floor candle, gothic arch */
+/* Stone: rich illustrated overlay â€” carved relief, iron torch sconce, floor candle, ivy, arch, leaf */
 html[data-workshop-bg="stone"]::after {
   background-image:
+    /* Hero: carved relief medallion mid-left â€” triskelion / triple spiral in deep stone */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cdefs%3E%3CradialGradient id='r1' cx='40%25' cy='40%25' r='65%25'%3E%3Cstop offset='0%25' stop-color='%23c4b894' stop-opacity='0.32'/%3E%3Cstop offset='100%25' stop-color='%231a1814' stop-opacity='0.55'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='140' cy='140' r='118' fill='url(%23r1)' stroke='%23080806' stroke-opacity='0.62' stroke-width='2'/%3E%3Ccircle cx='140' cy='140' r='110' fill='none' stroke='%23d8ccaa' stroke-opacity='0.20' stroke-width='0.8'/%3E%3Cg fill='none' stroke='%23080806' stroke-opacity='0.60' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M140 140 Q140 80 110 80 Q80 80 80 110 Q80 140 110 140'/%3E%3Cpath d='M140 140 Q200 140 200 110 Q200 80 170 80 Q140 80 140 110'/%3E%3Cpath d='M140 140 Q140 200 170 200 Q200 200 200 170 Q200 140 170 140'/%3E%3C/g%3E%3Cg fill='none' stroke='%23e8dcb8' stroke-opacity='0.18' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M140 140 Q140 80 110 80 Q80 80 80 110 Q80 140 110 140'/%3E%3Cpath d='M140 140 Q200 140 200 110 Q200 80 170 80 Q140 80 140 110'/%3E%3Cpath d='M140 140 Q140 200 170 200 Q200 200 200 170 Q200 140 170 140'/%3E%3C/g%3E%3Ccircle cx='140' cy='140' r='6' fill='%23080806' fill-opacity='0.62'/%3E%3C/svg%3E"),
     /* Iron wall sconce + torch flame upper-right */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='340' viewBox='0 0 180 340'%3E%3Cdefs%3E%3CradialGradient id='tg' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.62'/%3E%3Cstop offset='60%25' stop-color='%23ffa840' stop-opacity='0.24'/%3E%3Cstop offset='100%25' stop-color='%23ff7020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='90' cy='80' r='80' fill='url(%23tg)'/%3E%3Cpath fill='%23ff8a28' d='M90 26 Q72 60 76 100 Q84 130 90 130 Q96 130 104 100 Q108 60 90 26 Z'/%3E%3Cpath fill='%23ffd040' d='M90 46 Q80 72 82 100 Q86 122 90 122 Q94 122 98 100 Q100 72 90 46 Z'/%3E%3Cpath fill='%23ffffff' d='M90 70 Q85 88 86 104 Q88 116 90 116 Q92 116 94 104 Q95 88 90 70 Z'/%3E%3Cline x1='90' y1='124' x2='90' y2='148' stroke='%23241408' stroke-width='2.4'/%3E%3Crect x='78' y='148' width='24' height='42' fill='%23241408' stroke='%23080404' stroke-width='1.5'/%3E%3Cpath fill='%23241408' stroke='%23080404' stroke-width='1.5' d='M60 190 L120 190 L114 208 L66 208 Z'/%3E%3Cpath fill='%23120a06' d='M70 208 L110 208 L114 240 L66 240 Z'/%3E%3Cpath fill='none' stroke='%231a0e08' stroke-width='2' d='M90 240 L90 320 M64 240 Q40 268 50 320 M116 240 Q140 268 130 320'/%3E%3Ccircle cx='90' cy='200' r='3' fill='%23643818'/%3E%3Ccircle cx='78' cy='220' r='2' fill='%23582c10'/%3E%3Ccircle cx='102' cy='220' r='2' fill='%23582c10'/%3E%3C/svg%3E"),
     /* Floor candle lower-left â€” melted taper in iron holder */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='260' viewBox='0 0 160 260'%3E%3Cdefs%3E%3CradialGradient id='fg' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23ffe890' stop-opacity='0.55'/%3E%3Cstop offset='60%25' stop-color='%23ffa840' stop-opacity='0.22'/%3E%3Cstop offset='100%25' stop-color='%23ff7020' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='80' cy='62' r='62' fill='url(%23fg)'/%3E%3Cpath fill='%23ff8a28' d='M80 22 Q66 46 70 78 Q76 100 80 100 Q84 100 90 78 Q94 46 80 22 Z'/%3E%3Cpath fill='%23ffd040' d='M80 36 Q72 56 74 76 Q78 92 80 92 Q82 92 86 76 Q88 56 80 36 Z'/%3E%3Cpath fill='%23ffffff' d='M80 54 Q76 66 77 80 Q79 88 80 88 Q81 88 83 80 Q84 66 80 54 Z'/%3E%3Cline x1='80' y1='94' x2='80' y2='114' stroke='%23241408' stroke-width='2'/%3E%3Cpath fill='%23d4c4a0' stroke='%2362462a' stroke-width='1.2' d='M64 114 Q60 130 66 144 L94 144 Q100 130 96 114 Z'/%3E%3Cpath fill='%23d4c4a0' stroke='%2362462a' stroke-width='1' d='M62 142 L98 142 L102 220 L58 220 Z'/%3E%3Crect x='62' y='142' width='10' height='78' fill='%23000' fill-opacity='0.16'/%3E%3Cellipse cx='80' cy='222' rx='34' ry='5' fill='%2342322a'/%3E%3Cpath fill='%2342322a' d='M52 222 Q64 240 96 240 Q116 240 108 222 Z'/%3E%3Cellipse cx='80' cy='244' rx='28' ry='4' fill='%23241a14'/%3E%3Cellipse cx='80' cy='256' rx='44' ry='5' fill='%23000' fill-opacity='0.20'/%3E%3C/svg%3E"),
+    /* Ivy creeper descending from upper-left corner */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='420' viewBox='0 0 240 420'%3E%3Cpath fill='none' stroke='%232a4220' stroke-opacity='0.55' stroke-width='2' stroke-linecap='round' d='M20 -10 Q40 40 30 100 Q22 158 56 210 Q86 252 70 308 Q60 360 92 410'/%3E%3Cg fill='%23355024' fill-opacity='0.65' stroke='%231e2e16' stroke-opacity='0.55' stroke-width='0.8'%3E%3Cpath d='M28 36 Q18 30 14 40 Q12 50 22 52 Q34 52 36 42 Z'/%3E%3Cpath d='M42 28 Q52 22 56 32 Q56 44 46 44 Q34 42 36 32 Z'/%3E%3Cpath d='M34 78 Q22 76 20 88 Q22 100 32 100 Q44 96 44 86 Z'/%3E%3Cpath d='M30 116 Q42 110 48 122 Q46 134 36 134 Q24 130 24 120 Z'/%3E%3Cpath d='M40 156 Q28 156 26 168 Q30 180 40 178 Q52 174 50 164 Z'/%3E%3Cpath d='M50 200 Q62 196 66 208 Q62 220 52 218 Q40 214 42 204 Z'/%3E%3Cpath d='M62 248 Q50 246 48 258 Q52 270 62 268 Q74 264 72 254 Z'/%3E%3Cpath d='M78 282 Q90 278 94 290 Q90 302 80 302 Q68 298 70 288 Z'/%3E%3Cpath d='M68 328 Q56 328 54 340 Q58 352 68 350 Q80 346 78 336 Z'/%3E%3Cpath d='M86 372 Q98 368 102 380 Q98 392 88 392 Q76 388 78 378 Z'/%3E%3C/g%3E%3Cg fill='%234a6a32' fill-opacity='0.45'%3E%3Cpath d='M28 38 Q22 36 22 44 Q28 46 32 42 Z'/%3E%3Cpath d='M42 90 Q34 90 32 96 Q40 100 42 96 Z'/%3E%3Cpath d='M56 168 Q48 168 48 176 Q54 178 58 174 Z'/%3E%3Cpath d='M68 260 Q60 260 60 266 Q66 268 70 264 Z'/%3E%3Cpath d='M86 340 Q78 340 78 346 Q84 348 88 344 Z'/%3E%3C/g%3E%3C/svg%3E"),
     /* Gothic arch silhouette at top edge */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='180' viewBox='0 0 600 180' preserveAspectRatio='xMidYMin slice'%3E%3Cpath fill='%23050505' fill-opacity='0.72' d='M0 0V180 L0 100 Q0 60 30 60 L100 60 Q140 60 170 30 Q200 0 230 0 L370 0 Q400 0 430 30 Q460 60 500 60 L570 60 Q600 60 600 100 L600 180 L600 0Z'/%3E%3Cg fill='none' stroke='%23241a10' stroke-opacity='0.50' stroke-width='1.5'%3E%3Cpath d='M170 30 L300 0 L430 30'/%3E%3Cpath d='M30 60 L30 178 M570 60 L570 178'/%3E%3C/g%3E%3C/svg%3E"),
     /* Strong candle glow halo lower-left â€” anchors the floor candle flame */
     radial-gradient(ellipse 38% 32% at 14% 78%, color-mix(in srgb, #ffc060 16%, transparent), transparent 58%);
   background-size:
+    280px 280px,
     180px 340px,
     160px 260px,
+    240px 420px,
     600px 180px,
     100% 100%;
   background-position:
+    8% 48%,
     92% 14%,
     10% 86%,
+    0% 0%,
     50% 0%,
     0 0;
   background-repeat:
-    no-repeat, no-repeat, no-repeat, no-repeat;
+    no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   mix-blend-mode: normal;
   opacity: 1;
   animation: candle-breathe 18.6s ease-in-out infinite;
