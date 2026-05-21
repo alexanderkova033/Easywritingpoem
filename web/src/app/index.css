@@ -69,7 +69,7 @@
   --grain-opacity: 0.032;
   --after-blend: screen;
   --after-opacity: 0.3;
-  --after-animation: studio-light 48s ease-in-out infinite alternate;
+  --after-animation: studio-light 108s ease-in-out infinite alternate;
   --after-corner: rgba(0, 0, 0, 0.09);
   --after-zenith-top: var(--shine-top);
   --after-zenith-mid: var(--shine-mid);
@@ -108,7 +108,7 @@
     --shadow-3: 0 12px 40px color-mix(in srgb, #000 24%, transparent);
     --after-blend: multiply;
     --after-opacity: 0.16;
-    --after-animation: studio-light-soft 48s ease-in-out infinite alternate;
+    --after-animation: studio-light-soft 108s ease-in-out infinite alternate;
     --after-corner: rgba(0, 0, 0, 0.05);
   }
 }
@@ -310,7 +310,7 @@ body::before {
     24% 18%,
     50% 92%,
     center -1px, center -1px;
-  animation: ambient-drift 140s ease-in-out infinite alternate;
+  animation: ambient-drift 210s ease-in-out infinite alternate;
 }
 
 /* Theme-matched zenith glow + subtle corner vignette */

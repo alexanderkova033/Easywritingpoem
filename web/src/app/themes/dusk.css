@@ -28,7 +28,7 @@ html[data-workshop-bg="dusk"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 68%, transparent);
 }
 html[data-workshop-bg="dusk"] body::before {
-  animation: ember-drift 221s ease-in-out infinite;
+  animation: ember-drift 331.5s ease-in-out infinite;
   background-image:
     /* Ambient mesh */
     radial-gradient(ellipse 150% 130% at 20% 30%, var(--ambient-a), transparent 70%),
@@ -97,7 +97,7 @@ html[data-workshop-bg="dusk"]::after {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
-  animation: ember-glow-pulse 30.6s ease-in-out infinite alternate;
+  animation: ember-glow-pulse 45.9s ease-in-out infinite alternate;
 }
 
 @keyframes ember-glow-pulse {

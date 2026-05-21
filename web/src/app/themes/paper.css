@@ -21,13 +21,13 @@
   --shine-mid: rgba(195, 170, 125, 0.048);
   --after-blend: multiply;
   --after-opacity: 0.28;
-  --after-animation: studio-light-soft 173.4s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 390.15s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
 }
 html[data-workshop-bg="paper"] body::before {
-  animation: ambient-drift 272s ease-in-out infinite alternate;
+  animation: ambient-drift 408s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
@@ -70,5 +70,5 @@ html[data-workshop-bg="paper"]::after {
   background-repeat: no-repeat;
   mix-blend-mode: multiply;
   opacity: 1;
-  animation: candle-breathe 15.3s ease-in-out infinite;
+  animation: candle-breathe 22.95s ease-in-out infinite;
 }

@@ -25,7 +25,7 @@ html[data-workshop-bg="rain"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
 }
 html[data-workshop-bg="rain"] body::before {
-  animation: ambient-drift 255s ease-in-out infinite alternate;
+  animation: ambient-drift 382.5s ease-in-out infinite alternate;
   background-image:
     /* Ambient depth */
     radial-gradient(ellipse 130% 110% at 15% 30%, var(--ambient-a), transparent 72%),

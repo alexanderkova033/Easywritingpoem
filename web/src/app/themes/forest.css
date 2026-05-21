@@ -25,7 +25,7 @@
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 48%, transparent);
 }
 html[data-workshop-bg="forest"] body::before {
-  animation: ambient-drift 204s ease-in-out infinite alternate;
+  animation: ambient-drift 306s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
@@ -69,18 +69,15 @@ html[data-workshop-bg="forest"] body::before {
     50% 92%;
 }
 
-/* Forest: drifting mist + fireflies low among ferns */
+/* Forest: drifting mist low among ferns */
 html[data-workshop-bg="forest"]::after {
   background-image:
     /* Low fog band */
     radial-gradient(ellipse 120% 22% at 50% 78%, rgba(160, 220, 195, 0.13), transparent 100%),
-    radial-gradient(ellipse 80% 14% at 22% 88%, rgba(180, 230, 200, 0.10), transparent 100%),
-    /* Firefly cluster */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='320'%3E%3Ccircle cx='52' cy='240' r='1.4' fill='%23d8ffb0' fill-opacity='0.78'/%3E%3Ccircle cx='52' cy='240' r='5' fill='%23a0e880' fill-opacity='0.18'/%3E%3Ccircle cx='148' cy='268' r='1.0' fill='%23e0ffb8' fill-opacity='0.68'/%3E%3Ccircle cx='148' cy='268' r='4' fill='%23a8f090' fill-opacity='0.14'/%3E%3Ccircle cx='238' cy='222' r='1.6' fill='%23ccffa0' fill-opacity='0.72'/%3E%3Ccircle cx='238' cy='222' r='5.5' fill='%2398e870' fill-opacity='0.14'/%3E%3Ccircle cx='318' cy='258' r='1.2' fill='%23d8ffb0' fill-opacity='0.60'/%3E%3Ccircle cx='318' cy='258' r='4' fill='%23a8e880' fill-opacity='0.12'/%3E%3Ccircle cx='382' cy='232' r='0.9' fill='%23c8ff98' fill-opacity='0.55'/%3E%3Ccircle cx='98' cy='282' r='1.0' fill='%23d0ffa8' fill-opacity='0.50'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 100% 100%, 420px 320px;
-  background-position: 0 0, 0 0, center bottom;
-  background-repeat: no-repeat, no-repeat, no-repeat;
+    radial-gradient(ellipse 80% 14% at 22% 88%, rgba(180, 230, 200, 0.10), transparent 100%);
+  background-size: 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0;
+  background-repeat: no-repeat, no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: firefly-glow 81.6s ease-in-out infinite;
 }

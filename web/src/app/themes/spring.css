@@ -22,14 +22,14 @@ html[data-workshop-bg="spring"] {
   --shine-mid: rgba(140, 200, 110, 0.038);
   --after-blend: multiply;
   --after-opacity: 0.28;
-  --after-animation: studio-light-soft 179.2s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 403.2s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 3%, transparent);
   --shadow-2: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 22%, transparent);
 }
 
 html[data-workshop-bg="spring"] body::before {
-  animation: ambient-drift 272s ease-in-out infinite alternate;
+  animation: ambient-drift 408s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 200% 130% at 5% 10%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 200% 130% at 95% 75%, var(--ambient-b), transparent 70%),
@@ -77,7 +77,7 @@ html[data-workshop-bg="spring"]::after {
   background-repeat: repeat;
   mix-blend-mode: normal;
   opacity: 1;
-  animation: spring-petal-drift 85s linear infinite;
+  animation: spring-petal-drift 127.5s linear infinite;
 }
 
 @keyframes spring-petal-drift {

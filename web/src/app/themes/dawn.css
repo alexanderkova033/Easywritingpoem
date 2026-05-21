@@ -21,13 +21,13 @@
   --shine-mid: rgba(210, 150, 175, 0.042);
   --after-blend: multiply;
   --after-opacity: 0.32;
-  --after-animation: studio-light-soft 202.3s ease-in-out infinite alternate;
+  --after-animation: studio-light-soft 455.17s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
 }
 html[data-workshop-bg="dawn"] body::before {
-  animation: ambient-drift 221s ease-in-out infinite alternate;
+  animation: ambient-drift 331.5s ease-in-out infinite alternate;
   background-image:
     radial-gradient(
       ellipse 120% 100% at 14% 28%,

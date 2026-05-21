@@ -21,14 +21,14 @@ html[data-workshop-bg="aurora"] {
   --shine-top: rgba(190, 160, 255, 0.06);
   --shine-mid: rgba(90, 60, 160, 0.038);
   --after-blend: screen;
-  --after-animation: aurora-shimmer 346.8s ease-in-out infinite;
+  --after-animation: aurora-shimmer 780.3s ease-in-out infinite;
   --after-opacity: 0.28;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
 }
 html[data-workshop-bg="aurora"] body::before {
-  animation: aurora-pulse 340s ease-in-out infinite;
+  animation: aurora-pulse 510s ease-in-out infinite;
   background-image:
     /* Merged ambient washes */
     radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),

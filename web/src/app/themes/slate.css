@@ -25,7 +25,7 @@
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
 }
 html[data-workshop-bg="slate"] body::before {
-  animation: ambient-drift 187s ease-in-out infinite alternate;
+  animation: ambient-drift 280.5s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
@@ -80,7 +80,7 @@ html[data-workshop-bg="slate"]::after {
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: slate-scan 37.4s ease-in-out infinite;
+  animation: slate-scan 56.1s ease-in-out infinite;
 }
 
 @keyframes slate-scan {

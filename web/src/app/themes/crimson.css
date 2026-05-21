@@ -26,7 +26,7 @@ html[data-workshop-bg="crimson"] {
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 55%, transparent);
 }
 html[data-workshop-bg="crimson"] body::before {
-  animation: ember-drift 153s ease-in-out infinite;
+  animation: ember-drift 229.5s ease-in-out infinite;
   background-image:
     radial-gradient(ellipse 130% 110% at 15% 25%, var(--ambient-a), transparent 70%),
     radial-gradient(ellipse 110% 95% at 85% 20%, var(--ambient-b), transparent 68%),
@@ -84,5 +84,5 @@ html[data-workshop-bg="crimson"]::after {
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: 1;
-  animation: ember-glow-pulse 18.7s ease-in-out infinite alternate;
+  animation: ember-glow-pulse 28.05s ease-in-out infinite alternate;
 }

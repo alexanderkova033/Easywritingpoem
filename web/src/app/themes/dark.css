@@ -47,7 +47,7 @@ html[data-workshop-bg="dark"]::after {
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: var(--after-opacity);
-  animation: dark-ambient-drift 153s ease-in-out infinite;
+  animation: dark-ambient-drift 229.5s ease-in-out infinite;
 }
 
 @keyframes dark-ambient-drift {
