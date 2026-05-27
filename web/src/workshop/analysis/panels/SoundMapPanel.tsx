@@ -7,8 +7,6 @@ import {
   SOUND_CLASS_HUES,
   SOUND_CLASS_LABELS,
   summarisePauses,
-  VOWEL_FRIENDLY_LABEL,
-  VOWEL_HUES,
   type SoundClass,
   type SoundEcho,
 } from "@/workshop/sound/sound-map-analysis";
@@ -22,6 +20,19 @@ export interface EditorEchoHighlight {
   colorKey: string;
 }
 
+export interface EditorLineVowelTint {
+  line: number;
+  bucket: "bright" | "mid" | "dark";
+  active?: boolean;
+}
+
+export interface EditorFlowMarker {
+  line: number;
+  endStop: "hard" | "soft" | "open";
+  caesuraColumn: number | null;
+  active?: boolean;
+}
+
 export interface SoundMapPanelProps {
   poemLines: string[];
   stressLexicon: ReadonlyMap<string, string> | null;
@@ -30,7 +41,28 @@ export interface SoundMapPanelProps {
   goToLine: (line1Based: number) => void;
   /** When provided, the panel reports which words to highlight in the editor. */
   onEchoHighlightsChange?: (highlights: EditorEchoHighlight[] | null) => void;
+  onLineVowelTintsChange?: (tints: EditorLineVowelTint[] | null) => void;
+  onFlowMarkersChange?: (markers: EditorFlowMarker[] | null) => void;
 }
+
+const VOWEL_BUCKET: Record<string, "bright" | "mid" | "dark"> = {
+  a: "bright", e: "bright", i: "bright", ay: "bright",
+  ee: "bright", ih: "bright", y: "bright",
+  uh: "mid", er: "mid",
+  ah: "dark", aw: "dark", ow: "dark", oh: "dark",
+  oy: "dark", oo: "dark", o: "dark", u: "dark",
+};
+const VOWEL_BUCKET_LABEL = { bright: "Bright", mid: "Mid", dark: "Dark" } as const;
+const VOWEL_BUCKET_EXAMPLES = {
+  bright: "ee, ay, i",
+  mid: "uh, er",
+  dark: "oo, oh, ah",
+} as const;
+const VOWEL_BUCKET_HUE = {
+  bright: "#e6b550",
+  mid:    "#88a596",
+  dark:   "#6a78b8",
+} as const;
 
 type SoundSubTab = "echoes" | "vowels" | "flow";
 
@@ -46,9 +78,15 @@ const ALL_CLASSES: SoundClass[] = [
 function EchoCard({
   echo,
   goToLine,
+  echoId,
+  isActive,
+  onHoverChange,
 }: {
   echo: SoundEcho;
   goToLine: (line: number) => void;
+  echoId: string;
+  isActive: boolean;
+  onHoverChange: (id: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
   const previewMax = 6;
@@ -63,7 +101,14 @@ function EchoCard({
           : `across ${echo.span + 1} lines`
       : null;
   return (
-    <li className="rep-card sound-echo-card" style={{ borderLeftColor: tint }}>
+    <li
+      className={`rep-card sound-echo-card${isActive ? " is-active" : ""}`}
+      style={{ borderLeftColor: tint }}
+      onMouseEnter={() => onHoverChange(echoId)}
+      onMouseLeave={() => onHoverChange(null)}
+      onFocus={() => onHoverChange(echoId)}
+      onBlur={() => onHoverChange(null)}
+    >
       <div className="sound-echo-card-head">
         <span className="sound-echo-key">/{echo.key}/</span>
         <span className="sound-echo-count" style={{ color: tint }}>×{echo.members.length}</span>
@@ -97,57 +142,6 @@ function EchoCard({
   );
 }
 
-function FlowRow({
-  lineNumber,
-  text,
-  endStop,
-  caesuraAt,
-  caesuraColumn,
-  goToLine,
-}: {
-  lineNumber: number;
-  text: string;
-  endStop: "hard" | "soft" | "open";
-  caesuraAt: number | null;
-  caesuraColumn: number | null;
-  goToLine: (line: number) => void;
-}) {
-  const display = text.trim();
-  const before = caesuraColumn !== null ? display.slice(0, caesuraColumn) : display;
-  const after = caesuraColumn !== null ? display.slice(caesuraColumn) : "";
-  const endIcon = endStop === "hard" ? "■" : endStop === "soft" ? "·" : "↵";
-  const endTitle = endStopLabel(endStop);
-  return (
-    <li
-      className={`sound-flow-row sound-flow-row-${endStop}`}
-      onClick={() => goToLine(lineNumber)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          goToLine(lineNumber);
-        }
-      }}
-      title={`Line ${lineNumber} — ${endTitle}${caesuraAt !== null ? " · pause inside line" : ""}`}
-    >
-      <span className="sound-flow-num">L{lineNumber}</span>
-      <span className="sound-flow-text">
-        {before}
-        {after && (
-          <>
-            <span className="sound-flow-caesura" aria-label="pause">‖</span>
-            {after}
-          </>
-        )}
-      </span>
-      <span className={`sound-flow-end sound-flow-end-${endStop}`} aria-label={endTitle}>
-        {endIcon}
-      </span>
-    </li>
-  );
-}
-
 export function SoundMapPanel({
   poemLines,
   stressLexicon,
@@ -155,9 +149,14 @@ export function SoundMapPanel({
   heavyToolsStale,
   goToLine,
   onEchoHighlightsChange,
+  onLineVowelTintsChange,
+  onFlowMarkersChange,
 }: SoundMapPanelProps) {
   const [subTab, setSubTab] = useState<SoundSubTab>("echoes");
   const [classFilter, setClassFilter] = useState<SoundClass | "all">("all");
+  const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
+  const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
+  const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
 
   const lineSounds = useMemo(
     () => buildLineSounds(poemLines, stressLexicon),
@@ -197,45 +196,14 @@ export function SoundMapPanel({
     return m;
   }, [lineSounds]);
 
-  // Highlights to mirror in the editor while the Sound echoes subtab is active.
-  const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
-    if (subTab !== "echoes") return null;
-    const out: EditorEchoHighlight[] = [];
-    for (const cls of visibleClassesWithEchoes) {
-      for (const e of byClass[cls]) {
-        for (const m of e.members) {
-          const ls = lineSoundsByLine.get(m.lineNumber);
-          if (!ls) continue;
-          const tok = ls.tokens[m.tokenIndex];
-          if (!tok) continue;
-          out.push({
-            line: m.lineNumber,
-            start: tok.start,
-            end: tok.end,
-            colorKey: cls,
-          });
-        }
-      }
-    }
-    return out;
-  }, [subTab, visibleClassesWithEchoes, byClass, lineSoundsByLine]);
-
-  useEffect(() => {
-    if (!onEchoHighlightsChange) return;
-    onEchoHighlightsChange(editorEchoHighlights);
-    return () => {
-      onEchoHighlightsChange(null);
-    };
-  }, [onEchoHighlightsChange, editorEchoHighlights]);
-
-  // For vowel-arc legend: which vowels actually appear in this poem?
+  // Which vowels actually appear in this poem (for the legend).
   const usedVowels = useMemo(() => {
     const seen = new Set<string>();
     for (const ls of lineSounds) if (ls.dominantVowel) seen.add(ls.dominantVowel);
     return [...seen].sort();
   }, [lineSounds]);
 
-  // For caesura column: convert token index → column in line text.
+  // Caesura token index → column position in the line text.
   const caesuraColumnsByLine = useMemo(() => {
     const m = new Map<number, number | null>();
     for (const ls of lineSounds) {
@@ -245,6 +213,107 @@ export function SoundMapPanel({
     }
     return m;
   }, [lineSounds]);
+
+  const echoesWithId = useMemo(() => {
+    const out: Array<{ id: string; echo: SoundEcho }> = [];
+    for (const cls of ALL_CLASSES) {
+      const items = byClass[cls];
+      for (let i = 0; i < items.length; i++) {
+        out.push({ id: `${cls}-${items[i]!.key}-${i}`, echo: items[i]! });
+      }
+    }
+    return out;
+  }, [byClass]);
+  const echoesById = useMemo(() => {
+    const m = new Map<string, SoundEcho>();
+    for (const { id, echo } of echoesWithId) m.set(id, echo);
+    return m;
+  }, [echoesWithId]);
+
+  function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
+    const out: EditorEchoHighlight[] = [];
+    for (const m of echo.members) {
+      const ls = lineSoundsByLine.get(m.lineNumber);
+      if (!ls) continue;
+      const tok = ls.tokens[m.tokenIndex];
+      if (!tok) continue;
+      out.push({
+        line: m.lineNumber,
+        start: tok.start,
+        end: tok.end,
+        colorKey: echo.className,
+      });
+    }
+    return out;
+  }
+
+  // Echo highlights:
+  // - hover any card → just that one echo's words
+  // - else specific class filter → all words of that class
+  // - else (All filter, no hover) → nothing (avoids rainbow soup)
+  const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
+    if (subTab !== "echoes") return null;
+    if (hoveredEchoId) {
+      const e = echoesById.get(hoveredEchoId);
+      return e ? membersToHighlights(e) : null;
+    }
+    if (classFilter !== "all") {
+      const out: EditorEchoHighlight[] = [];
+      for (const e of byClass[classFilter]) out.push(...membersToHighlights(e));
+      return out;
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTab, hoveredEchoId, echoesById, classFilter, byClass, lineSoundsByLine]);
+
+  // Line-level vowel tints (3 buckets) — active when on vowels subtab.
+  const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
+    if (subTab !== "vowels") return null;
+    const out: EditorLineVowelTint[] = [];
+    for (const ls of lineSounds) {
+      if (ls.text.trim().length === 0 || !ls.dominantVowel) continue;
+      const bucket = VOWEL_BUCKET[ls.dominantVowel];
+      if (!bucket) continue;
+      out.push({
+        line: ls.lineNumber,
+        bucket,
+        active: hoveredVowelLine === ls.lineNumber,
+      });
+    }
+    return out;
+  }, [subTab, lineSounds, hoveredVowelLine]);
+
+  // Flow markers — active when on flow subtab.
+  const editorFlowMarkers = useMemo<EditorFlowMarker[] | null>(() => {
+    if (subTab !== "flow") return null;
+    const out: EditorFlowMarker[] = [];
+    for (const ls of lineSounds) {
+      if (ls.text.trim().length === 0) continue;
+      out.push({
+        line: ls.lineNumber,
+        endStop: ls.endStop,
+        caesuraColumn: caesuraColumnsByLine.get(ls.lineNumber) ?? null,
+        active: hoveredFlowLine === ls.lineNumber,
+      });
+    }
+    return out;
+  }, [subTab, lineSounds, caesuraColumnsByLine, hoveredFlowLine]);
+
+  useEffect(() => {
+    if (!onEchoHighlightsChange) return;
+    onEchoHighlightsChange(editorEchoHighlights);
+    return () => { onEchoHighlightsChange(null); };
+  }, [onEchoHighlightsChange, editorEchoHighlights]);
+  useEffect(() => {
+    if (!onLineVowelTintsChange) return;
+    onLineVowelTintsChange(editorLineVowelTints);
+    return () => { onLineVowelTintsChange(null); };
+  }, [onLineVowelTintsChange, editorLineVowelTints]);
+  useEffect(() => {
+    if (!onFlowMarkersChange) return;
+    onFlowMarkersChange(editorFlowMarkers);
+    return () => { onFlowMarkersChange(null); };
+  }, [onFlowMarkersChange, editorFlowMarkers]);
 
   return (
     <div
@@ -298,8 +367,8 @@ export function SoundMapPanel({
       {subTab === "echoes" && (
         <>
           <p className="muted small sound-help">
-            Groups of words that <strong>share a sound</strong>. Click any chip to jump to
-            the line — tighter gaps mean a more concentrated echo.
+            Hover an echo to highlight its words in the poem. Pick a sound type below
+            to keep its words lit while you read.
           </p>
 
           {echoes.length > 0 && (
@@ -308,6 +377,7 @@ export function SoundMapPanel({
                 type="button"
                 className={`sound-filter-chip${classFilter === "all" ? " is-active" : ""}`}
                 onClick={() => setClassFilter("all")}
+                title="Show every echo group below"
               >
                 All <span className="sound-filter-count">{echoes.length}</span>
               </button>
@@ -344,9 +414,7 @@ export function SoundMapPanel({
           {echoes.length === 0 ? (
             <EmptyState title="No strong echoes yet">
               <p className="muted small">
-                Sound echoes appear once three or more words in your poem share an initial
-                consonant (alliteration) or vowel sound (assonance). Keep writing —
-                they'll surface here as your lines fill in.
+                Echoes appear once three or more words share a sound — keep writing.
               </p>
             </EmptyState>
           ) : visibleClassesWithEchoes.length === 0 ? (
@@ -362,7 +430,10 @@ export function SoundMapPanel({
                     className="sound-echo-group"
                     style={{ ["--echo-hue" as string]: hue }}
                   >
-                    <header className="sound-echo-group-head">
+                    <header
+                      className="sound-echo-group-head"
+                      title={SOUND_CLASS_BLURB[cls]}
+                    >
                       <span
                         className="sound-echo-group-dot"
                         style={{ background: hue }}
@@ -372,18 +443,21 @@ export function SoundMapPanel({
                         {SOUND_CLASS_LABELS[cls]}
                       </span>
                       <span className="sound-echo-group-count">{items.length}</span>
-                      <span className="sound-echo-group-blurb muted small">
-                        {SOUND_CLASS_BLURB[cls]}
-                      </span>
                     </header>
                     <ul className="rep-card-list sound-echo-list">
-                      {items.map((e, i) => (
-                        <EchoCard
-                          key={`${cls}-${e.key}-${i}`}
-                          echo={e}
-                          goToLine={goToLine}
-                        />
-                      ))}
+                      {items.map((e, i) => {
+                        const id = `${cls}-${e.key}-${i}`;
+                        return (
+                          <EchoCard
+                            key={id}
+                            echo={e}
+                            goToLine={goToLine}
+                            echoId={id}
+                            isActive={hoveredEchoId === id}
+                            onHoverChange={setHoveredEchoId}
+                          />
+                        );
+                      })}
                     </ul>
                   </section>
                 );
@@ -397,81 +471,72 @@ export function SoundMapPanel({
       {subTab === "vowels" && (
         <>
           <p className="muted small sound-help">
-            Each line is tinted by its <strong>dominant vowel sound</strong>. Look for shape
-            across the poem — bright vowels (ee, ay, i) often feel sharp or hopeful;
-            dark vowels (oo, oh, ah) feel weighted or sombre.
+            Each line is tinted in the poem by its dominant vowel. Bright (ee, ay) feels
+            sharp; dark (oo, oh) feels weighted. Hover a stripe to spotlight that line.
           </p>
 
           {usedVowels.length === 0 ? (
             <EmptyState title="Not enough words yet">
-              <p className="muted small">
-                Write at least a few words on a line and the vowel arc will appear.
-              </p>
+              <p className="muted small">Write a few words and the shape will appear.</p>
             </EmptyState>
           ) : (
             <>
               <div className="sound-vowel-legend" aria-label="Vowel colour key">
-                {usedVowels.map((v) => (
-                  <span key={v} className="sound-vowel-legend-item">
+                {(["bright", "mid", "dark"] as const).map((b) => (
+                  <span key={b} className="sound-vowel-legend-item">
                     <span
-                      className="sound-vowel-legend-swatch"
-                      style={{ background: VOWEL_HUES[v] ?? "#888" }}
+                      className={`sound-vowel-legend-swatch sound-vowel-legend-swatch-${b}`}
+                      style={{ background: VOWEL_BUCKET_HUE[b] }}
                       aria-hidden
                     />
                     <span className="sound-vowel-legend-label">
-                      {VOWEL_FRIENDLY_LABEL[v] ?? v}
+                      {VOWEL_BUCKET_LABEL[b]}
+                      <span className="sound-vowel-legend-eg muted small">
+                        {" "}{VOWEL_BUCKET_EXAMPLES[b]}
+                      </span>
                     </span>
                   </span>
                 ))}
               </div>
 
-              <ol className="sound-vowel-arc" aria-label="Dominant vowel per line">
+              <div
+                className="sound-vowel-strip"
+                role="list"
+                aria-label="Vowel shape across the poem"
+              >
                 {lineSounds.map((ls) => {
                   if (ls.text.trim().length === 0) {
                     return (
-                      <li
+                      <span
                         key={ls.lineNumber}
-                        className="sound-vowel-arc-row sound-vowel-arc-blank"
+                        className="sound-vowel-strip-seg sound-vowel-strip-seg-blank"
                         aria-hidden
                       />
                     );
                   }
-                  const hue = ls.dominantVowel ? VOWEL_HUES[ls.dominantVowel] ?? "#888" : "#888";
-                  const label = ls.dominantVowel
-                    ? VOWEL_FRIENDLY_LABEL[ls.dominantVowel] ?? ls.dominantVowel
-                    : "—";
+                  const bucket = ls.dominantVowel ? VOWEL_BUCKET[ls.dominantVowel] : null;
+                  const isActive = hoveredVowelLine === ls.lineNumber;
                   return (
-                    <li
+                    <button
                       key={ls.lineNumber}
-                      className="sound-vowel-arc-row"
+                      type="button"
+                      role="listitem"
+                      className={`sound-vowel-strip-seg sound-vowel-strip-seg-${bucket ?? "none"}${isActive ? " is-active" : ""}`}
                       onClick={() => goToLine(ls.lineNumber)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          goToLine(ls.lineNumber);
-                        }
-                      }}
-                      title={`Line ${ls.lineNumber} — dominant vowel: ${label}`}
+                      onMouseEnter={() => setHoveredVowelLine(ls.lineNumber)}
+                      onMouseLeave={() => setHoveredVowelLine(null)}
+                      onFocus={() => setHoveredVowelLine(ls.lineNumber)}
+                      onBlur={() => setHoveredVowelLine(null)}
+                      title={`L${ls.lineNumber} — ${
+                        bucket ? VOWEL_BUCKET_LABEL[bucket].toLowerCase() : "—"
+                      }${ls.dominantVowel ? ` (${ls.dominantVowel})` : ""}`}
+                      aria-label={`Line ${ls.lineNumber}, ${bucket ?? "unknown"} vowel`}
                     >
-                      <span className="sound-vowel-arc-num">L{ls.lineNumber}</span>
-                      <span
-                        className="sound-vowel-arc-bar"
-                        style={{ background: hue }}
-                        aria-hidden
-                      />
-                      <span className="sound-vowel-arc-line-text">
-                        {ls.text.trim().slice(0, 60)}
-                        {ls.text.trim().length > 60 ? "…" : ""}
-                      </span>
-                      <span className="sound-vowel-arc-tag" style={{ color: hue }}>
-                        {ls.dominantVowel ?? "—"}
-                      </span>
-                    </li>
+                      <span className="sound-vowel-strip-num">{ls.lineNumber}</span>
+                    </button>
                   );
                 })}
-              </ol>
+              </div>
             </>
           )}
         </>
@@ -481,10 +546,10 @@ export function SoundMapPanel({
       {subTab === "flow" && (
         <>
           <p className="muted small sound-help">
-            Where each line <strong>breaks or flows</strong>. An end-stopped line ends with
-            a clean stop (. ! ?); a soft pause uses a comma or dash; an enjambed line
-            spills into the next without punctuation. A <strong>caesura</strong> (‖) is a
-            mid-line pause.
+            How each line breaks. <span className="sound-glyph-hard">■</span> stops,
+            <span className="sound-glyph-soft"> · </span>pauses,
+            <span className="sound-glyph-open"> ↵ </span>spills into the next.
+            <span className="sound-glyph-cae"> ‖ </span> marks a mid-line pause — shown in the poem.
           </p>
 
           {pauseStats.total === 0 ? (
@@ -496,42 +561,59 @@ export function SoundMapPanel({
               <div className="sound-flow-summary">
                 <div className="sound-flow-stat sound-flow-stat-hard">
                   <span className="sound-flow-stat-value">{pauseStats.endStopped}</span>
-                  <span className="sound-flow-stat-label">end-stopped</span>
+                  <span className="sound-flow-stat-label">stops ■</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-soft">
                   <span className="sound-flow-stat-value">{pauseStats.soft}</span>
-                  <span className="sound-flow-stat-label">soft pause</span>
+                  <span className="sound-flow-stat-label">pauses ·</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-open">
                   <span className="sound-flow-stat-value">{pauseStats.enjambed}</span>
-                  <span className="sound-flow-stat-label">enjambed</span>
+                  <span className="sound-flow-stat-label">enjambed ↵</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-cae">
                   <span className="sound-flow-stat-value">{pauseStats.caesuras}</span>
-                  <span className="sound-flow-stat-label">caesuras</span>
+                  <span className="sound-flow-stat-label">caesuras ‖</span>
                 </div>
               </div>
 
-              <ul className="sound-flow-list" aria-label="Per-line flow">
+              <div
+                className="sound-flow-strip"
+                role="list"
+                aria-label="Flow shape across the poem"
+              >
                 {lineSounds.map((ls) => {
                   if (ls.text.trim().length === 0) {
                     return (
-                      <li key={ls.lineNumber} className="sound-flow-row sound-flow-row-blank" aria-hidden />
+                      <span
+                        key={ls.lineNumber}
+                        className="sound-flow-strip-seg sound-flow-strip-seg-blank"
+                        aria-hidden
+                      />
                     );
                   }
+                  const isActive = hoveredFlowLine === ls.lineNumber;
+                  const hasCae = ls.caesuraAt !== null;
+                  const endTitle = endStopLabel(ls.endStop);
                   return (
-                    <FlowRow
+                    <button
                       key={ls.lineNumber}
-                      lineNumber={ls.lineNumber}
-                      text={ls.text}
-                      endStop={ls.endStop}
-                      caesuraAt={ls.caesuraAt}
-                      caesuraColumn={caesuraColumnsByLine.get(ls.lineNumber) ?? null}
-                      goToLine={goToLine}
-                    />
+                      type="button"
+                      role="listitem"
+                      className={`sound-flow-strip-seg sound-flow-strip-seg-${ls.endStop}${hasCae ? " has-caesura" : ""}${isActive ? " is-active" : ""}`}
+                      onClick={() => goToLine(ls.lineNumber)}
+                      onMouseEnter={() => setHoveredFlowLine(ls.lineNumber)}
+                      onMouseLeave={() => setHoveredFlowLine(null)}
+                      onFocus={() => setHoveredFlowLine(ls.lineNumber)}
+                      onBlur={() => setHoveredFlowLine(null)}
+                      title={`L${ls.lineNumber} — ${endTitle}${hasCae ? " · pause inside line" : ""}`}
+                      aria-label={`Line ${ls.lineNumber}, ${endTitle}`}
+                    >
+                      <span className="sound-flow-strip-num">{ls.lineNumber}</span>
+                    </button>
                   );
                 })}
-              </ul>
+              </div>
             </>
           )}
         </>

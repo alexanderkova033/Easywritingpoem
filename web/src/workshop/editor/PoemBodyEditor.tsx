@@ -488,6 +488,101 @@ const internalRhymeField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Line vowel tints (for the Vowel music subtab) ---- //
+const setLineVowelTints = StateEffect.define<Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }>>();
+const clearLineVowelTints = StateEffect.define<void>();
+
+const lineVowelTintField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearLineVowelTints)) { next = Decoration.none; }
+      if (e.is(setLineVowelTints)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const { line, bucket, active } of e.value) {
+          if (line < 1 || line > doc.lines) continue;
+          const docLine = doc.line(line);
+          const cls = `cm-vowel-line cm-vowel-line-${bucket}${active ? " cm-vowel-line-active" : ""}`;
+          decos.push(Decoration.line({ class: cls }).range(docLine.from));
+        }
+        decos.sort((a, b) => a.from - b.from);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
+// ---- Flow markers (end-of-line glyph + caesura mark) ---- //
+class FlowEndWidget extends WidgetType {
+  constructor(readonly endStop: "hard" | "soft" | "open", readonly active: boolean) { super(); }
+  eq(o: FlowEndWidget) { return o.endStop === this.endStop && o.active === this.active; }
+  toDOM() {
+    const el = document.createElement("span");
+    const glyph = this.endStop === "hard" ? "■" : this.endStop === "soft" ? "·" : "↵";
+    el.className = `cm-flow-end cm-flow-end-${this.endStop}${this.active ? " cm-flow-end-active" : ""}`;
+    el.textContent = glyph;
+    el.setAttribute("aria-hidden", "true");
+    return el;
+  }
+  ignoreEvent() { return true; }
+}
+
+class FlowCaesuraWidget extends WidgetType {
+  constructor(readonly active: boolean) { super(); }
+  eq(o: FlowCaesuraWidget) { return o.active === this.active; }
+  toDOM() {
+    const el = document.createElement("span");
+    el.className = `cm-flow-caesura${this.active ? " cm-flow-caesura-active" : ""}`;
+    el.textContent = "‖";
+    el.setAttribute("aria-hidden", "true");
+    return el;
+  }
+  ignoreEvent() { return true; }
+}
+
+const setFlowMarkers = StateEffect.define<Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }>>();
+const clearFlowMarkers = StateEffect.define<void>();
+
+const flowMarkerField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearFlowMarkers)) { next = Decoration.none; }
+      if (e.is(setFlowMarkers)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const { line, endStop, caesuraColumn, active } of e.value) {
+          if (line < 1 || line > doc.lines) continue;
+          const docLine = doc.line(line);
+          decos.push(
+            Decoration.widget({
+              widget: new FlowEndWidget(endStop, !!active),
+              side: 1,
+            }).range(docLine.to),
+          );
+          if (caesuraColumn !== null && caesuraColumn > 0 && caesuraColumn < docLine.text.length) {
+            decos.push(
+              Decoration.widget({
+                widget: new FlowCaesuraWidget(!!active),
+                side: 1,
+              }).range(docLine.from + caesuraColumn),
+            );
+          }
+        }
+        decos.sort((a, b) => a.from - b.from);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // ---- Sound-echo highlights (alliteration/assonance/…) ---- //
 const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string }>>();
 const clearEchoHighlights = StateEffect.define<void>();
@@ -615,6 +710,10 @@ export interface PoemBodyEditorProps {
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
   /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
   echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string }>;
+  /** Line-level vowel tints (Vowel music subtab). */
+  lineVowelTints?: Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }>;
+  /** End-stop glyphs + caesura marks (Pause & flow subtab). */
+  flowMarkers?: Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }>;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
   rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */
@@ -793,6 +892,30 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setEchoHighlights.of(eh) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.echoHighlights]);
 
+  // Line vowel tints
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const vt = props.lineVowelTints;
+    if (!vt || vt.length === 0) {
+      try { view.dispatch({ effects: clearLineVowelTints.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setLineVowelTints.of(vt) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.lineVowelTints]);
+
+  // Flow markers (end-stops + caesura)
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const fm = props.flowMarkers;
+    if (!fm || fm.length === 0) {
+      try { view.dispatch({ effects: clearFlowMarkers.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setFlowMarkers.of(fm) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.flowMarkers]);
+
   // Rhyme scheme letters in gutter
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -938,6 +1061,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       rhymeEndField,
       internalRhymeField,
       echoHighlightField,
+      lineVowelTintField,
+      flowMarkerField,
       diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,

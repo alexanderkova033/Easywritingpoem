@@ -638,6 +638,8 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) transparent;
@@ -701,6 +703,38 @@
    Hidden by default on desktop. */
 .tools-swipe-handle {
   display: none;
+}
+
+/* Mobile-only close button (X) in the tools sticky head */
+.tools-mobile-close {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .tools-mobile-close {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0.4rem;
+    right: 0.55rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 3;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.13s, color 0.13s, border-color 0.13s;
+  }
+
+  .tools-mobile-close:active {
+    background: color-mix(in srgb, var(--border) 40%, var(--surface));
+    color: var(--text);
+  }
 }
 
 .tools-sticky-head {

@@ -127,6 +127,12 @@ export interface WorkshopToolPanelsProps {
   onEchoHighlightsChange?: (
     highlights: { line: number; start: number; end: number; colorKey: string }[] | null,
   ) => void;
+  onLineVowelTintsChange?: (
+    tints: { line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }[] | null,
+  ) => void;
+  onFlowMarkersChange?: (
+    markers: { line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }[] | null,
+  ) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -304,6 +310,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
           onEchoHighlightsChange={props.onEchoHighlightsChange}
+          onLineVowelTintsChange={props.onLineVowelTintsChange}
+          onFlowMarkersChange={props.onFlowMarkersChange}
         />
       ) : null}
 

@@ -377,21 +377,21 @@
     isolation: isolate;
   }
 
-  /* Tools panel as bottom sheet — fixed, full width, height snaps via top offset. */
+  /* Tools panel as bottom sheet — fixed, full width, height snaps via top offset.
+     Bottom is anchored above the MobileActionBar so the user can still tap
+     "Write" / "Library" / "Analyse" to dismiss or switch. The inner
+     .tools-scroll-body is the only scroll container — outer overflow is hidden
+     to avoid iOS double-scroll confusion. */
   .tools-panel {
     width: 100%;
     box-sizing: border-box;
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
     /* Default closed — slid below viewport */
     top: 100vh;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
     isolation: isolate;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -10px 38px color-mix(in srgb, #000 26%, transparent);

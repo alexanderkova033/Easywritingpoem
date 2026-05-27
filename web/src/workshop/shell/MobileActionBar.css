@@ -10,7 +10,9 @@
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 54;
+    /* Must sit ABOVE .tools-panel (z-index 62) so the user can tap Write
+       to close the bottom sheet. */
+    z-index: 70;
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left: 0.25rem;
     padding-right: 0.25rem;

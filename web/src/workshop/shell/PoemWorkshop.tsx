@@ -292,6 +292,12 @@ export function PoemWorkshop() {
   const [echoHighlights, setEchoHighlights] = useState<
     Array<{ line: number; start: number; end: number; colorKey: string }> | null
   >(null);
+  const [lineVowelTints, setLineVowelTints] = useState<
+    Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }> | null
+  >(null);
+  const [flowMarkers, setFlowMarkers] = useState<
+    Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }> | null
+  >(null);
   const rhymeBumpRef = useRef(0);
 
   const baseRhymeEndHighlights = useMemo(() => {
@@ -1794,6 +1800,8 @@ export function PoemWorkshop() {
                       rhymeEndHighlights={rhymeEndHighlights}
                       internalRhymes={m.toolTab === "rhyme" ? m.internalRhymes : undefined}
                       echoHighlights={m.toolTab === "echoes" ? echoHighlights ?? undefined : undefined}
+                      lineVowelTints={m.toolTab === "echoes" ? lineVowelTints ?? undefined : undefined}
+                      flowMarkers={m.toolTab === "echoes" ? flowMarkers ?? undefined : undefined}
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
@@ -1989,6 +1997,14 @@ export function PoemWorkshop() {
                 setMobileSheetSnap((s) => (s === "half" ? "full" : "half"));
               }}
             />
+            <button
+              type="button"
+              className="tools-mobile-close"
+              onClick={() => setMobileToolsExpanded(false)}
+              aria-label="Close tools"
+            >
+              ✕
+            </button>
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
               <button
@@ -2185,6 +2201,8 @@ export function PoemWorkshop() {
             onSetStressOverride={manualStress.setOverride}
             onRemoveStressOverride={manualStress.removeOverride}
             onEchoHighlightsChange={setEchoHighlights}
+            onLineVowelTintsChange={setLineVowelTints}
+            onFlowMarkersChange={setFlowMarkers}
           />
           </Suspense>
 

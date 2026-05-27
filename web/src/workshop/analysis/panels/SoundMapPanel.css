@@ -162,7 +162,7 @@
   color: var(--muted);
 }
 
-/* ── Vowel music ── */
+/* ── Vowel music (3-bucket) ── */
 .sound-vowel-legend {
   display: flex;
   flex-wrap: wrap;
@@ -175,71 +175,69 @@
 .sound-vowel-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: var(--muted);
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text);
 }
 .sound-vowel-legend-swatch {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 3px;
   display: inline-block;
 }
 .sound-vowel-legend-label {
-  font-family: var(--font-metric, monospace);
+  font-weight: 600;
+}
+.sound-vowel-legend-eg {
+  font-weight: 400;
 }
 
-.sound-vowel-arc {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
-}
-.sound-vowel-arc-row {
+/* Stripe across the poem — one segment per line, bucket-colored. */
+.sound-vowel-strip {
   display: grid;
-  grid-template-columns: 1.7rem 0.4rem 1fr auto;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.22rem 0.35rem;
-  border-radius: 4px;
+  grid-template-columns: repeat(auto-fill, minmax(1.6rem, 1fr));
+  gap: 0.2rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.sound-vowel-strip-seg {
+  height: 1.5rem;
+  border-radius: 3px;
+  border: none;
   cursor: pointer;
-  transition: background 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  color: rgba(0, 0, 0, 0.55);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  transition: outline-color 0.12s ease, transform 0.12s ease, filter 0.12s ease;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
 }
-.sound-vowel-arc-row:hover {
-  background: var(--bg-subtle, rgba(127, 127, 127, 0.05));
+.sound-vowel-strip-seg:hover,
+.sound-vowel-strip-seg.is-active {
+  outline-color: var(--text);
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
-.sound-vowel-arc-blank {
-  height: 0.6rem;
-  padding: 0;
+.sound-vowel-strip-num {
   pointer-events: none;
 }
-.sound-vowel-arc-num {
-  font-size: 0.72rem;
+.sound-vowel-strip-seg-bright { background: #e6b550; }
+.sound-vowel-strip-seg-mid    { background: #88a596; color: rgba(255, 255, 255, 0.85); }
+.sound-vowel-strip-seg-dark   { background: #6a78b8; color: rgba(255, 255, 255, 0.85); }
+.sound-vowel-strip-seg-none {
+  background: var(--bg-subtle, rgba(127, 127, 127, 0.12));
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
-.sound-vowel-arc-bar {
-  width: 5px;
-  height: 1.4em;
-  border-radius: 2px;
-  opacity: 0.85;
-}
-.sound-vowel-arc-line-text {
-  font-family: var(--poem-font, inherit);
-  font-size: 0.88rem;
-  line-height: 1.35;
-  color: var(--text);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.sound-vowel-arc-tag {
-  font-size: 0.7rem;
-  font-family: var(--font-metric, monospace);
-  text-transform: lowercase;
-  font-weight: 600;
+.sound-vowel-strip-seg-blank {
+  height: 1.5rem;
+  background: transparent;
+  pointer-events: none;
 }
 
 /* ── Pause & flow ── */
@@ -276,64 +274,64 @@
 .sound-flow-stat-open .sound-flow-stat-value { color: #6a8bb4; }
 .sound-flow-stat-cae .sound-flow-stat-value { color: #806193; }
 
-.sound-flow-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-.sound-flow-row {
-  display: grid;
-  grid-template-columns: 2rem 1fr 1.2rem;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.22rem 0.35rem;
-  border-radius: 4px;
-  cursor: pointer;
-  border-left: 3px solid transparent;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-.sound-flow-row:hover {
-  background: var(--bg-subtle, rgba(127, 127, 127, 0.05));
-}
-.sound-flow-row-blank {
-  height: 0.6rem;
-  padding: 0;
-  border-left: none;
-  pointer-events: none;
-}
-.sound-flow-row-hard { border-left-color: #b07466; }
-.sound-flow-row-soft { border-left-color: #c08210; }
-.sound-flow-row-open { border-left-color: #6a8bb4; }
+/* Inline glyph hints in the help text */
+.sound-glyph-hard { color: #b07466; font-weight: 700; }
+.sound-glyph-soft { color: #c08210; font-weight: 700; }
+.sound-glyph-open { color: #6a8bb4; font-weight: 700; }
+.sound-glyph-cae  { color: #806193; font-weight: 700; }
 
-.sound-flow-num {
-  font-size: 0.72rem;
-  color: var(--muted);
+/* Stripe across the poem — one segment per line, end-stop colored. */
+.sound-flow-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(1.6rem, 1fr));
+  gap: 0.2rem;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.sound-flow-strip-seg {
+  position: relative;
+  height: 1.5rem;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  color: rgba(0, 0, 0, 0.55);
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  transition: outline-color 0.12s ease, transform 0.12s ease, filter 0.12s ease;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
 }
-.sound-flow-text {
-  font-family: var(--poem-font, inherit);
-  font-size: 0.92rem;
-  line-height: 1.45;
-  color: var(--text);
+.sound-flow-strip-seg:hover,
+.sound-flow-strip-seg.is-active {
+  outline-color: var(--text);
+  transform: translateY(-1px);
+  filter: brightness(1.05);
 }
-.sound-flow-caesura {
-  display: inline-block;
-  margin: 0 0.3rem;
+.sound-flow-strip-num { pointer-events: none; }
+.sound-flow-strip-seg-hard { background: color-mix(in srgb, #b07466 70%, transparent); color: #fff; }
+.sound-flow-strip-seg-soft { background: color-mix(in srgb, #c08210 65%, transparent); color: #fff; }
+.sound-flow-strip-seg-open { background: color-mix(in srgb, #6a8bb4 65%, transparent); color: #fff; }
+.sound-flow-strip-seg.has-caesura::after {
+  content: "‖";
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 0.65rem;
   color: #806193;
   font-weight: 700;
-  opacity: 0.85;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
 }
-.sound-flow-end {
-  font-size: 0.85rem;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
+.sound-flow-strip-seg-blank {
+  height: 1.5rem;
+  background: transparent;
+  pointer-events: none;
 }
-.sound-flow-end-hard { color: #b07466; }
-.sound-flow-end-soft { color: #c08210; }
-.sound-flow-end-open { color: #6a8bb4; }
 
 /* ── Editor decorations for echoes (mirrors SOUND_CLASS_HUES) ── */
 .cm-echo {
@@ -341,13 +339,61 @@
   padding: 0 0.06em;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+  border-bottom: 2px solid transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
-.cm-echo-alliteration { background: color-mix(in srgb, #c98c46 22%, transparent); }
-.cm-echo-assonance    { background: color-mix(in srgb, #7da6c9 22%, transparent); }
-.cm-echo-consonance   { background: color-mix(in srgb, #b08fb4 22%, transparent); }
-.cm-echo-sibilance    { background: color-mix(in srgb, #7fb8b3 22%, transparent); }
-.cm-echo-plosive      { background: color-mix(in srgb, #d2745d 22%, transparent); }
-.cm-echo-liquid       { background: color-mix(in srgb, #8fb480 22%, transparent); }
+.cm-echo-alliteration { background: color-mix(in srgb, #c98c46 38%, transparent); border-bottom-color: #c98c46; }
+.cm-echo-assonance    { background: color-mix(in srgb, #7da6c9 38%, transparent); border-bottom-color: #7da6c9; }
+.cm-echo-consonance   { background: color-mix(in srgb, #b08fb4 38%, transparent); border-bottom-color: #b08fb4; }
+.cm-echo-sibilance    { background: color-mix(in srgb, #7fb8b3 38%, transparent); border-bottom-color: #7fb8b3; }
+.cm-echo-plosive      { background: color-mix(in srgb, #d2745d 38%, transparent); border-bottom-color: #d2745d; }
+.cm-echo-liquid       { background: color-mix(in srgb, #8fb480 38%, transparent); border-bottom-color: #8fb480; }
+
+/* Active card in the panel — slightly raised + accented */
+.sound-echo-card.is-active {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--echo-hue, var(--border)) 7%, var(--bg-elev, var(--bg)));
+}
+
+/* ── Editor decorations: line-level vowel tints ── */
+.cm-vowel-line {
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+.cm-vowel-line-bright { background: color-mix(in srgb, #e6b550 14%, transparent); }
+.cm-vowel-line-mid    { background: color-mix(in srgb, #88a596 16%, transparent); }
+.cm-vowel-line-dark   { background: color-mix(in srgb, #6a78b8 16%, transparent); }
+.cm-vowel-line.cm-vowel-line-active.cm-vowel-line-bright { background: color-mix(in srgb, #e6b550 32%, transparent); }
+.cm-vowel-line.cm-vowel-line-active.cm-vowel-line-mid    { background: color-mix(in srgb, #88a596 36%, transparent); }
+.cm-vowel-line.cm-vowel-line-active.cm-vowel-line-dark   { background: color-mix(in srgb, #6a78b8 36%, transparent); }
+
+/* ── Editor decorations: flow markers ── */
+.cm-flow-end {
+  margin-left: 0.4rem;
+  font-size: 0.85em;
+  font-weight: 700;
+  opacity: 0.7;
+  font-family: var(--font-metric, monospace);
+  user-select: none;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.cm-flow-end-active { opacity: 1; transform: scale(1.15); }
+.cm-flow-end-hard { color: #b07466; }
+.cm-flow-end-soft { color: #c08210; }
+.cm-flow-end-open { color: #6a8bb4; }
+.cm-flow-caesura {
+  display: inline-block;
+  margin: 0 0.15em;
+  color: #806193;
+  font-weight: 700;
+  opacity: 0.75;
+  user-select: none;
+  transition: opacity 0.12s ease;
+}
+.cm-flow-caesura-active { opacity: 1; }
 
 /* Focus mode dims editor highlights to keep the page calm. */
-.poem-workshop.is-focus-mode .cm-echo { background: transparent; }
+.poem-workshop.is-focus-mode .cm-echo,
+.poem-workshop.is-focus-mode .cm-vowel-line { background: transparent; border-bottom-color: transparent; }
+.poem-workshop.is-focus-mode .cm-flow-end,
+.poem-workshop.is-focus-mode .cm-flow-caesura { opacity: 0.2; }
