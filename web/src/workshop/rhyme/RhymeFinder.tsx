@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { usePinnedRhymes, useRecentLookups } from "./rhyme-storage";
 import { datamuseFetch } from "./datamuse-cache";
 import { endingForBreadth } from "./scheme";
-import { useFavouriteWords } from "@/workshop/vocabulary/favourite-words-storage";
+import { useStarredWords } from "@/workshop/vocabulary/starred-words-storage";
 
 type RhymeStrength = "perfect" | "near" | "broad";
 
@@ -116,23 +116,22 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
   const abortRef = useRef<AbortController | null>(null);
   const { pinned, togglePin, isPinned } = usePinnedRhymes();
   const { recent, pushRecent } = useRecentLookups();
-  const { favourites } = useFavouriteWords();
+  const { starred } = useStarredWords();
 
-  // Favourites that rhyme with the current query (locally computed — free).
-  // Uses "near" breadth (vowel-tail) which mirrors the editor default.
-  const favouriteMatches = useMemo<string[]>(() => {
+  // Starred words that rhyme with the current query (locally computed — free).
+  const starredMatches = useMemo<string[]>(() => {
     const q = query.trim().toLowerCase().replace(/[^a-z'-]/g, "");
-    if (!q || favourites.length === 0) return [];
+    if (!q || starred.length === 0) return [];
     const targetKey = endingForBreadth(q, strength === "perfect" ? "strict" : strength === "near" ? "near" : "broad");
     if (!targetKey) return [];
     const out: string[] = [];
-    for (const f of favourites) {
-      if (f.word === q) continue;
-      const fk = endingForBreadth(f.word, strength === "perfect" ? "strict" : strength === "near" ? "near" : "broad");
-      if (fk && fk === targetKey) out.push(f.word);
+    for (const s of starred) {
+      if (s.word === q) continue;
+      const sk = endingForBreadth(s.word, strength === "perfect" ? "strict" : strength === "near" ? "near" : "broad");
+      if (sk && sk === targetKey) out.push(s.word);
     }
     return out;
-  }, [query, favourites, strength]);
+  }, [query, starred, strength]);
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
@@ -327,12 +326,12 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
         </p>
       )}
 
-      {favouriteMatches.length > 0 && (
+      {starredMatches.length > 0 && (
         <div className="rhyme-favourites-strip">
           <span className="rhyme-favourites-label" aria-hidden>★</span>
-          <span className="rhyme-favourites-title muted small">From your favourites:</span>
+          <span className="rhyme-favourites-title muted small">From your starred words:</span>
           <div className="rhyme-favourites-chips">
-            {favouriteMatches.map((w) => (
+            {starredMatches.map((w) => (
               <button
                 key={w}
                 type="button"
@@ -342,7 +341,7 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
                 onMouseLeave={() => onHoverWord?.(null)}
                 onFocus={() => onHoverWord?.(w)}
                 onBlur={() => onHoverWord?.(null)}
-                title={`Use "${w}" from your favourites`}
+                title={`Use "${w}" from your starred words`}
                 disabled={!onApplyWord}
               >
                 <span aria-hidden>★</span> {w}

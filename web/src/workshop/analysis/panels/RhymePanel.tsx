@@ -3,7 +3,6 @@ import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { StanzaClusterGroup } from "@/workshop/rhyme/hints";
 import type { RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { RhymeFinder } from "@/workshop/rhyme/RhymeFinder";
-import { isEyeRhymeCluster } from "@/workshop/rhyme/eye-rhymes";
 import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { endWordOfLine } from "@/workshop/analysis/tools/helpers";
 import { NoLinesYetHint } from "@/workshop/analysis/tools/shared";
@@ -94,21 +93,6 @@ export function RhymePanel({
     setLocalFinderQuery({ word, bump: localBumpRef.current, expand: true });
   };
   const effectiveFinderQuery = localFinderQuery ?? rhymeFinderQuery;
-
-  // Which stanzas does each scheme label appear in? Used to render a small
-  // "↔ st. N" hint on clusters that echo another stanza.
-  const labelStanzas = useMemo(() => {
-    const m = new Map<string, number[]>();
-    for (const g of stanzaRhymeGroups) {
-      for (const c of g.clusters) {
-        if (!c.label) continue;
-        const arr = m.get(c.label) ?? [];
-        if (!arr.includes(g.stanza)) arr.push(g.stanza);
-        m.set(c.label, arr);
-      }
-    }
-    return m;
-  }, [stanzaRhymeGroups]);
 
   const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
     setRhymeLinkSelection((prev) => {
@@ -335,30 +319,9 @@ export function RhymePanel({
                   const labelChar = c.label ? c.label.charAt(0).toLowerCase() : "";
                   const labelClass = labelChar ? ` rhyme-label-${labelChar}` : "";
                   const cardClass = labelChar ? ` rhyme-cluster-card-${labelChar}` : "";
-                  const eyeRhyme = isEyeRhymeCluster(words);
-                  const otherStanzas = c.label
-                    ? (labelStanzas.get(c.label) ?? []).filter((s) => s !== group.stanza)
-                    : [];
                   return (
                     <li key={c.ending} className={`rhyme-cluster-card${cardClass}`}>
                       {c.label ? <span className={`rhyme-cluster-card-tag rhyme-label-${labelChar}`}>{c.label}</span> : null}
-                      {eyeRhyme ? (
-                        <span
-                          className="rhyme-cluster-tilde"
-                          title="Looks like a rhyme but the words sound different (eye-rhyme)"
-                          aria-label="Possible eye-rhyme — these words look alike but sound different"
-                        >
-                          ~
-                        </span>
-                      ) : null}
-                      {otherStanzas.length > 0 ? (
-                        <span
-                          className="rhyme-cluster-echo muted small"
-                          title={`Same rhyme also in stanza ${otherStanzas.join(", ")}`}
-                        >
-                          ↔ {otherStanzas.length === 1 ? `st. ${otherStanzas[0]}` : `${otherStanzas.length} stanzas`}
-                        </span>
-                      ) : null}
                       <div className="rhyme-cluster-chips">
                         {c.lineNumbers.map((n) => {
                           const word = endWordOfLine(poemLines[n - 1]) || `line ${n}`;
@@ -391,28 +354,54 @@ export function RhymePanel({
                     </li>
                   );
                 })}
-                {looseEnds.length > 0 ? (
-                  <li className="rhyme-cluster-card rhyme-cluster-card-loose">
-                    <span className="rhyme-cluster-card-tag rhyme-cluster-card-tag-loose">unlinked</span>
-                    <div className="rhyme-cluster-chips">
-                      {looseEnds.map(({ line, word }) => {
-                        const selected = rhymeLinkSelection.some((p) => p.line === line);
-                        return (
+                {looseEnds.length > 0 ? (() => {
+                  // Contextual inline Link affordance — only appears when the
+                  // user has selected ≥2 chips from this card with different
+                  // end-words. Lives next to the chips so new users don't have
+                  // to find the action bar at the top of the panel.
+                  const thisCardSelected = looseEnds.filter(({ line }) =>
+                    rhymeLinkSelection.some((p) => p.line === line),
+                  );
+                  const distinctWordsInCard = new Set(
+                    thisCardSelected.map(({ word }) => word.toLowerCase().trim()).filter(Boolean),
+                  );
+                  const canLinkInline =
+                    thisCardSelected.length >= 2 &&
+                    distinctWordsInCard.size >= 2 &&
+                    !rhymeSelectionSameCluster;
+                  return (
+                    <li className="rhyme-cluster-card rhyme-cluster-card-loose">
+                      <span className="rhyme-cluster-card-tag rhyme-cluster-card-tag-loose">unlinked</span>
+                      <div className="rhyme-cluster-chips">
+                        {looseEnds.map(({ line, word }) => {
+                          const selected = rhymeLinkSelection.some((p) => p.line === line);
+                          return (
+                            <button
+                              key={line}
+                              type="button"
+                              className={`rhyme-word-chip rhyme-word-chip-loose${selected ? " is-selected" : ""}`}
+                              onClick={() => toggleRhymeSelection(word, line, null)}
+                              title={selected ? "Click to deselect" : "Pick another to link as a rhyme"}
+                            >
+                              <span className="rhyme-word-chip-word">{word}</span>
+                              <span className="rhyme-word-chip-line">{line}</span>
+                            </button>
+                          );
+                        })}
+                        {canLinkInline ? (
                           <button
-                            key={line}
                             type="button"
-                            className={`rhyme-word-chip rhyme-word-chip-loose${selected ? " is-selected" : ""}`}
-                            onClick={() => toggleRhymeSelection(word, line, null)}
-                            title={selected ? "Click to deselect" : "Pick another to link as a rhyme"}
+                            className="rhyme-cluster-link-inline"
+                            onClick={() => applyRhymeSelection("link")}
+                            title="Group these end-words as a new rhyme"
                           >
-                            <span className="rhyme-word-chip-word">{word}</span>
-                            <span className="rhyme-word-chip-line">{line}</span>
+                            Link as rhyme
                           </button>
-                        );
-                      })}
-                    </div>
-                  </li>
-                ) : null}
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })() : null}
               </ul>
             </div>
           );

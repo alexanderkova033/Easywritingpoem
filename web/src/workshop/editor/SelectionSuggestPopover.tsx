@@ -4,9 +4,9 @@ import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { countSyllablesInLine } from "@/workshop/meter/syllables";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import {
-  useFavouriteWords,
+  useStarredWords,
   useLookedUpWords,
-} from "@/workshop/vocabulary/favourite-words-storage";
+} from "@/workshop/vocabulary/starred-words-storage";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -179,7 +179,7 @@ export function SelectionSuggestPopover({
     }
   }, [poemTitle, poemLines, trimmedText, syllableInput, syllableTolerance]);
 
-  const { isFavourite, toggleFavourite } = useFavouriteWords();
+  const { isStarred, toggleStarred } = useStarredWords();
   const { recordLookup } = useLookedUpWords();
 
   const handleDefine = useCallback(async () => {
@@ -512,9 +512,9 @@ export function SelectionSuggestPopover({
                 {definition.pos && <span className="ssp-define-pos">{definition.pos}</span>}
                 <button
                   type="button"
-                  className={`ssp-favourite-btn${isFavourite(definition.word) ? " is-on" : ""}`}
+                  className={`ssp-favourite-btn${isStarred(definition.word) ? " is-on" : ""}`}
                   onClick={() =>
-                    toggleFavourite({
+                    toggleStarred({
                       word: definition.word,
                       pos: definition.pos || undefined,
                       defs: definition.defs,
@@ -523,20 +523,20 @@ export function SelectionSuggestPopover({
                     })
                   }
                   title={
-                    isFavourite(definition.word)
-                      ? "Remove from favourites"
-                      : "Save to favourites"
+                    isStarred(definition.word)
+                      ? "Remove from starred words"
+                      : "Star this word — saves it to your list"
                   }
-                  aria-pressed={isFavourite(definition.word)}
+                  aria-pressed={isStarred(definition.word)}
                   aria-label={
-                    isFavourite(definition.word)
-                      ? `Unfavourite ${definition.word}`
-                      : `Favourite ${definition.word}`
+                    isStarred(definition.word)
+                      ? `Unstar ${definition.word}`
+                      : `Star ${definition.word}`
                   }
                 >
-                  {isFavourite(definition.word) ? "★" : "☆"}
+                  {isStarred(definition.word) ? "★" : "☆"}
                   <span className="ssp-favourite-label">
-                    {isFavourite(definition.word) ? "Saved" : "Save"}
+                    {isStarred(definition.word) ? "Starred" : "Star"}
                   </span>
                 </button>
               </div>

@@ -29,9 +29,9 @@ import { MeterPanel } from "./panels/MeterPanel";
 import { RhymePanel } from "./panels/RhymePanel";
 import { RepeatPanel } from "./panels/RepeatPanel";
 import { SpellPanel } from "./panels/SpellPanel";
-import { FavouritesPanel } from "./panels/FavouritesPanel";
+import { StarredPanel } from "./panels/StarredPanel";
 import { SoundMapPanel } from "./panels/SoundMapPanel";
-import "./panels/FavouritesPanel.css";
+import "./panels/StarredPanel.css";
 import "./panels/SoundMapPanel.css";
 
 
@@ -289,11 +289,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         </div>
       ) : null}
 
-      {toolTab === "favourites" ? (
-        <FavouritesPanel onInsertWord={props.onInsertWord} />
+      {toolTab === "starred" ? (
+        <StarredPanel onInsertWord={props.onInsertWord} />
       ) : null}
 
-      {toolTab === "soundmap" ? (
+      {toolTab === "echoes" ? (
         <SoundMapPanel
           poemLines={props.poemLines}
           stressLexicon={props.stressLexicon}

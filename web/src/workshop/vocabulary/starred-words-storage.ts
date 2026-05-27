@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
-const FAV_KEY = "easy-poems:favourite-words:v1";
+const STARRED_KEY = "easy-poems:starred-words:v1";
+const LEGACY_FAV_KEY = "easy-poems:favourite-words:v1";
 const LOOKUP_KEY = "easy-poems:looked-up-words:v1";
 const LOOKUP_MAX = 50;
 
-export interface FavouriteWord {
+export interface StarredWord {
   word: string;
   /** ISO timestamp added. */
   addedAt: string;
@@ -48,12 +49,23 @@ function normalize(word: string): string {
   return word.trim().toLowerCase().replace(/[^a-z'-]/g, "");
 }
 
-export function loadFavouriteWords(): FavouriteWord[] {
-  const arr = readJson<unknown>(FAV_KEY, []);
+export function loadStarredWords(): StarredWord[] {
+  // Migration: read new key; fall back to legacy favourites key and copy across.
+  let arr = readJson<unknown>(STARRED_KEY, null as unknown);
+  if (arr == null) {
+    const legacy = readJson<unknown>(LEGACY_FAV_KEY, null as unknown);
+    if (Array.isArray(legacy) && legacy.length > 0) {
+      writeJson(STARRED_KEY, legacy);
+      try { localStorage.removeItem(LEGACY_FAV_KEY); } catch { /* ignore */ }
+      arr = legacy;
+    } else {
+      arr = [];
+    }
+  }
   if (!Array.isArray(arr)) return [];
   return arr
-    .filter((v): v is FavouriteWord =>
-      !!v && typeof v === "object" && typeof (v as FavouriteWord).word === "string",
+    .filter((v): v is StarredWord =>
+      !!v && typeof v === "object" && typeof (v as StarredWord).word === "string",
     )
     .map((v) => ({ ...v, word: normalize(v.word) }))
     .filter((v) => v.word.length > 0);
@@ -70,58 +82,58 @@ export function loadLookedUpWords(): LookedUpWord[] {
     .filter((v) => v.word.length > 0);
 }
 
-export function useFavouriteWords() {
-  const [favourites, setFavourites] = useState<FavouriteWord[]>(() => loadFavouriteWords());
+export function useStarredWords() {
+  const [starred, setStarred] = useState<StarredWord[]>(() => loadStarredWords());
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === FAV_KEY) setFavourites(loadFavouriteWords());
+      if (e.key === STARRED_KEY || e.key === LEGACY_FAV_KEY) setStarred(loadStarredWords());
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const isFavourite = useCallback(
+  const isStarred = useCallback(
     (word: string) => {
       const w = normalize(word);
-      return favourites.some((f) => f.word === w);
+      return starred.some((s) => s.word === w);
     },
-    [favourites],
+    [starred],
   );
 
-  const addFavourite = useCallback((entry: Omit<FavouriteWord, "addedAt"> & { addedAt?: string }) => {
+  const addStarred = useCallback((entry: Omit<StarredWord, "addedAt"> & { addedAt?: string }) => {
     const w = normalize(entry.word);
     if (!w) return;
-    setFavourites((prev) => {
-      const without = prev.filter((f) => f.word !== w);
-      const next: FavouriteWord[] = [
+    setStarred((prev) => {
+      const without = prev.filter((s) => s.word !== w);
+      const next: StarredWord[] = [
         { ...entry, word: w, addedAt: entry.addedAt ?? new Date().toISOString() },
         ...without,
       ];
-      writeJson(FAV_KEY, next);
+      writeJson(STARRED_KEY, next);
       return next;
     });
   }, []);
 
-  const removeFavourite = useCallback((word: string) => {
+  const removeStarred = useCallback((word: string) => {
     const w = normalize(word);
-    setFavourites((prev) => {
-      const next = prev.filter((f) => f.word !== w);
-      writeJson(FAV_KEY, next);
+    setStarred((prev) => {
+      const next = prev.filter((s) => s.word !== w);
+      writeJson(STARRED_KEY, next);
       return next;
     });
   }, []);
 
-  const toggleFavourite = useCallback(
-    (entry: Omit<FavouriteWord, "addedAt">) => {
+  const toggleStarred = useCallback(
+    (entry: Omit<StarredWord, "addedAt">) => {
       const w = normalize(entry.word);
       if (!w) return;
-      setFavourites((prev) => {
-        const has = prev.some((f) => f.word === w);
+      setStarred((prev) => {
+        const has = prev.some((s) => s.word === w);
         const next = has
-          ? prev.filter((f) => f.word !== w)
+          ? prev.filter((s) => s.word !== w)
           : [{ ...entry, word: w, addedAt: new Date().toISOString() }, ...prev];
-        writeJson(FAV_KEY, next);
+        writeJson(STARRED_KEY, next);
         return next;
       });
     },
@@ -130,14 +142,14 @@ export function useFavouriteWords() {
 
   const updateNote = useCallback((word: string, note: string) => {
     const w = normalize(word);
-    setFavourites((prev) => {
-      const next = prev.map((f) => (f.word === w ? { ...f, note: note.trim() || undefined } : f));
-      writeJson(FAV_KEY, next);
+    setStarred((prev) => {
+      const next = prev.map((s) => (s.word === w ? { ...s, note: note.trim() || undefined } : s));
+      writeJson(STARRED_KEY, next);
       return next;
     });
   }, []);
 
-  return { favourites, isFavourite, addFavourite, removeFavourite, toggleFavourite, updateNote };
+  return { starred, isStarred, addStarred, removeStarred, toggleStarred, updateNote };
 }
 
 export function useLookedUpWords() {

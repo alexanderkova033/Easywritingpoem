@@ -130,7 +130,7 @@ function IconTabSuggest() {
   );
 }
 
-function IconTabFavourites() {
+function IconTabStarred() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
       <path
@@ -174,12 +174,12 @@ export const TOOL_TABS: {
   { id: "lines",     label: "Lines",     desc: "Per-line syllable, word & character counts",                   Icon: IconTabLines },
   { id: "meter",     label: "Meter",     desc: "Stress patterns and iambic-fit per line",                      Icon: IconTabMeter },
   { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
-  { id: "soundmap",  label: "Sound map", desc: "Alliteration, assonance, rhyme web, caesura & vowel arc",      Icon: IconTabSoundMap },
+  { id: "echoes",    label: "Echoes",    desc: "Alliteration, assonance, rhyme echoes, caesura & vowel arc",   Icon: IconTabSoundMap },
   { id: "repeat",    label: "Repeats",   desc: "Words that appear more than once",                             Icon: IconTabRepeat },
   { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
   { id: "snapshots", label: "Snapshots", desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
   { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
-  { id: "favourites",label: "Favourites",desc: "Words you\u2019ve looked up or starred",                       Icon: IconTabFavourites },
+  { id: "starred",   label: "Starred",   desc: "Words you\u2019ve starred or looked up",                       Icon: IconTabStarred },
 ];
 
 export function LiveSectionTitle({ children }: { children: ReactNode }) {

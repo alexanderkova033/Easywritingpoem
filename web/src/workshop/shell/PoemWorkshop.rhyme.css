@@ -357,29 +357,6 @@
 .rhyme-cluster-card-y { --card-color: #c0ca33; }
 .rhyme-cluster-card-z { --card-color: #8d6e63; }
 
-/* Subtle indicator: cluster contains words that look like rhymes but sound
-   different (e.g. love/move). Sits between the label tag and the chips. */
-.rhyme-cluster-tilde {
-  flex-shrink: 0;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.95rem;
-  font-weight: 700;
-  line-height: 1;
-  color: color-mix(in srgb, var(--card-color) 55%, var(--muted));
-  cursor: help;
-  margin-left: -0.2rem;
-}
-
-/* Subtle indicator: same rhyme letter appears in another stanza. */
-.rhyme-cluster-echo {
-  flex-shrink: 0;
-  font-size: 0.7rem;
-  letter-spacing: 0.02em;
-  opacity: 0.7;
-  margin-left: -0.15rem;
-  cursor: help;
-}
-
 .rhyme-cluster-card-loose {
   --card-color: color-mix(in srgb, var(--muted) 55%, var(--border));
   background: color-mix(in srgb, var(--muted) 4%, var(--surface));
@@ -395,6 +372,29 @@
   --cat-color: color-mix(in srgb, var(--muted) 60%, var(--text));
   border-style: dashed;
   opacity: 0.85;
+}
+
+/* Contextual inline action — appears next to chips so the Link affordance
+   is reachable without scrolling back to the action bar at the top. */
+.rhyme-cluster-link-inline {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease;
+}
+.rhyme-cluster-link-inline:hover {
+  background: color-mix(in srgb, var(--accent) 28%, var(--bg));
+}
+.rhyme-cluster-link-inline:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .rhyme-word-chip.is-selected {

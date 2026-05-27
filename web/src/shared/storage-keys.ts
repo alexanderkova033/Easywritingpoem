@@ -41,7 +41,7 @@ export const STORAGE_KEY_READING_DROP_CAP = "easy-poems:readingDropCap";
 export const STORAGE_KEY_WORD_LOOKUP_ENABLED = "easy-poems:wordLookupEnabled";
 
 // Vocabulary
-export const STORAGE_KEY_FAVOURITE_WORDS = "easy-poems:favourite-words:v1";
+export const STORAGE_KEY_STARRED_WORDS = "easy-poems:starred-words:v1";
 export const STORAGE_KEY_LOOKED_UP_WORDS = "easy-poems:looked-up-words:v1";
 
 // AI settings

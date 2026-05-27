@@ -275,3 +275,177 @@ export const SOUND_CLASS_HUES: Record<SoundClass, string> = {
   plosive:      "#d2745d",
   liquid:       "#8fb480",
 };
+
+export const SOUND_CLASS_BLURB: Record<SoundClass, string> = {
+  alliteration: "Words starting with the same consonant sound — gives a punchy, mnemonic feel.",
+  assonance: "Words sharing the same vowel sound — creates an inner music inside the line.",
+  consonance: "Repeated consonant clusters — a thread of texture under the line.",
+  sibilance: "Hissing s / sh / z sounds — whispery, sometimes sinister, often hushed.",
+  plosive: "Hard p / b / t / d / k / g sounds — sharp, percussive, gives weight to a beat.",
+  liquid: "Soft l / r / m / n sounds — flowing, gentle, often lulling.",
+};
+
+/** Plain-English label for a phoneme, with letter fallback. */
+const PHONEME_FRIENDLY: Record<string, string> = {
+  S: "s", SH: "sh", Z: "z", ZH: "zh",
+  P: "p", B: "b", T: "t", D: "d", K: "k", G: "g",
+  L: "l", R: "r", M: "m", N: "n", NG: "ng",
+  F: "f", V: "v", TH: "th", DH: "th",
+  CH: "ch", JH: "j", HH: "h", W: "w", Y: "y",
+};
+
+export function friendlyInitialLabel(initialSound: string): string {
+  // initialSound may be a CMU phoneme (e.g. "S") or a single letter ("s")
+  const upper = initialSound.toUpperCase();
+  if (upper in PHONEME_FRIENDLY) return PHONEME_FRIENDLY[upper]!;
+  return initialSound.toLowerCase();
+}
+
+export const VOWEL_FRIENDLY_LABEL: Record<string, string> = {
+  ah: "ah (as in palm)",
+  a:  "a (as in cat)",
+  uh: "uh (as in cup)",
+  aw: "aw (as in dawn)",
+  ow: "ow (as in now)",
+  i:  "ai (as in bite)",
+  e:  "eh (as in bed)",
+  er: "er (as in her)",
+  ay: "ay (as in day)",
+  ih: "ih (as in bit)",
+  ee: "ee (as in see)",
+  oh: "oh (as in go)",
+  oy: "oy (as in boy)",
+  oo: "oo (as in food)",
+  o:  "o (as in dot)",
+  u:  "u (as in put)",
+  y:  "y (vowel)",
+};
+
+export interface EchoMember {
+  word: string;
+  lineNumber: number;
+  tokenIndex: number;
+}
+
+export interface SoundEcho {
+  className: SoundClass;
+  /** Friendly label for the shared sound: e.g. "s", "p / b", "ee". */
+  key: string;
+  members: EchoMember[];
+  /** Smallest line gap between members — small gaps mean a tight echo. */
+  minGap: number;
+  /** Range covered (last - first line number). */
+  span: number;
+}
+
+const PLOSIVE_GROUP_KEY = "p / b / t / d / k / g";
+const LIQUID_GROUP_KEY = "l / r / m / n";
+const SIBILANT_GROUP_KEY = "s / sh / z";
+
+function gapAndSpan(members: EchoMember[]): { minGap: number; span: number } {
+  if (members.length < 2) return { minGap: 0, span: 0 };
+  const lines = members.map((m) => m.lineNumber).sort((a, b) => a - b);
+  let minGap = Number.POSITIVE_INFINITY;
+  for (let i = 1; i < lines.length; i++) {
+    const g = lines[i]! - lines[i - 1]!;
+    if (g < minGap) minGap = g;
+  }
+  return { minGap: Number.isFinite(minGap) ? minGap : 0, span: lines[lines.length - 1]! - lines[0]! };
+}
+
+/**
+ * Build cross-line "echo" cards from per-line sound data. Each echo is a group
+ * of 3+ words that share an initial sound or a vowel, suitable for surfacing
+ * as a small discovery card.
+ */
+export function findEchoes(lines: LineSound[]): SoundEcho[] {
+  // Bucket members by sound dimension.
+  const allitByInitial = new Map<string, EchoMember[]>();
+  const assonByVowel = new Map<string, EchoMember[]>();
+  const plosives: EchoMember[] = [];
+  const liquids: EchoMember[] = [];
+  const sibilants: EchoMember[] = [];
+
+  for (const ls of lines) {
+    for (let ti = 0; ti < ls.tokens.length; ti++) {
+      const tok = ls.tokens[ti]!;
+      const memb: EchoMember = { word: tok.word, lineNumber: ls.lineNumber, tokenIndex: ti };
+
+      const initial = friendlyInitialLabel(tok.initialSound);
+      if (initial && /^[a-z]+$/i.test(initial) && !/^[aeiou]/i.test(initial)) {
+        const arr = allitByInitial.get(initial) ?? [];
+        arr.push(memb);
+        allitByInitial.set(initial, arr);
+      }
+      if (tok.dominantVowel) {
+        const arr = assonByVowel.get(tok.dominantVowel) ?? [];
+        arr.push(memb);
+        assonByVowel.set(tok.dominantVowel, arr);
+      }
+      if (tok.classes.has("plosive")) plosives.push(memb);
+      if (tok.classes.has("liquid")) liquids.push(memb);
+      if (tok.classes.has("sibilance")) sibilants.push(memb);
+    }
+  }
+
+  const echoes: SoundEcho[] = [];
+
+  for (const [initial, members] of allitByInitial.entries()) {
+    if (members.length < 3) continue;
+    const { minGap, span } = gapAndSpan(members);
+    echoes.push({ className: "alliteration", key: initial, members, minGap, span });
+  }
+  for (const [vowel, members] of assonByVowel.entries()) {
+    if (members.length < 3) continue;
+    const { minGap, span } = gapAndSpan(members);
+    echoes.push({ className: "assonance", key: VOWEL_FRIENDLY_LABEL[vowel] ?? vowel, members, minGap, span });
+  }
+  if (plosives.length >= 4) {
+    const { minGap, span } = gapAndSpan(plosives);
+    echoes.push({ className: "plosive", key: PLOSIVE_GROUP_KEY, members: plosives, minGap, span });
+  }
+  if (liquids.length >= 4) {
+    const { minGap, span } = gapAndSpan(liquids);
+    echoes.push({ className: "liquid", key: LIQUID_GROUP_KEY, members: liquids, minGap, span });
+  }
+  if (sibilants.length >= 3) {
+    const { minGap, span } = gapAndSpan(sibilants);
+    echoes.push({ className: "sibilance", key: SIBILANT_GROUP_KEY, members: sibilants, minGap, span });
+  }
+
+  // Sort by strength: tighter gap and bigger groups first.
+  echoes.sort((a, b) => {
+    if (a.minGap !== b.minGap) return a.minGap - b.minGap;
+    return b.members.length - a.members.length;
+  });
+
+  return echoes;
+}
+
+/** Plain-English label for end-stop status. */
+export function endStopLabel(stop: LineSound["endStop"]): string {
+  if (stop === "hard") return "End-stopped";
+  if (stop === "soft") return "Soft pause";
+  return "Enjambed (flows on)";
+}
+
+export interface PauseSummary {
+  total: number;
+  endStopped: number;
+  soft: number;
+  enjambed: number;
+  caesuras: number;
+}
+
+export function summarisePauses(lines: LineSound[]): PauseSummary {
+  let total = 0, endStopped = 0, soft = 0, enjambed = 0, caesuras = 0;
+  for (const ls of lines) {
+    if (ls.text.trim().length === 0) continue;
+    total++;
+    if (ls.endStop === "hard") endStopped++;
+    else if (ls.endStop === "soft") soft++;
+    else enjambed++;
+    if (ls.caesuraAt !== null) caesuras++;
+  }
+  return { total, endStopped, soft, enjambed, caesuras };
+}
