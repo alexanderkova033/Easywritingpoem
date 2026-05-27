@@ -171,6 +171,7 @@ export function SoundMapPanel({
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
   const [showTechnique, setShowTechnique] = useState(false);
+  const [pinHighlights, setPinHighlights] = useState(false);
 
   useEffect(() => {
     if (showTechnique) {
@@ -281,14 +282,23 @@ export function SoundMapPanel({
   }
 
   // Echo highlights:
-  // - hover any card → just that one echo's words
+  // - hover any card → just that one echo's words (spotlight beats everything)
+  // - else pin on → all echoes (filtered by class if a class is selected)
   // - else specific class filter → all words of that class
-  // - else (All filter, no hover) → nothing (avoids rainbow soup)
+  // - else (All filter, no hover, no pin) → nothing (avoids rainbow soup)
   const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
     if (subTab !== "echoes") return null;
     if (hoveredEchoId) {
       const e = echoesById.get(hoveredEchoId);
       return e ? membersToHighlights(e) : null;
+    }
+    if (pinHighlights) {
+      const classes = classFilter === "all" ? ALL_CLASSES : [classFilter];
+      const out: EditorEchoHighlight[] = [];
+      for (const cls of classes) {
+        for (const e of byClass[cls]) out.push(...membersToHighlights(e));
+      }
+      return out;
     }
     if (classFilter !== "all") {
       const out: EditorEchoHighlight[] = [];
@@ -297,7 +307,7 @@ export function SoundMapPanel({
     }
     return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, hoveredEchoId, echoesById, classFilter, byClass, lineSoundsByLine]);
+  }, [subTab, hoveredEchoId, echoesById, classFilter, byClass, lineSoundsByLine, pinHighlights]);
 
   // Line-level vowel tints (3 buckets) — active when on vowels subtab.
   const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
@@ -400,21 +410,33 @@ export function SoundMapPanel({
       {subTab === "echoes" && (
         <>
           <p className="muted small sound-help">
-            Hover an echo to highlight its words in the poem. Pick a sound type below
-            to keep its words lit while you read.
+            Hover a card to spotlight its words. Turn on <strong>Highlight in poem</strong>
+            to keep every echo visible while you read.
           </p>
 
           {echoes.length > 0 && (
-            <button
-              type="button"
-              className={`sound-toggle${showTechnique ? " is-active" : ""}`}
-              onClick={() => setShowTechnique((v) => !v)}
-              aria-pressed={showTechnique}
-              title="Show the technique name next to highlighted words in the poem"
-            >
-              <span className="sound-toggle-dot" aria-hidden />
-              Show technique in poem
-            </button>
+            <div className="sound-toggles" role="group" aria-label="Editor highlight options">
+              <button
+                type="button"
+                className={`sound-toggle${pinHighlights ? " is-active" : ""}`}
+                onClick={() => setPinHighlights((v) => !v)}
+                aria-pressed={pinHighlights}
+                title="Keep every echo highlighted in the poem, even without hovering"
+              >
+                <span className="sound-toggle-dot" aria-hidden />
+                Highlight in poem
+              </button>
+              <button
+                type="button"
+                className={`sound-toggle${showTechnique ? " is-active" : ""}`}
+                onClick={() => setShowTechnique((v) => !v)}
+                aria-pressed={showTechnique}
+                title="Add the technique name next to the first word of each echo"
+              >
+                <span className="sound-toggle-dot" aria-hidden />
+                Show technique
+              </button>
+            </div>
           )}
 
           {echoes.length > 0 && (
