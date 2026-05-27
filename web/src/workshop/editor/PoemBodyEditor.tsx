@@ -584,7 +584,7 @@ const flowMarkerField = StateField.define<DecorationSet>({
 });
 
 // ---- Sound-echo highlights (alliteration/assonance/…) ---- //
-const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string }>>();
+const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }>>();
 const clearEchoHighlights = StateEffect.define<void>();
 
 const echoHighlightField = StateField.define<DecorationSet>({
@@ -597,7 +597,7 @@ const echoHighlightField = StateField.define<DecorationSet>({
         const decos: Range<Decoration>[] = [];
         const doc = tr.state.doc;
         const seen = new Set<string>();
-        for (const { line, start, end, colorKey } of e.value) {
+        for (const { line, start, end, colorKey, color, label } of e.value) {
           if (line < 1 || line > doc.lines) continue;
           const docLine = doc.line(line);
           const from = docLine.from + start;
@@ -607,8 +607,16 @@ const echoHighlightField = StateField.define<DecorationSet>({
           if (seen.has(k)) continue;
           seen.add(k);
           const safe = /^[a-z]+$/.test(colorKey) ? colorKey : "x";
+          const attrs: Record<string, string> = {};
+          if (color) {
+            attrs.style = `background-color: color-mix(in srgb, ${color} 38%, transparent); border-bottom-color: ${color};`;
+          }
+          if (label) attrs["data-tech"] = label;
           decos.push(
-            Decoration.mark({ class: `cm-echo cm-echo-${safe}` }).range(from, to),
+            Decoration.mark({
+              class: `cm-echo cm-echo-${safe}`,
+              attributes: attrs,
+            }).range(from, to),
           );
         }
         decos.sort((a, b) => a.from - b.from || a.to - b.to);
@@ -709,7 +717,7 @@ export interface PoemBodyEditorProps {
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
   /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
-  echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string }>;
+  echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }>;
   /** Line-level vowel tints (Vowel music subtab). */
   lineVowelTints?: Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }>;
   /** End-stop glyphs + caesura marks (Pause & flow subtab). */

@@ -18,6 +18,19 @@ export interface EditorEchoHighlight {
   start: number;
   end: number;
   colorKey: string;
+  /** Per-echo color (CSS color string). Overrides the class-based color when set. */
+  color?: string;
+  /** Technique label (e.g. "alliteration") — shown next to the first member when present. */
+  label?: string;
+}
+
+/** Deterministic per-echo hue from class+key so the same echo always has the same color. */
+function echoColor(echo: SoundEcho): string {
+  const s = `${echo.className}|${echo.key}`;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  const hue = ((h % 360) + 360) % 360;
+  return `hsl(${hue}, 58%, 58%)`;
 }
 
 export interface EditorLineVowelTint {
@@ -91,7 +104,7 @@ function EchoCard({
   const [open, setOpen] = useState(false);
   const previewMax = 6;
   const preview = open ? echo.members : echo.members.slice(0, previewMax);
-  const tint = SOUND_CLASS_HUES[echo.className];
+  const tint = echoColor(echo);
   const gapLabel =
     echo.minGap > 0
       ? echo.minGap === 1
@@ -157,6 +170,15 @@ export function SoundMapPanel({
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
+  const [showTechnique, setShowTechnique] = useState(false);
+
+  useEffect(() => {
+    if (showTechnique) {
+      document.documentElement.classList.add("show-echo-technique");
+      return () => document.documentElement.classList.remove("show-echo-technique");
+    }
+    document.documentElement.classList.remove("show-echo-technique");
+  }, [showTechnique]);
 
   const lineSounds = useMemo(
     () => buildLineSounds(poemLines, stressLexicon),
@@ -232,7 +254,14 @@ export function SoundMapPanel({
 
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
-    for (const m of echo.members) {
+    const color = echoColor(echo);
+    const labelText = SOUND_CLASS_LABELS[echo.className].toLowerCase();
+    // Sort so the "first" member (gets the label) is reading-order earliest.
+    const sorted = [...echo.members].sort(
+      (a, b) => a.lineNumber - b.lineNumber || a.tokenIndex - b.tokenIndex,
+    );
+    for (let i = 0; i < sorted.length; i++) {
+      const m = sorted[i]!;
       const ls = lineSoundsByLine.get(m.lineNumber);
       if (!ls) continue;
       const tok = ls.tokens[m.tokenIndex];
@@ -242,6 +271,10 @@ export function SoundMapPanel({
         start: tok.start,
         end: tok.end,
         colorKey: echo.className,
+        color,
+        // Label only on the first member of this echo so we don't repeat
+        // "alliteration" beside every word.
+        label: i === 0 ? labelText : undefined,
       });
     }
     return out;
@@ -370,6 +403,19 @@ export function SoundMapPanel({
             Hover an echo to highlight its words in the poem. Pick a sound type below
             to keep its words lit while you read.
           </p>
+
+          {echoes.length > 0 && (
+            <button
+              type="button"
+              className={`sound-toggle${showTechnique ? " is-active" : ""}`}
+              onClick={() => setShowTechnique((v) => !v)}
+              aria-pressed={showTechnique}
+              title="Show the technique name next to highlighted words in the poem"
+            >
+              <span className="sound-toggle-dot" aria-hidden />
+              Show technique in poem
+            </button>
+          )}
 
           {echoes.length > 0 && (
             <div className="sound-filter-chips" role="group" aria-label="Filter echoes by sound type">

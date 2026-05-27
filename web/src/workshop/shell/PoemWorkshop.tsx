@@ -290,7 +290,7 @@ export function PoemWorkshop() {
   const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
   const [echoHighlights, setEchoHighlights] = useState<
-    Array<{ line: number; start: number; end: number; colorKey: string }> | null
+    Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }> | null
   >(null);
   const [lineVowelTints, setLineVowelTints] = useState<
     Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }> | null

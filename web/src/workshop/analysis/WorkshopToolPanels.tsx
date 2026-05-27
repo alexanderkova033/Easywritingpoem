@@ -125,7 +125,7 @@ export interface WorkshopToolPanelsProps {
   onSetStressOverride: (word: string, pattern: string) => void;
   onRemoveStressOverride: (word: string) => void;
   onEchoHighlightsChange?: (
-    highlights: { line: number; start: number; end: number; colorKey: string }[] | null,
+    highlights: { line: number; start: number; end: number; colorKey: string; color?: string; label?: string }[] | null,
   ) => void;
   onLineVowelTintsChange?: (
     tints: { line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }[] | null,

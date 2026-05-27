@@ -333,7 +333,40 @@
   pointer-events: none;
 }
 
-/* ── Editor decorations for echoes (mirrors SOUND_CLASS_HUES) ── */
+/* ── Toggle: show technique in poem ── */
+.sound-toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.78rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.sound-toggle:hover { background: var(--bg-subtle, rgba(127, 127, 127, 0.06)); }
+.sound-toggle.is-active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent, #2f7a3f) 12%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent, #2f7a3f) 55%, var(--border));
+}
+.sound-toggle-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: inline-block;
+  transition: background 0.12s ease;
+}
+.sound-toggle.is-active .sound-toggle-dot {
+  background: currentColor;
+}
+
+/* ── Editor decorations for echoes (each echo gets its own inline color) ── */
 .cm-echo {
   border-radius: 3px;
   padding: 0 0.06em;
@@ -342,12 +375,30 @@
   border-bottom: 2px solid transparent;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
+/* Fallback class-based colors — used only when no inline `color` is provided. */
 .cm-echo-alliteration { background: color-mix(in srgb, #c98c46 38%, transparent); border-bottom-color: #c98c46; }
 .cm-echo-assonance    { background: color-mix(in srgb, #7da6c9 38%, transparent); border-bottom-color: #7da6c9; }
 .cm-echo-consonance   { background: color-mix(in srgb, #b08fb4 38%, transparent); border-bottom-color: #b08fb4; }
 .cm-echo-sibilance    { background: color-mix(in srgb, #7fb8b3 38%, transparent); border-bottom-color: #7fb8b3; }
 .cm-echo-plosive      { background: color-mix(in srgb, #d2745d 38%, transparent); border-bottom-color: #d2745d; }
 .cm-echo-liquid       { background: color-mix(in srgb, #8fb480 38%, transparent); border-bottom-color: #8fb480; }
+
+/* Technique label — appears next to the first member of each echo when toggle is on. */
+html.show-echo-technique .cm-echo[data-tech]::after {
+  content: " " attr(data-tech);
+  font-size: 0.58em;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-left: 0.2em;
+  padding: 0 0.3em;
+  border-radius: 3px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg, #fff) 80%, transparent);
+  vertical-align: super;
+  white-space: nowrap;
+  opacity: 0.85;
+}
 
 /* Active card in the panel — slightly raised + accented */
 .sound-echo-card.is-active {
