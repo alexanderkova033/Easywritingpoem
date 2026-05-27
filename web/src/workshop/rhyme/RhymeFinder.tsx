@@ -1,7 +1,9 @@
 import "./RhymeFinder.css";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePinnedRhymes, useRecentLookups } from "./rhyme-storage";
 import { datamuseFetch } from "./datamuse-cache";
+import { endingForBreadth } from "./scheme";
+import { useFavouriteWords } from "@/workshop/vocabulary/favourite-words-storage";
 
 type RhymeStrength = "perfect" | "near" | "broad";
 
@@ -55,6 +57,33 @@ function bucketBySyllables(words: DatamuseWord[]): Array<{ key: string; label: s
   return out;
 }
 
+/** Group results by their spelling tail (last 3 letters) so visually-similar
+ *  endings cluster together — useful for picking the rhyme that *looks* right
+ *  for the poem, not just one that sounds right. Buckets are ordered by size. */
+function bucketByEnding(words: DatamuseWord[]): Array<{ key: string; label: string; words: DatamuseWord[] }> {
+  const buckets = new Map<string, DatamuseWord[]>();
+  for (const w of words) {
+    const normalized = w.word.toLowerCase().replace(/[^a-z]/g, "");
+    if (!normalized) continue;
+    const key = normalized.length >= 3 ? normalized.slice(-3) : normalized;
+    const arr = buckets.get(key) ?? [];
+    arr.push(w);
+    buckets.set(key, arr);
+  }
+  return [...buckets.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([key, ws]) => ({ key, label: `-${key}`, words: ws }));
+}
+
+type BucketMode = "syllables" | "sound";
+const BUCKET_MODE_KEY = "easy-poems:rhyme-finder-bucket";
+function readBucketMode(): BucketMode {
+  try { return localStorage.getItem(BUCKET_MODE_KEY) === "sound" ? "sound" : "syllables"; } catch { return "syllables"; }
+}
+function writeBucketMode(v: BucketMode): void {
+  try { localStorage.setItem(BUCKET_MODE_KEY, v); } catch { /* ignore */ }
+}
+
 interface RhymeFinderProps {
   onApplyWord?: (word: string) => void;
   /** When this changes, query is replaced with `word` and search runs. Bump
@@ -83,9 +112,27 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [collapsed, setCollapsed] = useState<boolean>(() => readCollapsed());
+  const [bucketMode, setBucketMode] = useState<BucketMode>(() => readBucketMode());
   const abortRef = useRef<AbortController | null>(null);
   const { pinned, togglePin, isPinned } = usePinnedRhymes();
   const { recent, pushRecent } = useRecentLookups();
+  const { favourites } = useFavouriteWords();
+
+  // Favourites that rhyme with the current query (locally computed — free).
+  // Uses "near" breadth (vowel-tail) which mirrors the editor default.
+  const favouriteMatches = useMemo<string[]>(() => {
+    const q = query.trim().toLowerCase().replace(/[^a-z'-]/g, "");
+    if (!q || favourites.length === 0) return [];
+    const targetKey = endingForBreadth(q, strength === "perfect" ? "strict" : strength === "near" ? "near" : "broad");
+    if (!targetKey) return [];
+    const out: string[] = [];
+    for (const f of favourites) {
+      if (f.word === q) continue;
+      const fk = endingForBreadth(f.word, strength === "perfect" ? "strict" : strength === "near" ? "near" : "broad");
+      if (fk && fk === targetKey) out.push(f.word);
+    }
+    return out;
+  }, [query, favourites, strength]);
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
@@ -152,7 +199,17 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
     void search(w, strength);
   };
 
-  const buckets = results ? bucketBySyllables(results) : [];
+  const toggleBucketMode = () => {
+    setBucketMode((v) => {
+      const next: BucketMode = v === "syllables" ? "sound" : "syllables";
+      writeBucketMode(next);
+      return next;
+    });
+  };
+
+  const buckets = results
+    ? (bucketMode === "sound" ? bucketByEnding(results) : bucketBySyllables(results))
+    : [];
 
   return (
     <div className={`rhyme-finder rhyme-lookup-card${collapsed ? " is-collapsed" : ""}`}>
@@ -270,6 +327,31 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
         </p>
       )}
 
+      {favouriteMatches.length > 0 && (
+        <div className="rhyme-favourites-strip">
+          <span className="rhyme-favourites-label" aria-hidden>★</span>
+          <span className="rhyme-favourites-title muted small">From your favourites:</span>
+          <div className="rhyme-favourites-chips">
+            {favouriteMatches.map((w) => (
+              <button
+                key={w}
+                type="button"
+                className="rhyme-favourite-chip"
+                onClick={() => onApplyWord?.(w)}
+                onMouseEnter={() => onHoverWord?.(w)}
+                onMouseLeave={() => onHoverWord?.(null)}
+                onFocus={() => onHoverWord?.(w)}
+                onBlur={() => onHoverWord?.(null)}
+                title={`Use "${w}" from your favourites`}
+                disabled={!onApplyWord}
+              >
+                <span aria-hidden>★</span> {w}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       </>
       )}
       {!collapsed && results !== null && results.length > 0 && (
@@ -278,6 +360,16 @@ export function RhymeFinder({ onApplyWord, externalQuery, onHoverWord }: RhymeFi
             <span className="rhyme-finder-results-count">{results.length}</span>
             <span>{strength} rhyme{results.length !== 1 ? "s" : ""} for</span>
             <span className="rhyme-finder-results-target">{query}</span>
+            <button
+              type="button"
+              className="rhyme-finder-bucket-toggle"
+              onClick={toggleBucketMode}
+              title={bucketMode === "syllables"
+                ? "Group by ending sound instead (e.g. -ight, -ate)"
+                : "Group by syllable count instead"}
+            >
+              by {bucketMode === "sound" ? "sound" : "syllables"}
+            </button>
           </p>
           <div className="rhyme-bucket-stack">
             {buckets.map((b) => (

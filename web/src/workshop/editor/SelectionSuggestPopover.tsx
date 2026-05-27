@@ -3,6 +3,10 @@ import { createPortal } from "react-dom";
 import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { countSyllablesInLine } from "@/workshop/meter/syllables";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
+import {
+  useFavouriteWords,
+  useLookedUpWords,
+} from "@/workshop/vocabulary/favourite-words-storage";
 import "./SelectionSuggestPopover.css";
 
 interface Suggestion {
@@ -175,6 +179,9 @@ export function SelectionSuggestPopover({
     }
   }, [poemTitle, poemLines, trimmedText, syllableInput, syllableTolerance]);
 
+  const { isFavourite, toggleFavourite } = useFavouriteWords();
+  const { recordLookup } = useLookedUpWords();
+
   const handleDefine = useCallback(async () => {
     setDefinePhase("loading");
     defineAbortRef.current?.abort();
@@ -184,11 +191,16 @@ export function SelectionSuggestPopover({
       const result = await fetchDefinition(trimmedText, ctrl.signal);
       setDefinition(result);
       setDefinePhase("done");
+      recordLookup({
+        word: result.word,
+        pos: result.pos || undefined,
+        firstDef: result.defs[0],
+      });
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
       setDefinePhase("error");
     }
-  }, [trimmedText]);
+  }, [trimmedText, recordLookup]);
 
   useEffect(() => () => { defineAbortRef.current?.abort(); }, []);
 
@@ -496,7 +508,38 @@ export function SelectionSuggestPopover({
 
           {definePhase === "done" && definition && (
             <>
-              {definition.pos && <span className="ssp-define-pos">{definition.pos}</span>}
+              <div className="ssp-define-head-row">
+                {definition.pos && <span className="ssp-define-pos">{definition.pos}</span>}
+                <button
+                  type="button"
+                  className={`ssp-favourite-btn${isFavourite(definition.word) ? " is-on" : ""}`}
+                  onClick={() =>
+                    toggleFavourite({
+                      word: definition.word,
+                      pos: definition.pos || undefined,
+                      defs: definition.defs,
+                      syns: definition.syns,
+                      ants: definition.ants,
+                    })
+                  }
+                  title={
+                    isFavourite(definition.word)
+                      ? "Remove from favourites"
+                      : "Save to favourites"
+                  }
+                  aria-pressed={isFavourite(definition.word)}
+                  aria-label={
+                    isFavourite(definition.word)
+                      ? `Unfavourite ${definition.word}`
+                      : `Favourite ${definition.word}`
+                  }
+                >
+                  {isFavourite(definition.word) ? "★" : "☆"}
+                  <span className="ssp-favourite-label">
+                    {isFavourite(definition.word) ? "Saved" : "Save"}
+                  </span>
+                </button>
+              </div>
               {definition.defs.length > 0 ? (
                 <ol className="ssp-define-defs">
                   {definition.defs.map((d, i) => <li key={i}>{d}</li>)}

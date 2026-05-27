@@ -49,8 +49,8 @@ html[data-workshop-bg="rain"] body::before {
       172deg,
       transparent,
       transparent 2.5px,
-      rgba(150, 170, 195, 0.024) 2.5px,
-      rgba(150, 170, 195, 0.024) 3px,
+      rgba(180, 200, 225, 0.10) 2.5px,
+      rgba(180, 200, 225, 0.10) 3px,
       transparent 3px,
       transparent 9px
     ),
@@ -59,8 +59,8 @@ html[data-workshop-bg="rain"] body::before {
       174deg,
       transparent,
       transparent 5px,
-      rgba(130, 155, 180, 0.016) 5px,
-      rgba(130, 155, 180, 0.016) 5.5px,
+      rgba(160, 185, 215, 0.06) 5px,
+      rgba(160, 185, 215, 0.06) 5.5px,
       transparent 5.5px,
       transparent 18px
     ),
@@ -69,11 +69,15 @@ html[data-workshop-bg="rain"] body::before {
       170deg,
       transparent,
       transparent 14px,
-      rgba(140, 160, 185, 0.010) 14px,
-      rgba(140, 160, 185, 0.010) 14.8px,
+      rgba(170, 195, 225, 0.035) 14px,
+      rgba(170, 195, 225, 0.035) 14.8px,
       transparent 14.8px,
       transparent 42px
     ),
+    /* Mid-air raindrops â€” angled teardrops scattered (visible drop shapes) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Cg fill='%23c0d4e8' fill-opacity='0.42' transform='rotate(8)'%3E%3Cellipse cx='30' cy='40' rx='0.9' ry='5'/%3E%3Cellipse cx='86' cy='62' rx='1.0' ry='6'/%3E%3Cellipse cx='148' cy='28' rx='0.8' ry='5'/%3E%3Cellipse cx='208' cy='52' rx='1.0' ry='6'/%3E%3Cellipse cx='262' cy='86' rx='0.9' ry='5'/%3E%3Cellipse cx='50' cy='118' rx='0.9' ry='5'/%3E%3Cellipse cx='118' cy='130' rx='1.0' ry='6'/%3E%3Cellipse cx='180' cy='108' rx='0.8' ry='5'/%3E%3Cellipse cx='240' cy='148' rx='1.0' ry='5'/%3E%3Cellipse cx='28' cy='186' rx='0.9' ry='5'/%3E%3Cellipse cx='92' cy='200' rx='1.0' ry='6'/%3E%3Cellipse cx='158' cy='178' rx='0.8' ry='5'/%3E%3Cellipse cx='218' cy='220' rx='1.0' ry='6'/%3E%3Cellipse cx='272' cy='196' rx='0.9' ry='5'/%3E%3Cellipse cx='62' cy='248' rx='0.9' ry='5'/%3E%3Cellipse cx='130' cy='258' rx='1.0' ry='6'/%3E%3Cellipse cx='194' cy='240' rx='0.8' ry='5'/%3E%3Cellipse cx='250' cy='270' rx='0.9' ry='5'/%3E%3C/g%3E%3C/svg%3E"),
+    /* Puddle ripples on wet ground â€” concentric circles repeating along bottom */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='80' viewBox='0 0 320 80'%3E%3Cg fill='none' stroke='%23a8c0d8' stroke-opacity='0.55' stroke-width='0.8'%3E%3Cellipse cx='30' cy='52' rx='10' ry='3'/%3E%3Cellipse cx='30' cy='52' rx='5' ry='1.5'/%3E%3Cellipse cx='90' cy='62' rx='14' ry='4'/%3E%3Cellipse cx='90' cy='62' rx='7' ry='2'/%3E%3Cellipse cx='154' cy='48' rx='8' ry='2.5'/%3E%3Cellipse cx='208' cy='66' rx='12' ry='3.5'/%3E%3Cellipse cx='208' cy='66' rx='6' ry='1.8'/%3E%3Cellipse cx='268' cy='54' rx='10' ry='3'/%3E%3Cellipse cx='268' cy='54' rx='5' ry='1.5'/%3E%3C/g%3E%3Cg fill='%23c8d8e8' fill-opacity='0.45'%3E%3Ccircle cx='30' cy='52' r='1'/%3E%3Ccircle cx='90' cy='62' r='1.2'/%3E%3Ccircle cx='154' cy='48' r='0.8'/%3E%3Ccircle cx='208' cy='66' r='1'/%3E%3Ccircle cx='268' cy='54' r='1'/%3E%3C/g%3E%3C/svg%3E"),
     /* Ground mist â€” soft pale band rising from wet ground */
     radial-gradient(ellipse 130% 22% at 50% 100%, rgba(160, 180, 200, 0.18), transparent 60%),
     radial-gradient(ellipse 90% 14% at 50% 100%, rgba(180, 195, 215, 0.10), transparent 70%);
@@ -82,18 +86,24 @@ html[data-workshop-bg="rain"] body::before {
     100% 100%,
     100% 100%,
     100% 100%, 100% 100%, 100% 100%,
+    280px 280px,
+    320px 80px,
     100% 100%, 100% 100%;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 70% 55%,
     0 0,
     0 100%,
     0 0, 0 0, 0 0,
+    0 0,
+    0% 100%,
     50% 100%, 50% 100%;
   background-repeat:
     repeat, repeat, repeat, repeat,
     no-repeat,
     no-repeat,
     repeat, repeat, repeat,
+    repeat,
+    repeat-x,
     no-repeat, no-repeat;
 }
 

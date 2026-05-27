@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { StanzaClusterGroup } from "@/workshop/rhyme/hints";
 import type { RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { RhymeFinder } from "@/workshop/rhyme/RhymeFinder";
+import { isEyeRhymeCluster } from "@/workshop/rhyme/eye-rhymes";
 import { useIgnoredRhymes } from "@/workshop/rhyme/rhyme-storage";
 import { endWordOfLine } from "@/workshop/analysis/tools/helpers";
 import { NoLinesYetHint } from "@/workshop/analysis/tools/shared";
@@ -70,6 +71,45 @@ export function RhymePanel({
   };
   const { ignoreCluster, isIgnored } = useIgnoredRhymes();
 
+  // Panel-local override for the rhyme finder's external query, so the
+  // "look up rhymes" action in the edit-mode action bar can drive the finder
+  // without round-tripping through the parent. Cleared whenever the parent
+  // prop changes, so cursor-driven updates resume.
+  const [localFinderQuery, setLocalFinderQuery] = useState<
+    { word: string; bump: number; expand: boolean } | null
+  >(null);
+  const lastPropQueryKey = useRef<string>("");
+  const localBumpRef = useRef(0);
+  useEffect(() => {
+    const k = rhymeFinderQuery
+      ? `${rhymeFinderQuery.word}:${rhymeFinderQuery.bump}`
+      : "";
+    if (k && k !== lastPropQueryKey.current) {
+      lastPropQueryKey.current = k;
+      setLocalFinderQuery(null);
+    }
+  }, [rhymeFinderQuery]);
+  const lookupRhymesFor = (word: string) => {
+    localBumpRef.current += 1;
+    setLocalFinderQuery({ word, bump: localBumpRef.current, expand: true });
+  };
+  const effectiveFinderQuery = localFinderQuery ?? rhymeFinderQuery;
+
+  // Which stanzas does each scheme label appear in? Used to render a small
+  // "↔ st. N" hint on clusters that echo another stanza.
+  const labelStanzas = useMemo(() => {
+    const m = new Map<string, number[]>();
+    for (const g of stanzaRhymeGroups) {
+      for (const c of g.clusters) {
+        if (!c.label) continue;
+        const arr = m.get(c.label) ?? [];
+        if (!arr.includes(g.stanza)) arr.push(g.stanza);
+        m.set(c.label, arr);
+      }
+    }
+    return m;
+  }, [stanzaRhymeGroups]);
+
   const toggleRhymeSelection = (word: string, line: number, label: string | null) => {
     setRhymeLinkSelection((prev) => {
       const i = prev.findIndex((p) => p.line === line);
@@ -132,7 +172,7 @@ export function RhymePanel({
 
       <RhymeFinder
         onApplyWord={onInsertWord}
-        externalQuery={rhymeFinderQuery}
+        externalQuery={effectiveFinderQuery}
         onHoverWord={onRhymeSuggestionHover}
       />
 
@@ -179,24 +219,37 @@ export function RhymePanel({
               <span className="rhyme-edit-action-count muted small">
                 {rhymeSelectionWords.length} selected
               </span>
-              <button
-                type="button"
-                className="small-btn small-btn-primary"
-                disabled={rhymeSelectionWords.length < 2 || rhymeSelectionSameCluster}
-                onClick={() => applyRhymeSelection("link")}
-                title="Group these end-words as a new rhyme"
-              >
-                Link as rhyme
-              </button>
-              <button
-                type="button"
-                className="small-btn"
-                disabled={rhymeSelectionWords.length < 2 || !rhymeSelectionSameCluster}
-                onClick={() => applyRhymeSelection("split")}
-                title="Split these end-words apart"
-              >
-                Split apart
-              </button>
+              {rhymeSelectionWords.length === 1 ? (
+                <button
+                  type="button"
+                  className="small-btn small-btn-primary"
+                  onClick={() => lookupRhymesFor(rhymeLinkSelection[0]!.word)}
+                  title={`Open the rhyme finder for "${rhymeLinkSelection[0]!.word}"`}
+                >
+                  Look up rhymes
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="small-btn small-btn-primary"
+                    disabled={rhymeSelectionWords.length < 2 || rhymeSelectionSameCluster}
+                    onClick={() => applyRhymeSelection("link")}
+                    title="Group these end-words as a new rhyme"
+                  >
+                    Link as rhyme
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    disabled={rhymeSelectionWords.length < 2 || !rhymeSelectionSameCluster}
+                    onClick={() => applyRhymeSelection("split")}
+                    title="Split these end-words apart"
+                  >
+                    Split apart
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 className="small-btn"
@@ -282,9 +335,30 @@ export function RhymePanel({
                   const labelChar = c.label ? c.label.charAt(0).toLowerCase() : "";
                   const labelClass = labelChar ? ` rhyme-label-${labelChar}` : "";
                   const cardClass = labelChar ? ` rhyme-cluster-card-${labelChar}` : "";
+                  const eyeRhyme = isEyeRhymeCluster(words);
+                  const otherStanzas = c.label
+                    ? (labelStanzas.get(c.label) ?? []).filter((s) => s !== group.stanza)
+                    : [];
                   return (
                     <li key={c.ending} className={`rhyme-cluster-card${cardClass}`}>
                       {c.label ? <span className={`rhyme-cluster-card-tag rhyme-label-${labelChar}`}>{c.label}</span> : null}
+                      {eyeRhyme ? (
+                        <span
+                          className="rhyme-cluster-tilde"
+                          title="Looks like a rhyme but the words sound different (eye-rhyme)"
+                          aria-label="Possible eye-rhyme — these words look alike but sound different"
+                        >
+                          ~
+                        </span>
+                      ) : null}
+                      {otherStanzas.length > 0 ? (
+                        <span
+                          className="rhyme-cluster-echo muted small"
+                          title={`Same rhyme also in stanza ${otherStanzas.join(", ")}`}
+                        >
+                          ↔ {otherStanzas.length === 1 ? `st. ${otherStanzas[0]}` : `${otherStanzas.length} stanzas`}
+                        </span>
+                      ) : null}
                       <div className="rhyme-cluster-chips">
                         {c.lineNumbers.map((n) => {
                           const word = endWordOfLine(poemLines[n - 1]) || `line ${n}`;

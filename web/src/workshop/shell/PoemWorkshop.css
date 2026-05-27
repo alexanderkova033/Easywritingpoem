@@ -3281,11 +3281,6 @@
     align-items: end;
   }
 
-  /* When main idea is collapsed the title takes the full row */
-  .editor-meta-grid.editor-meta-grid-solo {
-    grid-template-columns: 1fr;
-  }
-
   .editor-meta-grid .row {
     margin-bottom: 0.4rem;
   }

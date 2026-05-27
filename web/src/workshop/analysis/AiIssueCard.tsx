@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
+import type { AnalysisIssue, RecheckResult } from "@/workshop/analysis/ai-analyze";
+import { recheckIssue } from "@/workshop/analysis/ai-analyze";
 import { parseAiErrorAndNotify } from "@/workshop/ai-cost/aiBudgetBus";
 import {
   deriveCategory,
@@ -120,7 +121,7 @@ function IssueThread({
 
 export function IssueCard({
   issue, index, isOpen, onOpenChange, isResolved, onResolve, onIgnore,
-  onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
+  onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
 }: {
   issue: AnalysisIssue;
   index: number;
@@ -134,6 +135,8 @@ export function IssueCard({
   onClearHighlight?: () => void;
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
   poemLines?: string[];
+  /** Lines as they were at the time of the analysis (used for the re-check button). */
+  originalLines?: string[];
   poemTitle?: string;
   model?: string;
 }) {
@@ -147,9 +150,67 @@ export function IssueCard({
   const [previewRewrite, setPreviewRewrite] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
 
+  const [recheckLoading, setRecheckLoading] = useState(false);
+  const [recheckResult, setRecheckResult] = useState<RecheckResult | null>(null);
+  const [recheckError, setRecheckError] = useState("");
+  const recheckAbortRef = useRef<AbortController | null>(null);
+
   const originalLineText = poemLines
     ? poemLines.slice(issue.line_start - 1, issue.line_end).join("\n")
     : null;
+
+  const oldLineText = originalLines
+    ? originalLines.slice(issue.line_start - 1, issue.line_end).join("\n")
+    : "";
+  const newLineText = poemLines
+    ? poemLines.slice(issue.line_start - 1, issue.line_end).join("\n")
+    : "";
+  const lineUnchanged =
+    !!originalLines && !!poemLines && oldLineText.trim() === newLineText.trim();
+  const recheckAvailable = !!originalLines && !!poemLines && !!model && !!issue.rationale;
+
+  const handleRecheck = useCallback(async () => {
+    if (!recheckAvailable || recheckLoading) return;
+    recheckAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    recheckAbortRef.current = ctrl;
+    setRecheckLoading(true);
+    setRecheckError("");
+    setRecheckResult(null);
+    try {
+      // Small surrounding context — one line above and below the issue range.
+      const start = Math.max(1, issue.line_start - 1);
+      const end = Math.min(poemLines?.length ?? issue.line_end, issue.line_end + 1);
+      const ctx = (poemLines ?? [])
+        .slice(start - 1, end)
+        .map((l, i) => `${start + i}: ${l}`)
+        .join("\n");
+      const out = await recheckIssue(
+        {
+          oldLine: oldLineText,
+          newLine: newLineText,
+          context: ctx,
+          rationale: issue.rationale,
+          headline: issue.headline,
+          lineRange: rangeLabel,
+        },
+        model!,
+        ctrl.signal,
+      );
+      setRecheckResult(out);
+      if (out.status === "resolved") onResolve(true);
+    } catch (err) {
+      if ((err as Error).name === "AbortError") return;
+      setRecheckError((err as Error).message ?? "Could not re-check this issue.");
+    } finally {
+      setRecheckLoading(false);
+    }
+  }, [
+    recheckAvailable, recheckLoading, oldLineText, newLineText, poemLines, issue.line_start,
+    issue.line_end, issue.rationale, issue.headline, rangeLabel, model, onResolve,
+  ]);
+
+  useEffect(() => () => recheckAbortRef.current?.abort(), []);
 
   const triggerHighlight = () => {
     if (!isResolved) onHighlight?.(issue.line_start, issue.line_end, issue.severity);
@@ -338,6 +399,57 @@ export function IssueCard({
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Recheck row */}
+          {recheckAvailable && (
+            <div className="ai-issue-recheck-row">
+              <button
+                type="button"
+                className="ai-issue-recheck-btn"
+                onClick={handleRecheck}
+                disabled={recheckLoading || lineUnchanged}
+                title={
+                  lineUnchanged
+                    ? "Edit the line first — nothing has changed since the analysis"
+                    : "Ask the AI if your edit addressed this issue (cheap, single line)"
+                }
+              >
+                {recheckLoading ? (
+                  <>
+                    <span className="ai-chat-dot" />
+                    <span className="ai-chat-dot" />
+                    <span className="ai-chat-dot" />
+                    <span>Re-checking…</span>
+                  </>
+                ) : (
+                  <>
+                    <span aria-hidden>↻</span> Re-check fix
+                  </>
+                )}
+              </button>
+              {lineUnchanged && !recheckResult && !recheckLoading && (
+                <span className="ai-issue-recheck-hint muted small">
+                  Line unchanged — edit it to enable re-check.
+                </span>
+              )}
+              {recheckResult && (
+                <div className={`ai-issue-recheck-result ai-issue-recheck-${recheckResult.status}`}>
+                  <span className="ai-issue-recheck-status">
+                    {recheckResult.status === "resolved" && "✓ Resolved"}
+                    {recheckResult.status === "partial" && "◐ Partly addressed"}
+                    {recheckResult.status === "still" && "○ Still present"}
+                    {recheckResult.status === "elsewhere" && "△ New concern"}
+                  </span>
+                  {recheckResult.note && (
+                    <span className="ai-issue-recheck-note">{recheckResult.note}</span>
+                  )}
+                </div>
+              )}
+              {recheckError && (
+                <p className="ai-issue-recheck-err">{recheckError}</p>
               )}
             </div>
           )}

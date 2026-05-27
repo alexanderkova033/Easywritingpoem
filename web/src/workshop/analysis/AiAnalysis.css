@@ -3558,4 +3558,76 @@
 }
 
 .ai-cmp-toast-close:hover { color: var(--text); }
-
+
+/* Recheck (per-issue) */
+.ai-issue-recheck-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+  margin-top: 0.4rem;
+}
+.ai-issue-recheck-btn {
+  font-size: 0.78rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.ai-issue-recheck-btn:hover:not([disabled]) {
+  background: var(--bg-subtle, rgba(127, 127, 127, 0.06));
+}
+.ai-issue-recheck-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ai-issue-recheck-hint { font-size: 0.74rem; }
+.ai-issue-recheck-result {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  flex: 1 1 100%;
+  background: var(--bg);
+}
+.ai-issue-recheck-status {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ai-issue-recheck-note { color: var(--muted); font-size: 0.78rem; }
+.ai-issue-recheck-resolved {
+  border-color: color-mix(in srgb, #5fba7d 50%, var(--border));
+  background: color-mix(in srgb, #5fba7d 8%, var(--bg));
+}
+.ai-issue-recheck-resolved .ai-issue-recheck-status { color: #4a9c66; }
+.ai-issue-recheck-partial {
+  border-color: color-mix(in srgb, #e6a817 50%, var(--border));
+  background: color-mix(in srgb, #e6a817 8%, var(--bg));
+}
+.ai-issue-recheck-partial .ai-issue-recheck-status { color: #c08210; }
+.ai-issue-recheck-still {
+  border-color: color-mix(in srgb, #d95f5f 40%, var(--border));
+  background: color-mix(in srgb, #d95f5f 6%, var(--bg));
+}
+.ai-issue-recheck-still .ai-issue-recheck-status { color: #b04848; }
+.ai-issue-recheck-elsewhere {
+  border-color: color-mix(in srgb, #b08fb4 45%, var(--border));
+  background: color-mix(in srgb, #b08fb4 8%, var(--bg));
+}
+.ai-issue-recheck-elsewhere .ai-issue-recheck-status { color: #806193; }
+.ai-issue-recheck-err {
+  font-size: 0.78rem;
+  color: #b04848;
+  margin: 0;
+  flex: 1 1 100%;
+}

@@ -1664,7 +1664,7 @@ export function PoemWorkshop() {
                   {m.title.trim() || "Untitled"}
                 </button>
               )}
-              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}${mainIdeaOpen ? "" : " editor-meta-grid-solo"}`} aria-label="Draft metadata">
+              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}`} aria-label="Draft metadata">
                 <div className="row title-row">
                   <label htmlFor="poem-title">Title</label>
                   <input

@@ -284,6 +284,8 @@ export async function comparePoem(
     goals,
     writingFocus,
     scoreHistory,
+    previousWeaknesses,
+    previousIssues,
   }: {
     title: string;
     lines: string[];
@@ -293,6 +295,8 @@ export async function comparePoem(
     goals?: Record<string, number>;
     writingFocus?: string;
     scoreHistory?: number[];
+    previousWeaknesses?: string[];
+    previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
   },
   model = "gpt-5-nano",
   signal?: AbortSignal,
@@ -302,7 +306,10 @@ export async function comparePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, changesText, previousScores, model, localAnalysis, goals, writingFocus, scoreHistory }),
+    body: JSON.stringify({
+      title, lines, changesText, previousScores, model, localAnalysis, goals, writingFocus, scoreHistory,
+      previousWeaknesses, previousIssues,
+    }),
   });
 
   if (!response.ok) {
@@ -314,6 +321,53 @@ export async function comparePoem(
 
   const data = (await response.json()) as Record<string, unknown>;
   return parseComparison(data);
+}
+
+export type RecheckStatus = "resolved" | "partial" | "still" | "elsewhere";
+export interface RecheckResult {
+  status: RecheckStatus;
+  note: string;
+}
+
+export async function recheckIssue(
+  {
+    oldLine,
+    newLine,
+    context,
+    rationale,
+    headline,
+    lineRange,
+  }: {
+    oldLine: string;
+    newLine: string;
+    context?: string;
+    rationale: string;
+    headline?: string;
+    lineRange?: string;
+  },
+  model = "gpt-5-nano",
+  signal?: AbortSignal,
+): Promise<RecheckResult> {
+  const response = await fetch("/api/recheck", {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ oldLine, newLine, context, rationale, headline, lineRange, model }),
+  });
+  if (!response.ok) {
+    const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "recheck");
+    const e = new Error(message) as Error & { retryAfterSec?: number };
+    if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
+    throw e;
+  }
+  const data = (await response.json()) as Record<string, unknown>;
+  const rawStatus = typeof data.status === "string" ? data.status : "still";
+  const status: RecheckStatus =
+    rawStatus === "resolved" || rawStatus === "partial" || rawStatus === "still" || rawStatus === "elsewhere"
+      ? (rawStatus as RecheckStatus)
+      : "still";
+  const note = typeof data.note === "string" ? data.note.trim() : "";
+  return { status, note };
 }
 
 export type HarshnessLevel = "baby" | "casual" | "student" | "editor" | "critic";

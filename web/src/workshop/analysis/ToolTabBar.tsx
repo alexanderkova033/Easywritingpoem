@@ -130,6 +130,38 @@ function IconTabSuggest() {
   );
 }
 
+function IconTabFavourites() {
+  return (
+    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 4.5l2.3 4.7 5.2.8-3.75 3.65.9 5.2L12 16.4l-4.65 2.45.9-5.2L4.5 10l5.2-.8z"
+      />
+    </svg>
+  );
+}
+
+function IconTabSoundMap() {
+  return (
+    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12h2.5l1.5-4 3 8 2-5 2 3 2-2h4.5"
+      />
+      <circle cx="6.5" cy="12" r="1.1" fill="currentColor" />
+      <circle cx="17.5" cy="12" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Order tuned for flow: triage → spelling → line work → polish → versions → external help */
 export const TOOL_TABS: {
   id: ToolTab;
@@ -142,10 +174,12 @@ export const TOOL_TABS: {
   { id: "lines",     label: "Lines",     desc: "Per-line syllable, word & character counts",                   Icon: IconTabLines },
   { id: "meter",     label: "Meter",     desc: "Stress patterns and iambic-fit per line",                      Icon: IconTabMeter },
   { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
+  { id: "soundmap",  label: "Sound map", desc: "Alliteration, assonance, rhyme web, caesura & vowel arc",      Icon: IconTabSoundMap },
   { id: "repeat",    label: "Repeats",   desc: "Words that appear more than once",                             Icon: IconTabRepeat },
   { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
   { id: "snapshots", label: "Snapshots", desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
   { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
+  { id: "favourites",label: "Favourites",desc: "Words you\u2019ve looked up or starred",                       Icon: IconTabFavourites },
 ];
 
 export function LiveSectionTitle({ children }: { children: ReactNode }) {

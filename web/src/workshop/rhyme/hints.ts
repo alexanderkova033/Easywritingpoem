@@ -174,13 +174,11 @@ export function endRhymeClustersByStanza(
       }
     }
     clusters.sort((a, b) => b.lineNumbers.length - a.lineNumbers.length);
-    if (clusters.length > 0) {
-      groups.push({
-        stanza: stanzaIdx + 1,
-        lineRange: [stanzaStart + 1, endLine + 1],
-        clusters,
-      });
-    }
+    groups.push({
+      stanza: stanzaIdx + 1,
+      lineRange: [stanzaStart + 1, endLine + 1],
+      clusters,
+    });
     stanzaIdx++;
     stanzaStart = -1;
     byKey = new Map();
@@ -249,13 +247,11 @@ export function stanzaGroupsFromScheme(
       }
     }
     clusters.sort((a, b) => b.lineNumbers.length - a.lineNumbers.length);
-    if (clusters.length > 0) {
-      groups.push({
-        stanza: stanzaIdx + 1,
-        lineRange: [stanzaStart + 1, endLine + 1],
-        clusters,
-      });
-    }
+    groups.push({
+      stanza: stanzaIdx + 1,
+      lineRange: [stanzaStart + 1, endLine + 1],
+      clusters,
+    });
     stanzaIdx++;
     stanzaStart = -1;
     byLabel = new Map();

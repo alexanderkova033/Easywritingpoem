@@ -183,6 +183,15 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
             previousScores: { overall_score: savedResult!.overall_score },
             localAnalysis, goals: goalsPlain, writingFocus,
             scoreHistory: scoreHistory.slice(-3),
+            previousWeaknesses: savedResult!.weaknesses,
+            previousIssues: savedResult!.issues
+              .filter((i) => i.severity !== "low")
+              .slice(0, 6)
+              .map((i) => ({
+                line_start: i.line_start,
+                line_end: i.line_end,
+                headline: i.headline,
+              })),
           },
           model, ctrl.signal,
         );
@@ -434,6 +443,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 scoreHistory={scoreHistory}
                 onApplyLine={onApplyLine}
                 poemLines={lines}
+                originalLines={savedLines.length > 0 ? savedLines : undefined}
                 poemTitle={title}
                 model={model}
                 poemId={poemId}

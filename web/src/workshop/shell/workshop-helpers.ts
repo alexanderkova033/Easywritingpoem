@@ -11,7 +11,9 @@ export type ToolTab =
   | "repeat"
   | "spell"
   | "snapshots"
-  | "suggest";
+  | "suggest"
+  | "favourites"
+  | "soundmap";
 
 /** High-level tool groups (right panel); each maps to a subset of {@link ToolTab}. */
 export type ToolBucket = "overview" | "sound" | "ideas";
@@ -25,8 +27,8 @@ export const TOOL_BUCKET_LABEL: Record<ToolBucket, string> = {
 };
 
 export function toolTabBucket(tab: ToolTab): ToolBucket {
-  if (tab === "meter" || tab === "rhyme" || tab === "repeat") return "sound";
-  if (tab === "suggest") return "ideas";
+  if (tab === "meter" || tab === "rhyme" || tab === "repeat" || tab === "soundmap") return "sound";
+  if (tab === "suggest" || tab === "favourites") return "ideas";
   return "overview";
 }
 
@@ -41,9 +43,9 @@ export function tabsForBucket(bucket: ToolBucket): ToolTab[] {
         "snapshots",
       ];
     case "sound":
-      return ["meter", "rhyme", "repeat"];
+      return ["meter", "rhyme", "soundmap", "repeat"];
     case "ideas":
-      return ["suggest"];
+      return ["suggest", "favourites"];
   }
 }
 

@@ -152,7 +152,7 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 }
 
 export function AnalysisResults({
-  result, onJump, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, poemTitle, model,
+  result, onJump, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
   activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
 }: {
@@ -166,6 +166,8 @@ export function AnalysisResults({
   scoreHistory?: number[];
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
   poemLines?: string[];
+  /** Lines of the poem at the time of the analysis — used by the per-issue re-check button. */
+  originalLines?: string[];
   poemTitle?: string;
   model?: string;
   poemId?: string;
@@ -353,6 +355,7 @@ export function AnalysisResults({
       onClearHighlight={onClearHighlight}
       onApplyLine={onApplyLine}
       poemLines={poemLines}
+      originalLines={originalLines}
       poemTitle={poemTitle}
       model={model}
     />

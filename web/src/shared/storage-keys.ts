@@ -40,6 +40,10 @@ export const STORAGE_KEY_READING_LINE_NUMBERS = "easy-poems:readingLineNumbers";
 export const STORAGE_KEY_READING_DROP_CAP = "easy-poems:readingDropCap";
 export const STORAGE_KEY_WORD_LOOKUP_ENABLED = "easy-poems:wordLookupEnabled";
 
+// Vocabulary
+export const STORAGE_KEY_FAVOURITE_WORDS = "easy-poems:favourite-words:v1";
+export const STORAGE_KEY_LOOKED_UP_WORDS = "easy-poems:looked-up-words:v1";
+
 // AI settings
 export const STORAGE_KEY_AI_MODEL = "ep_openai_model";
 export const STORAGE_KEY_AI_SCORING_ENABLED = "easy-poems:ai-scoring-enabled";

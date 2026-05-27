@@ -126,6 +126,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     localAnalysis?: unknown;
     goals?: unknown;
     writingFocus?: unknown;
+    previousWeaknesses?: unknown;
+    previousIssues?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -176,14 +178,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? (body.scoreHistory as unknown[]).filter((v): v is number => typeof v === "number").slice(-10)
     : undefined;
 
+  const previousWeaknesses = Array.isArray(body.previousWeaknesses)
+    ? (body.previousWeaknesses as unknown[])
+        .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+        .slice(0, 6)
+        .map((s) => s.trim().slice(0, 120))
+    : [];
+
+  const previousIssues = Array.isArray(body.previousIssues)
+    ? (body.previousIssues as unknown[])
+        .filter(
+          (v): v is { line_start: number; line_end: number; headline?: string } =>
+            !!v && typeof v === "object" &&
+            typeof (v as { line_start: unknown }).line_start === "number",
+        )
+        .slice(0, 8)
+        .map((iss) => ({
+          line_start: Math.max(1, Math.round(iss.line_start)),
+          line_end: Math.max(1, Math.round(iss.line_end)),
+          headline: typeof iss.headline === "string" ? iss.headline.slice(0, 80) : "",
+        }))
+    : [];
+
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const prevScoreText = prevScores ? `\nPrevious score: ${JSON.stringify(prevScores)}\n` : "";
   const historyText = scoreHistory && scoreHistory.length > 1
     ? `\nScore history (oldest → newest): ${scoreHistory.join(" → ")}\n`
     : "";
+  let prevFlagged = "";
+  if (previousWeaknesses.length > 0 || previousIssues.length > 0) {
+    const sections: string[] = ["=== Previously flagged in last analysis (verify if resolved or still present) ==="];
+    if (previousWeaknesses.length > 0) {
+      sections.push(`Weaknesses: ${previousWeaknesses.map((w) => `"${w}"`).join("; ")}`);
+    }
+    if (previousIssues.length > 0) {
+      sections.push("Past issues:");
+      for (const iss of previousIssues) {
+        const range = iss.line_start === iss.line_end ? `L${iss.line_start}` : `L${iss.line_start}–${iss.line_end}`;
+        sections.push(`  - ${range}: ${iss.headline || "(no headline)"}`);
+      }
+    }
+    sections.push("If the writer addressed any of these, list them under comparison.improvements (terse). If still present, raise them again in issues[]. Don't re-criticise fixed problems.");
+    prevFlagged = "\n" + sections.join("\n") + "\n";
+  }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\nNote: only the diff is shown above, not the full previous draft. Score and review the CURRENT version, but use the diff to identify what improved or regressed.`;
+  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\nNote: only the diff is shown above, not the full previous draft. Score and review the CURRENT version, but use the diff to identify what improved or regressed.`;
 
   const result = await callOpenAI(
     apiKey,

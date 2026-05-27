@@ -194,6 +194,33 @@
   color: var(--accent);
 }
 
+/* Tiny right-aligned toggle in the results header — swaps how results are
+   grouped (by syllable count vs. by ending sound). Muted, dotted-underline
+   to read as a subtle inline link rather than a button. */
+.rhyme-finder-bucket-toggle {
+  appearance: none;
+  border: none;
+  background: none;
+  margin-left: auto;
+  padding: 0.05rem 0.2rem;
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: color-mix(in srgb, var(--muted) 45%, transparent);
+  text-underline-offset: 3px;
+}
+.rhyme-finder-bucket-toggle:hover {
+  color: var(--text);
+}
+.rhyme-finder-bucket-toggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
 .rhyme-finder-chips {
   display: flex;
   flex-wrap: wrap;
@@ -565,4 +592,44 @@
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
-
+
+.rhyme-favourites-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  margin-top: 0.3rem;
+  background: color-mix(in srgb, #d4a02b 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, #d4a02b 35%, var(--border));
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+.rhyme-favourites-label {
+  color: #d4a02b;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+.rhyme-favourites-title { line-height: 1.3; }
+.rhyme-favourites-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex: 1;
+}
+.rhyme-favourite-chip {
+  font-size: 0.8rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #d4a02b 45%, var(--border));
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.rhyme-favourite-chip:hover {
+  background: color-mix(in srgb, #d4a02b 15%, var(--bg));
+}
+.rhyme-favourite-chip[disabled] { opacity: 0.5; cursor: default; }
+

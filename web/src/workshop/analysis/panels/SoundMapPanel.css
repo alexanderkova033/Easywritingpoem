@@ -1,0 +1,146 @@
+.tool-block-soundmap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.soundmap-status {
+  margin: 0;
+}
+
+.soundmap-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.soundmap-toggle {
+  font: inherit;
+  font-size: 0.78rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem 0.2rem 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  color: var(--muted);
+}
+.soundmap-toggle.is-active {
+  color: var(--text);
+  background: var(--bg-subtle, rgba(127, 127, 127, 0.06));
+}
+.soundmap-toggle-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.soundmap-extra-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  padding: 0.15rem 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.soundmap-mini-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+.soundmap-mini-toggle input { accent-color: var(--accent, #6a8bb4); }
+
+.soundmap-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.soundmap-line {
+  display: grid;
+  grid-template-columns: 1.4rem 0.25rem 1fr 1rem;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.18rem 0.3rem;
+  border-radius: 5px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.12s ease;
+}
+.soundmap-line:hover {
+  background: var(--bg-subtle, rgba(127, 127, 127, 0.05));
+}
+.soundmap-line-blank {
+  height: 0.6rem;
+  padding: 0;
+  pointer-events: none;
+}
+
+.soundmap-line-num {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.soundmap-vowel-arc {
+  width: 4px;
+  height: 100%;
+  min-height: 1.2em;
+  border-radius: 2px;
+  opacity: 0.55;
+  align-self: stretch;
+}
+
+.soundmap-line-text {
+  display: inline;
+  font-family: var(--poem-font, inherit);
+}
+
+.soundmap-token {
+  display: inline;
+  padding: 0 1px;
+  border-radius: 2px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.soundmap-token.is-marked {
+  border-bottom-style: solid;
+  border-bottom-width: 1.5px;
+}
+.soundmap-token.is-rhyme-pair {
+  background: linear-gradient(transparent 60%, rgba(180, 140, 200, 0.18) 60%);
+}
+
+.soundmap-caesura-mark {
+  display: inline-block;
+  margin: 0 0.2rem;
+  color: var(--muted);
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.soundmap-end-mark {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+.soundmap-end-mark.soundmap-end-hard { color: #b07466; opacity: 0.75; }
+.soundmap-end-mark.soundmap-end-soft { opacity: 0.55; }
+.soundmap-end-mark.soundmap-end-open { color: #6a8bb4; opacity: 0.8; }
+
+.soundmap-foot {
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+  margin: 0;
+}
