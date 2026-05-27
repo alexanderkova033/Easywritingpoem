@@ -124,6 +124,9 @@ export interface WorkshopToolPanelsProps {
   manualStressOverrides: ManualStressOverrides;
   onSetStressOverride: (word: string, pattern: string) => void;
   onRemoveStressOverride: (word: string) => void;
+  onEchoHighlightsChange?: (
+    highlights: { line: number; start: number; end: number; colorKey: string }[] | null,
+  ) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -300,6 +303,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           stressLexiconReady={props.stressLexiconReady}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
+          onEchoHighlightsChange={props.onEchoHighlightsChange}
         />
       ) : null}
 

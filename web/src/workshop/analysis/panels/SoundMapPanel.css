@@ -55,27 +55,81 @@
   color: var(--muted);
 }
 
+/* ── Echo groups ── */
+.sound-echo-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.sound-echo-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.sound-echo-group-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  padding: 0.25rem 0 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+.sound-echo-group-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-hue, var(--border)) 18%, transparent);
+  flex: 0 0 auto;
+}
+.sound-echo-group-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+.sound-echo-group-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--echo-hue, var(--border)) 18%, transparent);
+  color: var(--text);
+}
+.sound-echo-group-blurb {
+  flex-basis: 100%;
+  margin: 0;
+  line-height: 1.4;
+}
+
 /* ── Echo card ── */
-.sound-echo-list { gap: 0.5rem; }
+.sound-echo-list { gap: 0.4rem; }
 .sound-echo-card {
   border-left-width: 3px;
+  padding: 0.45rem 0.6rem 0.5rem 0.8rem;
 }
-.sound-echo-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 0.12rem 0.5rem;
-  border-radius: 999px;
-  text-transform: uppercase;
+.sound-echo-card-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  min-width: 0;
 }
 .sound-echo-key {
   font-family: var(--font-metric, monospace);
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text);
 }
-.sound-echo-blurb {
-  margin: 0;
-  line-height: 1.45;
+.sound-echo-count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.sound-echo-gap {
+  margin-left: auto;
 }
 .sound-echo-members {
   display: flex;
@@ -280,3 +334,20 @@
 .sound-flow-end-hard { color: #b07466; }
 .sound-flow-end-soft { color: #c08210; }
 .sound-flow-end-open { color: #6a8bb4; }
+
+/* ── Editor decorations for echoes (mirrors SOUND_CLASS_HUES) ── */
+.cm-echo {
+  border-radius: 3px;
+  padding: 0 0.06em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.cm-echo-alliteration { background: color-mix(in srgb, #c98c46 22%, transparent); }
+.cm-echo-assonance    { background: color-mix(in srgb, #7da6c9 22%, transparent); }
+.cm-echo-consonance   { background: color-mix(in srgb, #b08fb4 22%, transparent); }
+.cm-echo-sibilance    { background: color-mix(in srgb, #7fb8b3 22%, transparent); }
+.cm-echo-plosive      { background: color-mix(in srgb, #d2745d 22%, transparent); }
+.cm-echo-liquid       { background: color-mix(in srgb, #8fb480 22%, transparent); }
+
+/* Focus mode dims editor highlights to keep the page calm. */
+.poem-workshop.is-focus-mode .cm-echo { background: transparent; }

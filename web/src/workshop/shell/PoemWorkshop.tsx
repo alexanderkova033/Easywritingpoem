@@ -289,6 +289,9 @@ export function PoemWorkshop() {
   const [cursorLine, setCursorLine] = useState<number>(1);
   const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
+  const [echoHighlights, setEchoHighlights] = useState<
+    Array<{ line: number; start: number; end: number; colorKey: string }> | null
+  >(null);
   const rhymeBumpRef = useRef(0);
 
   const baseRhymeEndHighlights = useMemo(() => {
@@ -1790,6 +1793,7 @@ export function PoemWorkshop() {
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
                       internalRhymes={m.toolTab === "rhyme" ? m.internalRhymes : undefined}
+                      echoHighlights={m.toolTab === "echoes" ? echoHighlights ?? undefined : undefined}
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
@@ -2180,6 +2184,7 @@ export function PoemWorkshop() {
             manualStressOverrides={manualStress.overrides}
             onSetStressOverride={manualStress.setOverride}
             onRemoveStressOverride={manualStress.removeOverride}
+            onEchoHighlightsChange={setEchoHighlights}
           />
           </Suspense>
 

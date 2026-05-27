@@ -488,6 +488,43 @@ const internalRhymeField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Sound-echo highlights (alliteration/assonance/…) ---- //
+const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string }>>();
+const clearEchoHighlights = StateEffect.define<void>();
+
+const echoHighlightField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearEchoHighlights)) { next = Decoration.none; }
+      if (e.is(setEchoHighlights)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        const seen = new Set<string>();
+        for (const { line, start, end, colorKey } of e.value) {
+          if (line < 1 || line > doc.lines) continue;
+          const docLine = doc.line(line);
+          const from = docLine.from + start;
+          const to = docLine.from + end;
+          if (to <= from || to > docLine.to) continue;
+          const k = `${from}-${to}`;
+          if (seen.has(k)) continue;
+          seen.add(k);
+          const safe = /^[a-z]+$/.test(colorKey) ? colorKey : "x";
+          decos.push(
+            Decoration.mark({ class: `cm-echo cm-echo-${safe}` }).range(from, to),
+          );
+        }
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // ---- Word-level problem highlights ---- //
 const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>();
 const clearWordHighlights = StateEffect.define<void>();
@@ -576,6 +613,8 @@ export interface PoemBodyEditorProps {
   rhymeEndHighlights?: Array<{ line: number; colorKey: string }>;
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
+  /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
+  echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string }>;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
   rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */
@@ -742,6 +781,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setInternalRhymeDecos.of(ir) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.internalRhymes]);
 
+  // Echo (alliteration/assonance/…) decorations
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const eh = props.echoHighlights;
+    if (!eh || eh.length === 0) {
+      try { view.dispatch({ effects: clearEchoHighlights.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setEchoHighlights.of(eh) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.echoHighlights]);
+
   // Rhyme scheme letters in gutter
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -886,6 +937,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       wordHighlightField,
       rhymeEndField,
       internalRhymeField,
+      echoHighlightField,
       diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,

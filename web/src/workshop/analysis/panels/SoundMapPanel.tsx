@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   buildLineSounds,
   endStopLabel,
@@ -15,12 +15,21 @@ import {
 import { EmptyState, NoLinesYetHint } from "@/workshop/analysis/tools/shared";
 import { LiveSectionTitle } from "../ToolTabBar";
 
+export interface EditorEchoHighlight {
+  line: number;
+  start: number;
+  end: number;
+  colorKey: string;
+}
+
 export interface SoundMapPanelProps {
   poemLines: string[];
   stressLexicon: ReadonlyMap<string, string> | null;
   stressLexiconReady: boolean;
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
+  /** When provided, the panel reports which words to highlight in the editor. */
+  onEchoHighlightsChange?: (highlights: EditorEchoHighlight[] | null) => void;
 }
 
 type SoundSubTab = "echoes" | "vowels" | "flow";
@@ -45,30 +54,21 @@ function EchoCard({
   const previewMax = 6;
   const preview = open ? echo.members : echo.members.slice(0, previewMax);
   const tint = SOUND_CLASS_HUES[echo.className];
+  const gapLabel =
+    echo.minGap > 0
+      ? echo.minGap === 1
+        ? "adjacent"
+        : echo.span <= 3
+          ? "tight"
+          : `across ${echo.span + 1} lines`
+      : null;
   return (
     <li className="rep-card sound-echo-card" style={{ borderLeftColor: tint }}>
-      <div className="rep-card-header">
-        <span
-          className="sound-echo-badge"
-          style={{ background: tint, color: "#fff" }}
-        >
-          {SOUND_CLASS_LABELS[echo.className]}
-        </span>
-        <span className="rep-card-title">
-          <span className="sound-echo-key">/{echo.key}/</span>
-        </span>
-        <span className="rep-card-count">×{echo.members.length}</span>
-        {echo.minGap > 0 && (
-          <span className="rep-card-gap muted small">
-            {echo.minGap === 1
-              ? "adjacent lines"
-              : echo.span <= 3
-                ? "tight cluster"
-                : `over ${echo.span + 1} lines`}
-          </span>
-        )}
+      <div className="sound-echo-card-head">
+        <span className="sound-echo-key">/{echo.key}/</span>
+        <span className="sound-echo-count" style={{ color: tint }}>×{echo.members.length}</span>
+        {gapLabel && <span className="sound-echo-gap muted small">{gapLabel}</span>}
       </div>
-      <p className="sound-echo-blurb muted small">{SOUND_CLASS_BLURB[echo.className]}</p>
       <div className="sound-echo-members">
         {preview.map((m, i) => (
           <button
@@ -154,6 +154,7 @@ export function SoundMapPanel({
   stressLexiconReady,
   heavyToolsStale,
   goToLine,
+  onEchoHighlightsChange,
 }: SoundMapPanelProps) {
   const [subTab, setSubTab] = useState<SoundSubTab>("echoes");
   const [classFilter, setClassFilter] = useState<SoundClass | "all">("all");
@@ -166,18 +167,66 @@ export function SoundMapPanel({
   const nonEmpty = lineSounds.some((l) => l.tokens.length > 0);
   const echoes = useMemo(() => findEchoes(lineSounds), [lineSounds]);
   const pauseStats = useMemo(() => summarisePauses(lineSounds), [lineSounds]);
-  const filteredEchoes = useMemo(
-    () => (classFilter === "all" ? echoes : echoes.filter((e) => e.className === classFilter)),
-    [echoes, classFilter],
-  );
+  const byClass = useMemo(() => {
+    const m: Record<SoundClass, SoundEcho[]> = {
+      alliteration: [], assonance: [], consonance: [],
+      sibilance: [], plosive: [], liquid: [],
+    };
+    for (const e of echoes) m[e.className].push(e);
+    return m;
+  }, [echoes]);
   const classCounts = useMemo(() => {
     const counts: Record<SoundClass, number> = {
       alliteration: 0, assonance: 0, consonance: 0,
       sibilance: 0, plosive: 0, liquid: 0,
     };
-    for (const e of echoes) counts[e.className]++;
+    for (const c of ALL_CLASSES) counts[c] = byClass[c].length;
     return counts;
-  }, [echoes]);
+  }, [byClass]);
+  const visibleClassesWithEchoes = useMemo(
+    () =>
+      ALL_CLASSES.filter(
+        (c) => byClass[c].length > 0 && (classFilter === "all" || classFilter === c),
+      ),
+    [byClass, classFilter],
+  );
+
+  const lineSoundsByLine = useMemo(() => {
+    const m = new Map<number, (typeof lineSounds)[number]>();
+    for (const ls of lineSounds) m.set(ls.lineNumber, ls);
+    return m;
+  }, [lineSounds]);
+
+  // Highlights to mirror in the editor while the Sound echoes subtab is active.
+  const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
+    if (subTab !== "echoes") return null;
+    const out: EditorEchoHighlight[] = [];
+    for (const cls of visibleClassesWithEchoes) {
+      for (const e of byClass[cls]) {
+        for (const m of e.members) {
+          const ls = lineSoundsByLine.get(m.lineNumber);
+          if (!ls) continue;
+          const tok = ls.tokens[m.tokenIndex];
+          if (!tok) continue;
+          out.push({
+            line: m.lineNumber,
+            start: tok.start,
+            end: tok.end,
+            colorKey: cls,
+          });
+        }
+      }
+    }
+    return out;
+  }, [subTab, visibleClassesWithEchoes, byClass, lineSoundsByLine]);
+
+  useEffect(() => {
+    if (!onEchoHighlightsChange) return;
+    onEchoHighlightsChange(editorEchoHighlights);
+    return () => {
+      onEchoHighlightsChange(null);
+    };
+  }, [onEchoHighlightsChange, editorEchoHighlights]);
 
   // For vowel-arc legend: which vowels actually appear in this poem?
   const usedVowels = useMemo(() => {
@@ -249,9 +298,8 @@ export function SoundMapPanel({
       {subTab === "echoes" && (
         <>
           <p className="muted small sound-help">
-            Groups of words that <strong>share a sound</strong>. Sound echoes give a poem its
-            inner music — tighter gaps between members mean a more concentrated echo.
-            Click any chip to jump to the line.
+            Groups of words that <strong>share a sound</strong>. Click any chip to jump to
+            the line — tighter gaps mean a more concentrated echo.
           </p>
 
           {echoes.length > 0 && (
@@ -273,6 +321,7 @@ export function SoundMapPanel({
                     type="button"
                     className={`sound-filter-chip${active ? " is-active" : ""}`}
                     onClick={() => setClassFilter(active ? "all" : c)}
+                    title={SOUND_CLASS_BLURB[c]}
                     style={
                       active
                         ? { borderColor: SOUND_CLASS_HUES[c], color: SOUND_CLASS_HUES[c] }
@@ -300,14 +349,46 @@ export function SoundMapPanel({
                 they'll surface here as your lines fill in.
               </p>
             </EmptyState>
-          ) : filteredEchoes.length === 0 ? (
+          ) : visibleClassesWithEchoes.length === 0 ? (
             <p className="muted small">No echoes of this type. Try another filter.</p>
           ) : (
-            <ul className="rep-card-list sound-echo-list">
-              {filteredEchoes.map((e, i) => (
-                <EchoCard key={`${e.className}-${e.key}-${i}`} echo={e} goToLine={goToLine} />
-              ))}
-            </ul>
+            <div className="sound-echo-groups">
+              {visibleClassesWithEchoes.map((cls) => {
+                const items = byClass[cls];
+                const hue = SOUND_CLASS_HUES[cls];
+                return (
+                  <section
+                    key={cls}
+                    className="sound-echo-group"
+                    style={{ ["--echo-hue" as string]: hue }}
+                  >
+                    <header className="sound-echo-group-head">
+                      <span
+                        className="sound-echo-group-dot"
+                        style={{ background: hue }}
+                        aria-hidden
+                      />
+                      <span className="sound-echo-group-label">
+                        {SOUND_CLASS_LABELS[cls]}
+                      </span>
+                      <span className="sound-echo-group-count">{items.length}</span>
+                      <span className="sound-echo-group-blurb muted small">
+                        {SOUND_CLASS_BLURB[cls]}
+                      </span>
+                    </header>
+                    <ul className="rep-card-list sound-echo-list">
+                      {items.map((e, i) => (
+                        <EchoCard
+                          key={`${cls}-${e.key}-${i}`}
+                          echo={e}
+                          goToLine={goToLine}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
           )}
         </>
       )}
