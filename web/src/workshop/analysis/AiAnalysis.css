@@ -1085,6 +1085,53 @@
   -webkit-box-decoration-break: clone;
 }
 
+/* Flagged-word pill in Overview text (cliché phrases + AI-flagged problem words).
+   Renders as a button so clicking jumps the editor cursor to the word's start. */
+button.ai-flagged-word {
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--ai-score-low, #d95f5f) 35%, var(--border));
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 12%, transparent);
+  padding: 0 0.32em;
+  border-radius: 4px;
+  line-height: inherit;
+  text-decoration: underline dotted color-mix(in srgb, var(--ai-score-low, #d95f5f) 60%, transparent);
+  text-underline-offset: 2px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+button.ai-flagged-word:hover,
+button.ai-flagged-word:focus-visible {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 22%, transparent);
+  border-color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 55%, var(--border));
+  outline: none;
+}
+
+mark.ai-flagged-word {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 14%, transparent);
+  color: inherit;
+  padding: 0 0.2em;
+  border-radius: 3px;
+}
+
+.ai-flagged-cliche {
+  --ai-flag-color: var(--ai-score-mid, #e6a817);
+}
+
+button.ai-flagged-cliche {
+  border-color: color-mix(in srgb, var(--ai-flag-color) 40%, var(--border));
+  background: color-mix(in srgb, var(--ai-flag-color) 14%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--ai-flag-color) 65%, transparent);
+}
+
+button.ai-flagged-cliche:hover,
+button.ai-flagged-cliche:focus-visible {
+  background: color-mix(in srgb, var(--ai-flag-color) 24%, transparent);
+  border-color: color-mix(in srgb, var(--ai-flag-color) 60%, var(--border));
+}
+
 .ai-issue-improvements {
   margin: 0.1rem 0 0;
   padding-left: 0;

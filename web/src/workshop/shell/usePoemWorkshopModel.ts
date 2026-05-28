@@ -65,6 +65,7 @@ import { buildPublicationChecklist } from "@/workshop/analysis/publication-check
 import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import {
   focusCharacterRangeInEditor,
+  focusCursorInEditor,
   focusLastWordInLine,
   focusLineInEditor,
 } from "@/workshop/editor/focus-line-in-editor";
@@ -500,6 +501,33 @@ export function usePoemWorkshopModel(
       const from = Math.max(docLine.from, docLine.from + Math.max(0, startCol));
       const to = Math.min(docLine.to, docLine.from + Math.max(startCol, endCol));
       focusCharacterRangeInEditor(view, from, to);
+    },
+    [],
+  );
+
+  const goToWordStart = useCallback(
+    (line1Based: number, phrase: string) => {
+      const view = editorViewRef.current;
+      if (!view) return;
+      const doc = view.state.doc;
+      if (line1Based < 1 || line1Based > doc.lines) return;
+      const docLine = doc.line(line1Based);
+      const haystack = docLine.text;
+      const needle = phrase.trim();
+      let col = 0;
+      if (needle) {
+        const re = new RegExp(`\\b${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+        const m = haystack.match(re);
+        if (m && m.index != null) {
+          col = m.index;
+        } else {
+          const idx = haystack.toLowerCase().indexOf(needle.toLowerCase());
+          if (idx >= 0) col = idx;
+        }
+      }
+      setJumpLine(line1Based);
+      setJumpBump((n) => n + 1);
+      focusCursorInEditor(view, docLine.from + col);
     },
     [],
   );
@@ -1179,6 +1207,7 @@ export function usePoemWorkshopModel(
     publication,
     goToLine,
     goToWord,
+    goToWordStart,
     goToLineEnd,
     goToSpellHit,
     goToSpellHitAt,

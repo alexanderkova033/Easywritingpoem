@@ -2290,6 +2290,7 @@ export function PoemWorkshop() {
             localAnalysis={localAnalysis}
             goals={m.goals}
             onJumpToLine={m.goToLine}
+            onJumpToWord={m.goToWordStart}
             onPeekLine={smartPreviewLine}
             onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
             onClearHighlight={() => setIssueHighlight(null)}
@@ -2369,6 +2370,7 @@ export function PoemWorkshop() {
                   localAnalysis={localAnalysis}
                   goals={m.goals}
                   onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
+                  onJumpToWord={(line, phrase) => { m.goToWordStart(line, phrase); setMobileAiOpen(false); setMobileTab("write"); }}
                   onPeekLine={smartPreviewLine}
                   onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
                   onClearHighlight={() => setIssueHighlight(null)}

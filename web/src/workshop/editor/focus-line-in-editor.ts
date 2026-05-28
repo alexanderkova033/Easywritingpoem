@@ -15,6 +15,20 @@ export function focusLineInEditor(
   view.focus();
 }
 
+/** Place the cursor (no selection) at a 0-based document offset. */
+export function focusCursorInEditor(
+  view: EditorView,
+  pos: number,
+): void {
+  const doc = view.state.doc;
+  const p = Math.max(0, Math.min(pos, doc.length));
+  view.dispatch({
+    selection: { anchor: p, head: p },
+    scrollIntoView: true,
+  });
+  view.focus();
+}
+
 /** Select a character range in the document (0-based offsets, end-exclusive). */
 export function focusCharacterRangeInEditor(
   view: EditorView,

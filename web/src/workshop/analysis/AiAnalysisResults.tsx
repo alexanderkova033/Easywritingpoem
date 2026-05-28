@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   type AnalysisIssue,
   type ComparisonChanges,
@@ -23,6 +23,62 @@ import { IssueCard } from "./AiIssueCard";
 import { AiChat } from "./AiChat";
 
 export type AnalysisTab = "overview" | "issues" | "chat";
+
+interface FlaggedEntry { phrase: string; line: number; kind: "cliche" | "problem" }
+
+/** Render `text` with occurrences of any flagged phrase wrapped in a clickable
+ * pill. Match is case-insensitive and word-boundary aware. Clicking a pill jumps
+ * the editor cursor to the start of that word on its associated line. */
+function FlaggedText({ text, flagged, onJumpToWord }: {
+  text: string;
+  flagged: FlaggedEntry[];
+  onJumpToWord?: (line: number, phrase: string) => void;
+}): ReactNode {
+  if (!text) return text;
+  if (!flagged.length) return text;
+
+  const byPhrase = new Map<string, FlaggedEntry>();
+  for (const f of flagged) {
+    const key = f.phrase.trim().toLowerCase();
+    if (!key) continue;
+    if (!byPhrase.has(key)) byPhrase.set(key, f);
+  }
+  const phrases = [...byPhrase.keys()].sort((a, b) => b.length - a.length);
+  if (!phrases.length) return text;
+
+  const escaped = phrases.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`(?:^|[^\\p{L}\\p{N}'])(${escaped.join("|")})(?=$|[^\\p{L}\\p{N}'])`, "giu");
+  const parts: ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const full = m[0];
+    const matched = m[1]!;
+    const start = m.index + (full.length - matched.length);
+    if (start > last) parts.push(text.slice(last, start));
+    const info = byPhrase.get(matched.toLowerCase())!;
+    if (onJumpToWord) {
+      parts.push(
+        <button
+          key={key++}
+          type="button"
+          className={`ai-flagged-word ai-flagged-${info.kind}`}
+          onClick={() => onJumpToWord(info.line, matched)}
+          title={`Jump to line ${info.line}`}
+        >{matched}</button>,
+      );
+    } else {
+      parts.push(
+        <mark key={key++} className={`ai-flagged-word ai-flagged-${info.kind}`}>{matched}</mark>,
+      );
+    }
+    last = start + matched.length;
+    if (re.lastIndex === m.index) re.lastIndex++;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
 
 function CompareCelebration({
   cmp, scoreDelta, dismissed, onDismiss,
@@ -152,13 +208,15 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 }
 
 export function AnalysisResults({
-  result, onJump, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
+  result, onJump, onJumpToWord, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
   activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
   onJump?: (line: number) => void;
+  /** Place the editor cursor at the start of a specific word on a line. */
+  onJumpToWord?: (line: number, phrase: string) => void;
   /** Soft scroll-into-view without focus/cursor change. */
   onPeek?: (line: number) => void;
   onHighlight?: (start: number, end: number, severity?: string) => void;
@@ -295,6 +353,23 @@ export function AnalysisResults({
     setOpenIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
     setResolvedIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
   };
+
+  const flaggedEntries = useMemo<FlaggedEntry[]>(() => {
+    const out: FlaggedEntry[] = [];
+    if (localAnalysis?.cliches) {
+      for (const c of localAnalysis.cliches) {
+        if (c.phrase?.trim()) out.push({ phrase: c.phrase.trim(), line: c.lineNumber, kind: "cliche" });
+      }
+    }
+    for (const iss of result.issues) {
+      if (!iss.problem_words?.length) continue;
+      for (const w of iss.problem_words) {
+        const word = w?.trim();
+        if (word) out.push({ phrase: word, line: iss.line_start, kind: "problem" });
+      }
+    }
+    return out;
+  }, [localAnalysis, result.issues]);
 
   const issueCategories = useMemo(() => {
     const map = new Map<string, { label: string; color: string } | null>();
@@ -453,7 +528,11 @@ export function AnalysisResults({
                 <div className="ai-card ai-card-weaknesses">
                   <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>−</span> Work on</span>
                   <ul className="ai-sw-list">
-                    {result.weaknesses!.map((s, i) => <li key={i}>{s}</li>)}
+                    {result.weaknesses!.map((s, i) => (
+                      <li key={i}>
+                        <FlaggedText text={s} flagged={flaggedEntries} onJumpToWord={onJumpToWord} />
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}
@@ -497,7 +576,7 @@ export function AnalysisResults({
                 <div className="ai-feedback-card ai-feedback-personal is-expanded">
                   <span className="ai-feedback-label">For you</span>
                   <p className="ai-feedback-text">
-                    {result.personal_feedback}
+                    <FlaggedText text={result.personal_feedback} flagged={flaggedEntries} onJumpToWord={onJumpToWord} />
                   </p>
                 </div>
               )}
@@ -505,7 +584,7 @@ export function AnalysisResults({
                 <div className="ai-feedback-card ai-feedback-overall is-expanded">
                   <span className="ai-feedback-label">Overall</span>
                   <p className="ai-feedback-text">
-                    {result.overall_feedback}
+                    <FlaggedText text={result.overall_feedback} flagged={flaggedEntries} onJumpToWord={onJumpToWord} />
                   </p>
                 </div>
               )}

@@ -46,6 +46,8 @@ export interface AiAnalysisProps {
   localAnalysis?: LocalAnalysisContext;
   goals?: WorkshopGoals;
   onJumpToLine?: (line: number) => void;
+  /** Place the editor cursor at the start of a specific word on a line. */
+  onJumpToWord?: (line: number, phrase: string) => void;
   /** Scroll editor to a line without moving the cursor or stealing focus. */
   onPeekLine?: (line: number) => void;
   onHighlightLines?: (start: number, end: number, severity?: string) => void;
@@ -66,7 +68,7 @@ export interface AiAnalysisProps {
   onSwitchTabRef?: (fn: (tab: "overview" | "issues" | "chat") => void) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
@@ -437,6 +439,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 result={result}
                 previous={effectiveMode === "compare" ? savedResult : null}
                 onJump={onJumpToLine}
+                onJumpToWord={onJumpToWord}
                 onPeek={onPeekLine}
                 onHighlight={onHighlightLines}
                 onClearHighlight={onClearHighlight}
