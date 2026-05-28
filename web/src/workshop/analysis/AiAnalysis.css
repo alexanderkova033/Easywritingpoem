@@ -321,6 +321,9 @@
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  max-width: 52rem;
+  width: 100%;
+  margin-inline: auto;
 }
 
 /* Score row — always visible */
@@ -1005,8 +1008,6 @@
   font-size: 0.8rem;
   font-style: italic;
   color: var(--muted);
-  max-width: 60ch;
-  overflow-wrap: break-word;
 }
 
 .ai-issue-body {
@@ -1023,7 +1024,6 @@
   font-size: 0.85rem;
   line-height: 1.5;
   color: var(--text);
-  max-width: 65ch;
 }
 
 .ai-rationale-mark {
@@ -1972,14 +1972,11 @@
   font-size: 0.85rem;
   color: var(--text);
   opacity: 0.85;
-  flex: 1 1 0;
+  flex: 1;
   min-width: 0;
-  max-width: 60ch;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ai-analyze-actions {

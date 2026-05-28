@@ -215,7 +215,13 @@
 /* ── Editor meter overlay (vowel-anchored stress dots) ────────────────────── */
 /* When the Stress & meter tab is open, each syllable nucleus is wrapped with
    a Decoration.mark; the dot is drawn via ::before above the character so the
-   poem text isn't shifted. */
+   poem text isn't shifted. We add a small padding-top to lines that have
+   meter marks so the dots have room to render above the line's text without
+   spilling into the previous line's box. */
+.cm-line:has(.cm-meter-syl) {
+  padding-top: 0.6em;
+}
+
 .cm-meter-syl {
   position: relative;
 }
@@ -232,8 +238,8 @@
 /* Stressed: filled accent-coloured dot, sized to read clearly. */
 .cm-meter-syl-stress::before {
   top: -0.55em;
-  width: 0.42em;
-  height: 0.42em;
+  width: 0.4em;
+  height: 0.4em;
   background: var(--accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
 }
@@ -241,8 +247,8 @@
 /* Unstressed: small hollow ring, muted — clearly weaker than the filled dot. */
 .cm-meter-syl-unstress::before {
   top: -0.42em;
-  width: 0.24em;
-  height: 0.24em;
+  width: 0.22em;
+  height: 0.22em;
   background: transparent;
   border: 1px solid color-mix(in srgb, var(--muted) 75%, transparent);
   opacity: 0.7;

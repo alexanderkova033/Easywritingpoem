@@ -137,7 +137,7 @@ export const poemEditorTheme = EditorView.theme({
     backgroundColor: "color-mix(in srgb, var(--accent) 6%, transparent)",
   },
   ".cm-activeLine": {
-    backgroundColor: "color-mix(in srgb, var(--accent) 3.5%, transparent)",
+    backgroundColor: "color-mix(in srgb, var(--accent) 1.5%, transparent)",
   },
   ".cm-cursor, .cm-dropCursor": {
     borderLeft:
