@@ -321,9 +321,48 @@
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  max-width: 52rem;
+  max-width: 58rem;
   width: 100%;
   margin-inline: auto;
+  position: relative;
+}
+
+/* Decorative dot rails in the freed-up gutter on either side of the centered column */
+.ai-results::before,
+.ai-results::after {
+  content: "";
+  position: absolute;
+  top: 1.2rem;
+  bottom: 1.2rem;
+  width: 3rem;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--accent) 24%, transparent) 0.75px,
+    transparent 1.1px
+  );
+  background-size: 10px 10px;
+  opacity: 0.55;
+}
+
+.ai-results::before {
+  right: calc(100% + 1.25rem);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 100%);
+}
+
+.ai-results::after {
+  left: calc(100% + 1.25rem);
+  -webkit-mask-image: linear-gradient(to right, black 0%, transparent 100%);
+  mask-image: linear-gradient(to right, black 0%, transparent 100%);
+}
+
+/* Hide decorative rails on narrow viewports where the gutter collapses */
+@media (max-width: 899px) {
+  .ai-results::before,
+  .ai-results::after {
+    display: none;
+  }
 }
 
 /* Score row — always visible */

@@ -214,12 +214,11 @@
 
 /* ── Editor meter overlay (vowel-anchored stress dots) ────────────────────── */
 /* When the Stress & meter tab is open, each syllable nucleus is wrapped with
-   a Decoration.mark; the dot is drawn via ::before above the character so the
-   poem text isn't shifted. We add a small padding-top to lines that have
-   meter marks so the dots have room to render above the line's text without
-   spilling into the previous line's box. */
+   a Decoration.mark; the dot is drawn via ::before just above the character.
+   A small padding-top reserves space inside the line's own box so the dots
+   don't spill into the previous line. */
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.6em;
+  padding-top: 0.4em;
 }
 
 .cm-meter-syl {
@@ -233,26 +232,25 @@
   transform: translateX(-50%);
   pointer-events: none;
   border-radius: 999px;
+  transition: opacity 0.18s ease;
 }
 
-/* Stressed: filled accent-coloured dot, sized to read clearly. */
+/* Stressed: small filled dot in the accent hue, softened by alpha. */
 .cm-meter-syl-stress::before {
-  top: -0.55em;
-  width: 0.4em;
-  height: 0.4em;
-  background: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--bg) 70%, transparent);
+  top: -0.3em;
+  width: 0.3em;
+  height: 0.3em;
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
-/* Unstressed: small hollow ring, muted — clearly weaker than the filled dot. */
+/* Unstressed: tiny muted dot — kept simple at small sizes, with a clear
+   size + colour gap so it reads as the weaker beat. */
 .cm-meter-syl-unstress::before {
-  top: -0.42em;
-  width: 0.22em;
-  height: 0.22em;
-  background: transparent;
-  border: 1px solid color-mix(in srgb, var(--muted) 75%, transparent);
-  opacity: 0.7;
+  top: -0.22em;
+  width: 0.14em;
+  height: 0.14em;
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
 }
 
 .poem-workshop.is-focus-mode .cm-meter-syl-stress::before,
-.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before { opacity: 0.2; }
+.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before { opacity: 0.18; }
