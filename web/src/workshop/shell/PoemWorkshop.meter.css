@@ -212,13 +212,13 @@
   font-size: 0.95rem;
 }
 
-/* ── Editor meter overlay (vowel-anchored stress dots) ────────────────────── */
-/* When the Stress & meter tab is open, each syllable nucleus is wrapped with
-   a Decoration.mark; the dot is drawn via ::before just above the character.
-   A small padding-top reserves space inside the line's own box so the dots
-   don't spill into the previous line. */
+/* ── Editor meter overlay (vowel-anchored scansion marks) ─────────────────── */
+/* Standard English scansion notation: macron (¯) for a stressed syllable,
+   breve (˘) for an unstressed one. Same glyphs the MeterPanel's scansion
+   view uses, so the editor reads the same as the panel. Marks are absolutely
+   positioned above each vowel character so the poem text isn't shifted. */
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.24em;
+  padding-top: 0.35em;
 }
 
 .cm-meter-syl {
@@ -226,31 +226,32 @@
 }
 
 .cm-meter-syl::before {
-  content: "";
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
-  border-radius: 999px;
+  font-family: var(--font-metric, ui-monospace, monospace);
+  font-size: 0.85em;
+  line-height: 1;
+  font-weight: 500;
   transition: opacity 0.18s ease;
 }
 
-/* Stressed: small filled dot in the accent hue, softened by alpha. */
+/* Stressed: macron in the accent hue. */
 .cm-meter-syl-stress::before {
-  top: -0.04em;
-  width: 0.3em;
-  height: 0.3em;
-  background: color-mix(in srgb, var(--accent) 70%, transparent);
+  content: "¯";
+  top: -0.55em;
+  color: var(--accent);
+  opacity: 0.85;
 }
 
-/* Unstressed: tiny muted dot — kept simple at small sizes, with a clear
-   size + colour gap so it reads as the weaker beat. Bottom aligned with the
-   stressed dot so the two sit on a shared baseline above the text. */
+/* Unstressed: breve in muted ink. Slightly lighter so the stressed mark
+   carries the rhythm. */
 .cm-meter-syl-unstress::before {
-  top: 0.12em;
-  width: 0.14em;
-  height: 0.14em;
-  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  content: "˘";
+  top: -0.55em;
+  color: var(--muted);
+  opacity: 0.7;
 }
 
 .poem-workshop.is-focus-mode .cm-meter-syl-stress::before,

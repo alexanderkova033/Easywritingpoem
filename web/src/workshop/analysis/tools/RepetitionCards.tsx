@@ -5,38 +5,25 @@ import type {
 import {
   buildPhraseRegex,
   buildPhraseRegexSource,
+  cropAroundMatch,
   escapeRegex,
   highlightInLine,
 } from "./helpers";
 
-export function RepetitionSummary({
-  counts,
-}: {
-  counts: { words: number; phrases: number; patterns: number };
-}) {
-  const total = counts.words + counts.phrases + counts.patterns;
-  return (
-    <div className="rep-summary" role="status" aria-live="polite">
-      <div className="rep-summary-stat">
-        <span className="rep-summary-value">{total}</span>
-        <span className="rep-summary-label">repeats</span>
-      </div>
-      {counts.patterns > 0 ? (
-        <div className="rep-summary-stat rep-summary-craft">
-          <span className="rep-summary-value">{counts.patterns}</span>
-          <span className="rep-summary-label">pattern{counts.patterns === 1 ? "" : "s"}</span>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function RepeatedWordCard({
   item,
+  cardId,
   goToLine,
+  peekToLine,
+  clearHoverPeek,
+  onReject,
 }: {
   item: RepeatedWord;
+  cardId?: string;
   goToLine: (line1Based: number) => void;
+  peekToLine?: (line1Based: number, word?: string) => void;
+  clearHoverPeek?: () => void;
+  onReject?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const variantList =
@@ -51,7 +38,7 @@ export function RepeatedWordCard({
   }, [item.word, item.variants]);
   const previewOccurrences = open ? item.occurrences : item.occurrences.slice(0, 2);
   return (
-    <li className="rep-card">
+    <li className="rep-card" data-repeat-card-id={cardId}>
       <div className="rep-card-header">
         <span className="rep-card-title">{item.display}</span>
         <span className="rep-card-count">×{item.count}</span>
@@ -69,20 +56,39 @@ export function RepeatedWordCard({
                 ? "adjacent lines"
                 : `${item.minGap} lines apart`}
         </span>
+        {onReject ? (
+          <button
+            type="button"
+            className="craft-cluster-reject"
+            onClick={onReject}
+            title="Hide this repeat"
+            aria-label={`Hide “${item.display}”`}
+          >
+            ×
+          </button>
+        ) : null}
       </div>
       <ul className="rep-snippets">
         {previewOccurrences.map((o, i) => (
-          <li key={`${o.line}-${o.start}-${i}`} className="rep-snippet">
+          <li
+            key={`${o.line}-${o.start}-${i}`}
+            className="rep-snippet"
+            onMouseEnter={() => peekToLine?.(o.line, item.display)}
+            onMouseLeave={() => clearHoverPeek?.()}
+          >
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(o.line)}
+              onFocus={() => peekToLine?.(o.line, item.display)}
+              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${o.line}`}
+              title="Click to jump, hover to peek"
             >
               L{o.line}
             </button>
             <span className="rep-snippet-text">
-              {highlightInLine(o.lineText, wordRe)}
+              {highlightInLine(cropAroundMatch(o.lineText, wordRe, 28), wordRe)}
             </span>
           </li>
         ))}
@@ -102,16 +108,22 @@ export function RepeatedWordCard({
 
 export function PhraseRepeatCard({
   item,
+  cardId,
   goToLine,
+  peekToLine,
+  clearHoverPeek,
 }: {
   item: import("@/workshop/analysis/repeated-words").PhraseRepeat;
+  cardId?: string;
   goToLine: (line1Based: number) => void;
+  peekToLine?: (line1Based: number, word?: string) => void;
+  clearHoverPeek?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
   const phraseRe = useMemo(() => buildPhraseRegex(item.phrase), [item.phrase]);
   return (
-    <li className="rep-card">
+    <li className="rep-card" data-repeat-card-id={cardId}>
       <div className="rep-card-header">
         <span className="rep-card-title">"{item.display}"</span>
         <span className="rep-card-count">×{item.count}</span>
@@ -119,17 +131,25 @@ export function PhraseRepeatCard({
       </div>
       <ul className="rep-snippets">
         {previewSnippets.map((s, i) => (
-          <li key={`${s.line}-${i}`} className="rep-snippet">
+          <li
+            key={`${s.line}-${i}`}
+            className="rep-snippet"
+            onMouseEnter={() => peekToLine?.(s.line, item.display)}
+            onMouseLeave={() => clearHoverPeek?.()}
+          >
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(s.line)}
+              onFocus={() => peekToLine?.(s.line, item.display)}
+              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${s.line}`}
+              title="Click to jump, hover to peek"
             >
               L{s.line}
             </button>
             <span className="rep-snippet-text">
-              {highlightInLine(s.text, phraseRe)}
+              {highlightInLine(cropAroundMatch(s.text, phraseRe, 28), phraseRe)}
             </span>
           </li>
         ))}
@@ -149,12 +169,18 @@ export function PhraseRepeatCard({
 
 export function EdgeRepeatCard({
   group,
+  cardId,
   edge,
   goToLine,
+  peekToLine,
+  clearHoverPeek,
 }: {
   group: import("@/workshop/analysis/repeated-words").AnaphoraGroup;
+  cardId?: string;
   edge: "start" | "end";
   goToLine: (line1Based: number) => void;
+  peekToLine?: (line1Based: number, word?: string) => void;
+  clearHoverPeek?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? group.snippets : group.snippets.slice(0, 3);
@@ -165,7 +191,7 @@ export function EdgeRepeatCard({
       : new RegExp(`${body}[^A-Za-z']*$`, "gi");
   }, [group.prefix, edge]);
   return (
-    <li className="rep-card rep-card-pattern">
+    <li className="rep-card rep-card-pattern" data-repeat-card-id={cardId}>
       <div className="rep-card-header">
         <span className="rep-pattern-icon" aria-hidden="true">
           {edge === "start" ? "↦" : "↤"}
@@ -178,17 +204,25 @@ export function EdgeRepeatCard({
       </div>
       <ul className="rep-snippets">
         {previewSnippets.map((s, i) => (
-          <li key={`${s.line}-${i}`} className="rep-snippet">
+          <li
+            key={`${s.line}-${i}`}
+            className="rep-snippet"
+            onMouseEnter={() => peekToLine?.(s.line, group.display)}
+            onMouseLeave={() => clearHoverPeek?.()}
+          >
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(s.line)}
+              onFocus={() => peekToLine?.(s.line, group.display)}
+              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${s.line}`}
+              title="Click to jump, hover to peek"
             >
               L{s.line}
             </button>
             <span className="rep-snippet-text">
-              {highlightInLine(s.text, matchRe)}
+              {highlightInLine(cropAroundMatch(s.text, matchRe, 28), matchRe)}
             </span>
           </li>
         ))}

@@ -103,6 +103,9 @@ export interface WorkshopToolPanelsProps {
   stressLexiconReady: boolean;
   stressLexiconErr: string | null;
   heavyToolsStale: boolean;
+  poemId?: string;
+  peekToLine?: (line1Based: number, word?: string) => void;
+  clearHoverPeek?: () => void;
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
@@ -221,11 +224,14 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
       {toolTab === "repeat" ? (
         <RepeatPanel
+          poemId={props.poemId}
           docStats={props.docStats}
           repeated={props.repeated}
           repetition={props.repetition}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
+          peekToLine={props.peekToLine}
+          clearHoverPeek={props.clearHoverPeek}
         />
       ) : null}
 

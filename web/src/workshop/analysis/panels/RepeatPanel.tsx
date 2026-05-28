@@ -9,39 +9,53 @@ import {
   EdgeRepeatCard,
   PhraseRepeatCard,
   RepeatedWordCard,
-  RepetitionSummary,
 } from "@/workshop/analysis/tools/RepetitionCards";
+import { CraftStatCard } from "@/workshop/analysis/tools/CraftCards";
+import { useIgnoredCraftItems } from "@/workshop/analysis/craft-ignored-storage";
 import { LiveSectionTitle } from "../ToolTabBar";
 
+const IGNORE_CATEGORY = "repeats";
+
 export interface RepeatPanelProps {
+  poemId?: string;
   docStats: DocumentStats;
   repeated: RepeatedWord[];
   repetition: RepetitionAnalysis;
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
+  peekToLine?: (line1Based: number, word?: string) => void;
+  clearHoverPeek?: () => void;
 }
 
 export function RepeatPanel({
+  poemId,
   docStats,
   repeated,
   repetition,
   heavyToolsStale,
   goToLine,
+  peekToLine,
+  clearHoverPeek,
 }: RepeatPanelProps) {
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
   const [repeatSubTab, setRepeatSubTab] = useState<
     "words" | "phrases" | "patterns"
   >("words");
+  const { ignore, restoreAll, isIgnored, countInCategory } =
+    useIgnoredCraftItems(poemId);
+  const ignoredCount = countInCategory(IGNORE_CATEGORY);
 
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    if (!t) return repeated;
-    return repeated.filter(
-      (r) =>
-        r.word.toLowerCase().includes(t) ||
-        r.variants.some((v) => v.toLowerCase().includes(t)),
-    );
-  }, [repeated, repeatWordFilter]);
+    return repeated
+      .filter((r) => !isIgnored(IGNORE_CATEGORY, r.word))
+      .filter(
+        (r) =>
+          !t ||
+          r.word.toLowerCase().includes(t) ||
+          r.variants.some((v) => v.toLowerCase().includes(t)),
+      );
+  }, [repeated, repeatWordFilter, isIgnored]);
 
   const filteredPhrases = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
@@ -57,6 +71,31 @@ export function RepeatPanel({
     }),
     [repeated, repetition],
   );
+
+  const totalRepeats =
+    repetitionCounts.words +
+    repetitionCounts.phrases +
+    repetitionCounts.patterns;
+
+  let tone: "good" | "warn" | "info" = "info";
+  let title = "";
+  let metricLabel: string;
+  let hint: string | undefined;
+  if (totalRepeats === 0) {
+    tone = "good";
+    title = "No repeats";
+    metricLabel = "clean";
+    hint = "No non-stopword words, phrases, or patterns repeat in this poem.";
+  } else if (repetitionCounts.words >= 6 || repetitionCounts.phrases >= 3) {
+    tone = "warn";
+    title = "Several echoes worth a look";
+    metricLabel = "repeats";
+    hint = "A few repeated words or phrases stand out. Tap any to jump to that line.";
+  } else {
+    title = "A few echoes spotted";
+    metricLabel = "repeats";
+    hint = "Most repeats are light. Tap any to jump to that line.";
+  }
 
   return (
     <div
@@ -76,7 +115,13 @@ export function RepeatPanel({
           Tools updating…
         </p>
       ) : null}
-      <RepetitionSummary counts={repetitionCounts} />
+      <CraftStatCard
+        tone={tone}
+        title={title}
+        metric={totalRepeats}
+        metricLabel={metricLabel}
+        hint={hint}
+      />
       <div className="rep-subtabs" role="tablist" aria-label="Repeats categories">
         <button
           type="button"
@@ -130,17 +175,36 @@ export function RepeatPanel({
             </p>
           </EmptyState>
         ) : filteredRepeated.length === 0 ? (
-          <p className="muted small">No words match this filter.</p>
+          <p className="muted small">
+            {ignoredCount > 0
+              ? "No words left — everything you flagged is hidden."
+              : "No words match this filter."}
+          </p>
         ) : (
-          <ul className="rep-card-list">
-            {filteredRepeated.map((r) => (
-              <RepeatedWordCard
-                key={r.word}
-                item={r}
-                goToLine={goToLine}
-              />
-            ))}
-          </ul>
+          <>
+            <ul className="rep-card-list">
+              {filteredRepeated.map((r) => (
+                <RepeatedWordCard
+                  key={r.word}
+                  item={r}
+                  cardId={`w:${r.word}`}
+                  goToLine={goToLine}
+                  peekToLine={peekToLine}
+                  clearHoverPeek={clearHoverPeek}
+                  onReject={() => ignore(IGNORE_CATEGORY, r.word)}
+                />
+              ))}
+            </ul>
+            {ignoredCount > 0 ? (
+              <button
+                type="button"
+                className="craft-restore-link linkish small"
+                onClick={() => restoreAll(IGNORE_CATEGORY)}
+              >
+                Show {ignoredCount} hidden
+              </button>
+            ) : null}
+          </>
         )
       ) : null}
 
@@ -159,7 +223,10 @@ export function RepeatPanel({
               <PhraseRepeatCard
                 key={`${p.n}:${p.phrase}`}
                 item={p}
+                cardId={`p${p.n}:${p.phrase}`}
                 goToLine={goToLine}
+                peekToLine={peekToLine}
+                clearHoverPeek={clearHoverPeek}
               />
             ))}
           </ul>
@@ -187,8 +254,11 @@ export function RepeatPanel({
                     <EdgeRepeatCard
                       key={`a:${g.prefix}`}
                       group={g}
+                      cardId={`a${g.n}:${g.prefix}`}
                       edge="start"
                       goToLine={goToLine}
+                      peekToLine={peekToLine}
+                      clearHoverPeek={clearHoverPeek}
                     />
                   ))}
                 </ul>
@@ -204,8 +274,11 @@ export function RepeatPanel({
                     <EdgeRepeatCard
                       key={`e:${g.prefix}`}
                       group={g}
+                      cardId={`e${g.n}:${g.prefix}`}
                       edge="end"
                       goToLine={goToLine}
+                      peekToLine={peekToLine}
+                      clearHoverPeek={clearHoverPeek}
                     />
                   ))}
                 </ul>

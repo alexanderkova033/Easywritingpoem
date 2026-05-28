@@ -10,15 +10,14 @@
   box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
   max-width: 78rem;
   width: 100%;
-  /* Offset left margin by the workshop rail's column so the rail above visually flows into the gutter beside this section */
-  margin-left: calc(var(--rail-col, 56px) + 1.45rem);
-  margin-right: auto;
+  margin-inline: auto;
 }
 
-/* On narrower viewports (below the 3-column workshop breakpoint), drop the rail offset and center */
-@media (max-width: 899px) {
-  .ai-analysis-section {
-    margin-left: auto;
+/* When inside the workshop grid (desktop), drop into row 2 spanning the editor+tools columns,
+   so the sticky workshop-rail in column 1 stays visible beside it while scrolling. */
+@media (min-width: 900px) {
+  .workshop-grid > .ai-analysis-section {
+    grid-column: 2 / -1;
   }
 }
 

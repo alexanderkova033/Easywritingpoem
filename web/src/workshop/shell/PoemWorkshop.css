@@ -7032,6 +7032,148 @@
 }
 
 /* ============================================================
+   Craft stat card — compact visual summary above repeat cards
+   Slightly smaller than the story version to fit poem-side scale.
+   ============================================================ */
+.craft-stat {
+  --stat-color: var(--accent);
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  padding: 0.45rem 0.65rem 0.5rem;
+  margin: 0.25rem 0 0.65rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--stat-color) 32%, var(--border));
+  background: color-mix(in srgb, var(--stat-color) 5%, var(--bg));
+}
+
+.craft-stat--good { --stat-color: #16a34a; }
+.craft-stat--warn { --stat-color: #d97706; }
+.craft-stat--info { --stat-color: var(--accent); }
+
+.craft-stat-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--stat-color) 18%, transparent);
+  color: var(--stat-color);
+}
+
+.craft-stat-icon-svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.craft-stat-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.craft-stat-metric {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-self: end;
+  line-height: 1.05;
+  color: var(--stat-color);
+}
+
+.craft-stat-metric-num {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.craft-stat-metric-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--stat-color) 80%, var(--muted));
+  margin-top: 0.05rem;
+}
+
+.craft-stat-progress {
+  grid-column: 1 / -1;
+  position: relative;
+  display: block;
+  height: 3px;
+  width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--stat-color) 14%, transparent);
+  overflow: hidden;
+}
+
+.craft-stat-progress::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: var(--craft-stat-pct, 0%);
+  background: color-mix(in srgb, var(--stat-color) 75%, transparent);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+/* Dismiss "×" button on repeat cards. */
+.craft-cluster-reject {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 0.35rem;
+  margin-left: auto;
+  cursor: pointer;
+  border-radius: 999px;
+  opacity: 0.55;
+  transition: opacity 0.13s, color 0.13s, background 0.13s;
+}
+
+.craft-cluster-reject:hover {
+  opacity: 1;
+  color: #d95f5f;
+  background: color-mix(in srgb, #d95f5f 12%, transparent);
+}
+
+.rep-card .craft-cluster-reject {
+  margin-left: auto;
+}
+
+/* "Show N hidden" restore link shown below the word list when ignores exist. */
+.craft-restore-link {
+  display: inline-block;
+  margin-top: 0.55rem;
+  padding: 0.16rem 0.5rem;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--accent) 85%, var(--fg));
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.craft-restore-link:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: var(--accent);
+}
+
+/* ============================================================
    Snapshots panel — clean visual rework
    ============================================================ */
 

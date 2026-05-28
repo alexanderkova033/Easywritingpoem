@@ -80,3 +80,43 @@ export function highlightInLine(
   }
   return out;
 }
+
+/**
+ * Trim a long line down to a short window of context around the first
+ * match of `re`. For poetry, most lines are short and pass through untouched —
+ * the crop only kicks in for the rare long line so cards stay compact.
+ */
+export function cropAroundMatch(
+  lineText: string,
+  match: string | RegExp,
+  context = 28,
+): string {
+  if (!lineText) return "";
+  if (lineText.length <= context * 2 + 30) return lineText;
+  const source = typeof match === "string" ? escapeRegex(match) : match.source;
+  const flags = typeof match === "string" ? "i" : match.flags.replace(/g/g, "");
+  let re: RegExp;
+  try {
+    re = new RegExp(source, flags);
+  } catch {
+    return lineText;
+  }
+  const m = re.exec(lineText);
+  if (!m) return lineText;
+  const matchStart = m.index;
+  const matchEnd = matchStart + m[0].length;
+  let from = Math.max(0, matchStart - context);
+  let to = Math.min(lineText.length, matchEnd + context);
+  if (from > 0) {
+    const ws = lineText.slice(from, matchStart).search(/\s\S/);
+    if (ws >= 0) from = from + ws + 1;
+  }
+  if (to < lineText.length) {
+    const tail = lineText.slice(matchEnd, to);
+    const lastWs = tail.lastIndexOf(" ");
+    if (lastWs >= 0) to = matchEnd + lastWs;
+  }
+  const prefix = from > 0 ? "…" : "";
+  const suffix = to < lineText.length ? "…" : "";
+  return `${prefix}${lineText.slice(from, to)}${suffix}`;
+}

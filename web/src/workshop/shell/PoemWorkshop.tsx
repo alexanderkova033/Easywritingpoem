@@ -551,10 +551,24 @@ export function PoemWorkshop() {
   const [peekLine, setPeekLine] = useState<number | null>(null);
   const [peekBump, setPeekBump] = useState(0);
 
+  const hoverPeekClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /** Scroll a line into view without moving the cursor. */
-  const peekToLine = useCallback((line: number) => {
+  const peekToLine = useCallback((line: number, _word?: string) => {
     setPeekLine(line);
     setPeekBump((n) => n + 1);
+    if (hoverPeekClearTimer.current) {
+      clearTimeout(hoverPeekClearTimer.current);
+      hoverPeekClearTimer.current = null;
+    }
+  }, []);
+
+  /** Debounced hover-leave so sliding from one chip to the next doesn't flicker. */
+  const clearHoverPeek = useCallback(() => {
+    if (hoverPeekClearTimer.current) clearTimeout(hoverPeekClearTimer.current);
+    hoverPeekClearTimer.current = setTimeout(() => {
+      hoverPeekClearTimer.current = null;
+    }, 140);
   }, []);
 
   /**
@@ -2197,6 +2211,9 @@ export function PoemWorkshop() {
             stressLexiconReady={m.stressLexiconReady}
             stressLexiconErr={m.stressLexiconErr}
             heavyToolsStale={m.heavyToolsStale}
+            poemId={m.activePoemId}
+            peekToLine={peekToLine}
+            clearHoverPeek={clearHoverPeek}
             clicheHits={m.clicheHits}
             poemTitle={m.title}
             poemLines={m.lines}
@@ -2261,44 +2278,44 @@ export function PoemWorkshop() {
             </button>
           </div>
         </aside>
-      </main>
 
-      {/* AI Analysis — full-width section below the grid on desktop; hidden on mobile (results flow into the Issues tab) */}
-      <Suspense fallback={null}>
-        <AiAnalysis
-          key={m.activePoemId}
-          poemId={m.activePoemId}
-          title={m.title}
-          lines={m.lines}
-          mainIdea={mainIdea}
-          localAnalysis={localAnalysis}
-          goals={m.goals}
-          onJumpToLine={m.goToLine}
-          onPeekLine={smartPreviewLine}
-          onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
-          onClearHighlight={() => setIssueHighlight(null)}
-          onAnalysisDone={(issues, score) => {
-            handleVisibleIssuesChange(issues);
-            m.setLastAiScore(score);
-            requestAnimationFrame(() => {
-              const panel = toolsPanelRef.current;
-              if (!panel) return;
-              const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
-              if (resultsEl) {
-                const panelRect = panel.getBoundingClientRect();
-                const elRect = resultsEl.getBoundingClientRect();
-                panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
-              }
-            });
-          }}
-          onVisibleIssuesChange={handleVisibleIssuesChange}
-          onResultChange={setAiResult}
-          onApplyLine={m.applyLineRewrite}
-          onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
-          onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
-          onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
-        />
-      </Suspense>
+        {/* AI Analysis — second row of the workshop grid, spans editor+tools columns so the rail can stay beside it on desktop. Hidden on mobile (results flow into the Issues tab). */}
+        <Suspense fallback={null}>
+          <AiAnalysis
+            key={m.activePoemId}
+            poemId={m.activePoemId}
+            title={m.title}
+            lines={m.lines}
+            mainIdea={mainIdea}
+            localAnalysis={localAnalysis}
+            goals={m.goals}
+            onJumpToLine={m.goToLine}
+            onPeekLine={smartPreviewLine}
+            onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+            onClearHighlight={() => setIssueHighlight(null)}
+            onAnalysisDone={(issues, score) => {
+              handleVisibleIssuesChange(issues);
+              m.setLastAiScore(score);
+              requestAnimationFrame(() => {
+                const panel = toolsPanelRef.current;
+                if (!panel) return;
+                const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
+                if (resultsEl) {
+                  const panelRect = panel.getBoundingClientRect();
+                  const elRect = resultsEl.getBoundingClientRect();
+                  panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
+                }
+              });
+            }}
+            onVisibleIssuesChange={handleVisibleIssuesChange}
+            onResultChange={setAiResult}
+            onApplyLine={m.applyLineRewrite}
+            onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
+            onOpenIssueAtLineRef={(fn) => { openIssueAtLineRef.current = fn; }}
+            onSwitchTabRef={(fn) => { aiSwitchTabRef.current = fn; }}
+          />
+        </Suspense>
+      </main>
 
       <MobileActionBar
         isFocusMode={isFocusMode}
