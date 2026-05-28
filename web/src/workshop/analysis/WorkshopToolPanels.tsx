@@ -56,6 +56,7 @@ export interface WorkshopToolPanelsProps {
   spellMode: SpellMode;
   onSpellModeChange: (mode: SpellMode) => void;
   goToLine: (line1Based: number) => void;
+  goToWord: (line1Based: number, startCol: number, endCol: number) => void;
   goToLineEnd: (line1Based: number) => void;
   goToSpellHitAt: (hit: SpellHit) => void;
   cycleSpellHit: (delta: number) => void;
@@ -125,7 +126,7 @@ export interface WorkshopToolPanelsProps {
   onSetStressOverride: (word: string, pattern: string) => void;
   onRemoveStressOverride: (word: string) => void;
   onEchoHighlightsChange?: (
-    highlights: { line: number; start: number; end: number; colorKey: string; color?: string; label?: string }[] | null,
+    highlights: { line: number; start: number; end: number; colorKey: string; color?: string }[] | null,
   ) => void;
   onLineVowelTintsChange?: (
     tints: { line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }[] | null,
@@ -309,6 +310,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           stressLexiconReady={props.stressLexiconReady}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
+          goToWord={props.goToWord}
           onEchoHighlightsChange={props.onEchoHighlightsChange}
           onLineVowelTintsChange={props.onLineVowelTintsChange}
           onFlowMarkersChange={props.onFlowMarkersChange}

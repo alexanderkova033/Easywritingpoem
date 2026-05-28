@@ -388,22 +388,6 @@
 .cm-echo-plosive      { background: color-mix(in srgb, #d2745d 38%, transparent); border-bottom-color: #d2745d; }
 .cm-echo-liquid       { background: color-mix(in srgb, #8fb480 38%, transparent); border-bottom-color: #8fb480; }
 
-/* Technique label — appears next to the first member of each echo when toggle is on. */
-html.show-echo-technique .cm-echo[data-tech]::after {
-  content: " " attr(data-tech);
-  font-size: 0.58em;
-  font-style: italic;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  margin-left: 0.2em;
-  padding: 0 0.3em;
-  border-radius: 3px;
-  color: var(--text);
-  background: color-mix(in srgb, var(--bg, #fff) 80%, transparent);
-  vertical-align: super;
-  white-space: nowrap;
-  opacity: 0.85;
-}
 
 /* Active card in the panel — slightly raised + accented */
 .sound-echo-card.is-active {

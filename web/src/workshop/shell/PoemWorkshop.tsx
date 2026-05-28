@@ -84,6 +84,7 @@ import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
 import { useManualStressOverrides } from "@/workshop/meter/stress-storage";
+import { wordPatternsForLine } from "@/workshop/meter/meter-hints";
 import { useGlobalKeyboardShortcuts } from "./hooks/useGlobalKeyboardShortcuts";
 import { ExportModal } from "./ExportModal";
 import { ShortcutsModal } from "./ShortcutsModal";
@@ -290,7 +291,7 @@ export function PoemWorkshop() {
   const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
   const [echoHighlights, setEchoHighlights] = useState<
-    Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }> | null
+    Array<{ line: number; start: number; end: number; colorKey: string; color?: string }> | null
   >(null);
   const [lineVowelTints, setLineVowelTints] = useState<
     Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }> | null
@@ -298,6 +299,28 @@ export function PoemWorkshop() {
   const [flowMarkers, setFlowMarkers] = useState<
     Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }> | null
   >(null);
+
+  // Scansion marks rendered above each line in the editor when the Stress &
+  // meter tab is active. Reuses wordPatternsForLine so the per-word grouping
+  // matches what MeterPanel renders in its scansion view.
+  const meterOverlay = useMemo(() => {
+    if (m.toolTab !== "meter") return null;
+    const hints = m.meterHints;
+    if (!hints || hints.length === 0) return null;
+    const out: Array<{ line: number; segments: Array<{ word: string; pattern: string }> }> = [];
+    for (const hint of hints) {
+      if (!hint.stressPattern) continue;
+      const lineText = m.lines[hint.lineNumber - 1] ?? "";
+      if (!lineText.trim()) continue;
+      const segs = wordPatternsForLine(lineText, m.stressLexicon, manualStress.overrides);
+      out.push({
+        line: hint.lineNumber,
+        segments: segs.map((s) => ({ word: s.word, pattern: s.pattern })),
+      });
+    }
+    return out;
+  }, [m.toolTab, m.meterHints, m.lines, m.stressLexicon, manualStress.overrides]);
+
   const rhymeBumpRef = useRef(0);
 
   const baseRhymeEndHighlights = useMemo(() => {
@@ -1802,6 +1825,7 @@ export function PoemWorkshop() {
                       echoHighlights={m.toolTab === "echoes" ? echoHighlights ?? undefined : undefined}
                       lineVowelTints={m.toolTab === "echoes" ? lineVowelTints ?? undefined : undefined}
                       flowMarkers={m.toolTab === "echoes" ? flowMarkers ?? undefined : undefined}
+                      meterOverlay={meterOverlay}
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
                       showLineSyllables={showLineSyllables}
@@ -2135,6 +2159,7 @@ export function PoemWorkshop() {
             spellMode={m.spellMode}
             onSpellModeChange={m.setSpellMode}
             goToLine={m.goToLine}
+            goToWord={m.goToWord}
             goToLineEnd={m.goToLineEnd}
             goToSpellHitAt={m.goToSpellHitAt}
             cycleSpellHit={m.cycleSpellHit}

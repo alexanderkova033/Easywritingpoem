@@ -583,8 +583,74 @@ const flowMarkerField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Meter scansion overlay (Stress & meter tab) ---- //
+class MeterScansionWidget extends WidgetType {
+  constructor(readonly segments: ReadonlyArray<{ word: string; pattern: string }>) { super(); }
+  eq(o: MeterScansionWidget) {
+    if (o.segments.length !== this.segments.length) return false;
+    for (let i = 0; i < this.segments.length; i++) {
+      if (o.segments[i].pattern !== this.segments[i].pattern) return false;
+      if (o.segments[i].word !== this.segments[i].word) return false;
+    }
+    return true;
+  }
+  toDOM() {
+    const el = document.createElement("div");
+    el.className = "cm-meter-scansion";
+    el.setAttribute("aria-hidden", "true");
+    for (const seg of this.segments) {
+      if (!seg.pattern) continue;
+      const group = document.createElement("span");
+      group.className = "cm-meter-word-marks";
+      for (const ch of seg.pattern) {
+        const mk = document.createElement("span");
+        mk.className = `cm-meter-mark${ch === "/" ? " is-stress" : ""}`;
+        mk.textContent = ch === "/" ? "¯" : "˘";
+        group.append(mk);
+      }
+      el.append(group);
+    }
+    return el;
+  }
+  ignoreEvent() { return true; }
+}
+
+const setMeterOverlay = StateEffect.define<Array<{ line: number; segments: Array<{ word: string; pattern: string }> }>>();
+const clearMeterOverlay = StateEffect.define<void>();
+
+const meterOverlayField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(clearMeterOverlay)) { next = Decoration.none; }
+      if (e.is(setMeterOverlay)) {
+        const decos: Range<Decoration>[] = [];
+        const doc = tr.state.doc;
+        for (const entry of e.value) {
+          if (entry.line < 1 || entry.line > doc.lines) continue;
+          const hasAny = entry.segments.some((s) => s.pattern);
+          if (!hasAny) continue;
+          const docLine = doc.line(entry.line);
+          decos.push(
+            Decoration.widget({
+              widget: new MeterScansionWidget(entry.segments),
+              block: true,
+              side: -1,
+            }).range(docLine.from),
+          );
+        }
+        decos.sort((a, b) => a.from - b.from);
+        try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
+      }
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 // ---- Sound-echo highlights (alliteration/assonance/…) ---- //
-const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }>>();
+const setEchoHighlights = StateEffect.define<Array<{ line: number; start: number; end: number; colorKey: string; color?: string }>>();
 const clearEchoHighlights = StateEffect.define<void>();
 
 const echoHighlightField = StateField.define<DecorationSet>({
@@ -597,7 +663,7 @@ const echoHighlightField = StateField.define<DecorationSet>({
         const decos: Range<Decoration>[] = [];
         const doc = tr.state.doc;
         const seen = new Set<string>();
-        for (const { line, start, end, colorKey, color, label } of e.value) {
+        for (const { line, start, end, colorKey, color } of e.value) {
           if (line < 1 || line > doc.lines) continue;
           const docLine = doc.line(line);
           const from = docLine.from + start;
@@ -607,11 +673,9 @@ const echoHighlightField = StateField.define<DecorationSet>({
           if (seen.has(k)) continue;
           seen.add(k);
           const safe = /^[a-z]+$/.test(colorKey) ? colorKey : "x";
-          const attrs: Record<string, string> = {};
-          if (color) {
-            attrs.style = `background-color: color-mix(in srgb, ${color} 38%, transparent); border-bottom-color: ${color};`;
-          }
-          if (label) attrs["data-tech"] = label;
+          const attrs: Record<string, string> = color
+            ? { style: `background-color: color-mix(in srgb, ${color} 38%, transparent); border-bottom-color: ${color};` }
+            : {};
           decos.push(
             Decoration.mark({
               class: `cm-echo cm-echo-${safe}`,
@@ -717,11 +781,13 @@ export interface PoemBodyEditorProps {
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
   /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
-  echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string; color?: string; label?: string }>;
+  echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string; color?: string }>;
   /** Line-level vowel tints (Vowel music subtab). */
   lineVowelTints?: Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }>;
   /** End-stop glyphs + caesura marks (Pause & flow subtab). */
   flowMarkers?: Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }>;
+  /** Per-line scansion marks rendered above each line (Stress & meter tab). */
+  meterOverlay?: Array<{ line: number; segments: Array<{ word: string; pattern: string }> }> | null;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
   rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */
@@ -924,6 +990,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     try { view.dispatch({ effects: setFlowMarkers.of(fm) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.flowMarkers]);
 
+  // Meter scansion overlay (Stress & meter tab)
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const mo = props.meterOverlay;
+    if (!mo || mo.length === 0) {
+      try { view.dispatch({ effects: clearMeterOverlay.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try { view.dispatch({ effects: setMeterOverlay.of(mo) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.meterOverlay]);
+
   // Rhyme scheme letters in gutter
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -1071,6 +1149,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       echoHighlightField,
       lineVowelTintField,
       flowMarkerField,
+      meterOverlayField,
       diffOverlayField,
       applyRewriteKeymap,
       ...lineFocusExtension,

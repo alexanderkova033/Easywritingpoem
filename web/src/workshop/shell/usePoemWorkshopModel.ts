@@ -488,6 +488,22 @@ export function usePoemWorkshopModel(
     focusLineInEditor(view, line1Based);
   }, []);
 
+  const goToWord = useCallback(
+    (line1Based: number, startCol: number, endCol: number) => {
+      const view = editorViewRef.current;
+      if (!view) return;
+      setJumpLine(line1Based);
+      setJumpBump((n) => n + 1);
+      const doc = view.state.doc;
+      if (line1Based < 1 || line1Based > doc.lines) return;
+      const docLine = doc.line(line1Based);
+      const from = Math.max(docLine.from, docLine.from + Math.max(0, startCol));
+      const to = Math.min(docLine.to, docLine.from + Math.max(startCol, endCol));
+      focusCharacterRangeInEditor(view, from, to);
+    },
+    [],
+  );
+
   const goToLineEnd = useCallback((line1Based: number) => {
     const view = editorViewRef.current;
     if (!view) return;
@@ -1162,6 +1178,7 @@ export function usePoemWorkshopModel(
     goalEvaluation,
     publication,
     goToLine,
+    goToWord,
     goToLineEnd,
     goToSpellHit,
     goToSpellHitAt,

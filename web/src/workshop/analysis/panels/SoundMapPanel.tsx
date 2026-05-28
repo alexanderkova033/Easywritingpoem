@@ -20,8 +20,6 @@ export interface EditorEchoHighlight {
   colorKey: string;
   /** Per-echo color (CSS color string). Overrides the class-based color when set. */
   color?: string;
-  /** Technique label (e.g. "alliteration") — shown next to the first member when present. */
-  label?: string;
 }
 
 /** Deterministic per-echo hue from class+key so the same echo always has the same color. */
@@ -52,6 +50,7 @@ export interface SoundMapPanelProps {
   stressLexiconReady: boolean;
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
+  goToWord?: (line1Based: number, startCol: number, endCol: number) => void;
   /** When provided, the panel reports which words to highlight in the editor. */
   onEchoHighlightsChange?: (highlights: EditorEchoHighlight[] | null) => void;
   onLineVowelTintsChange?: (tints: EditorLineVowelTint[] | null) => void;
@@ -90,13 +89,13 @@ const ALL_CLASSES: SoundClass[] = [
 
 function EchoCard({
   echo,
-  goToLine,
+  onMemberClick,
   echoId,
   isActive,
   onHoverChange,
 }: {
   echo: SoundEcho;
-  goToLine: (line: number) => void;
+  onMemberClick: (m: { lineNumber: number; tokenIndex: number; word: string }) => void;
   echoId: string;
   isActive: boolean;
   onHoverChange: (id: string | null) => void;
@@ -133,8 +132,8 @@ function EchoCard({
             key={`${m.lineNumber}-${i}`}
             type="button"
             className="sound-echo-chip"
-            onClick={() => goToLine(m.lineNumber)}
-            title={`Jump to line ${m.lineNumber}`}
+            onClick={() => onMemberClick(m)}
+            title={`Select "${m.word}" on line ${m.lineNumber}`}
             style={{ borderColor: tint }}
           >
             <span className="sound-echo-chip-word">{m.word}</span>
@@ -161,6 +160,7 @@ export function SoundMapPanel({
   stressLexiconReady,
   heavyToolsStale,
   goToLine,
+  goToWord,
   onEchoHighlightsChange,
   onLineVowelTintsChange,
   onFlowMarkersChange,
@@ -170,16 +170,7 @@ export function SoundMapPanel({
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
-  const [showTechnique, setShowTechnique] = useState(false);
   const [pinHighlights, setPinHighlights] = useState(false);
-
-  useEffect(() => {
-    if (showTechnique) {
-      document.documentElement.classList.add("show-echo-technique");
-      return () => document.documentElement.classList.remove("show-echo-technique");
-    }
-    document.documentElement.classList.remove("show-echo-technique");
-  }, [showTechnique]);
 
   const lineSounds = useMemo(
     () => buildLineSounds(poemLines, stressLexicon),
@@ -256,13 +247,7 @@ export function SoundMapPanel({
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
     const color = echoColor(echo);
-    const labelText = SOUND_CLASS_LABELS[echo.className].toLowerCase();
-    // Sort so the "first" member (gets the label) is reading-order earliest.
-    const sorted = [...echo.members].sort(
-      (a, b) => a.lineNumber - b.lineNumber || a.tokenIndex - b.tokenIndex,
-    );
-    for (let i = 0; i < sorted.length; i++) {
-      const m = sorted[i]!;
+    for (const m of echo.members) {
       const ls = lineSoundsByLine.get(m.lineNumber);
       if (!ls) continue;
       const tok = ls.tokens[m.tokenIndex];
@@ -273,9 +258,6 @@ export function SoundMapPanel({
         end: tok.end,
         colorKey: echo.className,
         color,
-        // Label only on the first member of this echo so we don't repeat
-        // "alliteration" beside every word.
-        label: i === 0 ? labelText : undefined,
       });
     }
     return out;
@@ -409,11 +391,6 @@ export function SoundMapPanel({
       {/* ── Echoes ── */}
       {subTab === "echoes" && (
         <>
-          <p className="muted small sound-help">
-            Hover a card to spotlight its words. Turn on <strong>Highlight in poem</strong>
-            to keep every echo visible while you read.
-          </p>
-
           {echoes.length > 0 && (
             <div className="sound-toggles" role="group" aria-label="Editor highlight options">
               <button
@@ -425,16 +402,6 @@ export function SoundMapPanel({
               >
                 <span className="sound-toggle-dot" aria-hidden />
                 Highlight in poem
-              </button>
-              <button
-                type="button"
-                className={`sound-toggle${showTechnique ? " is-active" : ""}`}
-                onClick={() => setShowTechnique((v) => !v)}
-                aria-pressed={showTechnique}
-                title="Add the technique name next to the first word of each echo"
-              >
-                <span className="sound-toggle-dot" aria-hidden />
-                Show technique
               </button>
             </div>
           )}
@@ -519,7 +486,15 @@ export function SoundMapPanel({
                           <EchoCard
                             key={id}
                             echo={e}
-                            goToLine={goToLine}
+                            onMemberClick={(m) => {
+                              const ls = lineSoundsByLine.get(m.lineNumber);
+                              const tok = ls?.tokens[m.tokenIndex];
+                              if (tok && goToWord) {
+                                goToWord(m.lineNumber, tok.start, tok.end);
+                              } else {
+                                goToLine(m.lineNumber);
+                              }
+                            }}
                             echoId={id}
                             isActive={hoveredEchoId === id}
                             onHoverChange={setHoveredEchoId}
@@ -538,11 +513,6 @@ export function SoundMapPanel({
       {/* ── Vowel music ── */}
       {subTab === "vowels" && (
         <>
-          <p className="muted small sound-help">
-            Each line is tinted in the poem by its dominant vowel. Bright (ee, ay) feels
-            sharp; dark (oo, oh) feels weighted. Hover a stripe to spotlight that line.
-          </p>
-
           {usedVowels.length === 0 ? (
             <EmptyState title="Not enough words yet">
               <p className="muted small">Write a few words and the shape will appear.</p>
@@ -613,13 +583,6 @@ export function SoundMapPanel({
       {/* ── Pause & flow ── */}
       {subTab === "flow" && (
         <>
-          <p className="muted small sound-help">
-            How each line breaks. <span className="sound-glyph-hard">■</span> stops,
-            <span className="sound-glyph-soft"> · </span>pauses,
-            <span className="sound-glyph-open"> ↵ </span>spills into the next.
-            <span className="sound-glyph-cae"> ‖ </span> marks a mid-line pause — shown in the poem.
-          </p>
-
           {pauseStats.total === 0 ? (
             <EmptyState title="Not enough text yet">
               <p className="muted small">Add some lines to see how they break and flow.</p>

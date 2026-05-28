@@ -187,7 +187,6 @@ export function AnalysisResults({
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
   const [internalTab, setInternalTab] = useState<AnalysisTab>("overview");
-  const [personalExpanded, setPersonalExpanded] = useState(false);
   const voiceFingerprint = useMemo(
     () => computeVoiceFingerprint(),
     [result.meta.analyzedAt],
@@ -495,17 +494,11 @@ export function AnalysisResults({
           {(result.personal_feedback || result.overall_feedback) && (
             <div className="ai-feedback-blocks">
               {result.personal_feedback && (
-                <div className={`ai-feedback-card ai-feedback-personal${personalExpanded ? " is-expanded" : ""}`}>
+                <div className="ai-feedback-card ai-feedback-personal is-expanded">
                   <span className="ai-feedback-label">For you</span>
-                  <p className={`ai-feedback-text${personalExpanded ? "" : " is-clamped"}`}>
+                  <p className="ai-feedback-text">
                     {result.personal_feedback}
                   </p>
-                  {result.personal_feedback.length > 90 && (
-                    <button type="button" className="ai-feedback-toggle"
-                      onClick={() => setPersonalExpanded((v) => !v)}>
-                      {personalExpanded ? "Show less" : "Read more"}
-                    </button>
-                  )}
                 </div>
               )}
               {result.overall_feedback && (

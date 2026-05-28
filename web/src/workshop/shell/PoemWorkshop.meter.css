@@ -211,3 +211,35 @@
 .meter-scansion-word-text {
   font-size: 0.95rem;
 }
+
+/* ── Editor scansion overlay (block widget above each line) ───────────────── */
+/* Shown when the Stress & meter tab is open. One row per non-empty line. */
+.cm-meter-scansion {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.55rem;
+  padding: 0.05rem 0.2rem 0;
+  font-family: var(--font-metric, monospace);
+  line-height: 1;
+  color: var(--muted);
+  opacity: 0.7;
+  user-select: none;
+  pointer-events: none;
+}
+.cm-meter-word-marks {
+  display: inline-flex;
+  gap: 0.18em;
+}
+.cm-meter-mark {
+  font-size: 0.78em;
+  min-width: 0.55em;
+  text-align: center;
+  opacity: 0.55;
+}
+.cm-meter-mark.is-stress {
+  color: var(--text);
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+.poem-workshop.is-focus-mode .cm-meter-scansion { opacity: 0.18; }

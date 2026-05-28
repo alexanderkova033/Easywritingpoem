@@ -396,8 +396,14 @@ export function findEchoes(lines: LineSound[]): SoundEcho[] {
     echoes.push({ className: "alliteration", key: initial, members, minGap, span });
   }
   for (const [vowel, members] of assonByVowel.entries()) {
-    if (members.length < 3) continue;
+    // Assonance is over-eager because vowels are common — raise the bar.
+    // 1. At least 5 members so we filter incidental repetition.
+    // 2. Members must cluster (avg gap small) — assonance only lands when the
+    //    vowel returns within a short window.
+    if (members.length < 5) continue;
     const { minGap, span } = gapAndSpan(members);
+    const avgGap = span / Math.max(1, members.length - 1);
+    if (avgGap > 2.5) continue;
     echoes.push({ className: "assonance", key: VOWEL_FRIENDLY_LABEL[vowel] ?? vowel, members, minGap, span });
   }
   if (plosives.length >= 4) {
