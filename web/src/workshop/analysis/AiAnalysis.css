@@ -13,11 +13,14 @@
   margin-inline: auto;
 }
 
-/* When inside the workshop grid (desktop), drop into row 2 spanning the FULL grid width so
-   the section is page-centered (not centered within just the editor+tools columns). */
+/* When inside the workshop grid (desktop), span the full grid width and center the section
+   within it using justify-self + an explicit width cap. The grid cell would otherwise be
+   constrained to a single column track and margin-inline auto would not center reliably. */
 @media (min-width: 900px) {
   .workshop-grid > .ai-analysis-section {
     grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 78rem);
   }
 }
 

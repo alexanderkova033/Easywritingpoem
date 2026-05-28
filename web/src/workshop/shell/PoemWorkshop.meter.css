@@ -213,13 +213,14 @@
 }
 
 /* ── Editor meter overlay (vowel-anchored scansion marks) ─────────────────── */
-/* Standard English scansion notation: a horizontal bar (macron, ¯) marks a
-   stressed syllable; a small u-curve (breve, ˘) marks an unstressed one.
-   Drawn with CSS rather than font glyphs so they stay crisp and the two
-   shapes are unambiguous at any size. Anchored above each vowel by wrapping
-   it with a Decoration.mark so the poem text isn't shifted. */
+/* Visual metaphor: heavy beat = thick coloured bar; light beat = small soft
+   dot. Sizes and weights mirror the audio — a stressed syllable should look
+   noticeably heavier than its neighbours at a glance, with no legend needed.
+   Drawn with CSS so the shapes stay crisp at any size. Anchored above each
+   vowel via a Decoration.mark so the poem text itself isn't shifted. */
+
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.32em;
+  padding-top: 0.62em;
 }
 
 .cm-meter-syl {
@@ -232,30 +233,84 @@
   left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
-  transition: opacity 0.18s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  animation: cm-meter-fade-in 0.32s ease both;
 }
 
-/* Stressed: solid horizontal bar (macron) in the accent hue. */
+@keyframes cm-meter-fade-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(2px); }
+  to   { opacity: var(--cm-meter-target-opacity, 1); transform: translateX(-50%) translateY(0); }
+}
+
+/* Stressed (heavy beat): bold rounded bar in the accent hue, with a soft
+   halo so it reads as "loud" even against busy text. */
 .cm-meter-syl-stress::before {
-  top: -0.05em;
-  width: 0.5em;
-  height: 0.13em;
+  --cm-meter-target-opacity: 0.95;
+  top: -0.48em;
+  width: 0.66em;
+  height: 0.18em;
   background: var(--accent);
-  border-radius: 1px;
-  opacity: 0.9;
+  border-radius: 2px;
+  opacity: 0.95;
+  box-shadow:
+    0 0 0.18em color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 0 0.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
-/* Unstressed: open u-curve (breve) in muted ink — drawn with borders so
-   the shape is unmistakably different from the bar above. */
+/* Unstressed (light beat): a small muted dot — quieter than the bar,
+   easy to skim past, which is how the syllable should sound. */
 .cm-meter-syl-unstress::before {
-  top: -0.08em;
-  width: 0.34em;
-  height: 0.2em;
-  border: 1.4px solid color-mix(in srgb, var(--muted) 80%, transparent);
-  border-top: 0;
-  border-radius: 0 0 50% 50% / 0 0 100% 100%;
-  opacity: 0.75;
+  --cm-meter-target-opacity: 0.62;
+  top: -0.42em;
+  width: 0.26em;
+  height: 0.26em;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  opacity: 0.62;
 }
 
-.poem-workshop.is-focus-mode .cm-meter-syl-stress::before,
-.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before { opacity: 0.2; }
+/* Hovering a metered line brings the marks forward so they feel
+   interactive even though they're decoration-only. */
+.cm-line:has(.cm-meter-syl):hover .cm-meter-syl-stress::before {
+  opacity: 1;
+  box-shadow:
+    0 0 0.28em color-mix(in srgb, var(--accent) 50%, transparent),
+    0 0 0 0.5px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.cm-line:has(.cm-meter-syl):hover .cm-meter-syl-unstress::before {
+  opacity: 0.85;
+  background: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+
+/* The active line gets a touch more presence so the writer sees the
+   rhythm of the line they're currently working on. */
+.cm-activeLine .cm-meter-syl-stress::before {
+  opacity: 1;
+}
+.cm-activeLine .cm-meter-syl-unstress::before {
+  opacity: 0.78;
+}
+
+/* Focus mode keeps marks visible but recessive, matching the dimmed
+   surroundings rather than pulling the eye away from the active line. */
+.poem-workshop.is-focus-mode .cm-meter-syl-stress::before {
+  opacity: 0.28;
+  box-shadow: none;
+}
+.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before {
+  opacity: 0.22;
+}
+.poem-workshop.is-focus-mode .cm-activeLine .cm-meter-syl-stress::before {
+  opacity: 0.95;
+  box-shadow:
+    0 0 0.18em color-mix(in srgb, var(--accent) 35%, transparent),
+    0 0 0 0.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.poem-workshop.is-focus-mode .cm-activeLine .cm-meter-syl-unstress::before {
+  opacity: 0.62;
+}
+
+/* Respect reduced-motion: skip the entrance animation entirely. */
+@media (prefers-reduced-motion: reduce) {
+  .cm-meter-syl::before { animation: none; }
+}
