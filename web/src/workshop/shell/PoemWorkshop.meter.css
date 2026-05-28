@@ -218,7 +218,7 @@
    A small padding-top reserves space inside the line's own box so the dots
    don't spill into the previous line. */
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.32em;
+  padding-top: 0.24em;
 }
 
 .cm-meter-syl {
@@ -237,16 +237,17 @@
 
 /* Stressed: small filled dot in the accent hue, softened by alpha. */
 .cm-meter-syl-stress::before {
-  top: -0.18em;
+  top: -0.04em;
   width: 0.3em;
   height: 0.3em;
   background: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 /* Unstressed: tiny muted dot — kept simple at small sizes, with a clear
-   size + colour gap so it reads as the weaker beat. */
+   size + colour gap so it reads as the weaker beat. Bottom aligned with the
+   stressed dot so the two sit on a shared baseline above the text. */
 .cm-meter-syl-unstress::before {
-  top: -0.12em;
+  top: 0.12em;
   width: 0.14em;
   height: 0.14em;
   background: color-mix(in srgb, var(--muted) 55%, transparent);

@@ -8,9 +8,18 @@
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));
   overflow: hidden;
   box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
-  max-width: 72rem;
+  max-width: 78rem;
   width: 100%;
-  margin-inline: auto;
+  /* Offset left margin by the workshop rail's column so the rail above visually flows into the gutter beside this section */
+  margin-left: calc(var(--rail-col, 56px) + 1.45rem);
+  margin-right: auto;
+}
+
+/* On narrower viewports (below the 3-column workshop breakpoint), drop the rail offset and center */
+@media (max-width: 899px) {
+  .ai-analysis-section {
+    margin-left: auto;
+  }
 }
 
 /* Collapsible toggle button */
