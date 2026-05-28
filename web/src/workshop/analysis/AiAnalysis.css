@@ -13,11 +13,11 @@
   margin-inline: auto;
 }
 
-/* When inside the workshop grid (desktop), drop into row 2 spanning the editor+tools columns,
-   so the sticky workshop-rail in column 1 stays visible beside it while scrolling. */
+/* When inside the workshop grid (desktop), drop into row 2 spanning the FULL grid width so
+   the section is page-centered (not centered within just the editor+tools columns). */
 @media (min-width: 900px) {
   .workshop-grid > .ai-analysis-section {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
   }
 }
 

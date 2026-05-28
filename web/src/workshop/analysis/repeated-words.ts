@@ -1,4 +1,4 @@
-import { normalizeWordToken, wordSpansInLine, wordsInLine } from "@/workshop/meter/tokenize";
+import { normalizeWordToken, wordSpansInLine } from "@/workshop/meter/tokenize";
 
 const STOP = new Set(
   [
@@ -34,6 +34,13 @@ export interface RepeatedWord {
   variants: string[];
 }
 
+export interface PhraseOccurrence {
+  line: number;
+  start: number;
+  end: number;
+  lineText: string;
+}
+
 export interface PhraseRepeat {
   phrase: string;
   display: string;
@@ -42,6 +49,14 @@ export interface PhraseRepeat {
   lines: number[];
   severity: Severity;
   snippets: Array<{ line: number; text: string }>;
+  occurrences: PhraseOccurrence[];
+}
+
+export interface EdgeOccurrence {
+  line: number;
+  start: number;
+  end: number;
+  lineText: string;
 }
 
 export interface AnaphoraGroup {
@@ -50,6 +65,7 @@ export interface AnaphoraGroup {
   n: number;
   lines: number[];
   snippets: Array<{ line: number; text: string }>;
+  occurrences: EdgeOccurrence[];
 }
 
 export interface RepetitionAnalysis {
@@ -244,15 +260,18 @@ function mergeStems(words: RepeatedWord[]): RepeatedWord[] {
 }
 
 function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
-  type Slot = { line: number; text: string };
+  type Slot = { line: number; text: string; start: number; end: number };
   const bigrams = new Map<string, Slot[]>();
   const trigrams = new Map<string, Slot[]>();
 
   for (let i = 0; i < lines.length; i++) {
-    const ws = wordsInLine(lines[i]!).map(normalizeWordToken).filter(Boolean);
-    for (let j = 0; j + 1 < ws.length; j++) {
-      const a = ws[j]!;
-      const b = ws[j + 1]!;
+    const lineText = lines[i]!;
+    const spans = wordSpansInLine(lineText);
+    const norms = spans.map((s) => normalizeWordToken(s.raw));
+    for (let j = 0; j + 1 < spans.length; j++) {
+      const a = norms[j]!;
+      const b = norms[j + 1]!;
+      if (!a || !b) continue;
       if (STOP.has(a) && STOP.has(b)) continue;
       const key = `${a} ${b}`;
       let arr = bigrams.get(key);
@@ -260,12 +279,18 @@ function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
         arr = [];
         bigrams.set(key, arr);
       }
-      arr.push({ line: i + 1, text: lines[i]! });
+      arr.push({
+        line: i + 1,
+        text: lineText,
+        start: spans[j]!.start,
+        end: spans[j + 1]!.end,
+      });
     }
-    for (let j = 0; j + 2 < ws.length; j++) {
-      const a = ws[j]!;
-      const b = ws[j + 1]!;
-      const c = ws[j + 2]!;
+    for (let j = 0; j + 2 < spans.length; j++) {
+      const a = norms[j]!;
+      const b = norms[j + 1]!;
+      const c = norms[j + 2]!;
+      if (!a || !b || !c) continue;
       if (STOP.has(a) && STOP.has(b) && STOP.has(c)) continue;
       const key = `${a} ${b} ${c}`;
       let arr = trigrams.get(key);
@@ -273,7 +298,12 @@ function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
         arr = [];
         trigrams.set(key, arr);
       }
-      arr.push({ line: i + 1, text: lines[i]! });
+      arr.push({
+        line: i + 1,
+        text: lineText,
+        start: spans[j]!.start,
+        end: spans[j + 2]!.end,
+      });
     }
   }
 
@@ -292,6 +322,7 @@ function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
       lines: lineNums,
       severity: phraseSeverity(slots.length, minGap, 3),
       snippets: dedupeSnippets(slots),
+      occurrences: slotsToPhraseOccurrences(slots),
     });
   }
   for (const [phrase, slots] of bigrams) {
@@ -314,6 +345,7 @@ function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
       lines: lineNums,
       severity: phraseSeverity(slots.length, minGap, 2),
       snippets: dedupeSnippets(slots),
+      occurrences: slotsToPhraseOccurrences(slots),
     });
   }
 
@@ -325,6 +357,14 @@ function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
     return a.phrase.localeCompare(b.phrase);
   });
   return out;
+}
+
+function slotsToPhraseOccurrences(
+  slots: Array<{ line: number; text: string; start: number; end: number }>,
+): PhraseOccurrence[] {
+  return slots
+    .map((s) => ({ line: s.line, start: s.start, end: s.end, lineText: s.text }))
+    .sort((a, b) => a.line - b.line || a.start - b.start);
 }
 
 function uniqLines(slots: Array<{ line: number }>): number[] {
@@ -352,45 +392,63 @@ function findEdgeRepeats(
 ): AnaphoraGroup[] {
   const map = new Map<
     string,
-    { display: string; lines: number[]; snippets: Array<{ line: number; text: string }>; n: number }
+    {
+      display: string;
+      lines: number[];
+      snippets: Array<{ line: number; text: string }>;
+      occurrences: EdgeOccurrence[];
+      n: number;
+    }
   >();
   for (let i = 0; i < lines.length; i++) {
     const text = lines[i]!;
-    const ws = wordsInLine(text);
-    if (ws.length === 0) continue;
+    const spans = wordSpansInLine(text);
+    if (spans.length === 0) continue;
+    const ws = spans.map((s) => s.raw);
     let key1: string;
     let key2: string | null;
     let disp1: string;
     let disp2: string | null = null;
+    let occ1: EdgeOccurrence;
+    let occ2: EdgeOccurrence | null = null;
     if (edge === "start") {
       disp1 = ws[0]!;
       key1 = normalizeWordToken(disp1);
-      if (ws.length >= 2) {
+      occ1 = { line: i + 1, start: spans[0]!.start, end: spans[0]!.end, lineText: text };
+      if (spans.length >= 2) {
         disp2 = `${ws[0]} ${ws[1]}`;
         key2 = `${normalizeWordToken(ws[0]!)} ${normalizeWordToken(ws[1]!)}`;
+        occ2 = { line: i + 1, start: spans[0]!.start, end: spans[1]!.end, lineText: text };
       } else {
         key2 = null;
       }
     } else {
-      disp1 = ws[ws.length - 1]!;
+      const last = spans.length - 1;
+      disp1 = ws[last]!;
       key1 = normalizeWordToken(disp1);
-      if (ws.length >= 2) {
-        disp2 = `${ws[ws.length - 2]} ${ws[ws.length - 1]}`;
-        key2 = `${normalizeWordToken(ws[ws.length - 2]!)} ${normalizeWordToken(ws[ws.length - 1]!)}`;
+      occ1 = { line: i + 1, start: spans[last]!.start, end: spans[last]!.end, lineText: text };
+      if (spans.length >= 2) {
+        disp2 = `${ws[last - 1]} ${ws[last]}`;
+        key2 = `${normalizeWordToken(ws[last - 1]!)} ${normalizeWordToken(ws[last]!)}`;
+        occ2 = { line: i + 1, start: spans[last - 1]!.start, end: spans[last]!.end, lineText: text };
       } else {
         key2 = null;
       }
     }
     if (key1.length >= 2) {
-      const e = map.get(key1) ?? { display: disp1, lines: [], snippets: [], n: 1 };
+      const e =
+        map.get(key1) ?? { display: disp1, lines: [], snippets: [], occurrences: [], n: 1 };
       e.lines.push(i + 1);
       e.snippets.push({ line: i + 1, text });
+      e.occurrences.push(occ1);
       map.set(key1, e);
     }
-    if (key2 && key2.length >= 4) {
-      const e = map.get(key2) ?? { display: disp2!, lines: [], snippets: [], n: 2 };
+    if (key2 && key2.length >= 4 && occ2) {
+      const e =
+        map.get(key2) ?? { display: disp2!, lines: [], snippets: [], occurrences: [], n: 2 };
       e.lines.push(i + 1);
       e.snippets.push({ line: i + 1, text });
+      e.occurrences.push(occ2);
       map.set(key2, e);
     }
   }
@@ -419,6 +477,7 @@ function findEdgeRepeats(
       n: v.n,
       lines: [...v.lines].sort((a, b) => a - b),
       snippets: v.snippets,
+      occurrences: [...v.occurrences].sort((a, b) => a.line - b.line || a.start - b.start),
     });
   }
   out.sort((a, b) => b.lines.length - a.lines.length || b.n - a.n);

@@ -27,7 +27,7 @@ import { GoalsPanel } from "./panels/GoalsPanel";
 import { LinesPanel } from "./panels/LinesPanel";
 import { MeterPanel } from "./panels/MeterPanel";
 import { RhymePanel } from "./panels/RhymePanel";
-import { RepeatPanel } from "./panels/RepeatPanel";
+import { RepeatPanel, type RepeatSubTab } from "./panels/RepeatPanel";
 import { SpellPanel } from "./panels/SpellPanel";
 import { StarredPanel } from "./panels/StarredPanel";
 import { SoundMapPanel } from "./panels/SoundMapPanel";
@@ -104,8 +104,8 @@ export interface WorkshopToolPanelsProps {
   stressLexiconErr: string | null;
   heavyToolsStale: boolean;
   poemId?: string;
-  peekToLine?: (line1Based: number, word?: string) => void;
-  clearHoverPeek?: () => void;
+  repeatSubTab: RepeatSubTab;
+  setRepeatSubTab: (t: RepeatSubTab) => void;
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
@@ -230,8 +230,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           repetition={props.repetition}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
-          peekToLine={props.peekToLine}
-          clearHoverPeek={props.clearHoverPeek}
+          subTab={props.repeatSubTab}
+          setSubTab={props.setRepeatSubTab}
         />
       ) : null}
 

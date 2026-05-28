@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+export type RepeatSubTab = "words" | "phrases" | "patterns";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type {
   RepeatedWord,
@@ -23,8 +24,8 @@ export interface RepeatPanelProps {
   repetition: RepetitionAnalysis;
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
-  peekToLine?: (line1Based: number, word?: string) => void;
-  clearHoverPeek?: () => void;
+  subTab: RepeatSubTab;
+  setSubTab: (t: RepeatSubTab) => void;
 }
 
 export function RepeatPanel({
@@ -34,13 +35,10 @@ export function RepeatPanel({
   repetition,
   heavyToolsStale,
   goToLine,
-  peekToLine,
-  clearHoverPeek,
+  subTab: repeatSubTab,
+  setSubTab: setRepeatSubTab,
 }: RepeatPanelProps) {
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
-  const [repeatSubTab, setRepeatSubTab] = useState<
-    "words" | "phrases" | "patterns"
-  >("words");
   const { ignore, restoreAll, isIgnored, countInCategory } =
     useIgnoredCraftItems(poemId);
   const ignoredCount = countInCategory(IGNORE_CATEGORY);
@@ -189,8 +187,6 @@ export function RepeatPanel({
                   item={r}
                   cardId={`w:${r.word}`}
                   goToLine={goToLine}
-                  peekToLine={peekToLine}
-                  clearHoverPeek={clearHoverPeek}
                   onReject={() => ignore(IGNORE_CATEGORY, r.word)}
                 />
               ))}
@@ -225,8 +221,6 @@ export function RepeatPanel({
                 item={p}
                 cardId={`p${p.n}:${p.phrase}`}
                 goToLine={goToLine}
-                peekToLine={peekToLine}
-                clearHoverPeek={clearHoverPeek}
               />
             ))}
           </ul>
@@ -257,8 +251,6 @@ export function RepeatPanel({
                       cardId={`a${g.n}:${g.prefix}`}
                       edge="start"
                       goToLine={goToLine}
-                      peekToLine={peekToLine}
-                      clearHoverPeek={clearHoverPeek}
                     />
                   ))}
                 </ul>
@@ -277,8 +269,6 @@ export function RepeatPanel({
                       cardId={`e${g.n}:${g.prefix}`}
                       edge="end"
                       goToLine={goToLine}
-                      peekToLine={peekToLine}
-                      clearHoverPeek={clearHoverPeek}
                     />
                   ))}
                 </ul>

@@ -708,6 +708,26 @@ const wordHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// ---- Repeat-tool persistent marks (Repeats panel subtab → editor) ---- //
+// Content depends on the active subtab (words / phrases / patterns). Hue comes
+// from the group's colour index; severity controls intensity. Cleared when the
+// tool closes or the array empties.
+const setRepeatHighlights = StateEffect.define<DecorationSet>();
+const clearRepeatHighlights = StateEffect.define<void>();
+
+const repeatHighlightField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(setRepeatHighlights)) next = e.value;
+      if (e.is(clearRepeatHighlights)) next = Decoration.none;
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 export interface PoemBodyEditorProps {
   value: string;
   /** Increment when `value` was set by the workshop (not from the debounced editor pipeline). */
@@ -750,6 +770,16 @@ export interface PoemBodyEditorProps {
   rhymeEndHighlights?: Array<{ line: number; colorKey: string }>;
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */
   internalRhymes?: Array<{ line: number; ranges: Array<{ start: number; end: number }> }>;
+  /** Repeat-tool highlights — one mark per occurrence of the active Repeats subtab. */
+  repeatHighlights?: Array<{
+    line: number;
+    start: number;
+    end: number;
+    severity: "low" | "med" | "high";
+    kind: "word" | "phrase" | "pattern";
+    groupId: string;
+    colorIndex: number;
+  }>;
   /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
   echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string; color?: string }>;
   /** Line-level vowel tints (Vowel music subtab). */
@@ -923,6 +953,43 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     }
     try { view.dispatch({ effects: setInternalRhymeDecos.of(ir) }); } catch { /* ignore */ }
   }, [props.editorViewRef, props.internalRhymes]);
+
+  // Repeat-tool persistent marks — one tinted span per occurrence of the
+  // active Repeats subtab. Colour comes from `colorIndex`, intensity from
+  // `severity`. Cleared when the Repeats tool closes or the array empties.
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const rh = props.repeatHighlights;
+    if (!rh || rh.length === 0) {
+      try { view.dispatch({ effects: clearRepeatHighlights.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try {
+      const doc = view.state.doc;
+      const lineCount = doc.lines;
+      const decos: Range<Decoration>[] = [];
+      for (const r of rh) {
+        if (r.line < 1 || r.line > lineCount) continue;
+        const line = doc.line(r.line);
+        const lineLen = line.to - line.from;
+        const a = Math.max(0, Math.min(r.start, lineLen));
+        const b = Math.max(a, Math.min(r.end, lineLen));
+        if (b <= a) continue;
+        const colorIdx = ((r.colorIndex % 6) + 6) % 6;
+        const cls =
+          `cm-repeat-mark cm-repeat-mark-${r.severity} cm-repeat-mark-${r.kind} cm-repeat-mark-c${colorIdx}`;
+        decos.push(
+          Decoration.mark({
+            class: cls,
+            attributes: { "data-repeat-group": r.groupId },
+          }).range(line.from + a, line.from + b),
+        );
+      }
+      decos.sort((a, b) => a.from - b.from || a.to - b.to);
+      view.dispatch({ effects: setRepeatHighlights.of(Decoration.set(decos, true)) });
+    } catch { /* ignore */ }
+  }, [props.editorViewRef, props.repeatHighlights]);
 
   // Echo (alliteration/assonance/…) decorations
   useEffect(() => {
@@ -1116,6 +1183,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       wordHighlightField,
       rhymeEndField,
       internalRhymeField,
+      repeatHighlightField,
       echoHighlightField,
       lineVowelTintField,
       flowMarkerField,

@@ -287,6 +287,7 @@ export function PoemWorkshop() {
     () => deriveAiHighlights(m.activePoemId).words,
   );
   const rhymeIgnored = useIgnoredRhymes();
+  const [repeatSubTab, setRepeatSubTab] = useState<"words" | "phrases" | "patterns">("words");
   const [cursorLine, setCursorLine] = useState<number>(1);
   const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
@@ -551,25 +552,82 @@ export function PoemWorkshop() {
   const [peekLine, setPeekLine] = useState<number | null>(null);
   const [peekBump, setPeekBump] = useState(0);
 
-  const hoverPeekClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   /** Scroll a line into view without moving the cursor. */
-  const peekToLine = useCallback((line: number, _word?: string) => {
+  const peekToLine = useCallback((line: number) => {
     setPeekLine(line);
     setPeekBump((n) => n + 1);
-    if (hoverPeekClearTimer.current) {
-      clearTimeout(hoverPeekClearTimer.current);
-      hoverPeekClearTimer.current = null;
-    }
   }, []);
 
-  /** Debounced hover-leave so sliding from one chip to the next doesn't flicker. */
-  const clearHoverPeek = useCallback(() => {
-    if (hoverPeekClearTimer.current) clearTimeout(hoverPeekClearTimer.current);
-    hoverPeekClearTimer.current = setTimeout(() => {
-      hoverPeekClearTimer.current = null;
-    }, 140);
-  }, []);
+  /**
+   * Repeat-tool persistent highlights. Active whenever the Repeats panel is
+   * the visible tool; content mirrors the active subtab (words/phrases/
+   * patterns). Each group (a unique word, phrase, or edge-pattern) gets a
+   * stable colour index assigned in encounter order — since the analyser
+   * sorts by severity descending, high-severity items always claim early
+   * hues and low-severity items reuse them after the palette wraps.
+   */
+  const repeatHighlights = useMemo(() => {
+    if (m.toolTab !== "repeat") return undefined;
+    type Entry = {
+      line: number;
+      start: number;
+      end: number;
+      severity: "low" | "med" | "high";
+      kind: "word" | "phrase" | "pattern";
+      groupId: string;
+      colorIndex: number;
+    };
+    const out: Entry[] = [];
+    const colorMap = new Map<string, number>();
+    const colorFor = (groupId: string) => {
+      let c = colorMap.get(groupId);
+      if (c === undefined) {
+        c = colorMap.size;
+        colorMap.set(groupId, c);
+      }
+      return c;
+    };
+    const pushGroup = (
+      groupId: string,
+      severity: "low" | "med" | "high",
+      kind: "word" | "phrase" | "pattern",
+      occurrences: Array<{ line: number; start: number; end: number }>,
+    ) => {
+      if (occurrences.length === 0) return;
+      const colorIndex = colorFor(groupId);
+      for (const o of occurrences) {
+        out.push({
+          line: o.line,
+          start: o.start,
+          end: o.end,
+          severity,
+          kind,
+          groupId,
+          colorIndex,
+        });
+      }
+    };
+    if (repeatSubTab === "words") {
+      for (const r of m.repeated) {
+        pushGroup(`w:${r.word}`, r.severity, "word", r.occurrences);
+      }
+    } else if (repeatSubTab === "phrases") {
+      for (const p of m.repetition.phrases) {
+        pushGroup(`p${p.n}:${p.phrase}`, p.severity, "phrase", p.occurrences);
+      }
+    } else {
+      // patterns — anaphora + epistrophe. Severity grades by group size.
+      const gradeEdge = (count: number): "low" | "med" | "high" =>
+        count >= 4 ? "high" : count >= 3 ? "med" : "low";
+      for (const g of m.repetition.anaphora) {
+        pushGroup(`a${g.n}:${g.prefix}`, gradeEdge(g.lines.length), "pattern", g.occurrences);
+      }
+      for (const g of m.repetition.epistrophe) {
+        pushGroup(`e${g.n}:${g.prefix}`, gradeEdge(g.lines.length), "pattern", g.occurrences);
+      }
+    }
+    return out;
+  }, [m.toolTab, repeatSubTab, m.repeated, m.repetition]);
 
   /**
    * Smart jump: if the user's cursor is already on that line, do nothing
@@ -1831,6 +1889,7 @@ export function PoemWorkshop() {
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
                       internalRhymes={m.toolTab === "rhyme" ? m.internalRhymes : undefined}
+                      repeatHighlights={repeatHighlights}
                       echoHighlights={m.toolTab === "echoes" ? echoHighlights ?? undefined : undefined}
                       lineVowelTints={m.toolTab === "echoes" ? lineVowelTints ?? undefined : undefined}
                       flowMarkers={m.toolTab === "echoes" ? flowMarkers ?? undefined : undefined}
@@ -2212,8 +2271,8 @@ export function PoemWorkshop() {
             stressLexiconErr={m.stressLexiconErr}
             heavyToolsStale={m.heavyToolsStale}
             poemId={m.activePoemId}
-            peekToLine={peekToLine}
-            clearHoverPeek={clearHoverPeek}
+            repeatSubTab={repeatSubTab}
+            setRepeatSubTab={setRepeatSubTab}
             clicheHits={m.clicheHits}
             poemTitle={m.title}
             poemLines={m.lines}

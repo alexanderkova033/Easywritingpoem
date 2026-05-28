@@ -14,15 +14,11 @@ export function RepeatedWordCard({
   item,
   cardId,
   goToLine,
-  peekToLine,
-  clearHoverPeek,
   onReject,
 }: {
   item: RepeatedWord;
   cardId?: string;
   goToLine: (line1Based: number) => void;
-  peekToLine?: (line1Based: number, word?: string) => void;
-  clearHoverPeek?: () => void;
   onReject?: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -70,20 +66,13 @@ export function RepeatedWordCard({
       </div>
       <ul className="rep-snippets">
         {previewOccurrences.map((o, i) => (
-          <li
-            key={`${o.line}-${o.start}-${i}`}
-            className="rep-snippet"
-            onMouseEnter={() => peekToLine?.(o.line, item.display)}
-            onMouseLeave={() => clearHoverPeek?.()}
-          >
+          <li key={`${o.line}-${o.start}-${i}`} className="rep-snippet">
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(o.line)}
-              onFocus={() => peekToLine?.(o.line, item.display)}
-              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${o.line}`}
-              title="Click to jump, hover to peek"
+              title={`Go to line ${o.line}`}
             >
               L{o.line}
             </button>
@@ -110,14 +99,10 @@ export function PhraseRepeatCard({
   item,
   cardId,
   goToLine,
-  peekToLine,
-  clearHoverPeek,
 }: {
   item: import("@/workshop/analysis/repeated-words").PhraseRepeat;
   cardId?: string;
   goToLine: (line1Based: number) => void;
-  peekToLine?: (line1Based: number, word?: string) => void;
-  clearHoverPeek?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
@@ -131,20 +116,13 @@ export function PhraseRepeatCard({
       </div>
       <ul className="rep-snippets">
         {previewSnippets.map((s, i) => (
-          <li
-            key={`${s.line}-${i}`}
-            className="rep-snippet"
-            onMouseEnter={() => peekToLine?.(s.line, item.display)}
-            onMouseLeave={() => clearHoverPeek?.()}
-          >
+          <li key={`${s.line}-${i}`} className="rep-snippet">
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(s.line)}
-              onFocus={() => peekToLine?.(s.line, item.display)}
-              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${s.line}`}
-              title="Click to jump, hover to peek"
+              title={`Go to line ${s.line}`}
             >
               L{s.line}
             </button>
@@ -172,15 +150,11 @@ export function EdgeRepeatCard({
   cardId,
   edge,
   goToLine,
-  peekToLine,
-  clearHoverPeek,
 }: {
   group: import("@/workshop/analysis/repeated-words").AnaphoraGroup;
   cardId?: string;
   edge: "start" | "end";
   goToLine: (line1Based: number) => void;
-  peekToLine?: (line1Based: number, word?: string) => void;
-  clearHoverPeek?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const previewSnippets = open ? group.snippets : group.snippets.slice(0, 3);
@@ -204,20 +178,13 @@ export function EdgeRepeatCard({
       </div>
       <ul className="rep-snippets">
         {previewSnippets.map((s, i) => (
-          <li
-            key={`${s.line}-${i}`}
-            className="rep-snippet"
-            onMouseEnter={() => peekToLine?.(s.line, group.display)}
-            onMouseLeave={() => clearHoverPeek?.()}
-          >
+          <li key={`${s.line}-${i}`} className="rep-snippet">
             <button
               type="button"
               className="rep-line-jump linkish"
               onClick={() => goToLine(s.line)}
-              onFocus={() => peekToLine?.(s.line, group.display)}
-              onBlur={() => clearHoverPeek?.()}
               aria-label={`Go to line ${s.line}`}
-              title="Click to jump, hover to peek"
+              title={`Go to line ${s.line}`}
             >
               L{s.line}
             </button>

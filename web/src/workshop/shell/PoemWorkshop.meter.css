@@ -213,12 +213,13 @@
 }
 
 /* ── Editor meter overlay (vowel-anchored scansion marks) ─────────────────── */
-/* Standard English scansion notation: macron (¯) for a stressed syllable,
-   breve (˘) for an unstressed one. Same glyphs the MeterPanel's scansion
-   view uses, so the editor reads the same as the panel. Marks are absolutely
-   positioned above each vowel character so the poem text isn't shifted. */
+/* Standard English scansion notation: a horizontal bar (macron, ¯) marks a
+   stressed syllable; a small u-curve (breve, ˘) marks an unstressed one.
+   Drawn with CSS rather than font glyphs so they stay crisp and the two
+   shapes are unambiguous at any size. Anchored above each vowel by wrapping
+   it with a Decoration.mark so the poem text isn't shifted. */
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.35em;
+  padding-top: 0.32em;
 }
 
 .cm-meter-syl {
@@ -226,33 +227,35 @@
 }
 
 .cm-meter-syl::before {
+  content: "";
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   pointer-events: none;
-  font-family: var(--font-metric, ui-monospace, monospace);
-  font-size: 0.85em;
-  line-height: 1;
-  font-weight: 500;
   transition: opacity 0.18s ease;
 }
 
-/* Stressed: macron in the accent hue. */
+/* Stressed: solid horizontal bar (macron) in the accent hue. */
 .cm-meter-syl-stress::before {
-  content: "¯";
-  top: -0.55em;
-  color: var(--accent);
-  opacity: 0.85;
+  top: -0.05em;
+  width: 0.5em;
+  height: 0.13em;
+  background: var(--accent);
+  border-radius: 1px;
+  opacity: 0.9;
 }
 
-/* Unstressed: breve in muted ink. Slightly lighter so the stressed mark
-   carries the rhythm. */
+/* Unstressed: open u-curve (breve) in muted ink — drawn with borders so
+   the shape is unmistakably different from the bar above. */
 .cm-meter-syl-unstress::before {
-  content: "˘";
-  top: -0.55em;
-  color: var(--muted);
-  opacity: 0.7;
+  top: -0.08em;
+  width: 0.34em;
+  height: 0.2em;
+  border: 1.4px solid color-mix(in srgb, var(--muted) 80%, transparent);
+  border-top: 0;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  opacity: 0.75;
 }
 
 .poem-workshop.is-focus-mode .cm-meter-syl-stress::before,
-.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before { opacity: 0.18; }
+.poem-workshop.is-focus-mode .cm-meter-syl-unstress::before { opacity: 0.2; }
