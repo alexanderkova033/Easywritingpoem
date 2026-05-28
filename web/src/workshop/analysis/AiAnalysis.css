@@ -8,6 +8,9 @@
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));
   overflow: hidden;
   box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
+  max-width: 72rem;
+  width: 100%;
+  margin-inline: auto;
 }
 
 /* Collapsible toggle button */
