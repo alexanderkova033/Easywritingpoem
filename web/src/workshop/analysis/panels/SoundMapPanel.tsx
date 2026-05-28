@@ -92,12 +92,16 @@ function EchoCard({
   onMemberClick,
   echoId,
   isActive,
+  isPinned,
+  onTogglePin,
   onHoverChange,
 }: {
   echo: SoundEcho;
   onMemberClick: (m: { lineNumber: number; tokenIndex: number; word: string }) => void;
   echoId: string;
   isActive: boolean;
+  isPinned: boolean;
+  onTogglePin: (id: string) => void;
   onHoverChange: (id: string | null) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -125,6 +129,17 @@ function EchoCard({
         <span className="sound-echo-key">/{echo.key}/</span>
         <span className="sound-echo-count" style={{ color: tint }}>×{echo.members.length}</span>
         {gapLabel && <span className="sound-echo-gap muted small">{gapLabel}</span>}
+        <button
+          type="button"
+          className={`sound-echo-pin${isPinned ? " is-pinned" : ""}`}
+          onClick={(ev) => { ev.stopPropagation(); onTogglePin(echoId); }}
+          aria-pressed={isPinned}
+          title={isPinned ? "Hide this echo in the poem" : "Show this echo in the poem"}
+          style={isPinned ? { borderColor: tint, color: tint } : undefined}
+        >
+          <span className="sound-echo-pin-dot" aria-hidden style={isPinned ? { background: tint } : undefined} />
+          {isPinned ? "Shown" : "Show"}
+        </button>
       </div>
       <div className="sound-echo-members">
         {preview.map((m, i) => (
@@ -170,7 +185,16 @@ export function SoundMapPanel({
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
-  const [pinHighlights, setPinHighlights] = useState(false);
+  const [pinnedEchoes, setPinnedEchoes] = useState<Set<string>>(() => new Set());
+
+  function togglePinnedEcho(id: string) {
+    setPinnedEchoes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   const lineSounds = useMemo(
     () => buildLineSounds(poemLines, stressLexicon),
@@ -263,33 +287,27 @@ export function SoundMapPanel({
     return out;
   }
 
-  // Echo highlights:
-  // - hover any card → just that one echo's words (spotlight beats everything)
-  // - else pin on → all echoes (filtered by class if a class is selected)
-  // - else specific class filter → all words of that class
-  // - else (All filter, no hover, no pin) → nothing (avoids rainbow soup)
+  // Echo highlights are a union of:
+  //   • every echo the user has toggled on (persistent)
+  //   • the currently hovered echo (transient preview)
+  // No pinned echoes + no hover ⇒ nothing in the editor.
   const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
     if (subTab !== "echoes") return null;
-    if (hoveredEchoId) {
+    const usedIds = new Set<string>();
+    const out: EditorEchoHighlight[] = [];
+    for (const id of pinnedEchoes) {
+      const e = echoesById.get(id);
+      if (!e) continue;
+      usedIds.add(id);
+      out.push(...membersToHighlights(e));
+    }
+    if (hoveredEchoId && !usedIds.has(hoveredEchoId)) {
       const e = echoesById.get(hoveredEchoId);
-      return e ? membersToHighlights(e) : null;
+      if (e) out.push(...membersToHighlights(e));
     }
-    if (pinHighlights) {
-      const classes = classFilter === "all" ? ALL_CLASSES : [classFilter];
-      const out: EditorEchoHighlight[] = [];
-      for (const cls of classes) {
-        for (const e of byClass[cls]) out.push(...membersToHighlights(e));
-      }
-      return out;
-    }
-    if (classFilter !== "all") {
-      const out: EditorEchoHighlight[] = [];
-      for (const e of byClass[classFilter]) out.push(...membersToHighlights(e));
-      return out;
-    }
-    return null;
+    return out.length > 0 ? out : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, hoveredEchoId, echoesById, classFilter, byClass, lineSoundsByLine, pinHighlights]);
+  }, [subTab, hoveredEchoId, echoesById, pinnedEchoes, lineSoundsByLine]);
 
   // Line-level vowel tints (3 buckets) — active when on vowels subtab.
   const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
@@ -392,21 +410,6 @@ export function SoundMapPanel({
       {subTab === "echoes" && (
         <>
           {echoes.length > 0 && (
-            <div className="sound-toggles" role="group" aria-label="Editor highlight options">
-              <button
-                type="button"
-                className={`sound-toggle${pinHighlights ? " is-active" : ""}`}
-                onClick={() => setPinHighlights((v) => !v)}
-                aria-pressed={pinHighlights}
-                title="Keep every echo highlighted in the poem, even without hovering"
-              >
-                <span className="sound-toggle-dot" aria-hidden />
-                Highlight in poem
-              </button>
-            </div>
-          )}
-
-          {echoes.length > 0 && (
             <div className="sound-filter-chips" role="group" aria-label="Filter echoes by sound type">
               <button
                 type="button"
@@ -497,6 +500,8 @@ export function SoundMapPanel({
                             }}
                             echoId={id}
                             isActive={hoveredEchoId === id}
+                            isPinned={pinnedEchoes.has(id)}
+                            onTogglePin={togglePinnedEcho}
                             onHoverChange={setHoveredEchoId}
                           />
                         );

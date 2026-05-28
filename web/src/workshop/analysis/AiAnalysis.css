@@ -837,6 +837,33 @@
   color: var(--ai-score-high);
 }
 
+/* Compact recheck button (header actions) */
+.ai-recheck-btn-compact {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+.ai-recheck-btn-compact:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--accent, #6aa) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent, #6aa) 45%, var(--border));
+  color: var(--text);
+}
+.ai-recheck-btn-compact[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Ignore button */
 .ai-ignore-btn {
   appearance: none;
@@ -978,6 +1005,8 @@
   font-size: 0.8rem;
   font-style: italic;
   color: var(--muted);
+  max-width: 60ch;
+  overflow-wrap: break-word;
 }
 
 .ai-issue-body {
@@ -994,6 +1023,7 @@
   font-size: 0.85rem;
   line-height: 1.5;
   color: var(--text);
+  max-width: 65ch;
 }
 
 .ai-rationale-mark {
@@ -1340,7 +1370,8 @@
 @media (max-width: 899px) {
   /* Bigger touch targets for action buttons */
   .ai-resolve-btn,
-  .ai-ignore-btn {
+  .ai-ignore-btn,
+  .ai-recheck-btn-compact {
     width: 2.75rem;
     height: 2.75rem;
     font-size: 0.9rem;
@@ -1941,11 +1972,14 @@
   font-size: 0.85rem;
   color: var(--text);
   opacity: 0.85;
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
+  max-width: 60ch;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ai-analyze-actions {

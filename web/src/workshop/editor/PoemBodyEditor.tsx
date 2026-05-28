@@ -583,39 +583,8 @@ const flowMarkerField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
-// ---- Meter scansion overlay (Stress & meter tab) ---- //
-class MeterScansionWidget extends WidgetType {
-  constructor(readonly segments: ReadonlyArray<{ word: string; pattern: string }>) { super(); }
-  eq(o: MeterScansionWidget) {
-    if (o.segments.length !== this.segments.length) return false;
-    for (let i = 0; i < this.segments.length; i++) {
-      if (o.segments[i].pattern !== this.segments[i].pattern) return false;
-      if (o.segments[i].word !== this.segments[i].word) return false;
-    }
-    return true;
-  }
-  toDOM() {
-    const el = document.createElement("div");
-    el.className = "cm-meter-scansion";
-    el.setAttribute("aria-hidden", "true");
-    for (const seg of this.segments) {
-      if (!seg.pattern) continue;
-      const group = document.createElement("span");
-      group.className = "cm-meter-word-marks";
-      for (const ch of seg.pattern) {
-        const mk = document.createElement("span");
-        mk.className = `cm-meter-mark${ch === "/" ? " is-stress" : ""}`;
-        mk.textContent = ch === "/" ? "¯" : "˘";
-        group.append(mk);
-      }
-      el.append(group);
-    }
-    return el;
-  }
-  ignoreEvent() { return true; }
-}
-
-const setMeterOverlay = StateEffect.define<Array<{ line: number; segments: Array<{ word: string; pattern: string }> }>>();
+// ---- Meter overlay: stress dots anchored on vowel positions ---- //
+const setMeterOverlay = StateEffect.define<Array<{ line: number; marks: Array<{ col: number; stress: boolean }> }>>();
 const clearMeterOverlay = StateEffect.define<void>();
 
 const meterOverlayField = StateField.define<DecorationSet>({
@@ -629,18 +598,19 @@ const meterOverlayField = StateField.define<DecorationSet>({
         const doc = tr.state.doc;
         for (const entry of e.value) {
           if (entry.line < 1 || entry.line > doc.lines) continue;
-          const hasAny = entry.segments.some((s) => s.pattern);
-          if (!hasAny) continue;
           const docLine = doc.line(entry.line);
-          decos.push(
-            Decoration.widget({
-              widget: new MeterScansionWidget(entry.segments),
-              block: true,
-              side: -1,
-            }).range(docLine.from),
-          );
+          const lineLen = docLine.to - docLine.from;
+          for (const mark of entry.marks) {
+            if (mark.col < 0 || mark.col >= lineLen) continue;
+            const from = docLine.from + mark.col;
+            decos.push(
+              Decoration.mark({
+                class: mark.stress ? "cm-meter-syl cm-meter-syl-stress" : "cm-meter-syl cm-meter-syl-unstress",
+              }).range(from, from + 1),
+            );
+          }
         }
-        decos.sort((a, b) => a.from - b.from);
+        decos.sort((a, b) => a.from - b.from || a.to - b.to);
         try { next = Decoration.set(decos, true); } catch { next = Decoration.none; }
       }
     }
@@ -786,8 +756,8 @@ export interface PoemBodyEditorProps {
   lineVowelTints?: Array<{ line: number; bucket: "bright" | "mid" | "dark"; active?: boolean }>;
   /** End-stop glyphs + caesura marks (Pause & flow subtab). */
   flowMarkers?: Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }>;
-  /** Per-line scansion marks rendered above each line (Stress & meter tab). */
-  meterOverlay?: Array<{ line: number; segments: Array<{ word: string; pattern: string }> }> | null;
+  /** Stress dots anchored on syllable nucleus positions per line (Stress & meter tab). */
+  meterOverlay?: Array<{ line: number; marks: Array<{ col: number; stress: boolean }> }> | null;
   /** Per-line rhyme scheme letters (A/B/A/B…). Empty string skips a line. Only rendered when present. */
   rhymeSchemeLabels?: string[] | null;
   /** Receives a getter so callers can read the current cursor line synchronously. */

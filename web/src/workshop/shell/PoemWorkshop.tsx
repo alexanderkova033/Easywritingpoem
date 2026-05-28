@@ -84,7 +84,7 @@ import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
 import { useManualStressOverrides } from "@/workshop/meter/stress-storage";
-import { wordPatternsForLine } from "@/workshop/meter/meter-hints";
+import { meterMarksForLine } from "@/workshop/meter/meter-marks";
 import { useGlobalKeyboardShortcuts } from "./hooks/useGlobalKeyboardShortcuts";
 import { ExportModal } from "./ExportModal";
 import { ShortcutsModal } from "./ShortcutsModal";
@@ -300,26 +300,21 @@ export function PoemWorkshop() {
     Array<{ line: number; endStop: "hard" | "soft" | "open"; caesuraColumn: number | null; active?: boolean }> | null
   >(null);
 
-  // Scansion marks rendered above each line in the editor when the Stress &
-  // meter tab is active. Reuses wordPatternsForLine so the per-word grouping
-  // matches what MeterPanel renders in its scansion view.
+  // Stress dots anchored on vowel positions, rendered when the Stress & meter
+  // tab is active. Each vowel becomes a Decoration.mark; CSS draws the dot
+  // above the character so the text isn't shifted.
   const meterOverlay = useMemo(() => {
     if (m.toolTab !== "meter") return null;
-    const hints = m.meterHints;
-    if (!hints || hints.length === 0) return null;
-    const out: Array<{ line: number; segments: Array<{ word: string; pattern: string }> }> = [];
-    for (const hint of hints) {
-      if (!hint.stressPattern) continue;
-      const lineText = m.lines[hint.lineNumber - 1] ?? "";
+    const out: Array<{ line: number; marks: Array<{ col: number; stress: boolean }> }> = [];
+    for (let i = 0; i < m.lines.length; i++) {
+      const lineText = m.lines[i] ?? "";
       if (!lineText.trim()) continue;
-      const segs = wordPatternsForLine(lineText, m.stressLexicon, manualStress.overrides);
-      out.push({
-        line: hint.lineNumber,
-        segments: segs.map((s) => ({ word: s.word, pattern: s.pattern })),
-      });
+      const marks = meterMarksForLine(lineText, m.stressLexicon, manualStress.overrides);
+      if (marks.length === 0) continue;
+      out.push({ line: i + 1, marks });
     }
-    return out;
-  }, [m.toolTab, m.meterHints, m.lines, m.stressLexicon, manualStress.overrides]);
+    return out.length === 0 ? null : out;
+  }, [m.toolTab, m.lines, m.stressLexicon, manualStress.overrides]);
 
   const rhymeBumpRef = useRef(0);
 

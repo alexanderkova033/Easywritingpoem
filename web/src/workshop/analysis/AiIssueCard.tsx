@@ -281,6 +281,22 @@ export function IssueCard({
           {isResolved && <span className="ai-issue-resolved-label">Addressed</span>}
         </span>
         <div className="ai-issue-actions" onClick={(e) => e.stopPropagation()}>
+          {recheckAvailable && !isResolved && (
+            <button
+              type="button"
+              className="ai-recheck-btn-compact"
+              onClick={handleRecheck}
+              disabled={recheckLoading || lineUnchanged}
+              title={
+                lineUnchanged
+                  ? "Edit the line first — nothing has changed since the analysis"
+                  : "Re-check fix — ask the AI if your edit addressed this issue"
+              }
+              aria-label="Re-check fix"
+            >
+              {recheckLoading ? <span className="ai-chat-dot" /> : <span aria-hidden>↻</span>}
+            </button>
+          )}
           <button
             type="button"
             className={`ai-resolve-btn${isResolved ? " is-resolved" : ""}`}
@@ -403,36 +419,15 @@ export function IssueCard({
             </div>
           )}
 
-          {/* Recheck row */}
-          {recheckAvailable && (
+          {/* Recheck feedback (button moved to header actions) */}
+          {recheckAvailable && (recheckLoading || recheckResult || recheckError) && (
             <div className="ai-issue-recheck-row">
-              <button
-                type="button"
-                className="ai-issue-recheck-btn"
-                onClick={handleRecheck}
-                disabled={recheckLoading || lineUnchanged}
-                title={
-                  lineUnchanged
-                    ? "Edit the line first — nothing has changed since the analysis"
-                    : "Ask the AI if your edit addressed this issue (cheap, single line)"
-                }
-              >
-                {recheckLoading ? (
-                  <>
-                    <span className="ai-chat-dot" />
-                    <span className="ai-chat-dot" />
-                    <span className="ai-chat-dot" />
-                    <span>Re-checking…</span>
-                  </>
-                ) : (
-                  <>
-                    <span aria-hidden>↻</span> Re-check fix
-                  </>
-                )}
-              </button>
-              {lineUnchanged && !recheckResult && !recheckLoading && (
+              {recheckLoading && (
                 <span className="ai-issue-recheck-hint muted small">
-                  Line unchanged — edit it to enable re-check.
+                  <span className="ai-chat-dot" />
+                  <span className="ai-chat-dot" />
+                  <span className="ai-chat-dot" />
+                  <span>Re-checking…</span>
                 </span>
               )}
               {recheckResult && (
