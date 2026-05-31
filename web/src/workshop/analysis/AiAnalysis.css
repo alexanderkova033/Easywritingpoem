@@ -13,14 +13,28 @@
   margin-inline: auto;
 }
 
-/* When inside the workshop grid (desktop), span the full grid width and center the section
-   within it using justify-self + an explicit width cap. The grid cell would otherwise be
-   constrained to a single column track and margin-inline auto would not center reliably. */
-@media (min-width: 900px) {
+/* Tablet (900–1049px): tools-panel is a fixed overlay drawer, so the grid only has
+   2 columns (rail + content). Span the full width. */
+@media (min-width: 900px) and (max-width: 1049px) {
   .workshop-grid > .ai-analysis-section {
     grid-column: 1 / -1;
-    justify-self: center;
-    width: min(100%, 78rem);
+    justify-self: stretch;
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+  }
+}
+
+/* Desktop (≥1050px): tools-panel is sticky in the last grid column. Stop the AI Analysis
+   section at the column before the tools panel so the sticky panel doesn't overlap it
+   when the user scrolls down. */
+@media (min-width: 1050px) {
+  .workshop-grid > .ai-analysis-section {
+    grid-column: 1 / -2;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
   }
 }
 

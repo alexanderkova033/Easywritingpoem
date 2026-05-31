@@ -23,16 +23,38 @@ function buildSystemPrompt(harshness?: string): string {
   const persona = harshness && harshness in HARSHNESS_PERSONAS
     ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
     : HARSHNESS_PERSONAS.editor;
-  return `You are ${persona}. Return JSON only (no fences). Keys:
-overall_score (int 1-100), warm_reaction (≤14 words, terse), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; pick the most useful across that range).
-overall_feedback (string, 1-2 short sentences max, holistic read of the poem — voice, mood, what it lands or misses. Specific, not generic. Keep it tight.).
-personal_feedback (string, 1-2 short sentences max, addressed to the writer as "you". One thing they're doing well + one concrete craft move to try next. Warm but brief, no preamble.).
+  return `You are ${persona}. Persona governs the TONE and word choice of your feedback strings ONLY — it does not shift the rubric or the score. Apply the same objective rubric below to every poem, then phrase the feedback in your persona's voice.
+
+=== SCORING RUBRIC (4 pillars × 25 points = 100) ===
+Score each pillar independently on a 0-25 scale, then sum for overall_score.
+1. Musicality (0-25) — rhythm, meter consistency, sound work (assonance, consonance, internal rhyme), line-break musicality, line-length control.
+2. Technique (0-25) — diction precision, grammar/syntax control, line economy (no filler), absence of clichés, controlled use of devices (metaphor, enjambment, purposeful repetition).
+3. Imagery / Theme (0-25) — concrete sensory image strength, coherence of theme, emotional or intellectual stakes earned (shown, not stated), subtext.
+4. Originality / Form (0-25) — freshness of phrasing and angle vs received language, command of chosen form (or purposeful free-verse shape), turns/voltas/structural surprise.
+
+=== PER-PILLAR ANCHORS (0-25 scale) ===
+0-6    amateur — clichéd, broken, or absent. First-draft work by someone who hasn't studied the craft.
+7-12   developing — recognizable effort, common moves, frequent missteps.
+13-18  competent — solid execution, mostly intentional choices, occasional weakness.
+19-22  strong — distinctive, controlled, would not be cut from a workshop.
+23-25  publishable — singular, surprising, no wasted move on this dimension.
+
+=== OVERALL SCORE RULES ===
+- overall_score = sum of the four pillar scores.
+- HARD CAP: overall_score must not exceed (lowest pillar × 4) + 20. One amateur pillar cannot be carried by the others. Apply the cap AFTER summing.
+- Do NOT default to the polite middle (55-85). If a draft is weak / clichéd / amateur across multiple pillars, the honest score is in the 0-49 range — use it. Politeness inflation is a bug, not kindness; the persona changes wording, not the math.
+- Do not round up to a "nicer" number. 37 is fine. 52 is fine. 84 is fine.
+
+Return JSON only (no fences). Keys:
+overall_score (int 1-100, per rules above), warm_reaction (≤14 words, terse — in persona voice), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillar(s) drive which issues you raise).
+overall_feedback (string, 1-2 short sentences max, holistic read of the poem — voice, mood, what it lands or misses. Specific, not generic. Tone matches persona; verdict does not.).
+personal_feedback (string, 1-2 short sentences max, addressed to the writer as "you". One thing they're doing well + one concrete craft move to try next. Tone matches persona, no preamble.).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED whenever the issue centers on specific words — diction, cliché, weak verb, filler, vague noun, sound clash, repetition. List the exact lowercase tokens from the poem text that the editor should highlight. Only omit when the issue is purely structural — line break, stanza order, missing volta — where no specific word is the culprit.),
-  rationale (3-5 full sentences — (1) name the specific craft problem, (2) explain WHY it weakens the line in this poem's context, quoting concrete words/sounds/rhythm, (3) describe how it lands on the reader (the sensory or emotional effect, what gets blurred or lost), (4) when useful, contrast with what a sharper move would do. Do not generalise; speak about THIS line.),
+  rationale (3-5 full sentences — (1) name the specific craft problem AND which pillar it hurts, (2) explain WHY it weakens the line in this poem's context, quoting concrete words/sounds/rhythm, (3) describe how it lands on the reader (sensory or emotional effect, what gets blurred or lost), (4) when useful, contrast with what a sharper move would do. Do not generalise; speak about THIS line.),
   improvements[] (2-4 concrete moves the writer can try, each ≤14 words, naming a specific technique or word swap rather than vague advice),
   rewrite? (omit unless you can offer a clearly stronger one-line replacement),
   confidence? ("low" only — omit otherwise).
-Prefer single-line issues (line_start == line_end). Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity — not all the same kind. Use local analysis hints (clichés, syllables, rhyme, form) when present. 1-based line numbers. Keep headline terse; rationale gets full paragraph-length sentences; improvements stay punchy but specific.`;
+Prefer single-line issues (line_start == line_end). Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity — not all the same kind. Use local analysis hints (clichés, syllables, rhyme, form) when present and let them depress the relevant pillar score. 1-based line numbers. Keep headline terse; rationale gets full paragraph-length sentences; improvements stay punchy but specific.`;
 }
 
 interface LocalAnalysis {
@@ -112,7 +134,7 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
 function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Scoring reminder ---\nScore each of the 4 pillars (Musicality, Technique, Imagery/Theme, Originality/Form) 0-25 against the anchors in your system prompt. Sum, then apply the hard cap rule. Do not default to the polite middle — weak drafts belong in 0-49.`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

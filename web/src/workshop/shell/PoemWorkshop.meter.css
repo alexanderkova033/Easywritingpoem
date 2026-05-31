@@ -220,7 +220,7 @@
    vowel via a Decoration.mark so the poem text itself isn't shifted. */
 
 .cm-line:has(.cm-meter-syl) {
-  padding-top: 0.62em;
+  padding-top: 0.36em;
 }
 
 .cm-meter-syl {
@@ -246,7 +246,7 @@
    halo so it reads as "loud" even against busy text. */
 .cm-meter-syl-stress::before {
   --cm-meter-target-opacity: 0.95;
-  top: -0.48em;
+  top: -0.22em;
   width: 0.66em;
   height: 0.18em;
   background: var(--accent);
@@ -261,7 +261,7 @@
    easy to skim past, which is how the syllable should sound. */
 .cm-meter-syl-unstress::before {
   --cm-meter-target-opacity: 0.62;
-  top: -0.42em;
+  top: -0.18em;
   width: 0.26em;
   height: 0.26em;
   border-radius: 50%;

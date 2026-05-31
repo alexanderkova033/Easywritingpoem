@@ -1028,7 +1028,7 @@
   min-width: 0;
   width: 100%;
   min-height: 3.2rem;
-  padding: 0.5rem 0.3rem 0.44rem;
+  padding: 0.5rem 0.2rem 0.44rem;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
@@ -1090,13 +1090,15 @@
 }
 
 .tool-tab-label {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
   text-align: center;
   line-height: 1.2;
-  hyphens: auto;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .tools-overview-wrap {

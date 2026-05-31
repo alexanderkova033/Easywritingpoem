@@ -10,14 +10,40 @@ import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 
-const SYSTEM_PROMPT = `You are an encouraging poetry editor. Receive a diff (previous → current) + previous score. Score the CURRENT version. Return JSON only (no fences). Keys:
-overall_score (int 1-100, CURRENT), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; pick the most useful across that range), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
-overall_feedback (string, 2-3 full sentences, holistic read of the current draft as a whole — voice, mood, what it accomplishes, where it lands).
-personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc — what improved, what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not rubric).
+const SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revision. You receive: a diff (previous → current), the previous score, and the current draft. Score the CURRENT version AGAINST THE RUBRIC BELOW — not against the previous score. Return JSON only (no fences).
+
+=== SCORING RUBRIC (4 pillars × 25 points = 100) ===
+Score each pillar independently on a 0-25 scale, then sum for overall_score.
+1. Musicality (0-25) — rhythm, meter consistency, sound work (assonance, consonance, internal rhyme), line-break musicality, line-length control.
+2. Technique (0-25) — diction precision, grammar/syntax control, line economy (no filler), absence of clichés, controlled use of devices.
+3. Imagery / Theme (0-25) — concrete sensory image strength, coherence of theme, emotional/intellectual stakes earned (shown, not stated), subtext.
+4. Originality / Form (0-25) — freshness of phrasing vs received language, command of chosen form (or purposeful free-verse shape), structural surprise.
+
+=== PER-PILLAR ANCHORS (0-25 scale) ===
+0-6    amateur — clichéd, broken, or absent.
+7-12   developing — recognizable effort, common moves, frequent missteps.
+13-18  competent — solid execution, mostly intentional choices.
+19-22  strong — distinctive, controlled.
+23-25  publishable — singular, surprising.
+
+=== RE-SCORING RULES (read carefully — these override any instinct to be encouraging) ===
+- The previous score is reference ONLY for describing the trend in comparison{}. It is NOT a floor, NOT an anchor, and NOT a polite starting point.
+- Compute the current overall_score by reading the current draft FRESH and summing the four pillar scores, AS IF you had never seen the previous version.
+- ZERO PITY POINTS: do not raise the score because the writer revised, because they tried, because they followed advice, or because they engaged with feedback. Raise the score ONLY if the rubric mathematically yields more points on a fresh read.
+- If the edits did NOT fix the underlying craft weaknesses, the score MUST stay the same OR drop. Swapping one cliché for another, breaking rhythm, or adding flatness scores LOWER, not higher.
+- A revision can absolutely score lower than the previous draft. When it does, say so plainly in comparison.regressions and let overall_score reflect it.
+- HARD CAP: overall_score must not exceed (lowest pillar × 4) + 20. Apply AFTER summing.
+- Do NOT default to the polite middle (55-85). Weak / clichéd / amateur drafts belong in 0-49 even on revision.
+- Do not round up to a nicer number. 41 is fine. 58 is fine.
+
+Keys:
+overall_score (int 1-100, CURRENT, per rules above), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillars drive issue selection), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty — be honest about what didn't change or got worse).
+overall_feedback (string, 2-3 full sentences, holistic read of the CURRENT draft as a whole — voice, mood, what it accomplishes, where it lands).
+personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc honestly — what actually improved (if anything), what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not flattery, not pity).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
-  rationale (3-5 full sentences — (1) name the specific craft problem, (2) explain WHY it weakens the line in this poem's context with concrete words/sounds/rhythm, (3) describe how it lands on the reader (sensory or emotional effect, what gets blurred), (4) when useful, contrast with what a sharper move would do. Speak about THIS line, not generalities.),
+  rationale (3-5 full sentences — (1) name the specific craft problem AND which pillar it hurts, (2) explain WHY it weakens the line in this poem's context with concrete words/sounds/rhythm, (3) describe how it lands on the reader (sensory or emotional effect, what gets blurred), (4) when useful, contrast with what a sharper move would do. Speak about THIS line, not generalities.),
   improvements[] (2-4 concrete moves, each ≤14 words, naming a specific technique or word swap), rewrite?, confidence? ("low" only).
-Prefer single-line issues. Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity. Headline stays terse; rationale gets paragraph-length detail; improvements stay punchy but specific. Use local analysis hints if provided. 1-based line numbers.`;
+Prefer single-line issues. Cover a range of craft angles across issues — imagery, diction, rhythm, sound, structure, clarity. Headline stays terse; rationale gets paragraph-length detail; improvements stay punchy but specific. Use local analysis hints if provided and let them depress the relevant pillar score. 1-based line numbers.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -223,7 +249,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\nNote: only the diff is shown above, not the full previous draft. Score and review the CURRENT version, but use the diff to identify what improved or regressed.`;
+  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n--- Scoring instructions ---\nScore the CURRENT version from scratch against the rubric in your system prompt. The previous score and history above are reference ONLY for describing the trend in comparison{} — do NOT let them anchor or inflate the new score. If the previously flagged weaknesses are still present, the score does not move up; if the edits added new flatness, the score moves DOWN. Use the diff to identify what improved or regressed, then write the verdict.`;
 
   const result = await callOpenAI(
     apiKey,
