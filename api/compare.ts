@@ -41,7 +41,7 @@ These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one a
 7-12   present but weak — common moves, recognizable effort, frequent misses.
 13-18  solid — execution mostly intentional, occasional weakness.
 19-22  strong — distinctive, controlled.
-23-25  singular — no wasted move on this dimension.
+23-25  canonical — published masters routinely sit here on their strongest pillar. REACHABLE, not theoretical.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
 These show that pillars DIVERGE. Mirror this spread.
@@ -58,6 +58,16 @@ EXAMPLE C — total 68 (quiet but lasting):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
   pillar_scores: {chord: 12, craft: 21, spark: 17, echo: 19}
 
+EXAMPLE D — total 91 (canonical sonnet, formal mastery):
+  "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May, / And summer's lease hath all too short a date."
+  pillar_scores: {chord: 23, craft: 25, spark: 21, echo: 22}
+  This is what canonical published work scores. The top of the scale is not reserved.
+
+EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
+  "there's a bluebird in my heart that / wants to get out / but I'm too tough for him, / I say, stay in there, I'm not going / to let anybody see you."
+  pillar_scores: {chord: 22, craft: 21, spark: 24, echo: 23}
+  IMPORTANT: looseness scores HIGH Craft when the brokenness is the point. Do not mistake intentional roughness for amateur failure.
+
 === RE-SCORING RULES (read carefully — these override any instinct to be encouraging) ===
 - The previous score is reference ONLY for describing the trend in comparison{}. NOT a floor, NOT an anchor.
 - Compute the current overall_score by reading the current draft FRESH and summing the four pillar scores, AS IF you had never seen the previous version.
@@ -66,27 +76,34 @@ EXAMPLE C — total 68 (quiet but lasting):
 - HARD CAP: overall_score must not exceed (lowest pillar × 4) + 20. Apply AFTER summing.
 - Do NOT default to the polite middle (55-85). Weak drafts belong in 0-49 even on revision.
 - Do NOT cluster pillars. If three pillars are 18 and one is 9, score the fourth 9, not 13 "to be fair".
+- DO NOT PARK THE TOP. Canonical published poetry (Shakespeare, Bukowski, Plath) should land 85-95 overall. If you are scoring revisions in the 12-20 range per pillar across the board and never venturing above 80 overall, you are being too conservative. Use the full scale.
+
+=== STYLE: PLAIN AND STRAIGHTFORWARD ===
+Talk like a smart friend, not a literature professor.
+- Lead with the point. No preambles, no hedging ("perhaps", "it seems"), no filler ("really", "quite", "very").
+- Short sentences. Active voice. Concrete over abstract.
+- Common terms are fine: metaphor, image, rhythm, stanza, voice, tone, line break, rhyme, simile.
+- Swap obscure scholarly terms for the effect: sibilance → "the s sounds hush"; anaphora → "the same opening repeated"; caesura → "a pause inside the line"; prosody → "rhythm".
+- Applies to every feedback string.
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
-Detected clichés normally lower Spark — UNLESS used ironically or subverted. Broken syllable targets normally lower Craft — UNLESS the breakage lands as deliberate rhythmic disruption. Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation). Reward purposeful rule-breaking; penalize accidental failures.
+Detected clichés normally lower Spark — UNLESS used ironically or subverted. Broken syllable targets normally lower Craft — UNLESS the breakage lands as deliberate rhythmic disruption. Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation). Reward purposeful rule-breaking.
 
-Compute pillar_scores FIRST against the anchors, write pillar_rationales, then derive overall_score arithmetically. The math must be visible.
+Compute pillar_scores FIRST, write pillar_rationales, then derive overall_score arithmetically.
 
 Keys:
-pillar_scores {chord:int 0-25, craft:int 0-25, spark:int 0-25, echo:int 0-25} — REQUIRED. Score INDEPENDENTLY against the anchors. The four should show divergence.
-pillar_rationales {chord:string, craft:string, spark:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English). Name the specific line/image/sound that justified the score. No jargon.
-overall_score (int 1-100, CURRENT) — MUST equal min(chord + craft + spark + echo, (lowest_pillar × 4) + 20). Compute arithmetically.
-warm_reaction (≤14w, terse).
-strengths[] (2-3 items, 6-12 words each — plain and specific, name the actual line/image: "the streetlight buzz chords you in fast", not "strong sonic patterning").
-weaknesses[] (2-3 items, 6-12 words each — same rule, plain and specific: "the closing line falls into received language", not "tonal failure").
-strongest_line {line:int, why:≤10w plain words}.
-issues[] (2-5).
-comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty).
-personal_feedback (string, 2-3 sentences, addressed to the writer as "you". Holistic read of the CURRENT draft + the revision arc + one concrete next move, in one short paragraph. Mentor tone, no preamble.).
-Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
-  rationale (3-5 sentences — name the craft problem and which pillar it hurts, explain why it weakens THIS line, describe the effect on the reader, contrast with a sharper move),
-  improvements[] (2-4 concrete moves, each ≤14 words), rewrite?, confidence? ("low" only).
-Prefer single-line issues. 1-based line numbers. DO NOT emit overall_feedback — personal_feedback now carries both the holistic read and the addressed-to-you note.`;
+pillar_scores {chord, craft, spark, echo}: int 0-25 each, scored INDEPENDENTLY.
+pillar_rationales {chord, craft, spark, echo}: one line per pillar, ≤14 words, plain English. Name the specific line/image/sound.
+overall_score: int 1-100 (CURRENT). MUST equal min(chord+craft+spark+echo, lowest×4+20).
+warm_reaction: ≤14 words, terse.
+strengths[]: 2-3 items, 6-12 words. Plain and specific — name the actual line/image.
+weaknesses[]: 2-3 items, 6-12 words. Same.
+strongest_line: {line:int, why:≤10w plain}.
+issues[]: 2-5.
+comparison: {improvements:[], regressions:[], unchanged:[]} — 0-3 items each, ≤6 words, may be empty.
+personal_feedback: 2-3 sentences, addressed to "you". Holistic read of CURRENT + the revision arc + one concrete next move. No preamble.
+Each issue: {id, severity, line_start, line_end, headline (≤6w), problem_words?[], rationale (2-3 short sentences — name the problem and which pillar it hurts, then how it lands), improvements[] (1-3 concrete moves, ≤14w each), rewrite?, confidence? ("low" only)}.
+Prefer single-line issues. 1-based line numbers. DO NOT emit overall_feedback.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -294,7 +311,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n--- Scoring instructions ---\nScore the CURRENT version from scratch against the 4 pillars (Chord/Breeze, Craft/Technique, Spark/Edge, Echo/Effect). Write one plain-language pillar_rationale per pillar (≤14 words) naming the specific line/image/sound that drove that score. The previous score and history above are reference ONLY for describing the trend in comparison{} — do NOT let them anchor or inflate the new score. Local-analysis signals are soft — reward intentional rule-breaking, penalize accidental failures. Do not cluster pillars; divergence is the point.`;
+  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n--- Reminder ---\nScore the CURRENT version from scratch. Previous score and history are reference ONLY for comparison{} — do NOT let them anchor the new score. Don't park scores in the polite middle or at the top — use the full scale. Local hints are soft; reward purposeful rule-breaking.`;
 
   const result = await callOpenAI(
     apiKey,

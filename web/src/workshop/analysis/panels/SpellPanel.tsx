@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DocumentStats } from "@/workshop/analysis/line-stats";
 import type { SpellHit } from "@/spellcheck/scan";
-import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import { downloadTextFile } from "@/workshop/library/export-poem";
 import {
   addToPersonalDictionary,
@@ -20,8 +19,6 @@ export interface SpellPanelProps {
   spellHits: SpellHit[];
   wordlist: Set<string> | null;
   wordlistErr: string | null;
-  spellMode: SpellMode;
-  onSpellModeChange: (mode: SpellMode) => void;
   goToSpellHitAt: (hit: SpellHit) => void;
   applySpellSuggestion: (hit: SpellHit, replacement: string) => boolean;
   applySpellSuggestionAll: (normalized: string, replacement: string) => boolean;
@@ -36,8 +33,6 @@ export function SpellPanel({
   spellHits,
   wordlist,
   wordlistErr,
-  spellMode,
-  onSpellModeChange,
   goToSpellHitAt,
   applySpellSuggestion,
   applySpellSuggestionAll,
@@ -56,7 +51,7 @@ export function SpellPanel({
   useEffect(() => {
     setSpellListCap(50);
     setExpandedSuggestions(new Set());
-  }, [spellHits, spellMode]);
+  }, [spellHits]);
 
   const toggleSuggestionExpand = (normalized: string) => {
     setExpandedSuggestions((prev) => {
@@ -115,30 +110,6 @@ export function SpellPanel({
     >
       <LiveSectionTitle>Spelling</LiveSectionTitle>
       {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
-      <div
-        className="spell-strategy-toggle"
-        role="group"
-        aria-label="How strictly to flag unknown words"
-      >
-        <button
-          type="button"
-          className={`segment-btn spell-strategy-btn ${spellMode === "permissive" ? "active" : ""}`}
-          aria-pressed={spellMode === "permissive"}
-          title="Fewer flags — poetry-friendly"
-          onClick={() => onSpellModeChange("permissive")}
-        >
-          Poetry-friendly
-        </button>
-        <button
-          type="button"
-          className={`segment-btn spell-strategy-btn ${spellMode === "strict" ? "active" : ""}`}
-          aria-pressed={spellMode === "strict"}
-          title="More flags — strict"
-          onClick={() => onSpellModeChange("strict")}
-        >
-          Strict
-        </button>
-      </div>
       {wordlistErr ? (
         <p className="error compact" role="alert">
           {wordlistErr}
@@ -151,9 +122,7 @@ export function SpellPanel({
         <>
           {spellHits.length === 0 ? (
             <EmptyState title="No spelling flags">
-              <p className="muted small">
-                Looks clean under your current mode.
-              </p>
+              <p className="muted small">Looks clean.</p>
             </EmptyState>
           ) : (
             <>

@@ -1928,7 +1928,6 @@ export function PoemWorkshop() {
                       onLiveBody={m.onEditorBody}
                       editorViewRef={m.editorViewRef}
                       wordlist={m.wordlist}
-                      spellMode={m.spellMode}
                       spellBump={m.spellBump}
                       jumpLine={m.jumpLine}
                       jumpBump={m.jumpBump}
@@ -2282,8 +2281,6 @@ export function PoemWorkshop() {
             spellHits={m.spellHits}
             wordlist={m.wordlist}
             wordlistErr={m.wordlistErr}
-            spellMode={m.spellMode}
-            onSpellModeChange={m.setSpellMode}
             goToLine={m.goToLine}
             goToWord={m.goToWord}
             goToLineEnd={m.goToLineEnd}

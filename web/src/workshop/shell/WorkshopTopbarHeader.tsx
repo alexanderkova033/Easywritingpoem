@@ -232,17 +232,6 @@ export function WorkshopTopbarHeader(props: Props) {
             {!isFocusMode && m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
               <span className="topbar-context-hint"> ({m.quickDocStats.totalLines} incl. blanks)</span>
             ) : null}
-            {m.lastAiScore != null && (
-              <>
-                <span className={isFocusMode ? "topbar-focus-sep" : "topbar-context-sep"} aria-hidden>·</span>
-                <span
-                  className="topbar-ai-score"
-                  {...hint(`Last AI analysis score: ${m.lastAiScore}/10`)}
-                >
-                  ✦ {m.lastAiScore}
-                </span>
-              </>
-            )}
             {showRhymeScheme && m.rhymeScheme.some((l) => l) && (
               <span
                 className="topbar-rhyme-dot"

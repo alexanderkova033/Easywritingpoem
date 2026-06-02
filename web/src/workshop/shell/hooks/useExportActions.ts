@@ -47,7 +47,6 @@ export interface ExportActionsInput {
     title: string;
     body: string;
     formNote: string;
-    spellMode: import("@/workshop/library/local-draft-storage").SpellMode;
     library: DraftLibrary;
   }>;
   setLibrary: React.Dispatch<React.SetStateAction<DraftLibrary>>;
@@ -267,7 +266,6 @@ export function useExportActions(input: ExportActionsInput) {
           title: state.title,
           body: state.body,
           form: state.formNote,
-          spellMode: state.spellMode,
         });
         let totalFiles = 0;
         for (const poem of flushed.poems) {
@@ -333,13 +331,12 @@ export function useExportActions(input: ExportActionsInput) {
       const reader = new FileReader();
       reader.onload = () => {
         const text = typeof reader.result === "string" ? reader.result : "";
-        const { title: t, body: b, formNote: f, spellMode: sm, library: lib } =
+        const { title: t, body: b, formNote: f, library: lib } =
           workshopStateRef.current;
         const flushed = upsertActivePoem(lib, {
           title: t,
           body: b,
           form: f,
-          spellMode: sm,
         });
         if (!saveLibrary(flushed)) {
           setPersistenceError(DRAFT_STORAGE_MSG);

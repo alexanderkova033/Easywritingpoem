@@ -8,19 +8,11 @@ import {
 
 const STORAGE_KEY = STORAGE_KEY_DRAFT;
 
-export type SpellMode = "strict" | "permissive";
-
 export interface DraftState {
   title: string;
   body: string;
   /** Optional form or note (e.g. sonnet, free verse). */
   form?: string;
-  spellMode?: SpellMode;
-}
-
-function readSpellMode(v: unknown): SpellMode | undefined {
-  if (v === "strict" || v === "permissive") return v;
-  return undefined;
 }
 
 export function loadDraft(): DraftState | null {
@@ -35,12 +27,10 @@ export function loadDraft(): DraftState | null {
       o.form === undefined || o.form === null
         ? undefined
         : String(o.form);
-    const sm = readSpellMode(o.spellMode);
     return {
       title: o.title,
       body: o.body,
       ...(form ? { form } : {}),
-      ...(sm ? { spellMode: sm } : {}),
     };
   } catch {
     return null;
@@ -54,7 +44,6 @@ export function saveDraft(state: DraftState): boolean {
       title: state.title,
       body: state.body,
       ...(state.form ? { form: state.form } : {}),
-      ...(state.spellMode ? { spellMode: state.spellMode } : {}),
     }),
   );
 }

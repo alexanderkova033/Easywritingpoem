@@ -34,13 +34,11 @@ describe("local-draft-library", () => {
       title: "Sea",
       body: "one\n",
       form: "haiku",
-      spellMode: "strict",
     });
     const p = poemById(next, next.activeId);
     expect(p?.title).toBe("Sea");
     expect(p?.body).toBe("one\n");
     expect(p?.form).toBe("haiku");
-    expect(p?.spellMode).toBe("strict");
   });
 
   it("clears form when empty string passed", () => {

@@ -48,28 +48,37 @@ These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one a
 7-12   present but weak — common moves, recognizable effort, frequent misses.
 13-18  solid — execution mostly intentional, occasional weakness.
 19-22  strong — distinctive, controlled, would survive workshop.
-23-25  singular — no wasted move on this dimension.
+23-25  canonical — published masters routinely sit here on their strongest pillar. REACHABLE, not theoretical. Use it when the work earns it.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
 These show that pillars DIVERGE. Do not cluster scores; mirror this kind of spread.
 
-EXAMPLE A — total 28 (weak):
+EXAMPLE A — total 28 (weak across, pillars still diverge):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
   pillar_scores: {chord: 6, craft: 8, spark: 5, echo: 9}
-  pillar_rationales: {chord: "Opening is a stock phrase, no hook", craft: "Steady rhythm but cliché-driven diction", spark: "Every line is received language", echo: "Subject carries some residual sting despite execution"}
-  Note divergence: even a weak poem isn't uniformly weak. Subject can echo while phrasing fails.
+  Even weak poems aren't uniformly weak — subject can echo while phrasing fails.
 
 EXAMPLE B — total 52 (uneven — grabs ear, flat landing):
   "The streetlight buzzes — moths drum / against the milk-blue lamp. / Somewhere a refrigerator sighs. / Everything is fine."
   pillar_scores: {chord: 18, craft: 16, spark: 14, echo: 8}
-  pillar_rationales: {chord: "Drumming moths and milk-blue lamp chord you in fast", craft: "Controlled cadence and line breaks", spark: "Milk-blue lamp is fresh, irony at end is received", echo: "Everything is fine collapses what came before"}
-  Note divergence: high chord can sit alongside low echo. Hard cap: lowest×4+20 = 52. Use it.
+  High chord, low echo. Hard cap: lowest×4+20 = 52.
 
-EXAMPLE C — total 68 (quiet but lasting):
+EXAMPLE C — total 68 (quiet but lasting — the inverse profile of B):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
   pillar_scores: {chord: 12, craft: 21, spark: 17, echo: 19}
-  pillar_rationales: {chord: "Quiet opening, doesn't grab immediately", craft: "Every word controlled, simile arrives clean", spark: "Paperback-spine simile is genuinely new", echo: "The warped book stays with you"}
-  Note divergence: low chord, high echo. This is the inverse profile of Example B. Both real poem-shapes.
+  Low chord, high echo. Both shapes are real.
+
+EXAMPLE D — total 91 (canonical sonnet, formal mastery):
+  "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May, / And summer's lease hath all too short a date."
+  pillar_scores: {chord: 23, craft: 25, spark: 21, echo: 22}
+  pillar_rationales: {chord: "The opening question warms and pulls instantly", craft: "Flawless iambic pentameter, every word placed", spark: "Familiar conceit but turned in surprising ways", echo: "Lines that have stayed in memory for centuries"}
+  This is what published canonical work scores. The top of the scale is not reserved — it is for work like this.
+
+EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
+  "there's a bluebird in my heart that / wants to get out / but I'm too tough for him, / I say, stay in there, I'm not going / to let anybody see you."
+  pillar_scores: {chord: 22, craft: 21, spark: 24, echo: 23}
+  pillar_rationales: {chord: "Intimate confession grabs immediately", craft: "Looseness is purposeful — the anti-craft IS the craft", spark: "Singular voice, couldn't be anyone else", echo: "The bluebird metaphor haunts long after"}
+  IMPORTANT: looseness and broken-feeling rhythm score HIGH Craft when the brokenness is the point. Do not mistake intentional roughness for amateur failure.
 
 === OVERALL SCORE RULES ===
 - overall_score = sum of the four pillar scores.
@@ -77,6 +86,23 @@ EXAMPLE C — total 68 (quiet but lasting):
 - Do NOT default to the polite middle (55-85). Weak drafts belong in 0-49 — use that range honestly. Persona changes wording, not math.
 - Do not round up to a "nicer" number. 37 is fine. 52 is fine. 84 is fine.
 - Do NOT cluster pillars. If three pillars naturally land at 18 and one at 9, the answer is 9 for that one, not 13 or 14. Independence is the point.
+- DO NOT PARK THE TOP. Canonical published poetry (Shakespeare, Bukowski, Plath, Bishop, the kind of work you would teach in a poetry class) should land 85-95 overall. The 19-25 per-pillar range is where published masters live. If you are scoring everything in the 12-20 range and never venturing above 80 overall, you are being too conservative — use the full scale.
+
+=== STYLE: PLAIN AND STRAIGHTFORWARD ===
+Talk like a smart friend, not a literature professor.
+- Lead with the point. No preambles ("The poem opens with...", "What's interesting here is...").
+- No hedging ("perhaps", "it seems", "one might say", "in some sense"). State it.
+- No filler ("really", "quite", "rather", "very", "actually", "truly", "indeed"). Cut them.
+- Short sentences. One idea each. Active voice. Concrete over abstract.
+- Common terms are FINE — keep them. metaphor, image, rhythm, stanza, voice, tone, rhyme, line break, simile, repetition, contrast. Most readers know these.
+- Only swap obscure scholarly terms for the effect they describe:
+  - sibilance → "the s sounds hush"
+  - anaphora → "the same opening repeated"
+  - caesura → "a pause inside the line"
+  - synecdoche / metonymy → describe what stands in for what
+  - prosody / metrical → "rhythm"
+  - diction → "word choice" (only when the simpler phrase fits)
+- Applies to every feedback string.
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
 The user message may include detected clichés, syllable counts, rhyme scheme, repeated words. Treat these as SOFT signals:
@@ -85,24 +111,20 @@ The user message may include detected clichés, syllable counts, rhyme scheme, r
 - Heavy word repetition normally lowers Craft or Spark — UNLESS the repetition is doing visible work (incantation, refrain, semantic accumulation).
 The principle: penalize accidental craft failures, NOT purposeful rule-breaking. Decide which one this is before docking points.
 
-Return JSON only (no fences). Compute pillar_scores FIRST against the anchors, write the matching pillar_rationales, THEN derive overall_score arithmetically. The math must be visible.
+Return JSON only (no fences). Compute pillar_scores FIRST, write pillar_rationales, THEN derive overall_score arithmetically.
 
 Keys:
-pillar_scores {chord:int 0-25, craft:int 0-25, spark:int 0-25, echo:int 0-25} — REQUIRED. Score each pillar INDEPENDENTLY against the anchors. Show divergence.
-pillar_rationales {chord:string, craft:string, spark:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English the writer will understand). Name the specific thing (the line, the image, the phrasing) that justified the score. Avoid jargon — say "the s sounds hush" not "sibilance creates phonic texture".
-overall_score (int 1-100) — MUST equal min(chord + craft + spark + echo, (lowest_pillar × 4) + 20). Compute arithmetically. If your overall_score does not match the formula, your output is invalid.
-warm_reaction (≤14 words, in persona voice).
-strengths[] (2-3 items, 6-12 words each — name the SPECIFIC thing in plain words: "the buzz of the streetlight chords you in", not "strong sonic patterning". Reference actual lines/images, not craft jargon.).
-weaknesses[] (2-3 items, 6-12 words each — same rule, plain and specific: "the word 'crazy' in line 5 breaks the quiet", not "tonal inconsistency".).
-strongest_line {line:int, why:≤10w in plain words}.
-issues[] (2-5 — mix serious problems with smaller nitpicks; let the lowest-scoring pillar drive selection).
-personal_feedback (string, 2-3 short sentences, addressed to the writer as "you". Holistic read of the poem AND one concrete craft move to try next, in one short paragraph. Mentor tone, no preamble, no "Dear writer".).
-Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED whenever the issue centers on specific words. List exact lowercase tokens from the poem.),
-  rationale (3-5 full sentences — (1) name the specific craft problem AND which pillar it hurts, (2) explain why it weakens THIS line in this poem's context, quoting words/sounds/rhythm, (3) describe how it lands on the reader, (4) when useful, contrast with a sharper move.),
-  improvements[] (2-4 concrete moves, each ≤14 words, naming a specific technique or word swap),
-  rewrite? (omit unless you can offer a clearly stronger one-line replacement),
-  confidence? ("low" only — omit otherwise).
-Prefer single-line issues. Cover a range of craft angles. 1-based line numbers. DO NOT emit overall_feedback — personal_feedback now carries both the holistic read and the addressed-to-you note.`;
+pillar_scores {chord, craft, spark, echo}: int 0-25 each, scored INDEPENDENTLY against the anchors.
+pillar_rationales {chord, craft, spark, echo}: one line per pillar, ≤14 words, plain English. Name the specific line/image/sound that drove the score.
+overall_score: int 1-100. MUST equal min(chord+craft+spark+echo, lowest×4+20). If not, output is invalid.
+warm_reaction: ≤14 words, persona voice.
+strengths[]: 2-3 items, 6-12 words each. Plain and specific — name the actual line or image.
+weaknesses[]: 2-3 items, 6-12 words each. Plain and specific.
+strongest_line: {line:int, why:≤10w plain}.
+issues[]: 2-5 items. Mix serious + small. Let the lowest-scoring pillar drive what you raise.
+personal_feedback: 2-3 short sentences, addressed to "you". Holistic read + one concrete next move. No preamble.
+Each issue: {id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED for word-level issues — exact lowercase tokens from the poem), rationale (2-3 short sentences — name the problem and which pillar it hurts, then how it lands on the reader), improvements[] (1-3 concrete moves, ≤14 words each), rewrite? (omit unless clearly stronger), confidence? ("low" only)}.
+Prefer single-line issues. 1-based line numbers. DO NOT emit overall_feedback — personal_feedback covers both holistic and addressed-to-you.`;
 }
 
 interface LocalAnalysis {
@@ -182,7 +204,7 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
 function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Scoring reminder ---\nScore each of the 4 pillars (Chord/Breeze, Craft/Technique, Spark/Edge, Echo/Effect) 0-25 INDEPENDENTLY against the anchors. Write one short plain-language rationale per pillar (≤14 words) that names the specific line/image/sound that drove the score. Sum, then apply the hard cap. Local-analysis signals (clichés, syllables) are soft — penalize accidental failures but reward intentional rule-breaking. Do not cluster the pillars; divergence is the point.`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Reminder ---\nScore each pillar independently. Don't park scores in the polite middle, and don't park them at the top — use the full scale. Local hints are soft; reward purposeful rule-breaking.`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

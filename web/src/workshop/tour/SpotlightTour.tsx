@@ -66,7 +66,7 @@ const STEPS: TourStep[] = [
   {
     id: "tools-panel",
     title: "Live analysis",
-    body: "Re-analyses on every keystroke. Hover any result for detail. Click a line number to jump there. Spell-check has poetry-friendly and strict modes.",
+    body: "Re-analyses on every keystroke. Hover any result for detail. Click a line number to jump there.",
     placement: "left",
     pad: 10,
   },

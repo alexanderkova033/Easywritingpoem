@@ -386,7 +386,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 {status === "loading"
                   ? (effectiveMode === "compare" ? (draftMode ? "Re-checking…" : "Refining…") : (draftMode ? "Checking…" : "Reading…"))
                   : effectiveMode === "compare"
-                    ? (draftMode ? "↻ Re-check draft" : "↻ Refine")
+                    ? (draftMode ? "⟳ Re-check draft" : "⟳ Refine")
                     : draftMode ? "✎ Check draft" : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (
@@ -465,38 +465,27 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           )}
 
           {status === "done" && result && (
-            <>
-              <AnalysisResults
-                key={`results-${sessionNonce}`}
-                result={result}
-                previous={effectiveMode === "compare" ? savedResult : null}
-                onJump={onJumpToLine}
-                onJumpToWord={onJumpToWord}
-                onPeek={onPeekLine}
-                onHighlight={onHighlightLines}
-                onClearHighlight={onClearHighlight}
-                scoreHistory={scoreHistory}
-                onApplyLine={onApplyLine}
-                poemLines={lines}
-                originalLines={savedLines.length > 0 ? savedLines : undefined}
-                poemTitle={title}
-                poemId={poemId}
-                onVisibleIssuesChange={onVisibleIssuesChange}
-                openIssueLineSignal={openIssueLineSignal}
-                scoringEnabled={scoringEnabled}
-                externalTabSignal={externalTabSignal}
-                localAnalysis={localAnalysis}
-              />
-              <button type="button"
-                className="small-btn ai-rerun-btn"
-                onClick={() => void handleAnalyze()}
-                disabled={retryAfterSec > 0}
-                title={retryAfterSec > 0 ? `Rate limit — wait ${retryAfterSec}s` : undefined}>
-                {retryAfterSec > 0
-                  ? `Wait ${retryAfterSec}s`
-                  : effectiveMode === "compare" ? "Refine again" : "Read again"}
-              </button>
-            </>
+            <AnalysisResults
+              key={`results-${sessionNonce}`}
+              result={result}
+              previous={effectiveMode === "compare" ? savedResult : null}
+              onJump={onJumpToLine}
+              onJumpToWord={onJumpToWord}
+              onPeek={onPeekLine}
+              onHighlight={onHighlightLines}
+              onClearHighlight={onClearHighlight}
+              scoreHistory={scoreHistory}
+              onApplyLine={onApplyLine}
+              poemLines={lines}
+              originalLines={savedLines.length > 0 ? savedLines : undefined}
+              poemTitle={title}
+              poemId={poemId}
+              onVisibleIssuesChange={onVisibleIssuesChange}
+              openIssueLineSignal={openIssueLineSignal}
+              scoringEnabled={scoringEnabled}
+              externalTabSignal={externalTabSignal}
+              localAnalysis={localAnalysis}
+            />
           )}
         </div>
       )}

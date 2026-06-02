@@ -1,4 +1,3 @@
-import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import { normalizeWordToken, wordSpansInLine } from "@/workshop/meter/tokenize";
 import { suggestCorrections } from "./suggest";
 
@@ -30,15 +29,8 @@ export function spellHitsFromText(
   dict: Set<string>,
   personal: Set<string>,
   sessionIgnores: Set<string>,
-  mode: SpellMode,
 ): SpellHit[] {
-  const ranges = spellErrorRangesFromText(
-    fullText,
-    dict,
-    personal,
-    sessionIgnores,
-    mode,
-  );
+  const ranges = spellErrorRangesFromText(fullText, dict, personal, sessionIgnores);
   const hits: SpellHit[] = [];
   for (const r of ranges) {
     const raw = fullText.slice(r.from, r.to);
@@ -55,8 +47,7 @@ export function spellHitsFromText(
   return hits;
 }
 
-function shouldSkipPermissive(token: string, normalized: string): boolean {
-  if (normalized.length <= 1) return true;
+function shouldSkipToken(token: string, normalized: string): boolean {
   if (normalized.length <= 2) return true;
   if (/\d/.test(token)) return true;
   if (/[^a-zA-Z']/.test(token.replace(/'/g, ""))) return true;
@@ -67,24 +58,28 @@ function shouldSkipPermissive(token: string, normalized: string): boolean {
   return false;
 }
 
-function shouldSkipStrict(_token: string, normalized: string): boolean {
-  if (normalized.length <= 1) return true;
-  if (/^\d+$/.test(normalized)) return true;
-  return false;
-}
-
 const CONTRACTION_SUFFIXES = new Set(["s", "re", "ve", "ll", "d", "m"]);
+// Bases that don't appear in the wordlist (single-letter words are excluded
+// from spell-checking) but are valid contraction stems.
+const EXTRA_CONTRACTION_BASES = new Set(["i"]);
+
+function isKnownBase(base: string, dict: Set<string>): boolean {
+  return dict.has(base) || EXTRA_CONTRACTION_BASES.has(base);
+}
 
 function isContraction(normalized: string, dict: Set<string>): boolean {
   if (!normalized.includes("'")) return false;
   if (normalized.endsWith("n't") && normalized.length > 3) {
     const base = normalized.slice(0, -3);
-    if (dict.has(base)) return true;
+    if (isKnownBase(base, dict)) return true;
   }
   const apos = normalized.lastIndexOf("'");
   if (apos > 0 && apos < normalized.length - 1) {
     const suffix = normalized.slice(apos + 1);
-    if (CONTRACTION_SUFFIXES.has(suffix) && dict.has(normalized.slice(0, apos))) {
+    if (
+      CONTRACTION_SUFFIXES.has(suffix) &&
+      isKnownBase(normalized.slice(0, apos), dict)
+    ) {
       return true;
     }
   }
@@ -112,12 +107,9 @@ function isMisspelled(
   dict: Set<string>,
   personal: Set<string>,
   sessionIgnores: Set<string>,
-  mode: SpellMode,
 ): boolean {
   if (!normalized) return false;
-  if (mode === "permissive" && shouldSkipPermissive(raw, normalized))
-    return false;
-  if (mode === "strict" && shouldSkipStrict(raw, normalized)) return false;
+  if (shouldSkipToken(raw, normalized)) return false;
   if (inWordSet(personal, normalized) || inWordSet(sessionIgnores, normalized))
     return false;
   if (inDictionary(dict, normalized)) return false;
@@ -130,7 +122,6 @@ export function spellErrorRangesFromText(
   dict: Set<string>,
   personal: Set<string>,
   sessionIgnores: Set<string>,
-  mode: SpellMode,
 ): { from: number; to: number }[] {
   const lines = fullText.split("\n");
   const ranges: { from: number; to: number }[] = [];
@@ -139,16 +130,7 @@ export function spellErrorRangesFromText(
     const line = lines[i]!;
     for (const span of wordSpansInLine(line)) {
       const normalized = normalizeWordToken(span.raw);
-      if (
-        !isMisspelled(
-          span.raw,
-          normalized,
-          dict,
-          personal,
-          sessionIgnores,
-          mode,
-        )
-      )
+      if (!isMisspelled(span.raw, normalized, dict, personal, sessionIgnores))
         continue;
       ranges.push({ from: base + span.start, to: base + span.end });
     }
@@ -162,13 +144,6 @@ export function scanLinesForSpelling(
   dict: Set<string>,
   personal: Set<string>,
   sessionIgnores: Set<string>,
-  mode: SpellMode,
 ): SpellHit[] {
-  return spellHitsFromText(
-    lines.join("\n"),
-    dict,
-    personal,
-    sessionIgnores,
-    mode,
-  );
+  return spellHitsFromText(lines.join("\n"), dict, personal, sessionIgnores);
 }

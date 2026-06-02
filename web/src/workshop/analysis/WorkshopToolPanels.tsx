@@ -1,5 +1,4 @@
 import type { ChangeEvent } from "react";
-import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import type { GoalEvaluation } from "@/workshop/goals/metrics";
@@ -49,8 +48,6 @@ export interface WorkshopToolPanelsProps {
   spellHits: SpellHit[];
   wordlist: Set<string> | null;
   wordlistErr: string | null;
-  spellMode: SpellMode;
-  onSpellModeChange: (mode: SpellMode) => void;
   goToLine: (line1Based: number) => void;
   goToWord: (line1Based: number, startCol: number, endCol: number) => void;
   goToLineEnd: (line1Based: number) => void;
@@ -227,8 +224,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           spellHits={props.spellHits}
           wordlist={props.wordlist}
           wordlistErr={props.wordlistErr}
-          spellMode={props.spellMode}
-          onSpellModeChange={props.onSpellModeChange}
           goToSpellHitAt={props.goToSpellHitAt}
           applySpellSuggestion={props.applySpellSuggestion}
           applySpellSuggestionAll={props.applySpellSuggestionAll}

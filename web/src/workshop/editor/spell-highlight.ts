@@ -6,7 +6,6 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { SpellMode } from "@/workshop/library/local-draft-storage";
 import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
 import { SPELL_ANALYSIS_DEBOUNCE_MS } from "@/spellcheck/spell-timing";
 import { spellErrorRangesFromText } from "@/spellcheck/scan";
@@ -15,9 +14,9 @@ export const spellSyncFacet = Facet.define<number, number>({
   combine: (xs) => xs[xs.length - 1] ?? 0,
 });
 
-type SpellCtx = () => { dict: Set<string> | null; mode: SpellMode };
+type SpellCtx = () => { dict: Set<string> | null };
 
-let spellContext: SpellCtx = () => ({ dict: null, mode: "permissive" });
+let spellContext: SpellCtx = () => ({ dict: null });
 
 /** Call each render (or via layout effect) so the plugin reads fresh dict/mode. */
 export function bindSpellContext(fn: SpellCtx): void {
@@ -62,7 +61,7 @@ const spellPlugin = ViewPlugin.fromClass(
 
     private run() {
       if (this.disposed) return;
-      const { dict, mode } = spellContext();
+      const { dict } = spellContext();
       if (!dict) {
         this.safeDispatch(setSpellDeco.of(Decoration.none));
         return;
@@ -79,7 +78,6 @@ const spellPlugin = ViewPlugin.fromClass(
         dict,
         loadPersonalDictionary(),
         loadSessionIgnores(),
-        mode,
       ).filter((r) => !cursorPositions.some((pos) => pos >= r.from && pos <= r.to));
       const deco = ranges.map((r) =>
         Decoration.mark({ class: "cm-spell-error" }).range(r.from, r.to),

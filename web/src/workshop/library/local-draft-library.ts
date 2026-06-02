@@ -6,7 +6,7 @@ import {
   STORAGE_KEY_DRAFT,
   STORAGE_KEY_LIBRARY,
 } from "@/shared/storage-keys";
-import { loadDraft, type DraftState, type SpellMode } from "./local-draft-storage";
+import { loadDraft, type DraftState } from "./local-draft-storage";
 import {
   migrateLegacyRevisionsV1ToPoem,
   parseRevisionSnapshotsFromExport,
@@ -17,14 +17,11 @@ import {
 const LIBRARY_KEY = STORAGE_KEY_LIBRARY;
 const LEGACY_DRAFT_KEY = STORAGE_KEY_DRAFT;
 
-export type { SpellMode };
-
 export interface PoemRecord {
   id: string;
   title: string;
   body: string;
   form?: string;
-  spellMode?: SpellMode;
   updatedAt: string;
 }
 
@@ -64,17 +61,12 @@ function readLibraryRaw(): DraftLibrary | null {
         typeof r.updatedAt === "string" ? r.updatedAt : new Date().toISOString();
       const form =
         r.form === undefined || r.form === null ? undefined : String(r.form);
-      const spellMode =
-        r.spellMode === "strict" || r.spellMode === "permissive"
-          ? r.spellMode
-          : undefined;
       poems.push({
         id: r.id,
         title: r.title,
         body: r.body,
         updatedAt,
         ...(form ? { form } : {}),
-        ...(spellMode ? { spellMode } : {}),
       });
     }
     if (poems.length === 0) return null;
@@ -106,7 +98,6 @@ function fromDraftState(d: DraftState, id: string): PoemRecord {
     body: d.body,
     updatedAt: new Date().toISOString(),
     ...(d.form ? { form: d.form } : {}),
-    ...(d.spellMode ? { spellMode: d.spellMode } : {}),
   };
 }
 
@@ -135,7 +126,6 @@ export function upsertActivePoem(
   lib: DraftLibrary,
   patch: Pick<PoemRecord, "title" | "body"> & {
     form?: string;
-    spellMode?: SpellMode;
   },
 ): DraftLibrary {
   const now = new Date().toISOString();
@@ -150,9 +140,6 @@ export function upsertActivePoem(
     if (patch.form !== undefined) {
       if (patch.form.trim()) next.form = patch.form.trim();
       else delete next.form;
-    }
-    if (patch.spellMode !== undefined) {
-      next.spellMode = patch.spellMode;
     }
     return next;
   });
@@ -180,7 +167,6 @@ export function duplicatePoemById(
     body: cur.body,
     updatedAt: new Date().toISOString(),
     ...(cur.form ? { form: cur.form } : {}),
-    ...(cur.spellMode ? { spellMode: cur.spellMode } : {}),
   };
   return addPoem(lib, copy);
 }
@@ -214,7 +200,6 @@ export interface WorkshopExportPoem {
   title: string;
   body: string;
   form?: string;
-  spellMode?: SpellMode;
   updatedAt?: string;
   revisions?: RevisionSnapshot[];
 }
@@ -235,7 +220,6 @@ export function buildWorkshopExportJson(input: {
     title: p.title,
     body: p.body,
     ...(p.form ? { form: p.form } : {}),
-    ...(p.spellMode ? { spellMode: p.spellMode } : {}),
     updatedAt: p.updatedAt,
     revisions: input.revisionsForPoem(p.id),
   }));
@@ -284,10 +268,6 @@ export function mergeImportedPoems(
     const id = newPoemId();
     const form =
       p.form === undefined || p.form === null ? undefined : String(p.form);
-    const spellMode =
-      p.spellMode === "strict" || p.spellMode === "permissive"
-        ? p.spellMode
-        : undefined;
     const poem: PoemRecord = {
       id,
       title: p.title,
@@ -295,7 +275,6 @@ export function mergeImportedPoems(
       updatedAt:
         typeof p.updatedAt === "string" ? p.updatedAt : new Date().toISOString(),
       ...(form?.trim() ? { form: form.trim() } : {}),
-      ...(spellMode ? { spellMode } : {}),
     };
     next = { ...next, poems: [...next.poems, poem], activeId: id };
     added++;

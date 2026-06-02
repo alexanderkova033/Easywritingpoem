@@ -21,7 +21,6 @@ import {
   formatMarksExtension,
   formatMarksTheme,
 } from "@/workshop/editor/format-marks";
-import type { SpellMode } from "@/workshop/library/local-draft-storage";
 
 // Touch devices (iOS Safari, Android Chrome, iPad) struggle with the heaviest
 // live-update decoration plugins. Detect once at module load; matchMedia result
@@ -236,11 +235,6 @@ const syllableCountPlugin = ViewPlugin.fromClass(
   },
   { decorations: (v) => v.decorations },
 );
-
-/** Facet must change on the same render as spellMode (not only after a spellBump effect). */
-function spellFacetValue(spellBump: number, spellMode: SpellMode): number {
-  return spellBump * 2 + (spellMode === "strict" ? 1 : 0);
-}
 
 const setLineFlash = StateEffect.define<DecorationSet>();
 const clearLineFlash = StateEffect.define<void>();
@@ -735,7 +729,6 @@ export interface PoemBodyEditorProps {
   onLiveBody: (value: string) => void;
   editorViewRef: MutableRefObject<EditorView | null>;
   wordlist: Set<string> | null;
-  spellMode: SpellMode;
   spellBump: number;
   jumpLine?: number | null;
   jumpBump?: number;
@@ -802,7 +795,6 @@ export interface PoemBodyEditorProps {
 export function PoemBodyEditor(props: PoemBodyEditorProps) {
   bindSpellContext(() => ({
     dict: props.wordlist,
-    mode: props.spellMode,
   }));
 
   const lastBodySyncNonce = useRef(props.bodySyncNonce);
@@ -812,8 +804,20 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     if (props.bodySyncNonce !== lastBodySyncNonce.current) {
       lastBodySyncNonce.current = props.bodySyncNonce;
       setLocalValue(props.value);
+      // The user types directly into CodeMirror without flowing through React's
+      // value prop (see onChange below). So localValue can be stale relative to
+      // view.state.doc. If a resync target matches that stale React value,
+      // setLocalValue is a no-op and CodeMirror's own value-watcher won't fire.
+      // Push the new value straight into the view to guarantee the doc resets.
+      const view = props.editorViewRef.current;
+      if (view && view.state.doc.toString() !== props.value) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: props.value },
+          annotations: [ExternalChange.of(true)],
+        });
+      }
     }
-  }, [props.bodySyncNonce, props.value]);
+  }, [props.bodySyncNonce, props.value, props.editorViewRef]);
 
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -1176,7 +1180,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       // biggest source of typing lag on iPad.
       ...(IS_TOUCH_DEVICE ? [] : [lineFontScaleField, lineFontScalePlugin]),
       EditorView.contentAttributes.of({ spellcheck: "false" }),
-      spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
+      spellSyncFacet.of(props.spellBump),
       search({ top: true }),
       highlightSelectionMatches(),
       lineFlashField,
@@ -1206,7 +1210,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       ...basicSetup(),
       poemEditorTheme,
     ],
-    [props.spellBump, props.spellMode, showSyllables],
+    [props.spellBump, showSyllables],
   );
 
   const selectionCallbackRef = useRef(props.onSelectionText);
