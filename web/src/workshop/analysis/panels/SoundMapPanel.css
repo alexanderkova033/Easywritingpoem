@@ -16,6 +16,72 @@
 }
 .sound-help strong { color: var(--text); font-weight: 600; }
 
+/* ── At-a-glance summary (Echoes view) ── */
+.sound-echo-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.55rem 0.7rem 0.6rem 0.85rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--echo-hue, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--echo-hue, var(--border)) 5%, var(--bg));
+  transition: background 0.15s ease;
+}
+.sound-echo-summary:hover {
+  background: color-mix(in srgb, var(--echo-hue, var(--border)) 9%, var(--bg));
+}
+.sound-echo-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.sound-echo-summary-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-hue, var(--border)) 22%, transparent);
+}
+.sound-echo-summary-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sound-echo-summary-line {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: var(--text);
+}
+.sound-echo-summary-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+}
+.sound-echo-summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sound-echo-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sound-echo-summary-more {
+  align-self: center;
+}
+.sound-echo-summary-pin {
+  margin-left: auto;
+}
+
 /* ── Filter chips (Echoes view) ── */
 .sound-filter-chips {
   display: flex;

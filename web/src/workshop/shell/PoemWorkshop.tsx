@@ -562,10 +562,11 @@ export function PoemWorkshop() {
   /**
    * Repeat-tool persistent highlights. Active whenever the Repeats panel is
    * the visible tool; content mirrors the active subtab (words/phrases/
-   * patterns). Each group (a unique word, phrase, or edge-pattern) gets a
-   * stable colour index assigned in encounter order — since the analyser
-   * sorts by severity descending, high-severity items always claim early
-   * hues and low-severity items reuse them after the palette wraps.
+   * patterns). Each group (a unique word, phrase, or edge-pattern) gets its
+   * own colour index assigned in encounter order — the editor turns this
+   * into a unique hue via golden-angle increment so any number of groups
+   * stays visually distinct. `count` drives the small badge at the top-right
+   * of each occurrence.
    */
   const repeatHighlights = useMemo(() => {
     if (m.toolTab !== "repeat") return undefined;
@@ -577,6 +578,7 @@ export function PoemWorkshop() {
       kind: "word" | "phrase" | "pattern";
       groupId: string;
       colorIndex: number;
+      count: number;
     };
     const out: Entry[] = [];
     const colorMap = new Map<string, number>();
@@ -596,6 +598,7 @@ export function PoemWorkshop() {
     ) => {
       if (occurrences.length === 0) return;
       const colorIndex = colorFor(groupId);
+      const count = occurrences.length;
       for (const o of occurrences) {
         out.push({
           line: o.line,
@@ -605,6 +608,7 @@ export function PoemWorkshop() {
           kind,
           groupId,
           colorIndex,
+          count,
         });
       }
     };
@@ -718,8 +722,20 @@ export function PoemWorkshop() {
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
   // editor instead of showing labels inside the editor's left gutter.
+  // Remember the prior state so we can restore it when leaving the tab if
+  // the user had the quick-toggle off before we forced it on.
+  const rhymeSchemePrevRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (m.toolTab === "rhyme") setShowRhymeScheme(true);
+    if (m.toolTab === "rhyme") {
+      setShowRhymeScheme((prev) => {
+        if (rhymeSchemePrevRef.current === null) rhymeSchemePrevRef.current = prev;
+        return true;
+      });
+    } else if (rhymeSchemePrevRef.current !== null) {
+      const wasOnBefore = rhymeSchemePrevRef.current;
+      rhymeSchemePrevRef.current = null;
+      if (!wasOnBefore) setShowRhymeScheme(false);
+    }
   }, [m.toolTab]);
 
 

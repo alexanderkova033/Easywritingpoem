@@ -25,17 +25,17 @@
   }
 }
 
-/* Desktop (≥1050px): the sticky tools panel must never slide over this section, and the
-   section should look centered between the rail (which is allowed to "slide in" on the
-   left) and the tools panel area. Span up to but not including the tools-panel column,
-   then inset symmetrically by the rail width + 8px breathing room on each side. */
+/* Desktop (≥1050px): span the full grid width with symmetric horizontal margins equal
+   to the rail width + 8px breathing room. The section is centered on the page; the
+   rail can slide in on the left and the tools panel (now static, not sticky) sits
+   above in row 1 without sliding down to overlap. */
 @media (min-width: 1050px) {
   .workshop-grid > .ai-analysis-section {
-    grid-column: 1 / -2;
+    grid-column: 1 / -1;
     justify-self: stretch;
     width: auto;
     max-width: none;
-    margin-inline: calc(var(--rail-col, 56px) + 8px);
+    margin-inline: calc(var(--rail-col, 56px) + 1rem);
   }
 }
 

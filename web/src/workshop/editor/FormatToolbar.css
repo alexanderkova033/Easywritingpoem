@@ -816,37 +816,21 @@ button.primary:disabled {
 .cm-rhyme-end-hover { text-decoration-color: var(--accent); background-color: color-mix(in srgb, var(--accent) 14%, transparent); }
 
 /* ---- Repeats-tool persistent marks (group-coloured, severity-tinted) ----
- * Every occurrence of a single repeated word/phrase/pattern shares one hue,
- * so the eye can instantly cluster siblings without reading them. Severity
- * controls the alpha (low/med/high). Cleared when the Repeats tool closes
- * or the active subtab changes. Sized for poetry: subtle underline tint, not
- * a heavy fill, so the poem text stays the focus.                            */
+ * Every occurrence of a single repeated word/phrase/pattern shares one hue
+ * (assigned per-group via golden-angle spread in the editor — every group
+ * gets a unique colour, no cycling). Severity controls the alpha. A small
+ * count badge in the top-right corner shows how many times the group
+ * repeats, so the same number on the same colour confirms the match at a
+ * glance. Cleared when the Repeats tool closes or the active subtab changes.
+ */
 .cm-repeat-mark {
-  --repeat-hue: var(--repeat-c0);
+  --repeat-hue: 210 72% 48%; /* fallback only — overridden inline per group */
+  position: relative;
   border-radius: 2px;
   background: hsl(var(--repeat-hue) / 0.08);
   box-shadow: inset 0 -1px 0 hsl(var(--repeat-hue) / 0.32);
   transition: background 0.12s ease, box-shadow 0.12s ease;
 }
-
-/* Six-hue rotation. Stable per repeat group; assigned in encounter order so
-   the most-severe items get distinct colours and lower-severity items reuse
-   them if the palette wraps. */
-:root {
-  --repeat-c0: 210 80% 55%; /* blue */
-  --repeat-c1: 30 85% 55%;  /* orange */
-  --repeat-c2: 145 55% 45%; /* green */
-  --repeat-c3: 280 60% 60%; /* purple */
-  --repeat-c4: 340 75% 60%; /* pink */
-  --repeat-c5: 180 60% 45%; /* teal */
-}
-
-.cm-repeat-mark-c0 { --repeat-hue: var(--repeat-c0); }
-.cm-repeat-mark-c1 { --repeat-hue: var(--repeat-c1); }
-.cm-repeat-mark-c2 { --repeat-hue: var(--repeat-c2); }
-.cm-repeat-mark-c3 { --repeat-hue: var(--repeat-c3); }
-.cm-repeat-mark-c4 { --repeat-hue: var(--repeat-c4); }
-.cm-repeat-mark-c5 { --repeat-hue: var(--repeat-c5); }
 
 .cm-repeat-mark-low {
   background: hsl(var(--repeat-hue) / 0.08);
@@ -877,6 +861,28 @@ button.primary:disabled {
   box-shadow:
     inset 0 1px 0 hsl(var(--repeat-hue) / 0.62),
     inset 0 -1px 0 hsl(var(--repeat-hue) / 0.62);
+}
+
+/* Count badge — small pill at top-right showing how many times this group
+   repeats. Same number + same colour = members of the same echo. */
+.cm-repeat-mark[data-repeat-count]::after {
+  content: attr(data-repeat-count);
+  position: absolute;
+  top: -0.55em;
+  right: -0.35em;
+  min-width: 1.05em;
+  padding: 0 0.32em;
+  font-size: 0.62em;
+  line-height: 1.45;
+  font-weight: 700;
+  text-align: center;
+  color: #fff;
+  background: hsl(var(--repeat-hue) / 0.92);
+  border-radius: 999px;
+  pointer-events: none;
+  z-index: 2;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

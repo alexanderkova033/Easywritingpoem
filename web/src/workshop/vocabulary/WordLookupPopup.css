@@ -244,6 +244,10 @@
 }
 
 /* ── Syllable count + rhythm bar inline widget ────────────────── */
+/* line-height: 1 + vertical-align: middle keep the widget's box small
+   enough that adding/removing it on a line (active-line filter) never
+   shifts that line's height — otherwise the line below visibly nudges
+   closer when the user clicks the line above. */
 .cm-syllable-wrap {
   display: inline-flex;
   align-items: center;
@@ -251,6 +255,8 @@
   margin-left: 0.55em;
   user-select: none;
   pointer-events: none;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .cm-rhythm-bar {

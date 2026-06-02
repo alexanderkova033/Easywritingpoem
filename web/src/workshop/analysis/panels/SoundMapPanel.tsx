@@ -87,6 +87,38 @@ const ALL_CLASSES: SoundClass[] = [
   "liquid",
 ];
 
+const CLASS_HEADLINE: Record<SoundClass, string> = {
+  alliteration: "Words sharing a starting sound chime through your poem.",
+  assonance: "Vowel sounds chime through your lines.",
+  consonance: "Repeated consonants thread through your lines.",
+  sibilance: "Hissing s / sh sounds run through your poem.",
+  plosive: "Hard, punchy consonants give your lines weight.",
+  liquid: "Soft l / r / m / n sounds carry your lines along.",
+};
+
+function pickDominantClass(
+  byClass: Record<SoundClass, SoundEcho[]>,
+): SoundClass | null {
+  let best: { cls: SoundClass; weight: number } | null = null;
+  for (const cls of ALL_CLASSES) {
+    let weight = 0;
+    for (const e of byClass[cls]) weight += e.members.length;
+    if (weight === 0) continue;
+    if (best === null || weight > best.weight) best = { cls, weight };
+  }
+  return best?.cls ?? null;
+}
+
+function pickStrongestEcho(echoes: SoundEcho[]): SoundEcho | null {
+  if (echoes.length === 0) return null;
+  let best = echoes[0]!;
+  for (const e of echoes) {
+    if (e.members.length > best.members.length) best = e;
+    else if (e.members.length === best.members.length && e.minGap < best.minGap) best = e;
+  }
+  return best;
+}
+
 function EchoCard({
   echo,
   onMemberClick,
@@ -268,6 +300,16 @@ export function SoundMapPanel({
     return m;
   }, [echoesWithId]);
 
+  const dominantClass = useMemo(() => pickDominantClass(byClass), [byClass]);
+  const headlineEcho = useMemo(
+    () => (dominantClass ? pickStrongestEcho(byClass[dominantClass]) : null),
+    [byClass, dominantClass],
+  );
+  const headlineEchoId = useMemo(() => {
+    if (!headlineEcho) return null;
+    return echoesWithId.find((x) => x.echo === headlineEcho)?.id ?? null;
+  }, [echoesWithId, headlineEcho]);
+
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
     const color = echoColor(echo);
@@ -409,6 +451,83 @@ export function SoundMapPanel({
       {/* ── Echoes ── */}
       {subTab === "echoes" && (
         <>
+          {headlineEcho && dominantClass && (
+            <section
+              className="sound-echo-summary"
+              style={{ ["--echo-hue" as string]: SOUND_CLASS_HUES[dominantClass] }}
+              onMouseEnter={() => headlineEchoId && setHoveredEchoId(headlineEchoId)}
+              onMouseLeave={() => setHoveredEchoId(null)}
+              onFocus={() => headlineEchoId && setHoveredEchoId(headlineEchoId)}
+              onBlur={() => setHoveredEchoId(null)}
+            >
+              <header className="sound-echo-summary-head">
+                <span
+                  className="sound-echo-summary-dot"
+                  style={{ background: SOUND_CLASS_HUES[dominantClass] }}
+                  aria-hidden
+                />
+                <span className="sound-echo-summary-eyebrow">At a glance</span>
+              </header>
+              <p className="sound-echo-summary-line">{CLASS_HEADLINE[dominantClass]}</p>
+              <div className="sound-echo-summary-pick">
+                <span className="sound-echo-summary-label">Strongest echo</span>
+                <div className="sound-echo-summary-chips">
+                  {headlineEcho.members.slice(0, 5).map((m, i) => (
+                    <button
+                      key={`hl-${m.lineNumber}-${i}`}
+                      type="button"
+                      className="sound-echo-chip"
+                      onClick={() => {
+                        const ls = lineSoundsByLine.get(m.lineNumber);
+                        const tok = ls?.tokens[m.tokenIndex];
+                        if (tok && goToWord) {
+                          goToWord(m.lineNumber, tok.start, tok.end);
+                        } else {
+                          goToLine(m.lineNumber);
+                        }
+                      }}
+                      title={`"${m.word}" on line ${m.lineNumber}`}
+                      style={{ borderColor: SOUND_CLASS_HUES[dominantClass] }}
+                    >
+                      <span className="sound-echo-chip-word">{m.word}</span>
+                      <span className="sound-echo-chip-line">L{m.lineNumber}</span>
+                    </button>
+                  ))}
+                  {headlineEcho.members.length > 5 && (
+                    <span className="sound-echo-summary-more muted small">
+                      +{headlineEcho.members.length - 5} more
+                    </span>
+                  )}
+                </div>
+                {headlineEchoId && (
+                  <button
+                    type="button"
+                    className={`sound-echo-pin sound-echo-summary-pin${pinnedEchoes.has(headlineEchoId) ? " is-pinned" : ""}`}
+                    onClick={() => togglePinnedEcho(headlineEchoId)}
+                    aria-pressed={pinnedEchoes.has(headlineEchoId)}
+                    title={pinnedEchoes.has(headlineEchoId) ? "Hide this echo in the poem" : "Show this echo in the poem"}
+                    style={
+                      pinnedEchoes.has(headlineEchoId)
+                        ? { borderColor: SOUND_CLASS_HUES[dominantClass], color: SOUND_CLASS_HUES[dominantClass] }
+                        : undefined
+                    }
+                  >
+                    <span
+                      className="sound-echo-pin-dot"
+                      aria-hidden
+                      style={
+                        pinnedEchoes.has(headlineEchoId)
+                          ? { background: SOUND_CLASS_HUES[dominantClass] }
+                          : undefined
+                      }
+                    />
+                    {pinnedEchoes.has(headlineEchoId) ? "Shown in poem" : "Show in poem"}
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
           {echoes.length > 0 && (
             <div className="sound-filter-chips" role="group" aria-label="Filter echoes by sound type">
               <button

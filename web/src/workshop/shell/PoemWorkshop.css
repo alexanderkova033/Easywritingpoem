@@ -648,12 +648,10 @@
 
 @media (min-width: 900px) {
   .tools-panel {
-    position: sticky;
-    top: 1.15rem;
     align-self: start;
-    /* Promote to compositor layer to eliminate jank when page scrolls */
-    will-change: transform;
-    transform: translateZ(0);
+    /* Static positioning (no sticky) so the panel scrolls with the page and never
+       slides down over the AI Analysis section in the row below. Matches the rail's
+       behavior at the same breakpoints. */
   }
 }
 

@@ -779,6 +779,7 @@ export interface PoemBodyEditorProps {
     kind: "word" | "phrase" | "pattern";
     groupId: string;
     colorIndex: number;
+    count: number;
   }>;
   /** Sound-echo highlights — words that share a sound (alliteration, assonance, etc.). */
   echoHighlights?: Array<{ line: number; start: number; end: number; colorKey: string; color?: string }>;
@@ -976,13 +977,18 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         const a = Math.max(0, Math.min(r.start, lineLen));
         const b = Math.max(a, Math.min(r.end, lineLen));
         if (b <= a) continue;
-        const colorIdx = ((r.colorIndex % 6) + 6) % 6;
+        // Golden-angle hue spread → distinct colour per group, no cycling.
+        const hue = Math.round(((r.colorIndex * 137.508) % 360 + 360) % 360);
         const cls =
-          `cm-repeat-mark cm-repeat-mark-${r.severity} cm-repeat-mark-${r.kind} cm-repeat-mark-c${colorIdx}`;
+          `cm-repeat-mark cm-repeat-mark-${r.severity} cm-repeat-mark-${r.kind}`;
         decos.push(
           Decoration.mark({
             class: cls,
-            attributes: { "data-repeat-group": r.groupId },
+            attributes: {
+              "data-repeat-group": r.groupId,
+              "data-repeat-count": String(r.count),
+              style: `--repeat-hue: ${hue} 72% 48%`,
+            },
           }).range(line.from + a, line.from + b),
         );
       }
