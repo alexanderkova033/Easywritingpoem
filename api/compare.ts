@@ -15,8 +15,8 @@ const DRAFT_BLOCK = `
 === DRAFT MODE — work-in-progress check ===
 The poet has marked this revision as still in-progress. Apply these adjustments:
 - DO NOT penalize for incompleteness, missing ending, undeveloped form, structural gaps. Score the four pillars on what is on the page.
-- Frame feedback FORWARD. strengths[] = what is already landing, in PLAIN words a reader would use (name the specific line/image/sound). weaknesses[] = THREADS TO DEVELOP (images/sounds/moves to pull on), phrased as invitations, not problems.
-- In personal_feedback, name 1-2 directions the poem seems to want to go, grounded in specific words/images on the page.
+- Frame feedback FORWARD. strengths[] = what is already landing, kept a bit broad — name the general quality without over-specifying. weaknesses[] = THREADS TO DEVELOP (general images/sounds/moves to pull on), phrased as invitations, not problems.
+- In personal_feedback, name 1-2 directions the poem seems to want to go. Stay readable and warm; don't pin to single words.
 - OMIT issues[] (return issues: []). Line-level critique is premature in draft mode.
 - OMIT strongest_line unless one line clearly stands out already.
 - comparison{} still applies: describe what changed between the previous draft and this one. improvements/regressions reference craft moves, not "fix this".
@@ -31,9 +31,9 @@ const BASE_SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revi
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one and low on another. Do not cluster the scores; divergence is the point.
 
-1. Catch (0-25) — how the poem grabs and holds the ear/eye from the first line. Memorable phrasing, a striking opening, hooks, rhythm that carries you in. Independent of whether it lands long-term.
+1. Pull (0-25) — what pulls the reader into the poem and keeps them there. A striking opening, memorable phrasing, hooks, rhythm that carries you in. Independent of whether it lands long-term.
 2. Craft (0-25) — control of the language. Word choice precision, line economy, purposeful line breaks, syntax under command, intentional rhythm, no unintended awkwardness.
-3. Freshness (0-25) — what's new, surprising, or distinctly this poet's. Phrasing that hasn't appeared in a thousand other poems, voice that doesn't borrow received language.
+3. Spark (0-25) — what's new, surprising, or distinctly this poet's. Phrasing that hasn't appeared in a thousand other poems, voice that doesn't borrow received language.
 4. Echo (0-25) — what stays after reading. A line that loops, an image you can't unsee, subtext that surfaces on re-read. The afterlife of the poem.
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
@@ -48,15 +48,15 @@ These show that pillars DIVERGE. Mirror this spread.
 
 EXAMPLE A — total 28 (weak):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
-  pillar_scores: {catch: 6, craft: 8, freshness: 5, echo: 9}
+  pillar_scores: {pull: 6, craft: 8, spark: 5, echo: 9}
 
 EXAMPLE B — total 52 (uneven — grabs ear, flat landing):
   "The streetlight buzzes — moths drum / against the milk-blue lamp. / Somewhere a refrigerator sighs. / Everything is fine."
-  pillar_scores: {catch: 18, craft: 16, freshness: 14, echo: 8}
+  pillar_scores: {pull: 18, craft: 16, spark: 14, echo: 8}
 
 EXAMPLE C — total 68 (quiet but lasting):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
-  pillar_scores: {catch: 12, craft: 21, freshness: 17, echo: 19}
+  pillar_scores: {pull: 12, craft: 21, spark: 17, echo: 19}
 
 === RE-SCORING RULES (read carefully — these override any instinct to be encouraging) ===
 - The previous score is reference ONLY for describing the trend in comparison{}. NOT a floor, NOT an anchor.
@@ -68,14 +68,14 @@ EXAMPLE C — total 68 (quiet but lasting):
 - Do NOT cluster pillars. If three pillars are 18 and one is 9, score the fourth 9, not 13 "to be fair".
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
-Detected clichés normally lower Freshness — UNLESS used ironically or subverted. Broken syllable targets normally lower Craft — UNLESS the breakage lands as deliberate rhythmic disruption. Heavy repetition normally lowers Craft or Freshness — UNLESS doing visible work (refrain, incantation). Reward purposeful rule-breaking; penalize accidental failures.
+Detected clichés normally lower Spark — UNLESS used ironically or subverted. Broken syllable targets normally lower Craft — UNLESS the breakage lands as deliberate rhythmic disruption. Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation). Reward purposeful rule-breaking; penalize accidental failures.
 
 Compute pillar_scores FIRST against the anchors, write pillar_rationales, then derive overall_score arithmetically. The math must be visible.
 
 Keys:
-pillar_scores {catch:int 0-25, craft:int 0-25, freshness:int 0-25, echo:int 0-25} — REQUIRED. Score INDEPENDENTLY against the anchors. The four should show divergence.
-pillar_rationales {catch:string, craft:string, freshness:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English). Name the specific line/image/sound that justified the score. No jargon.
-overall_score (int 1-100, CURRENT) — MUST equal min(catch + craft + freshness + echo, (lowest_pillar × 4) + 20). Compute arithmetically.
+pillar_scores {pull:int 0-25, craft:int 0-25, spark:int 0-25, echo:int 0-25} — REQUIRED. Score INDEPENDENTLY against the anchors. The four should show divergence.
+pillar_rationales {pull:string, craft:string, spark:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English). Name the specific line/image/sound that justified the score. No jargon.
+overall_score (int 1-100, CURRENT) — MUST equal min(pull + craft + spark + echo, (lowest_pillar × 4) + 20). Compute arithmetically.
 warm_reaction (≤14w, terse).
 strengths[] (2-3 items, 6-12 words each — plain and specific, name the actual line/image: "the streetlight buzz pulls you in fast", not "strong sonic patterning").
 weaknesses[] (2-3 items, 6-12 words each — same rule, plain and specific: "the closing line falls into received language", not "tonal failure").
@@ -294,7 +294,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n--- Scoring instructions ---\nScore the CURRENT version from scratch against the 4 pillars (Catch, Craft, Freshness, Echo). Write one plain-language pillar_rationale per pillar (≤14 words) naming the specific line/image/sound that drove that score. The previous score and history above are reference ONLY for describing the trend in comparison{} — do NOT let them anchor or inflate the new score. Local-analysis signals are soft — reward intentional rule-breaking, penalize accidental failures. Do not cluster pillars; divergence is the point.`;
+  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n--- Scoring instructions ---\nScore the CURRENT version from scratch against the 4 pillars (Pull, Craft, Spark, Echo). Write one plain-language pillar_rationale per pillar (≤14 words) naming the specific line/image/sound that drove that score. The previous score and history above are reference ONLY for describing the trend in comparison{} — do NOT let them anchor or inflate the new score. Local-analysis signals are soft — reward intentional rule-breaking, penalize accidental failures. Do not cluster pillars; divergence is the point.`;
 
   const result = await callOpenAI(
     apiKey,

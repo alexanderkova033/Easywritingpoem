@@ -36,16 +36,16 @@ export interface StrongestLine {
 }
 
 export interface PillarScores {
-  catch: number;
+  pull: number;
   craft: number;
-  freshness: number;
+  spark: number;
   echo: number;
 }
 
 export interface PillarRationales {
-  catch?: string;
+  pull?: string;
   craft?: string;
-  freshness?: string;
+  spark?: string;
   echo?: string;
 }
 
@@ -117,15 +117,15 @@ function parsePillarScores(v: unknown): PillarScores | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
   const hasAny =
-    o.catch !== undefined ||
+    o.pull !== undefined ||
     o.craft !== undefined ||
-    o.freshness !== undefined ||
+    o.spark !== undefined ||
     o.echo !== undefined;
   if (!hasAny) return undefined;
   return {
-    catch: clampPillar(o.catch),
+    pull: clampPillar(o.pull),
     craft: clampPillar(o.craft),
-    freshness: clampPillar(o.freshness),
+    spark: clampPillar(o.spark),
     echo: clampPillar(o.echo),
   };
 }
@@ -138,12 +138,12 @@ function parsePillarRationales(v: unknown): PillarRationales | undefined {
     return typeof val === "string" && val.trim() ? val.trim() : undefined;
   };
   const out: PillarRationales = {
-    catch: pick("catch"),
+    pull: pick("pull"),
     craft: pick("craft"),
-    freshness: pick("freshness"),
+    spark: pick("spark"),
     echo: pick("echo"),
   };
-  if (!out.catch && !out.craft && !out.freshness && !out.echo) return undefined;
+  if (!out.pull && !out.craft && !out.spark && !out.echo) return undefined;
   return out;
 }
 
@@ -152,7 +152,7 @@ function parsePillarRationales(v: unknown): PillarRationales | undefined {
  *  too so a sloppy model can't sneak past with an inflated overall_score. */
 function reconcileOverallScore(pillars: PillarScores | undefined, modelOverall: number): number {
   if (!pillars) return modelOverall;
-  const values = [pillars.catch, pillars.craft, pillars.freshness, pillars.echo];
+  const values = [pillars.pull, pillars.craft, pillars.spark, pillars.echo];
   const sum = values.reduce((a, b) => a + b, 0);
   const lowest = Math.min(...values);
   const cap = lowest * 4 + 20;

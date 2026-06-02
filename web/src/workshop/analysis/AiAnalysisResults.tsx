@@ -152,18 +152,32 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 
 function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales?: PillarRationales }) {
   const rows: { key: keyof PillarScores; label: string; hint: string }[] = [
-    { key: "catch",     label: "Catch",     hint: "How it grabs the reader" },
-    { key: "craft",     label: "Craft",     hint: "Control over language" },
-    { key: "freshness", label: "Freshness", hint: "What's new or surprising" },
-    { key: "echo",      label: "Echo",      hint: "What stays after reading" },
+    { key: "pull",  label: "Pull",  hint: "What pulls you into the poem" },
+    { key: "craft", label: "Craft", hint: "Control over language" },
+    { key: "spark", label: "Spark", hint: "What's new, surprising, or distinctly yours" },
+    { key: "echo",  label: "Echo",  hint: "What stays after reading" },
   ];
   const pillarColor = (v: number): string => {
     if (v >= 19) return "var(--ai-score-high, #5fba7d)";
     if (v >= 13) return "var(--ai-score-mid, #e6a817)";
     return "var(--ai-score-low, #d95f5f)";
   };
+  const [showRationales, setShowRationales] = useState(false);
+  const hasAnyRationale = !!rationales && rows.some((r) => rationales[r.key]);
   return (
     <div className="ai-pillars" aria-label="Pillar score breakdown">
+      {hasAnyRationale && (
+        <button
+          type="button"
+          className="ai-pillars-toggle"
+          onClick={() => setShowRationales((v) => !v)}
+          aria-expanded={showRationales}
+          aria-label={showRationales ? "Hide pillar comments" : "Show pillar comments"}
+          title={showRationales ? "Hide why" : "Show why each pillar got its score"}
+        >
+          {showRationales ? "Hide why ▴" : "Why? ▾"}
+        </button>
+      )}
       {rows.map(({ key, label, hint }) => {
         const v = pillars[key];
         const pct = Math.max(0, Math.min(100, (v / 25) * 100));
@@ -178,7 +192,7 @@ function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales
             <span className="ai-pillar-value" style={{ color }}>
               {v}<span className="ai-pillar-outof">/25</span>
             </span>
-            {rationale && (
+            {rationale && showRationales && (
               <span className="ai-pillar-rationale">{rationale}</span>
             )}
           </div>

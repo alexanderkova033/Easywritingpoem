@@ -2660,11 +2660,34 @@ button.ai-flagged-cliche:focus-visible {
 
 /* Four pillar bars under the score ring */
 .ai-pillars {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.3rem;
   padding: 0.55rem 0.15rem 0.25rem;
   border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* Single global toggle to expand/collapse all four rationales */
+.ai-pillars-toggle {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.15rem;
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ai-pillars-toggle:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .ai-pillar-row {
@@ -3172,6 +3195,7 @@ button.ai-flagged-cliche:focus-visible {
 .ai-feedback-summary {
   background: color-mix(in srgb, var(--accent, #5fba7d) 5%, var(--surface));
   border-left: 4px solid color-mix(in srgb, var(--accent, #5fba7d) 60%, var(--border));
+  grid-column: 1 / -1;
 }
 
 .ai-feedback-overall .ai-feedback-label::before {

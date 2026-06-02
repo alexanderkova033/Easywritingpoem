@@ -325,8 +325,8 @@
  * Fades with chrome on idle, brightens on hover. */
 .focus-notes-panel {
   position: fixed;
-  top: 3.2rem;
-  left: 0.6rem;
+  top: 6rem;
+  left: max(0.6rem, calc(50% - 42rem));
   z-index: 69;
   max-width: 12rem;
   transition: opacity 0.5s ease;

@@ -528,7 +528,7 @@ export function SoundMapPanel({
           className={`rep-subtab${subTab === "sound" ? " active" : ""}`}
           onClick={() => setSubTab("sound")}
         >
-          Sound &amp; vowels <span className="rep-subtab-count">{echoes.length}</span>
+          Sound <span className="rep-subtab-count">{echoes.length}</span>
         </button>
         <button
           type="button"
@@ -537,21 +537,13 @@ export function SoundMapPanel({
           className={`rep-subtab${subTab === "flow" ? " active" : ""}`}
           onClick={() => setSubTab("flow")}
         >
-          Pause &amp; flow <span className="rep-subtab-count">{pauseStats.caesuras}</span>
+          Flow <span className="rep-subtab-count">{pauseStats.caesuras}</span>
         </button>
       </div>
 
       {/* ── Sound & vowels (combined) ── */}
       {subTab === "sound" && (
         <>
-          {(dominantClass || vowelVerdict) && (
-            <p className="sound-subtab-hint muted small">
-              {dominantClass ? `${CLASS_HEADLINE[dominantClass]} ` : ""}
-              {vowelVerdict ? `${vowelVerdict.sentence} ` : ""}
-              Click any item below to jump.
-            </p>
-          )}
-
           {echoes.length === 0 && !vowelVerdict && (
             <EmptyState title="No strong patterns yet">
               <p className="muted small">
@@ -566,15 +558,15 @@ export function SoundMapPanel({
               <div className="sound-flow-summary" aria-label="Vowel mood statistics">
                 <div className="sound-flow-stat sound-vowel-stat-bright">
                   <span className="sound-flow-stat-value">{vowelVerdict.pct.bright}%</span>
-                  <span className="sound-flow-stat-label">bright</span>
+                  <span className="sound-flow-stat-label">Bright</span>
                 </div>
                 <div className="sound-flow-stat sound-vowel-stat-mid">
                   <span className="sound-flow-stat-value">{vowelVerdict.pct.mid}%</span>
-                  <span className="sound-flow-stat-label">mid</span>
+                  <span className="sound-flow-stat-label">Mid</span>
                 </div>
                 <div className="sound-flow-stat sound-vowel-stat-dark">
                   <span className="sound-flow-stat-value">{vowelVerdict.pct.dark}%</span>
-                  <span className="sound-flow-stat-label">dark</span>
+                  <span className="sound-flow-stat-label">Dark</span>
                 </div>
                 <div className="sound-flow-stat sound-vowel-stat-turn">
                   <span className="sound-flow-stat-value">
@@ -583,7 +575,7 @@ export function SoundMapPanel({
                       : "→"}
                   </span>
                   <span className="sound-flow-stat-label">
-                    {vowelVerdict.turnAt !== null ? "tonal turn" : "no turn"}
+                    {vowelVerdict.turnAt !== null ? "Tonal turn" : "No turn"}
                   </span>
                 </div>
               </div>
@@ -761,19 +753,19 @@ export function SoundMapPanel({
               <div className="sound-flow-summary">
                 <div className="sound-flow-stat sound-flow-stat-hard">
                   <span className="sound-flow-stat-value">{pauseStats.endStopped}</span>
-                  <span className="sound-flow-stat-label">stops ■</span>
+                  <span className="sound-flow-stat-label">Stops ■</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-soft">
                   <span className="sound-flow-stat-value">{pauseStats.soft}</span>
-                  <span className="sound-flow-stat-label">pauses ·</span>
+                  <span className="sound-flow-stat-label">Pauses ·</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-open">
                   <span className="sound-flow-stat-value">{pauseStats.enjambed}</span>
-                  <span className="sound-flow-stat-label">enjambed ↵</span>
+                  <span className="sound-flow-stat-label">Enjambed ↵</span>
                 </div>
                 <div className="sound-flow-stat sound-flow-stat-cae">
                   <span className="sound-flow-stat-value">{pauseStats.caesuras}</span>
-                  <span className="sound-flow-stat-label">caesuras ‖</span>
+                  <span className="sound-flow-stat-label">Caesuras ‖</span>
                 </div>
               </div>
 
