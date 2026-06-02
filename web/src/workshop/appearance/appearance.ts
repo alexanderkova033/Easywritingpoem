@@ -68,7 +68,7 @@ const DEFAULTS: AppearanceSettings = {
   poemWeight: "normal",
   poemDecoration: "none",
   backdropMotion: "system",
-  backdropPower: "off",
+  backdropPower: "low",
   customBackground: null,
 };
 

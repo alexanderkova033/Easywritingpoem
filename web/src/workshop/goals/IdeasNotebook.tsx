@@ -4,11 +4,10 @@ import {
   createIdea,
   IDEA_MOOD_OPTIONS,
   IDEA_TEXT_MAX,
-  loadIdeas,
-  saveIdeas,
   type IdeaEntry,
   type IdeaMood,
 } from "./ideas-notebook-storage";
+import { sortPinnedFirst, useIdeasNotebook } from "./useIdeasNotebook";
 
 const NEXT_MOOD: Record<IdeaMood, IdeaMood> = {
   neutral: "warm",
@@ -29,7 +28,7 @@ function moodLabel(mood: IdeaMood | undefined): string {
 }
 
 export function IdeasNotebook() {
-  const [ideas, setIdeas] = useState<IdeaEntry[]>([]);
+  const [ideas, persist] = useIdeasNotebook();
   const [draft, setDraft] = useState("");
   const [draftMood, setDraftMood] = useState<IdeaMood>("neutral");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,15 +37,6 @@ export function IdeasNotebook() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const editInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  useEffect(() => {
-    setIdeas(loadIdeas());
-  }, []);
-
-  const persist = useCallback((next: IdeaEntry[]) => {
-    setIdeas(next);
-    saveIdeas(next);
-  }, []);
 
   const onAdd = useCallback(
     (e: FormEvent) => {
@@ -90,14 +80,27 @@ export function IdeasNotebook() {
     [ideas, persist],
   );
 
+  const onTogglePin = useCallback(
+    (id: string) => {
+      persist(
+        ideas.map((i) =>
+          i.id === id ? { ...i, pinned: !i.pinned } : i,
+        ),
+      );
+    },
+    [ideas, persist],
+  );
+
   const reorder = useCallback(
     (sourceId: string, targetId: string) => {
       if (sourceId === targetId) return;
       const src = ideas.find((i) => i.id === sourceId);
       const tgt = ideas.find((i) => i.id === targetId);
       if (!src || !tgt) return;
-      // Only allow reorder within same done bucket.
+      // Constrain reorder to ideas in the same bucket (done state and pin state)
+      // so dragging never silently un-pins or un-completes an idea.
       if (src.done !== tgt.done) return;
+      if (!!src.pinned !== !!tgt.pinned) return;
       const sIdx = ideas.indexOf(src);
       const next = ideas.slice();
       next.splice(sIdx, 1);
@@ -147,7 +150,10 @@ export function IdeasNotebook() {
     }
   };
 
-  const active = useMemo(() => ideas.filter((i) => !i.done), [ideas]);
+  const active = useMemo(
+    () => sortPinnedFirst(ideas.filter((i) => !i.done)),
+    [ideas],
+  );
   const done = useMemo(() => ideas.filter((i) => i.done), [ideas]);
 
   const onDragStart = (id: string) => (e: DragEvent<HTMLLIElement>) => {
@@ -179,7 +185,7 @@ export function IdeasNotebook() {
     return (
       <li
         key={idea.id}
-        className={`ideas-card ideas-card--${moodKey}${idea.done ? " ideas-card--done" : ""}${isDragging ? " ideas-card--dragging" : ""}${isDragOver ? " ideas-card--drop-target" : ""}`}
+        className={`ideas-card ideas-card--${moodKey}${idea.done ? " ideas-card--done" : ""}${idea.pinned ? " ideas-card--pinned" : ""}${isDragging ? " ideas-card--dragging" : ""}${isDragOver ? " ideas-card--drop-target" : ""}`}
         draggable={!editingId || editingId !== idea.id}
         onDragStart={onDragStart(idea.id)}
         onDragOver={onDragOver(idea.id)}
@@ -233,6 +239,25 @@ export function IdeasNotebook() {
             aria-label={`Mood: ${moodLabel(idea.mood)} — click to change`}
             title={`${moodLabel(idea.mood)} — click to cycle`}
           />
+
+          <button
+            type="button"
+            className={`ideas-card-pin${idea.pinned ? " ideas-card-pin--on" : ""}`}
+            onClick={() => onTogglePin(idea.id)}
+            aria-pressed={!!idea.pinned}
+            aria-label={idea.pinned ? "Unpin idea" : "Pin idea to top"}
+            title={idea.pinned ? "Unpin" : "Pin to top"}
+          >
+            <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+              <path
+                d="M9.5 1.5l5 5-2 2-1.5-.5L8 11l-.5 3-1.5-1.5L3 9.5l-1.5-1.5L5 5l-.5-1.5 5-2z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
 
           <button
             type="button"

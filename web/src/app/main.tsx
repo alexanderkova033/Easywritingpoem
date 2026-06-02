@@ -44,8 +44,8 @@ document.addEventListener("visibilitychange", syncTabHiddenClass);
 //
 // Listeners are passive + capture so they cannot block scroll or be
 // cancelled by stopPropagation inside the app.
-const IDLE_MS = 60_000;
-const IDLE_RATE = 0.5;
+const IDLE_MS = 45_000;
+const IDLE_RATE = 0.35;
 let idleTimer: number | undefined;
 let isIdle = false;
 let currentRate = 1;
@@ -55,7 +55,8 @@ function applyAmbientRate(rate: number) {
   for (const anim of document.getAnimations()) {
     const effect = anim.effect;
     if (!(effect instanceof KeyframeEffect)) continue;
-    if (effect.target !== document.body) continue;
+    const target = effect.target;
+    if (target !== document.body && target !== document.documentElement) continue;
     const pseudo = effect.pseudoElement;
     if (pseudo !== "::before" && pseudo !== "::after") continue;
     anim.playbackRate = rate;

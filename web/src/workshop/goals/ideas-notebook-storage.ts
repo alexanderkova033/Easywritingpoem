@@ -20,7 +20,10 @@ export interface IdeaEntry {
   done: boolean;
   createdAt: number;
   mood?: IdeaMood;
+  pinned?: boolean;
 }
+
+export const IDEAS_CHANGED_EVENT = "easywriting:ideas-changed";
 
 const MAX_TEXT_LEN = 500;
 
@@ -58,7 +61,8 @@ export function loadIdeas(): IdeaEntry[] {
           moodRaw === "neutral"
             ? (moodRaw as IdeaMood)
             : undefined;
-        return { id, text: text.slice(0, MAX_TEXT_LEN), done, createdAt, mood };
+        const pinned = o.pinned === true ? true : undefined;
+        return { id, text: text.slice(0, MAX_TEXT_LEN), done, createdAt, mood, pinned };
       })
       .filter((x): x is IdeaEntry => x !== null);
   } catch {
@@ -67,13 +71,23 @@ export function loadIdeas(): IdeaEntry[] {
 }
 
 export function saveIdeas(list: IdeaEntry[]): boolean {
+  let ok: boolean;
   if (list.length === 0) {
-    return tryLocalStorageRemoveItem(STORAGE_KEY_IDEAS_NOTEBOOK);
+    ok = tryLocalStorageRemoveItem(STORAGE_KEY_IDEAS_NOTEBOOK);
+  } else {
+    ok = tryLocalStorageSetItem(
+      STORAGE_KEY_IDEAS_NOTEBOOK,
+      JSON.stringify(list),
+    );
   }
-  return tryLocalStorageSetItem(
-    STORAGE_KEY_IDEAS_NOTEBOOK,
-    JSON.stringify(list),
-  );
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new CustomEvent(IDEAS_CHANGED_EVENT));
+    } catch {
+      /* ignore */
+    }
+  }
+  return ok;
 }
 
 export function createIdea(text: string, mood?: IdeaMood): IdeaEntry {

@@ -35,9 +35,18 @@ export interface StrongestLine {
   why: string;
 }
 
+export interface PillarScores {
+  musicality: number;
+  technique: number;
+  imagery_theme: number;
+  originality_form: number;
+}
+
 export interface PoemAnalysis {
   meta: AnalysisMeta;
   overall_score: number;
+  /** 4 × 25 pillar breakdown. Sum (with hard cap) = overall_score. */
+  pillar_scores?: PillarScores;
   warm_reaction?: string;
   summary?: string;
   strengths?: string[];
@@ -85,6 +94,42 @@ function clampScore(n: unknown): number {
   const v = typeof n === "number" ? n : parseInt(String(n), 10);
   if (!Number.isFinite(v)) return 50;
   return Math.max(1, Math.min(100, Math.round(v)));
+}
+
+function clampPillar(n: unknown): number {
+  const v = typeof n === "number" ? n : parseInt(String(n), 10);
+  if (!Number.isFinite(v)) return 0;
+  return Math.max(0, Math.min(25, Math.round(v)));
+}
+
+function parsePillarScores(v: unknown): PillarScores | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const hasAny =
+    o.musicality !== undefined ||
+    o.technique !== undefined ||
+    o.imagery_theme !== undefined ||
+    o.originality_form !== undefined;
+  if (!hasAny) return undefined;
+  return {
+    musicality: clampPillar(o.musicality),
+    technique: clampPillar(o.technique),
+    imagery_theme: clampPillar(o.imagery_theme),
+    originality_form: clampPillar(o.originality_form),
+  };
+}
+
+/** If the model emitted pillar_scores, enforce overall = min(sum, lowest×4 + 20).
+ *  This is the server-side math check the prompt mandates — we apply it client-side
+ *  too so a sloppy model can't sneak past with an inflated overall_score. */
+function reconcileOverallScore(pillars: PillarScores | undefined, modelOverall: number): number {
+  if (!pillars) return modelOverall;
+  const values = [pillars.musicality, pillars.technique, pillars.imagery_theme, pillars.originality_form];
+  const sum = values.reduce((a, b) => a + b, 0);
+  const lowest = Math.min(...values);
+  const cap = lowest * 4 + 20;
+  const computed = Math.min(sum, cap);
+  return Math.max(1, Math.min(100, computed));
 }
 
 function parseSeverity(v: unknown): "high" | "medium" | "low" | undefined {
@@ -148,6 +193,7 @@ function balanceAndCapIssues<T extends { severity?: "high" | "medium" | "low" }>
 function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
+  const pillars = parsePillarScores(obj.pillar_scores);
 
   return {
     meta: {
@@ -155,7 +201,8 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
       analyzedAt:
         typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
     },
-    overall_score: clampScore(obj.overall_score),
+    overall_score: reconcileOverallScore(pillars, clampScore(obj.overall_score)),
+    pillar_scores: pillars,
     warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
       ? obj.warm_reaction.trim() : undefined,
     summary: typeof obj.summary === "string" ? obj.summary : undefined,

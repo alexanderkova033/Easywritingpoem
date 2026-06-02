@@ -69,8 +69,7 @@
   --grain-opacity: 0.032;
   --after-blend: screen;
   --after-opacity: 0.3;
-  --after-animation: studio-light 108s ease-in-out infinite alternate;
-  --after-corner: rgba(0, 0, 0, 0.09);
+  --after-animation: studio-light 180s ease-in-out infinite alternate;
   --after-zenith-top: var(--shine-top);
   --after-zenith-mid: var(--shine-mid);
   font-family: var(--font-ui);
@@ -109,7 +108,6 @@
     --after-blend: multiply;
     --after-opacity: 0.16;
     --after-animation: studio-light-soft 108s ease-in-out infinite alternate;
-    --after-corner: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -229,8 +227,6 @@ body::before {
   /* 4 % scale gives ±2 % translate headroom without revealing empty edges. */
   transform: scale(1.04);
   transition: opacity 0.45s ease;
-  /* Globally calm all backgrounds: slight desaturation + reduced intensity */
-  filter: saturate(0.82) brightness(0.96);
 }
 
 /* Theme cross-fade: JS adds this class for one frame to trigger the fade.
@@ -306,18 +302,13 @@ body::before {
     24% 18%,
     50% 92%,
     center -1px, center -1px;
-  animation: ambient-drift 210s ease-in-out infinite alternate;
+  animation: ambient-drift 360s ease-in-out infinite alternate;
 }
 
-/* Theme-matched zenith glow + subtle corner vignette */
+/* Theme-matched zenith glow */
 body::after {
   background:
-    radial-gradient(ellipse 60% 55% at 0% 0%, var(--after-corner), transparent 65%),
-    radial-gradient(ellipse 60% 55% at 100% 0%, var(--after-corner), transparent 65%),
-    radial-gradient(ellipse 60% 55% at 0% 100%, var(--after-corner), transparent 65%),
-    radial-gradient(ellipse 60% 55% at 100% 100%, var(--after-corner), transparent 65%),
-    radial-gradient(95% 55% at 50% -12%, var(--after-zenith-top), var(--after-zenith-mid) 38%, transparent 68%),
-    radial-gradient(80% 70% at 100% 100%, color-mix(in srgb, var(--ambient-b) 40%, transparent), transparent 55%);
+    radial-gradient(95% 55% at 50% -12%, var(--after-zenith-top), var(--after-zenith-mid) 38%, transparent 68%);
   animation: var(--after-animation);
   mix-blend-mode: var(--after-blend);
   opacity: var(--after-opacity);
@@ -390,12 +381,10 @@ html[data-backdrop-power="very-low"] {
 }
 
 html[data-backdrop-power="low"] body::before {
-  filter: saturate(0.78) brightness(0.95);
-  opacity: 0.92;
+  opacity: 0.88;
 }
 
 html[data-backdrop-power="very-low"] body::before {
-  filter: saturate(0.72) brightness(0.95);
   opacity: 0.75;
   animation: none !important;
 }

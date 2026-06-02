@@ -45,8 +45,12 @@ Score each pillar independently on a 0-25 scale, then sum for overall_score.
 - Do NOT default to the polite middle (55-85). If a draft is weak / clichéd / amateur across multiple pillars, the honest score is in the 0-49 range — use it. Politeness inflation is a bug, not kindness; the persona changes wording, not the math.
 - Do not round up to a "nicer" number. 37 is fine. 52 is fine. 84 is fine.
 
-Return JSON only (no fences). Keys:
-overall_score (int 1-100, per rules above), warm_reaction (≤14 words, terse — in persona voice), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillar(s) drive which issues you raise).
+Return JSON only (no fences). Compute pillar_scores FIRST against the anchors, then derive overall_score from them. Do not skip the pillar step — the math must be visible in the output.
+
+Keys:
+pillar_scores {musicality:int 0-25, technique:int 0-25, imagery_theme:int 0-25, originality_form:int 0-25} — REQUIRED. Apply the anchors above to each pillar independently. This is where you show your work.
+overall_score (int 1-100) — MUST equal min(musicality + technique + imagery_theme + originality_form, (lowest_pillar × 4) + 20). Compute it arithmetically from pillar_scores; do NOT pick a vibe number. If your overall_score does not match this formula, your output is invalid.
+warm_reaction (≤14 words, terse — in persona voice), strengths[] (2-3 items, ≤6w each, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillar(s) drive which issues you raise).
 overall_feedback (string, 1-2 short sentences max, holistic read of the poem — voice, mood, what it lands or misses. Specific, not generic. Tone matches persona; verdict does not.).
 personal_feedback (string, 1-2 short sentences max, addressed to the writer as "you". One thing they're doing well + one concrete craft move to try next. Tone matches persona, no preamble.).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED whenever the issue centers on specific words — diction, cliché, weak verb, filler, vague noun, sound clash, repetition. List the exact lowercase tokens from the poem text that the editor should highlight. Only omit when the issue is purely structural — line break, stanza order, missing volta — where no specific word is the culprit.),

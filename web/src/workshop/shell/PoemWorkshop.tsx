@@ -43,6 +43,7 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/goals/types";
+import { FocusNotesPanel } from "@/workshop/goals/FocusNotesPanel";
 import { loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/ai-analysis-storage";
 // Lazy-load the AI analysis panel — it pulls in the analyze/compare client,
 // chat UI, and rationale renderer, none of which are needed for first paint.
@@ -1237,6 +1238,7 @@ export function PoemWorkshop() {
           </svg>
         </button>
       )}
+      {isFocusMode && <FocusNotesPanel />}
       <CommandPalette
         open={isCmdkOpen}
         onClose={() => setIsCmdkOpen(false)}

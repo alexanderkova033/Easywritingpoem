@@ -36,8 +36,12 @@ Score each pillar independently on a 0-25 scale, then sum for overall_score.
 - Do NOT default to the polite middle (55-85). Weak / clichéd / amateur drafts belong in 0-49 even on revision.
 - Do not round up to a nicer number. 41 is fine. 58 is fine.
 
+Compute pillar_scores FIRST against the anchors, then derive overall_score from them. The math must be visible.
+
 Keys:
-overall_score (int 1-100, CURRENT, per rules above), warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillars drive issue selection), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty — be honest about what didn't change or got worse).
+pillar_scores {musicality:int 0-25, technique:int 0-25, imagery_theme:int 0-25, originality_form:int 0-25} — REQUIRED. Apply the anchors above to each pillar of the CURRENT draft independently. This is where you show your work, and it must reflect the CURRENT draft on its own, not a polite delta from the previous one.
+overall_score (int 1-100, CURRENT) — MUST equal min(musicality + technique + imagery_theme + originality_form, (lowest_pillar × 4) + 20). Compute it arithmetically; do NOT pick a vibe number. If your overall_score does not match this formula, your output is invalid.
+warm_reaction (≤14w, terse), strengths[] (2-3, ≤6w, terse), weaknesses[] (2-3, ≤6w, terse), strongest_line {line:int, why:≤8w}, issues[] (2-5 — mix serious craft problems with smaller nitpicks; let the lowest-scoring pillars drive issue selection), comparison {improvements:[], regressions:[], unchanged:[]} (0-3 items each, ≤6w, may be empty — be honest about what didn't change or got worse).
 overall_feedback (string, 2-3 full sentences, holistic read of the CURRENT draft as a whole — voice, mood, what it accomplishes, where it lands).
 personal_feedback (string, 2-3 full sentences addressed to the writer as "you". Note the revision arc honestly — what actually improved (if anything), what their instincts seem drawn to, one concrete craft move to grow into next. Mentor tone, not flattery, not pity).
 Each issue: id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words?[],
