@@ -11,7 +11,7 @@ import {
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
-import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import {
   LS_LAST_ANALYSIS_PREFIX,
   LS_LAST_ANALYZED_LINES_PREFIX,
@@ -30,6 +30,7 @@ import {
   LS_SNAPSHOTS_PREFIX,
   appendScoreHistory,
   hashInput,
+  loadDraftMode,
   loadLastHash,
   loadScoreHistory,
   loadScoringEnabled,
@@ -71,7 +72,11 @@ export interface AiAnalysisProps {
 
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
-  const [draftMode, setDraftMode] = useState<boolean>(false);
+  const [draftMode, setDraftModeState] = useState<boolean>(loadDraftMode);
+  const setDraftMode = useCallback((next: boolean) => {
+    setDraftModeState(next);
+    tryLocalStorageSetItem(STORAGE_KEY_AI_DRAFT_MODE, next ? "1" : "0");
+  }, []);
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
@@ -146,6 +151,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
   const handleAnalyze = useCallback(async () => {
     if (!hasPoem) return;
+    // Don't even attempt a new request while the rate-limit countdown is active —
+    // the prior result should stay on screen, and we shouldn't churn the UI into
+    // a loading state just to hit a 429 again.
+    if (retryAfterSec > 0) return;
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
@@ -214,18 +223,23 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       if ((err as Error).name === "AbortError") return;
       const e = err as Error & { retryAfterSec?: number };
       const msg = e.message ?? "Unknown error";
-      if (typeof e.retryAfterSec === "number" && e.retryAfterSec > 0) {
-        setRetryAfterSec(e.retryAfterSec);
+      const isRateLimit = typeof e.retryAfterSec === "number" && e.retryAfterSec > 0;
+      if (isRateLimit) {
+        setRetryAfterSec(e.retryAfterSec!);
       }
       if (msg.toLowerCase().includes("not configured") || msg.toLowerCase().includes("api key")) {
         setIsUnconfigured(true);
         setStatus("idle");
+      } else if (isRateLimit && result) {
+        // Rate-limited but we still have a previous result — keep it on screen.
+        // The retry banner already communicates the wait; no need for a full error UI.
+        setStatus("done");
       } else {
         setErrorMsg(msg);
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, draftMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
+  }, [canCompare, hasPoem, harshness, draftMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
 
 
   useEffect(() => {
@@ -363,12 +377,16 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <button type="button"
                 className="small-btn small-btn-primary ai-analyze-btn"
                 onClick={() => void handleAnalyze()}
-                disabled={!hasPoem || status === "loading"}
-                title={!hasPoem ? "Write some lines first" : undefined}>
+                disabled={!hasPoem || status === "loading" || retryAfterSec > 0}
+                title={
+                  !hasPoem ? "Write some lines first"
+                    : retryAfterSec > 0 ? `Rate limit — wait ${retryAfterSec}s`
+                    : undefined
+                }>
                 {status === "loading"
-                  ? (effectiveMode === "compare" ? "Refining…" : (draftMode ? "Checking…" : "Reading…"))
+                  ? (effectiveMode === "compare" ? (draftMode ? "Re-checking…" : "Refining…") : (draftMode ? "Checking…" : "Reading…"))
                   : effectiveMode === "compare"
-                    ? "↻ Refine"
+                    ? (draftMode ? "↻ Re-check draft" : "↻ Refine")
                     : draftMode ? "✎ Check draft" : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (
@@ -471,8 +489,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"
-                onClick={() => void handleAnalyze()}>
-                {effectiveMode === "compare" ? "Refine again" : "Read again"}
+                onClick={() => void handleAnalyze()}
+                disabled={retryAfterSec > 0}
+                title={retryAfterSec > 0 ? `Rate limit — wait ${retryAfterSec}s` : undefined}>
+                {retryAfterSec > 0
+                  ? `Wait ${retryAfterSec}s`
+                  : effectiveMode === "compare" ? "Refine again" : "Read again"}
               </button>
             </>
           )}

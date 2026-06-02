@@ -50,6 +50,7 @@ export const STORAGE_KEY_LOOKED_UP_WORDS = "easy-poems:looked-up-words:v1";
 
 // AI settings
 export const STORAGE_KEY_AI_SCORING_ENABLED = "easy-poems:ai-scoring-enabled";
+export const STORAGE_KEY_AI_DRAFT_MODE = "easy-poems:ai-draft-mode";
 
 // Landing page
 export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";

@@ -73,10 +73,29 @@ function shouldSkipStrict(_token: string, normalized: string): boolean {
   return false;
 }
 
+const CONTRACTION_SUFFIXES = new Set(["s", "re", "ve", "ll", "d", "m"]);
+
+function isContraction(normalized: string, dict: Set<string>): boolean {
+  if (!normalized.includes("'")) return false;
+  if (normalized.endsWith("n't") && normalized.length > 3) {
+    const base = normalized.slice(0, -3);
+    if (dict.has(base)) return true;
+  }
+  const apos = normalized.lastIndexOf("'");
+  if (apos > 0 && apos < normalized.length - 1) {
+    const suffix = normalized.slice(apos + 1);
+    if (CONTRACTION_SUFFIXES.has(suffix) && dict.has(normalized.slice(0, apos))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function inDictionary(dict: Set<string>, normalized: string): boolean {
   if (dict.has(normalized)) return true;
   const flat = normalized.replace(/'/g, "");
   if (flat !== normalized && dict.has(flat)) return true;
+  if (isContraction(normalized, dict)) return true;
   return false;
 }
 

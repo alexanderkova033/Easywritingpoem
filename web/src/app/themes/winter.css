@@ -81,9 +81,11 @@ html[data-workshop-bg="winter"]::after {
   animation: winter-snowfall 153s linear infinite;
 }
 
+/* Each flake layer loops by exactly one of its own tile sizes so the seam
+   is invisible; the two layers drift at different rates for parallax. */
 @keyframes winter-snowfall {
-  0%   { transform: translate3d(0, -2%, 0); }
-  100% { transform: translate3d(-3%, 6%, 0); }
+  0%   { background-position: 0 0, 0 0; }
+  100% { background-position: -340px 340px, -220px 220px; }
 }
 
 /* Winter body::after uses shared backdrop vars */

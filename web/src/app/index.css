@@ -334,21 +334,24 @@ body::after {
   50%       { transform: scale(1.04) translate( 2%,   1%); }
 }
 
+/* 100% returns to the 0% transform so the loop is seamless. */
 @keyframes aurora-pulse {
   0%   { transform: scale(1.04) translate(-1.8%, -0.8%); }
-  33%  { transform: scale(1.04) translate( 1.6%,  0.4%); }
-  66%  { transform: scale(1.04) translate(-0.4%,  1.0%); }
-  100% { transform: scale(1.04) translate( 1.2%, -0.5%); }
+  25%  { transform: scale(1.04) translate( 1.6%,  0.4%); }
+  50%  { transform: scale(1.04) translate(-0.4%,  1.0%); }
+  75%  { transform: scale(1.04) translate( 1.2%, -0.5%); }
+  100% { transform: scale(1.04) translate(-1.8%, -0.8%); }
 }
 
-/* Aurora-specific glow shimmer — calmed range so curtain doesn't pulse visibly */
+/* Aurora-specific glow shimmer — calmed range so curtain doesn't pulse visibly.
+   100% returns to 0% so the loop is seamless. */
 @keyframes aurora-shimmer {
   0%   { opacity: 0.28; }
   20%  { opacity: 0.38; }
   40%  { opacity: 0.30; }
   60%  { opacity: 0.44; }
-  80%  { opacity: 0.29; }
-  100% { opacity: 0.35; }
+  80%  { opacity: 0.35; }
+  100% { opacity: 0.28; }
 }
 
 /* Manual motion-off toggle (data-backdrop-motion="off" set by JS) */

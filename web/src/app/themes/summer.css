@@ -88,7 +88,9 @@ html[data-workshop-bg="summer"]::after {
   animation: summer-clouds 459s linear infinite;
 }
 
+/* Move each repeating layer by one of its own tile widths so the seam is
+   invisible; the horizon gradient stays pinned. */
 @keyframes summer-clouds {
-  0%   { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-10%, 0, 0); }
+  0%   { background-position: 0 32%, 0 0, 0 0; }
+  100% { background-position: -600px 32%, -480px 0, 0 0; }
 }

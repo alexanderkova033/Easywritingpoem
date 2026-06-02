@@ -528,8 +528,15 @@
 
   /* Rail gutter extends down through the AI Analysis row so it stays
      draggable alongside the centered analysis section. Tools gutter
-     keeps the row-1 confinement above. */
-  .rail-resize-gutter { grid-row: 1 / -1; }
+     keeps the row-1 confinement from the shared rule above.
+     Use line 3 explicitly: the workshop-grid has 2 implicit rows
+     (editor row + AI analysis row), so implicit line 3 sits at the
+     bottom of row 2. `auto`/`-1`/`span N` behave inconsistently for
+     absolutely-positioned grid items when there is no explicit
+     `grid-template-rows`, so we hard-code the line number. */
+  .rail-resize-gutter {
+    grid-row: 1 / 3 !important;
+  }
 
   /* Drag line — faintly visible at rest, bright on hover */
   .tools-resize-gutter::before,

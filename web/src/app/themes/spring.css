@@ -85,7 +85,8 @@ html[data-workshop-bg="spring"]::after {
   animation: spring-petal-drift 127.5s linear infinite;
 }
 
+/* Loop by exactly one petal-tile (320px) so the seam is invisible. */
 @keyframes spring-petal-drift {
-  0%   { transform: translate3d(0, -2%, 0); }
-  100% { transform: translate3d(-6%, 8%, 0); }
+  0%   { background-position: 0 0; }
+  100% { background-position: -320px 320px; }
 }

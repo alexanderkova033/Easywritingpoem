@@ -42,6 +42,23 @@ describe("spellHitsFromText", () => {
     }
   });
 
+  it("accepts contractions whose base is in the dictionary", () => {
+    const dict = new Set([
+      "could", "would", "should", "is", "are", "was", "were", "has", "have", "had", "do", "does", "did",
+      "you", "we", "they", "i", "he", "she", "it",
+    ]);
+    const contractions = [
+      "couldn't", "wouldn't", "shouldn't", "isn't", "aren't", "wasn't", "weren't",
+      "hasn't", "haven't", "hadn't", "don't", "doesn't", "didn't",
+      "you're", "we're", "they're", "i'm", "he's", "she's", "it's",
+      "you've", "we've", "they've", "i've",
+      "you'll", "we'll", "they'll", "i'll", "he'll", "she'll",
+      "you'd", "we'd", "they'd", "i'd", "he'd", "she'd",
+    ];
+    const hits = spellHitsFromText(contractions.join(" "), dict, new Set(), new Set(), "strict");
+    expect(hits.map((h) => h.word)).toEqual([]);
+  });
+
   it("reports correct line numbers for second line", () => {
     const text = "ok\nbadwordx";
     const dict = new Set(["ok"]);

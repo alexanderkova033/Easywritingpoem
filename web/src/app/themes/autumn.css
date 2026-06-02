@@ -90,9 +90,11 @@ html[data-workshop-bg="autumn"]::after {
   animation: autumn-drift 178.5s linear infinite;
 }
 
+/* Loop by exactly one leaf-tile (320px) so the seam is invisible.
+   Animating background-position keeps the no-repeat radial gradients pinned. */
 @keyframes autumn-drift {
-  0%   { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-6%, 4%, 0); }
+  0%   { background-position: 0 0, 0 0, 0 0; }
+  100% { background-position: -320px 320px, 0 0, 0 0; }
 }
 
 /* Autumn body::after uses shared backdrop vars */
