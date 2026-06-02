@@ -208,6 +208,7 @@ export function sendParsedResponse(
   res: VercelResponse,
   rawContent: string,
   resolvedModel: string,
+  extra?: Record<string, unknown>,
 ): boolean {
   const parsed = tolerantJsonParse(rawContent);
   if (parsed === null || typeof parsed !== "object") {
@@ -216,11 +217,13 @@ export function sendParsedResponse(
     return false;
   }
 
-  (parsed as Record<string, unknown>).meta = {
+  const out = parsed as Record<string, unknown>;
+  out.meta = {
     model: resolvedModel,
     analyzedAt: new Date().toISOString(),
   };
+  if (extra) Object.assign(out, extra);
 
-  res.status(200).json(parsed);
+  res.status(200).json(out);
   return true;
 }

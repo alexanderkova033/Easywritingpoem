@@ -209,6 +209,23 @@ function computeVowelVerdict(
   };
 }
 
+function friendlyEchoKey(echo: SoundEcho): string {
+  const upper = echo.key.toUpperCase();
+  return echo.className === "assonance" ? `${upper} vowel` : `${upper} sound`;
+}
+
+function echoLineRange(echo: SoundEcho): string {
+  let first = echo.members[0]?.lineNumber ?? 0;
+  let last = first;
+  for (const m of echo.members) {
+    if (m.lineNumber < first) first = m.lineNumber;
+    if (m.lineNumber > last) last = m.lineNumber;
+  }
+  if (first === last) return `all on L${first}`;
+  if (echo.minGap === 1) return `L${first}–L${last}, adjacent`;
+  return `L${first}–L${last}`;
+}
+
 function EchoCard({
   echo,
   onMemberClick,
@@ -230,14 +247,8 @@ function EchoCard({
   const previewMax = 6;
   const preview = open ? echo.members : echo.members.slice(0, previewMax);
   const tint = echoColor(echo);
-  const gapLabel =
-    echo.minGap > 0
-      ? echo.minGap === 1
-        ? "adjacent"
-        : echo.span <= 3
-          ? "tight"
-          : `across ${echo.span + 1} lines`
-      : null;
+  const wordsLabel = `${echo.members.length} word${echo.members.length === 1 ? "" : "s"}`;
+  const rangeLabel = echoLineRange(echo);
   return (
     <li
       className={`rep-card sound-echo-card${isActive ? " is-active" : ""}`}
@@ -248,9 +259,9 @@ function EchoCard({
       onBlur={() => onHoverChange(null)}
     >
       <div className="sound-echo-card-head">
-        <span className="sound-echo-key">/{echo.key}/</span>
-        <span className="sound-echo-count" style={{ color: tint }}>×{echo.members.length}</span>
-        {gapLabel && <span className="sound-echo-gap muted small">{gapLabel}</span>}
+        <span className="sound-echo-key">{friendlyEchoKey(echo)}</span>
+        <span className="sound-echo-count" style={{ color: tint }}>{wordsLabel}</span>
+        <span className="sound-echo-gap muted small">{rangeLabel}</span>
         <button
           type="button"
           className={`sound-echo-pin${isPinned ? " is-pinned" : ""}`}
@@ -305,7 +316,6 @@ export function SoundMapPanel({
   const [subTab, setSubTab] = useState<SoundSubTab>("echoes");
   const [classFilter, setClassFilter] = useState<SoundClass | "all">("all");
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
-  const [hoveredEchoLine, setHoveredEchoLine] = useState<number | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
   const [pinnedEchoes, setPinnedEchoes] = useState<Set<string>>(() => new Set());
@@ -333,6 +343,12 @@ export function SoundMapPanel({
       sibilance: [], plosive: [], liquid: [],
     };
     for (const e of echoes) m[e.className].push(e);
+    for (const cls of ALL_CLASSES) {
+      m[cls].sort((a, b) => {
+        if (b.members.length !== a.members.length) return b.members.length - a.members.length;
+        return a.minGap - b.minGap;
+      });
+    }
     return m;
   }, [echoes]);
   const classCounts = useMemo(() => {
@@ -401,61 +417,7 @@ export function SoundMapPanel({
     return m;
   }, [echoesWithId]);
 
-  // Which echo IDs touch each line (so stripe hover can preview a line's echoes).
-  const echoIdsByLine = useMemo(() => {
-    const m = new Map<number, string[]>();
-    for (const { id, echo } of echoesWithId) {
-      const seenLines = new Set<number>();
-      for (const member of echo.members) {
-        if (seenLines.has(member.lineNumber)) continue;
-        seenLines.add(member.lineNumber);
-        const list = m.get(member.lineNumber);
-        if (list) list.push(id);
-        else m.set(member.lineNumber, [id]);
-      }
-    }
-    return m;
-  }, [echoesWithId]);
-
   const dominantClass = useMemo(() => pickDominantClass(byClass), [byClass]);
-
-  const echoStats = useMemo(() => {
-    const tokensByLine = new Map<number, Set<number>>();
-    const classCountsByLine = new Map<number, Record<SoundClass, number>>();
-    let largestCluster = 0;
-    for (const e of echoes) {
-      if (e.members.length > largestCluster) largestCluster = e.members.length;
-      for (const m of e.members) {
-        let s = tokensByLine.get(m.lineNumber);
-        if (!s) { s = new Set(); tokensByLine.set(m.lineNumber, s); }
-        s.add(m.tokenIndex);
-        let c = classCountsByLine.get(m.lineNumber);
-        if (!c) {
-          c = { alliteration: 0, assonance: 0, consonance: 0, sibilance: 0, plosive: 0, liquid: 0 };
-          classCountsByLine.set(m.lineNumber, c);
-        }
-        c[e.className]++;
-      }
-    }
-    const nonEmptyLines = lineSounds.filter((ls) => ls.text.trim().length > 0);
-    const totalLines = nonEmptyLines.length;
-    let linesWithEchoes = 0;
-    const flatLines: number[] = [];
-    for (const ls of nonEmptyLines) {
-      if (tokensByLine.has(ls.lineNumber)) linesWithEchoes++;
-      else flatLines.push(ls.lineNumber);
-    }
-    const dominantClassByLine = new Map<number, SoundClass>();
-    for (const [ln, counts] of classCountsByLine) {
-      let best: { cls: SoundClass; n: number } | null = null;
-      for (const cls of ALL_CLASSES) {
-        if (counts[cls] === 0) continue;
-        if (best === null || counts[cls] > best.n) best = { cls, n: counts[cls] };
-      }
-      if (best) dominantClassByLine.set(ln, best.cls);
-    }
-    return { tokensByLine, totalLines, linesWithEchoes, flatLines, largestCluster, dominantClassByLine };
-  }, [echoes, lineSounds]);
 
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
@@ -478,8 +440,7 @@ export function SoundMapPanel({
 
   // Echo highlights are a union of:
   //   • every echo the user has toggled on (persistent)
-  //   • the currently hovered echo card (transient preview)
-  //   • every echo touching the line currently hovered on the density stripe
+  //   • the currently hovered echo (transient preview)
   // No pinned echoes + no hover ⇒ nothing in the editor.
   const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
     if (subTab !== "echoes") return null;
@@ -493,25 +454,11 @@ export function SoundMapPanel({
     }
     if (hoveredEchoId && !usedIds.has(hoveredEchoId)) {
       const e = echoesById.get(hoveredEchoId);
-      if (e) {
-        usedIds.add(hoveredEchoId);
-        out.push(...membersToHighlights(e));
-      }
-    }
-    if (hoveredEchoLine !== null) {
-      const ids = echoIdsByLine.get(hoveredEchoLine) ?? [];
-      for (const id of ids) {
-        if (usedIds.has(id)) continue;
-        const e = echoesById.get(id);
-        if (e) {
-          usedIds.add(id);
-          out.push(...membersToHighlights(e));
-        }
-      }
+      if (e) out.push(...membersToHighlights(e));
     }
     return out.length > 0 ? out : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, hoveredEchoId, hoveredEchoLine, echoesById, echoIdsByLine, pinnedEchoes, lineSoundsByLine]);
+  }, [subTab, hoveredEchoId, echoesById, pinnedEchoes, lineSoundsByLine]);
 
   // Line-level vowel tints (3 buckets) — active when on vowels subtab.
   const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
@@ -631,71 +578,10 @@ export function SoundMapPanel({
           )}
 
           {echoes.length > 0 && (
-            <div className="sound-flow-summary" aria-label="Echo statistics">
-              <div className="sound-flow-stat sound-echo-stat-total">
-                <span className="sound-flow-stat-value">{echoes.length}</span>
-                <span className="sound-flow-stat-label">echoes</span>
-              </div>
-              <div className="sound-flow-stat sound-echo-stat-musical">
-                <span className="sound-flow-stat-value">
-                  {echoStats.linesWithEchoes}
-                  <span className="sound-echo-stat-denom">/{echoStats.totalLines}</span>
-                </span>
-                <span className="sound-flow-stat-label">musical lines</span>
-              </div>
-              <div className="sound-flow-stat sound-echo-stat-flat">
-                <span className="sound-flow-stat-value">{echoStats.flatLines.length}</span>
-                <span className="sound-flow-stat-label">flat lines</span>
-              </div>
-              <div className="sound-flow-stat sound-echo-stat-cluster">
-                <span className="sound-flow-stat-value">{echoStats.largestCluster}</span>
-                <span className="sound-flow-stat-label">top cluster</span>
-              </div>
-            </div>
-          )}
-
-          {echoes.length > 0 && (
-            <div
-              className="sound-echo-strip"
-              role="list"
-              aria-label="Echo density across the poem"
-            >
-              {lineSounds.map((ls) => {
-                if (ls.text.trim().length === 0) {
-                  return (
-                    <span
-                      key={ls.lineNumber}
-                      className="sound-echo-strip-seg sound-echo-strip-seg-blank"
-                      aria-hidden
-                    />
-                  );
-                }
-                const count = echoStats.tokensByLine.get(ls.lineNumber)?.size ?? 0;
-                const cls = echoStats.dominantClassByLine.get(ls.lineNumber);
-                const isFlat = count === 0;
-                const isActive = hoveredEchoLine === ls.lineNumber;
-                const bg = cls ? SOUND_CLASS_HUES[cls] : undefined;
-                const flatLabel = isFlat ? "flat — no echoes" : `${count} echo word${count === 1 ? "" : "s"}`;
-                return (
-                  <button
-                    key={ls.lineNumber}
-                    type="button"
-                    role="listitem"
-                    className={`sound-echo-strip-seg${isFlat ? " is-flat" : ""}${isActive ? " is-active" : ""}`}
-                    onClick={() => goToLine(ls.lineNumber)}
-                    onMouseEnter={() => setHoveredEchoLine(ls.lineNumber)}
-                    onMouseLeave={() => setHoveredEchoLine(null)}
-                    onFocus={() => setHoveredEchoLine(ls.lineNumber)}
-                    onBlur={() => setHoveredEchoLine(null)}
-                    title={`L${ls.lineNumber} — ${flatLabel}`}
-                    aria-label={`Line ${ls.lineNumber}, ${flatLabel}`}
-                    style={bg ? { background: bg } : undefined}
-                  >
-                    <span className="sound-echo-strip-num">{ls.lineNumber}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <p className="sound-echo-purpose muted small">
+              Echoes shows words that share a sound. Use it to spot patterns you didn&apos;t
+              notice, strengthen the ones you like, or find lines where adding sound would help.
+            </p>
           )}
 
           {echoes.length > 0 && (

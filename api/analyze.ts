@@ -19,11 +19,21 @@ const HARSHNESS_PERSONAS: Record<string, string> = {
   critic:  "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
 };
 
-function buildSystemPrompt(harshness?: string): string {
+function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
   const persona = harshness && harshness in HARSHNESS_PERSONAS
     ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
     : HARSHNESS_PERSONAS.editor;
-  return `You are ${persona}. Persona governs the TONE and word choice of your feedback strings ONLY — it does not shift the rubric or the score. Apply the same objective rubric below to every poem, then phrase the feedback in your persona's voice.
+  const draftBlock = draftMode ? `
+
+=== DRAFT MODE — work-in-progress check ===
+The poet has marked this as a draft they are still writing. Apply these adjustments:
+- DO NOT penalize for: incompleteness, missing ending, undeveloped form, lines that feel like placeholders, abrupt stops, structural gaps. Score the four pillars on what is actually on the page, using the same anchors. A great half-poem can score high; a weak half-poem still scores honestly.
+- Frame feedback FORWARD, not corrective. In strengths[], list what is already landing on the page (concrete: which image, which sound, which move). In weaknesses[], list THREADS TO DEVELOP — images, sounds, or moves the poet should pull on as they continue. Do NOT phrase these as problems; phrase them as "more of X" or "follow this thread".
+- In personal_feedback, name 1-2 directions the poem seems to want to go, grounded in specific words/images already on the page. No generic encouragement.
+- OMIT issues[] entirely. Return issues: []. Line-level critique is premature when the poet is mid-process.
+- OMIT strongest_line if no line clearly stands out yet; only include it if one line is already markedly stronger than the rest.
+` : "";
+  return `You are ${persona}. Persona governs the TONE and word choice of your feedback strings ONLY — it does not shift the rubric or the score. Apply the same objective rubric below to every poem, then phrase the feedback in your persona's voice.${draftBlock}
 
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 Score each pillar independently on a 0-25 scale, then sum for overall_score.
@@ -38,6 +48,24 @@ Score each pillar independently on a 0-25 scale, then sum for overall_score.
 13-18  competent — solid execution, mostly intentional choices, occasional weakness.
 19-22  strong — distinctive, controlled, would not be cut from a workshop.
 23-25  publishable — singular, surprising, no wasted move on this dimension.
+
+=== CALIBRATION EXAMPLES — use these as fixed reference points ===
+Score the user's poem on the SAME scale these examples sit on. If a draft reads like Example A it does not score above ~35. If it reads like Example C it does not score below ~80. Apply consistently across runs.
+
+EXAMPLE A — total 32 (weak draft):
+  "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
+  pillar_scores: {musicality: 8, technique: 7, imagery_theme: 9, originality_form: 8}
+  Why: stock phrases ("broken into pieces", "empty word"), no concrete image, flat rhythm, no form awareness. Every pillar sits in 7-12 "developing".
+
+EXAMPLE B — total 60 (competent draft):
+  "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
+  pillar_scores: {musicality: 15, technique: 16, imagery_theme: 16, originality_form: 13}
+  Why: one fresh simile, controlled enjambment, accurate diction — but a single image with no turn or earned stakes, free-verse shape isn't distinctive. Sits in 13-18 "competent" across the board.
+
+EXAMPLE C — total 86 (strong draft):
+  "The cows go down through the grass / as if through the small change of an hour / not theirs to spend. Above them, a thin gold / closes its book on the wood."
+  pillar_scores: {musicality: 21, technique: 22, imagery_theme: 23, originality_form: 20}
+  Why: surprising metaphor ("small change of an hour"), controlled cadence, image carries subtext (mortality, lateness), distinctive free-verse shape with a turn. 19-23 "strong" across the board.
 
 === OVERALL SCORE RULES ===
 - overall_score = sum of the four pillar scores.
@@ -168,6 +196,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     goals?: unknown;
     harshness?: unknown;
     writingFocus?: unknown;
+    draftMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -176,7 +205,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
-  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
 
   const spend = await precheckSpend({
     rawIp: req.headers["x-forwarded-for"],
@@ -191,6 +220,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
+  const draftMode = body.draftMode === true;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -218,11 +248,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     {
       model,
       messages: [
-        { role: "system", content: buildSystemPrompt(harshness) },
+        { role: "system", content: buildSystemPrompt(harshness, draftMode) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
       max_tokens: 4000,
-      temperature: 0.4,
+      temperature: 0,
       reasoningEffort: "low",
     },
     res,
@@ -230,5 +260,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!result) return;
 
   await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
-  sendParsedResponse(res, result.content, result.model);
+  sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
 }

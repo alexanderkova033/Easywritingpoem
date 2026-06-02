@@ -146,35 +146,6 @@
   }
 }
 
-/* ---- Model selector ---- */
-.ai-model-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
-  color: var(--muted);
-  font-weight: 600;
-}
-
-.ai-model-label-text {
-  white-space: nowrap;
-}
-
-.ai-model-select {
-  font: inherit;
-  font-size: 0.85rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 7px);
-  padding: 0.35rem 0.5rem;
-  background: var(--bg);
-  color: var(--text);
-}
-
-.ai-model-select:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
 .ai-harshness-label {
   gap: 0.25rem;
 }
@@ -2687,9 +2658,65 @@ button.ai-flagged-cliche:focus-visible {
   border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
 }
 
+/* Four pillar bars under the score ring */
+.ai-pillars {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.3rem;
+  padding: 0.55rem 0.15rem 0.25rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.ai-pillar-row {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr 3.2rem;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+}
+
+.ai-pillar-label {
+  color: var(--text);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-pillar-track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  overflow: hidden;
+}
+
+.ai-pillar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  transition: width 320ms ease-out, background 200ms ease;
+}
+
+.ai-pillar-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ai-pillar-outof {
+  opacity: 0.55;
+  font-weight: 400;
+  font-size: 0.72rem;
+  margin-left: 0.1rem;
+}
+
 @media (max-width: 540px) {
   .ai-hero-score { flex-direction: column; align-items: flex-start; gap: 0.55rem; }
   .ai-hero-meta { align-items: flex-start; }
+  .ai-pillar-row { grid-template-columns: 5.5rem 1fr 2.8rem; gap: 0.4rem; font-size: 0.78rem; }
 }
 
 /* ======================================================
@@ -3373,6 +3400,64 @@ button.ai-flagged-cliche:focus-visible {
 
 .ai-harshness-critic.is-active {
   background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 75%, #6b0e0e);
+}
+
+/* ======================================================
+   Draft / Final toggle (2-state segmented)
+   ====================================================== */
+.ai-draft-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  gap: 1px;
+}
+
+.ai-draft-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 0.28rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ai-draft-btn:hover { color: var(--text); }
+
+.ai-draft-btn.is-active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.ai-draft-final.is-active {
+  background: var(--accent, #5fba7d);
+}
+
+.ai-draft-draft.is-active {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 75%, #6b4e0e);
+}
+
+/* Draft badge in the hero meta row */
+.ai-draft-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 18%, transparent);
+  color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 90%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--ai-score-mid, #e6a817) 35%, var(--border));
+  white-space: nowrap;
 }
 
 /* ======================================================

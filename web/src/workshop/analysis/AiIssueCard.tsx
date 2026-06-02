@@ -12,12 +12,11 @@ import {
 interface IssueChatMessage { role: "user" | "assistant"; text: string; }
 
 function IssueThread({
-  issue, poemTitle, poemLines, model,
+  issue, poemTitle, poemLines,
 }: {
   issue: AnalysisIssue;
   poemTitle: string;
   poemLines: string[];
-  model: string;
 }) {
   const [messages, setMessages] = useState<IssueChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -56,7 +55,6 @@ function IssueThread({
           message: text,
           analysisContext: issueContext,
           history: priorHistory,
-          model,
         }),
       });
       if (!res.ok) {
@@ -73,7 +71,7 @@ function IssueThread({
     } finally {
       setLoading(false);
     }
-  }, [input, loading, messages, poemTitle, poemLines, issueContext, model]);
+  }, [input, loading, messages, poemTitle, poemLines, issueContext]);
 
   return (
     <div className="ai-issue-thread">
@@ -121,7 +119,7 @@ function IssueThread({
 
 export function IssueCard({
   issue, index, isOpen, onOpenChange, isResolved, onResolve, onIgnore,
-  onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
+  onJump, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle,
 }: {
   issue: AnalysisIssue;
   index: number;
@@ -138,7 +136,6 @@ export function IssueCard({
   /** Lines as they were at the time of the analysis (used for the re-check button). */
   originalLines?: string[];
   poemTitle?: string;
-  model?: string;
 }) {
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}`
@@ -167,7 +164,7 @@ export function IssueCard({
     : "";
   const lineUnchanged =
     !!originalLines && !!poemLines && oldLineText.trim() === newLineText.trim();
-  const recheckAvailable = !!originalLines && !!poemLines && !!model && !!issue.rationale;
+  const recheckAvailable = !!originalLines && !!poemLines && !!issue.rationale;
 
   const handleRecheck = useCallback(async () => {
     if (!recheckAvailable || recheckLoading) return;
@@ -194,7 +191,6 @@ export function IssueCard({
           headline: issue.headline,
           lineRange: rangeLabel,
         },
-        model!,
         ctrl.signal,
       );
       setRecheckResult(out);
@@ -207,7 +203,7 @@ export function IssueCard({
     }
   }, [
     recheckAvailable, recheckLoading, oldLineText, newLineText, poemLines, issue.line_start,
-    issue.line_end, issue.rationale, issue.headline, rangeLabel, model, onResolve,
+    issue.line_end, issue.rationale, issue.headline, rangeLabel, onResolve,
   ]);
 
   useEffect(() => () => recheckAbortRef.current?.abort(), []);
@@ -450,7 +446,7 @@ export function IssueCard({
           )}
 
           {/* Per-issue thread toggle */}
-          {poemLines && poemTitle !== undefined && model && (
+          {poemLines && poemTitle !== undefined && (
             <div className="ai-issue-thread-toggle-row">
               <button
                 type="button"
@@ -463,12 +459,11 @@ export function IssueCard({
             </div>
           )}
 
-          {showThread && poemLines && poemTitle !== undefined && model && (
+          {showThread && poemLines && poemTitle !== undefined && (
             <IssueThread
               issue={issue}
               poemTitle={poemTitle}
               poemLines={poemLines}
-              model={model}
             />
           )}
         </div>

@@ -124,7 +124,7 @@ export const poemEditorTheme = EditorView.theme({
     letterSpacing: "var(--poem-letter-spacing, 0em)",
     caretColor: "color-mix(in srgb, var(--accent) 70%, var(--text))",
     minHeight: "13rem",
-    padding: "0.6rem 0.7rem",
+    padding: "0.25rem 0.7rem",
   },
   ".cm-gutters": {
     backgroundColor: "transparent",

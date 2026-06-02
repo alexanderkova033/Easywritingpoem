@@ -20,7 +20,6 @@ const DEFAULT_COOLDOWN_MS = 5_000;
 const ANALYZE_COOLDOWN_BY_MODEL_MS: Record<string, number> = {
   "gpt-5-nano": 60_000,
   "gpt-5-mini": 120_000,
-  "gpt-5": 180_000,
 };
 const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
 
@@ -31,9 +30,8 @@ interface ModelPrice {
 const MODEL_PRICING: Record<string, ModelPrice> = {
   "gpt-5-nano": { inCentsPerMTok: 5, outCentsPerMTok: 40 },
   "gpt-5-mini": { inCentsPerMTok: 25, outCentsPerMTok: 200 },
-  "gpt-5": { inCentsPerMTok: 125, outCentsPerMTok: 1000 },
 };
-const FALLBACK_PRICE: ModelPrice = MODEL_PRICING["gpt-5"]!;
+const FALLBACK_PRICE: ModelPrice = MODEL_PRICING["gpt-5-mini"]!;
 
 function priceFor(model: string): ModelPrice {
   if (MODEL_PRICING[model]) return MODEL_PRICING[model]!;

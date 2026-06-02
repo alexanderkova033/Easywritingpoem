@@ -24,7 +24,6 @@ import {
   loadIgnoredIssueIds,
 } from "./ai-analysis-storage";
 import {
-  LS_KEY_MODEL,
   LS_CHAT_PREFIX,
   LS_LAST_HASH_PREFIX,
   LS_SCORE_HISTORY_PREFIX,
@@ -34,7 +33,6 @@ import {
   loadLastHash,
   loadScoreHistory,
   loadScoringEnabled,
-  loadStoredModel,
   pushSnapshot,
   saveLastHash,
 } from "./ai-analysis-helpers";
@@ -72,8 +70,8 @@ export interface AiAnalysisProps {
 }
 
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
-  const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
+  const [draftMode, setDraftMode] = useState<boolean>(false);
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
@@ -123,11 +121,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     onResultChange?.(result);
   }, [result, onResultChange]);
 
-  const saveModel = useCallback((val: string) => {
-    setModel(val);
-    tryLocalStorageSetItem(LS_KEY_MODEL, val);
-  }, []);
-
   const toggleScoring = useCallback(() => {
     setScoringEnabled((prev) => {
       const next = !prev;
@@ -175,6 +168,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       harshness,
       mainIdea ?? "",
       canCompare ? "compare" : "fresh",
+      draftMode ? "draft" : "final",
     ].join("|"));
     if (!canCompare && result && loadLastHash(poemId) === inputHash) {
       setStatus("done");
@@ -199,11 +193,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 line_end: i.line_end,
                 headline: i.headline,
               })),
+            draftMode,
           },
-          model, ctrl.signal,
+          ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, model, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, draftMode }, ctrl.signal);
       }
       setResult(res);
       setSavedResult(res);
@@ -230,7 +225,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, model, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
+  }, [canCompare, hasPoem, harshness, draftMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result]);
 
 
   useEffect(() => {
@@ -320,15 +315,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 <span className="ai-score-toggle-label">Score</span>
               </button>
 
-              <label className="ai-model-label">
-                <select className="ai-model-select" value={model}
-                  onChange={(e) => saveModel(e.target.value)}>
-                  <option value="gpt-5-nano">Fast</option>
-                  <option value="gpt-5-mini">Normal</option>
-                  <option value="gpt-5">Thinking</option>
-                </select>
-              </label>
-
               <div className="ai-harshness-toggle" role="group" aria-label="Feedback tone">
                 {([
                   { id: "casual" as const, label: "Gentle", icon: "♡" },
@@ -350,6 +336,27 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                   </button>
                 ))}
               </div>
+
+              <div className="ai-draft-toggle" role="group" aria-label="Poem stage">
+                <button
+                  type="button"
+                  className={`ai-draft-btn${!draftMode ? " is-active" : ""} ai-draft-final`}
+                  onClick={() => setDraftMode(false)}
+                  title="Treat the poem as finished — full critique, line-level issues, strongest line"
+                  aria-pressed={!draftMode}
+                >
+                  <span aria-hidden>✓</span> Final
+                </button>
+                <button
+                  type="button"
+                  className={`ai-draft-btn${draftMode ? " is-active" : ""} ai-draft-draft`}
+                  onClick={() => setDraftMode(true)}
+                  title="Work-in-progress — forward-looking feedback, no line-level issues"
+                  aria-pressed={draftMode}
+                >
+                  <span aria-hidden>✎</span> Draft
+                </button>
+              </div>
             </div>
 
             <div className="ai-analyze-actions">
@@ -359,10 +366,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 disabled={!hasPoem || status === "loading"}
                 title={!hasPoem ? "Write some lines first" : undefined}>
                 {status === "loading"
-                  ? (effectiveMode === "compare" ? "Refining…" : "Reading…")
+                  ? (effectiveMode === "compare" ? "Refining…" : (draftMode ? "Checking…" : "Reading…"))
                   : effectiveMode === "compare"
                     ? "✦ Refine"
-                    : "✦ Read poem"}
+                    : draftMode ? "✎ Check draft" : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (
                 <button type="button"
@@ -455,7 +462,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 poemLines={lines}
                 originalLines={savedLines.length > 0 ? savedLines : undefined}
                 poemTitle={title}
-                model={model}
                 poemId={poemId}
                 onVisibleIssuesChange={onVisibleIssuesChange}
                 openIssueLineSignal={openIssueLineSignal}

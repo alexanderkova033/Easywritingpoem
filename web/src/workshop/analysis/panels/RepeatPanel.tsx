@@ -11,7 +11,6 @@ import {
   PhraseRepeatCard,
   RepeatedWordCard,
 } from "@/workshop/analysis/tools/RepetitionCards";
-import { CraftStatCard } from "@/workshop/analysis/tools/CraftCards";
 import { useIgnoredCraftItems } from "@/workshop/analysis/craft-ignored-storage";
 import { LiveSectionTitle } from "../ToolTabBar";
 
@@ -39,13 +38,80 @@ export function RepeatPanel({
   setSubTab: setRepeatSubTab,
 }: RepeatPanelProps) {
   const [repeatWordFilter, setRepeatWordFilter] = useState("");
-  const { ignore, restoreAll, isIgnored, countInCategory } =
+  const [hiddenOpen, setHiddenOpen] = useState(false);
+  const { ignored, ignore, restore, restoreAll, isIgnored, countInCategory } =
     useIgnoredCraftItems(poemId);
   const ignoredCount = countInCategory(IGNORE_CATEGORY);
 
+  const ignoredItems = useMemo(() => {
+    const prefix = `${IGNORE_CATEGORY}:`;
+    const out: string[] = [];
+    for (const k of ignored) {
+      if (k.startsWith(prefix)) out.push(k.slice(prefix.length));
+    }
+    return out.sort((a, b) => a.localeCompare(b));
+  }, [ignored]);
+
+  // Priority: Patterns > Phrases > Words. If a token is already represented in
+  // a higher tier, suppress its lower-tier card so the same word/phrase does
+  // not surface in multiple subtabs.
+  const patternPrefixes = useMemo(
+    () => [
+      ...repetition.anaphora.map((a) => a.prefix),
+      ...repetition.epistrophe.map((e) => e.prefix),
+    ],
+    [repetition.anaphora, repetition.epistrophe],
+  );
+
+  const dedupedPhrases = useMemo(() => {
+    if (patternPrefixes.length === 0) return repetition.phrases;
+    const prefixSet = new Set(patternPrefixes);
+    return repetition.phrases.filter((p) => {
+      if (prefixSet.has(p.phrase)) return false;
+      // Also drop phrases that are contiguous subsequences of a longer pattern.
+      const phraseTokens = p.phrase.split(/\s+/);
+      for (const prefix of patternPrefixes) {
+        const prefixTokens = prefix.split(/\s+/);
+        if (prefixTokens.length <= phraseTokens.length) continue;
+        for (let i = 0; i + phraseTokens.length <= prefixTokens.length; i++) {
+          let match = true;
+          for (let j = 0; j < phraseTokens.length; j++) {
+            if (prefixTokens[i + j] !== phraseTokens[j]) {
+              match = false;
+              break;
+            }
+          }
+          if (match) return false;
+        }
+      }
+      return true;
+    });
+  }, [repetition.phrases, patternPrefixes]);
+
+  const wordsInHigherTiers = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of dedupedPhrases) {
+      for (const t of p.phrase.split(/\s+/)) if (t) s.add(t);
+    }
+    for (const prefix of patternPrefixes) {
+      for (const t of prefix.split(/\s+/)) if (t) s.add(t);
+    }
+    return s;
+  }, [dedupedPhrases, patternPrefixes]);
+
+  const dedupedWords = useMemo(
+    () =>
+      repeated.filter(
+        (r) =>
+          !wordsInHigherTiers.has(r.word) &&
+          !r.variants.some((v) => wordsInHigherTiers.has(v)),
+      ),
+    [repeated, wordsInHigherTiers],
+  );
+
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    return repeated
+    return dedupedWords
       .filter((r) => !isIgnored(IGNORE_CATEGORY, r.word))
       .filter(
         (r) =>
@@ -53,47 +119,22 @@ export function RepeatPanel({
           r.word.toLowerCase().includes(t) ||
           r.variants.some((v) => v.toLowerCase().includes(t)),
       );
-  }, [repeated, repeatWordFilter, isIgnored]);
+  }, [dedupedWords, repeatWordFilter, isIgnored]);
 
   const filteredPhrases = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    if (!t) return repetition.phrases;
-    return repetition.phrases.filter((p) => p.phrase.toLowerCase().includes(t));
-  }, [repetition.phrases, repeatWordFilter]);
+    if (!t) return dedupedPhrases;
+    return dedupedPhrases.filter((p) => p.phrase.toLowerCase().includes(t));
+  }, [dedupedPhrases, repeatWordFilter]);
 
   const repetitionCounts = useMemo(
     () => ({
-      words: repeated.length,
-      phrases: repetition.phrases.length,
+      words: dedupedWords.length,
+      phrases: dedupedPhrases.length,
       patterns: repetition.anaphora.length + repetition.epistrophe.length,
     }),
-    [repeated, repetition],
+    [dedupedWords, dedupedPhrases, repetition.anaphora, repetition.epistrophe],
   );
-
-  const totalRepeats =
-    repetitionCounts.words +
-    repetitionCounts.phrases +
-    repetitionCounts.patterns;
-
-  let tone: "good" | "warn" | "info" = "info";
-  let title = "";
-  let metricLabel: string;
-  let hint: string | undefined;
-  if (totalRepeats === 0) {
-    tone = "good";
-    title = "No repeats";
-    metricLabel = "clean";
-    hint = "No non-stopword words, phrases, or patterns repeat in this poem.";
-  } else if (repetitionCounts.words >= 6 || repetitionCounts.phrases >= 3) {
-    tone = "warn";
-    title = "Several echoes worth a look";
-    metricLabel = "repeats";
-    hint = "A few repeated words or phrases stand out. Tap any to jump to that line.";
-  } else {
-    title = "A few echoes spotted";
-    metricLabel = "repeats";
-    hint = "Most repeats are light. Tap any to jump to that line.";
-  }
 
   return (
     <div
@@ -113,13 +154,6 @@ export function RepeatPanel({
           Tools updating…
         </p>
       ) : null}
-      <CraftStatCard
-        tone={tone}
-        title={title}
-        metric={totalRepeats}
-        metricLabel={metricLabel}
-        hint={hint}
-      />
       <div className="rep-subtabs" role="tablist" aria-label="Repeats categories">
         <button
           type="button"
@@ -166,10 +200,12 @@ export function RepeatPanel({
       ) : null}
 
       {repeatSubTab === "words" ? (
-        repeated.length === 0 ? (
+        dedupedWords.length === 0 ? (
           <EmptyState title="No word repeats">
             <p className="muted small">
-              Nice—list stays empty unless a non-stopword repeats.
+              {repeated.length > 0
+                ? "Every repeat here is already shown as a phrase or pattern."
+                : "Nice—list stays empty unless a non-stopword repeats."}
             </p>
           </EmptyState>
         ) : filteredRepeated.length === 0 ? (
@@ -192,23 +228,57 @@ export function RepeatPanel({
               ))}
             </ul>
             {ignoredCount > 0 ? (
-              <button
-                type="button"
-                className="craft-restore-link linkish small"
-                onClick={() => restoreAll(IGNORE_CATEGORY)}
-              >
-                Show {ignoredCount} hidden
-              </button>
+              <div className="rep-hidden-section">
+                <button
+                  type="button"
+                  className="rep-hidden-toggle linkish small"
+                  onClick={() => setHiddenOpen((v) => !v)}
+                  aria-expanded={hiddenOpen}
+                  aria-controls="rep-hidden-list"
+                >
+                  {hiddenOpen ? "▾" : "▸"} Hidden ({ignoredCount})
+                </button>
+                {hiddenOpen ? (
+                  <ul id="rep-hidden-list" className="rep-hidden-list">
+                    {ignoredItems.map((w) => (
+                      <li key={w} className="rep-hidden-item">
+                        <span className="rep-hidden-word">{w}</span>
+                        <button
+                          type="button"
+                          className="linkish small"
+                          onClick={() => restore(IGNORE_CATEGORY, w)}
+                          aria-label={`Restore “${w}”`}
+                        >
+                          Restore
+                        </button>
+                      </li>
+                    ))}
+                    {ignoredCount > 1 ? (
+                      <li className="rep-hidden-actions">
+                        <button
+                          type="button"
+                          className="linkish small"
+                          onClick={() => restoreAll(IGNORE_CATEGORY)}
+                        >
+                          Restore all
+                        </button>
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
+              </div>
             ) : null}
           </>
         )
       ) : null}
 
       {repeatSubTab === "phrases" ? (
-        repetition.phrases.length === 0 ? (
+        dedupedPhrases.length === 0 ? (
           <EmptyState title="No phrase echoes">
             <p className="muted small">
-              No 2- or 3-word phrases repeat across your poem.
+              {repetition.phrases.length > 0
+                ? "Every phrase echo here is already shown as a pattern."
+                : "No 2- or 3-word phrases repeat across your poem."}
             </p>
           </EmptyState>
         ) : filteredPhrases.length === 0 ? (

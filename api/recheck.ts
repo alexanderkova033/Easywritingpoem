@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rationale = typeof body.rationale === "string" ? body.rationale.slice(0, 800) : "";
   const headline = typeof body.headline === "string" ? body.headline.slice(0, 80) : "";
   const lineRange = typeof body.lineRange === "string" ? body.lineRange.slice(0, 30) : "";
-  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
 
   if (!rationale.trim()) {
     return res.status(400).json({ error: "Missing `rationale` for the recheck." });

@@ -10,7 +10,23 @@ import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 
-const SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revision. You receive: a diff (previous → current), the previous score, and the current draft. Score the CURRENT version AGAINST THE RUBRIC BELOW — not against the previous score. Return JSON only (no fences).
+const DRAFT_BLOCK = `
+
+=== DRAFT MODE — work-in-progress check ===
+The poet has marked this revision as still in-progress. Apply these adjustments:
+- DO NOT penalize for incompleteness, missing ending, undeveloped form, structural gaps. Score the four pillars on what is actually on the page.
+- Frame feedback FORWARD: strengths[] = what is already landing; weaknesses[] = THREADS TO DEVELOP (images/sounds/moves to pull on), NOT problems to fix.
+- In personal_feedback, name 1-2 directions the poem seems to want to go, grounded in specific words/images on the page.
+- OMIT issues[] (return issues: []). Line-level critique is premature in draft mode.
+- OMIT strongest_line unless one line clearly stands out already.
+- comparison{} still applies: describe what changed between the previous draft and this one. improvements/regressions reference craft moves, not "fix this".
+`;
+
+function buildSystemPrompt(draftMode?: boolean): string {
+  return BASE_SYSTEM_PROMPT + (draftMode ? DRAFT_BLOCK : "");
+}
+
+const BASE_SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revision. You receive: a diff (previous → current), the previous score, and the current draft. Score the CURRENT version AGAINST THE RUBRIC BELOW — not against the previous score. Return JSON only (no fences).
 
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 Score each pillar independently on a 0-25 scale, then sum for overall_score.
@@ -25,6 +41,24 @@ Score each pillar independently on a 0-25 scale, then sum for overall_score.
 13-18  competent — solid execution, mostly intentional choices.
 19-22  strong — distinctive, controlled.
 23-25  publishable — singular, surprising.
+
+=== CALIBRATION EXAMPLES — use these as fixed reference points ===
+Score the CURRENT draft on the SAME scale these examples sit on. A draft that reads like Example A does not score above ~35. A draft that reads like Example C does not score below ~80. Apply consistently across runs.
+
+EXAMPLE A — total 32 (weak draft):
+  "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
+  pillar_scores: {musicality: 8, technique: 7, imagery_theme: 9, originality_form: 8}
+  Why: stock phrases, no concrete image, flat rhythm. Every pillar in 7-12 "developing".
+
+EXAMPLE B — total 60 (competent draft):
+  "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
+  pillar_scores: {musicality: 15, technique: 16, imagery_theme: 16, originality_form: 13}
+  Why: one fresh simile, controlled enjambment — but single image, no turn, undistinguished free-verse shape. 13-18 "competent".
+
+EXAMPLE C — total 86 (strong draft):
+  "The cows go down through the grass / as if through the small change of an hour / not theirs to spend. Above them, a thin gold / closes its book on the wood."
+  pillar_scores: {musicality: 21, technique: 22, imagery_theme: 23, originality_form: 20}
+  Why: surprising metaphor, controlled cadence, image carries subtext, distinctive shape with a turn. 19-23 "strong".
 
 === RE-SCORING RULES (read carefully — these override any instinct to be encouraging) ===
 - The previous score is reference ONLY for describing the trend in comparison{}. It is NOT a floor, NOT an anchor, and NOT a polite starting point.
@@ -158,6 +192,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     writingFocus?: unknown;
     previousWeaknesses?: unknown;
     previousIssues?: unknown;
+    draftMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -179,7 +214,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Poem too long (max 20000 characters)." });
   }
   const changesText = (body.changesText as string).slice(0, 8_000);
-  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
+  const draftMode = body.draftMode === true;
 
   const gib = await gibberishGuard({
     rawIp: req.headers["x-forwarded-for"],
@@ -260,11 +296,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     {
       model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: buildSystemPrompt(draftMode) },
         { role: "user", content: userMessage },
       ],
       max_tokens: 5000,
-      temperature: 0.4,
+      temperature: 0,
       reasoningEffort: "low",
     },
     res,
@@ -272,5 +308,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!result) return;
 
   await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
-  sendParsedResponse(res, result.content, result.model);
+  sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
 }

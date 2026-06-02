@@ -56,61 +56,10 @@
   color: var(--text);
 }
 
-/* ── Sound echoes: density stripe ── */
-.sound-echo-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(1.6rem, 1fr));
-  gap: 0.2rem;
-  padding: 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-}
-.sound-echo-strip-seg {
-  height: 1.5rem;
-  border-radius: 3px;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.62rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  transition: outline-color 0.12s ease, transform 0.12s ease, filter 0.12s ease;
-  outline: 2px solid transparent;
-  outline-offset: 1px;
-  background: var(--bg-subtle, rgba(127, 127, 127, 0.18));
-}
-.sound-echo-strip-seg:hover,
-.sound-echo-strip-seg.is-active {
-  outline-color: var(--text);
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-.sound-echo-strip-seg.is-flat {
-  background: transparent;
-  border: 1px dashed var(--border);
-  color: var(--muted);
-}
-.sound-echo-strip-seg-blank {
-  height: 1.5rem;
-  background: transparent;
-  pointer-events: none;
-}
-.sound-echo-strip-num { pointer-events: none; }
-
-/* Sound echo stats row tints (reuses .sound-flow-summary grid). */
-.sound-echo-stat-total   .sound-flow-stat-value { color: var(--text); }
-.sound-echo-stat-musical .sound-flow-stat-value { color: #7fb8b3; }
-.sound-echo-stat-flat    .sound-flow-stat-value { color: var(--muted); }
-.sound-echo-stat-cluster .sound-flow-stat-value { color: #c98c46; }
-.sound-echo-stat-denom {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--muted);
-  margin-left: 0.1rem;
+/* Sound echoes: "what this is for" tagline below the at-a-glance. */
+.sound-echo-purpose {
+  margin: 0;
+  line-height: 1.45;
 }
 
 /* Vowel-music stats row tints. */

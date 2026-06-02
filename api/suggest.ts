@@ -162,7 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const steer = typeof body.steer === "string" ? body.steer.slice(0, 200) : undefined;
   const syllableTarget = typeof body.syllableTarget === "number" && body.syllableTarget > 0 ? body.syllableTarget : undefined;
   const syllableTolerance = typeof body.syllableTolerance === "number" && body.syllableTolerance >= 0 ? Math.min(10, Math.round(body.syllableTolerance)) : undefined;
-  const model = typeof body.model === "string" ? body.model : "gpt-5-nano";
+  const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
 
   const totalChars = lines.reduce((sum, l) => sum + l.length, 0) + title.length;
   if (totalChars > 20_000) {

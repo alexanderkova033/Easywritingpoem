@@ -13,12 +13,27 @@ import {
 
 // ---- Decoration classes ---- //
 const boldMark = Decoration.mark({ class: "cm-fmt-bold" });
-const boldBracket = Decoration.mark({ class: "cm-fmt-bracket" });
 const underlineMark = Decoration.mark({ class: "cm-fmt-underline" });
-const underlineBracket = Decoration.mark({ class: "cm-fmt-bracket" });
+// Hidden bracket: replaces the `**` / `__` characters with nothing.
+const hiddenBracket = Decoration.replace({});
+// Visible bracket: shown faintly while the cursor is inside the wrapped range
+// so the user can still see and edit the markers when they want to.
+const visibleBracket = Decoration.mark({ class: "cm-fmt-bracket" });
 
-const BOLD_RE = /\*\*(.+?)\*\*/g;
-const UNDERLINE_RE = /__(.+?)__/g;
+// Marks must stay on a single line — the styling regex below doesn't cross newlines.
+const BOLD_RE = /\*\*([^*\n]+?)\*\*/g;
+const UNDERLINE_RE = /__([^_\n]+?)__/g;
+
+function rangeTouchesSelection(
+  from: number,
+  to: number,
+  view: EditorView,
+): boolean {
+  for (const r of view.state.selection.ranges) {
+    if (r.from <= to && r.to >= from) return true;
+  }
+  return false;
+}
 
 function buildDecorations(view: EditorView): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
@@ -27,31 +42,25 @@ function buildDecorations(view: EditorView): DecorationSet {
   for (const { from, to } of view.visibleRanges) {
     const text = view.state.sliceDoc(from, to);
 
-    // Bold
-    for (const m of text.matchAll(BOLD_RE)) {
+    const addWrapped = (
+      m: RegExpMatchArray,
+      innerDeco: Decoration,
+    ) => {
       const start = from + m.index!;
       const end = start + m[0].length;
       const inner = start + 2;
       const innerEnd = end - 2;
-      entries.push({ from: start, to: inner, deco: boldBracket });
-      entries.push({ from: inner, to: innerEnd, deco: boldMark });
-      entries.push({ from: innerEnd, to: end, deco: boldBracket });
-    }
+      const showBrackets = rangeTouchesSelection(start, end, view);
+      const bracket = showBrackets ? visibleBracket : hiddenBracket;
+      entries.push({ from: start, to: inner, deco: bracket });
+      entries.push({ from: inner, to: innerEnd, deco: innerDeco });
+      entries.push({ from: innerEnd, to: end, deco: bracket });
+    };
 
-    // Underline
-    for (const m of text.matchAll(UNDERLINE_RE)) {
-      const start = from + m.index!;
-      const end = start + m[0].length;
-      // Make sure this isn't inside a bold span (starts with ** already handled)
-      const inner = start + 2;
-      const innerEnd = end - 2;
-      entries.push({ from: start, to: inner, deco: underlineBracket });
-      entries.push({ from: inner, to: innerEnd, deco: underlineMark });
-      entries.push({ from: innerEnd, to: end, deco: underlineBracket });
-    }
+    for (const m of text.matchAll(BOLD_RE)) addWrapped(m, boldMark);
+    for (const m of text.matchAll(UNDERLINE_RE)) addWrapped(m, underlineMark);
   }
 
-  // Sort by `from` so builder is fed in order
   entries.sort((a, b) => a.from - b.from || a.to - b.to);
   for (const { from, to, deco } of entries) {
     builder.add(from, to, deco);
@@ -66,7 +75,11 @@ export const formatMarksExtension = ViewPlugin.fromClass(
       this.decorations = buildDecorations(view);
     }
     update(update: ViewUpdate) {
-      if (update.docChanged || update.viewportChanged) {
+      if (
+        update.docChanged ||
+        update.viewportChanged ||
+        update.selectionSet
+      ) {
         this.decorations = buildDecorations(update.view);
       }
     }
@@ -86,37 +99,86 @@ export const formatMarksTheme = EditorView.baseTheme({
 
 // ---- Toggle helpers ---- //
 
+/**
+ * Wrap a single segment of text with `open` / `close`, or unwrap if it already
+ * starts and ends with them. Returns the rewritten segment and the offsets of
+ * the inner content within it (used to position the selection afterwards).
+ */
+function wrapOrUnwrapSegment(
+  text: string,
+  open: string,
+  close: string,
+): { result: string; innerStart: number; innerEnd: number } {
+  if (
+    text.startsWith(open) &&
+    text.endsWith(close) &&
+    text.length > open.length + close.length
+  ) {
+    const inner = text.slice(open.length, text.length - close.length);
+    return { result: inner, innerStart: 0, innerEnd: inner.length };
+  }
+  const result = open + text + close;
+  return {
+    result,
+    innerStart: open.length,
+    innerEnd: open.length + text.length,
+  };
+}
+
 /** Wraps or unwraps the selection with `open` / `close` markers. */
 function toggleWrap(view: EditorView, open: string, close: string) {
   const { state } = view;
   const range = state.selection.main;
-  const selected = state.sliceDoc(range.from, range.to);
 
-  if (selected.startsWith(open) && selected.endsWith(close) && selected.length > open.length + close.length) {
-    // Unwrap
-    const inner = selected.slice(open.length, selected.length - close.length);
-    view.dispatch({
-      changes: { from: range.from, to: range.to, insert: inner },
-      selection: { anchor: range.from, head: range.from + inner.length },
-    });
-  } else if (selected.length > 0) {
-    // Wrap
-    const replacement = open + selected + close;
-    view.dispatch({
-      changes: { from: range.from, to: range.to, insert: replacement },
-      selection: {
-        anchor: range.from + open.length,
-        head: range.from + open.length + selected.length,
-      },
-    });
-  } else {
-    // No selection — insert placeholder and put cursor inside
+  // No selection — insert placeholder and put cursor inside.
+  if (range.empty) {
     const placeholder = open + close;
     view.dispatch({
       changes: { from: range.from, insert: placeholder },
       selection: { anchor: range.from + open.length },
     });
+    view.focus();
+    return;
   }
+
+  const selected = state.sliceDoc(range.from, range.to);
+
+  // Multi-line selection — wrap each non-empty line on its own, since the
+  // styling regex can't span newlines. Preserve leading/trailing whitespace.
+  if (selected.includes("\n")) {
+    const lines = selected.split("\n");
+    const rewritten = lines.map((line) => {
+      const leadingLen = line.length - line.trimStart().length;
+      const trailingLen = line.length - line.trimEnd().length;
+      const leading = line.slice(0, leadingLen);
+      const trailing = trailingLen > 0 ? line.slice(line.length - trailingLen) : "";
+      const core = line.slice(leadingLen, line.length - trailingLen);
+      if (!core) return line;
+      const { result } = wrapOrUnwrapSegment(core, open, close);
+      return leading + result + trailing;
+    });
+    const replacement = rewritten.join("\n");
+    view.dispatch({
+      changes: { from: range.from, to: range.to, insert: replacement },
+      selection: { anchor: range.from, head: range.from + replacement.length },
+    });
+    view.focus();
+    return;
+  }
+
+  // Single-line selection.
+  const { result, innerStart, innerEnd } = wrapOrUnwrapSegment(
+    selected,
+    open,
+    close,
+  );
+  view.dispatch({
+    changes: { from: range.from, to: range.to, insert: result },
+    selection: {
+      anchor: range.from + innerStart,
+      head: range.from + innerEnd,
+    },
+  });
   view.focus();
 }
 

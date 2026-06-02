@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { diffPoemLines } from "@/workshop/library/diff-lines";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
   formatRelativeSnapshotWhen,
@@ -20,9 +21,17 @@ export interface RevisionCompareSectionProps {
   activeDiffSnapshotId?: string | null;
 }
 
+type PreviewLine =
+  | { kind: "body"; text: string }
+  | { kind: "add"; text: string }
+  | { kind: "remove"; text: string }
+  | { kind: "change"; from: string; to: string };
+
 interface RowMeta {
   snap: RevisionSnapshot;
-  previewLines: string[];
+  autoName: string;
+  autoNameKind: "initial" | "manual" | "edit" | "none";
+  previewLines: PreviewLine[];
   lines: number;
   words: number;
   deltaLines: number | null;
@@ -40,19 +49,144 @@ function wordCount(body: string): number {
   return m ? m.length : 0;
 }
 
-/**
- * Up to two non-empty lines, each clipped, so cards differ visually even
- * when their first lines happen to match.
- */
-function previewLinesFor(body: string): string[] {
-  if (!body) return ["(empty)"];
+function clip(text: string, max: number): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return t.slice(0, max).trimEnd() + "…";
+}
+
+/** First non-empty body lines, used when there are no changes to highlight. */
+function bodyOpeningLines(body: string): PreviewLine[] {
+  if (!body) return [{ kind: "body", text: "(empty)" }];
   const lines = body
     .split("\n")
     .map((l) => l.trim())
     .filter((l) => l.length > 0)
     .slice(0, 2)
-    .map((l) => (l.length > 64 ? l.slice(0, 64).trimEnd() + "…" : l));
-  return lines.length === 0 ? ["(empty)"] : lines;
+    .map((l) => clip(l, 64));
+  return lines.length === 0
+    ? [{ kind: "body", text: "(empty)" }]
+    : lines.map((text) => ({ kind: "body" as const, text }));
+}
+
+/**
+ * Compute an auto-name and a preview that shows the *changed* lines vs the
+ * predecessor snapshot. Cards in the list then look visibly different from
+ * each other even when their opening lines are the same.
+ */
+function buildChangePreview(
+  current: RevisionSnapshot,
+  older: RevisionSnapshot | undefined,
+): {
+  autoName: string;
+  autoNameKind: "initial" | "manual" | "edit" | "none";
+  previewLines: PreviewLine[];
+} {
+  if (current.label && current.label.trim().length > 0) {
+    // Manual label wins; preview still shows changes if any.
+    const change = older ? summarizeChanges(older.body, current.body) : null;
+    return {
+      autoName: current.label.trim(),
+      autoNameKind: "manual",
+      previewLines:
+        change && change.previewLines.length > 0
+          ? change.previewLines
+          : bodyOpeningLines(current.body),
+    };
+  }
+  if (!older) {
+    return {
+      autoName: "Initial draft",
+      autoNameKind: "initial",
+      previewLines: bodyOpeningLines(current.body),
+    };
+  }
+  const change = summarizeChanges(older.body, current.body);
+  if (!change) {
+    return {
+      autoName: "No body changes",
+      autoNameKind: "none",
+      previewLines: bodyOpeningLines(current.body),
+    };
+  }
+  return {
+    autoName: change.name,
+    autoNameKind: "edit",
+    previewLines:
+      change.previewLines.length > 0
+        ? change.previewLines
+        : bodyOpeningLines(current.body),
+  };
+}
+
+function summarizeChanges(
+  prevBody: string,
+  curBody: string,
+): { name: string; previewLines: PreviewLine[] } | null {
+  if (prevBody === curBody) return null;
+  const rows = diffPoemLines(prevBody, curBody);
+  const adds: string[] = [];
+  const removes: string[] = [];
+  const changes: Array<{ from: string; to: string }> = [];
+  for (const r of rows) {
+    if (r.kind === "right" && r.text.trim().length > 0) {
+      adds.push(r.text);
+    } else if (r.kind === "left" && r.text.trim().length > 0) {
+      removes.push(r.text);
+    } else if (r.kind === "change") {
+      changes.push({ from: r.left, to: r.right });
+    }
+  }
+  if (adds.length === 0 && removes.length === 0 && changes.length === 0) {
+    return null;
+  }
+
+  // Build the auto-name. Single-action snapshots get a specific verb; mixed
+  // edits get a compact counter (+1 ↻2 −1) so the card still differs from
+  // neighbours.
+  let name: string;
+  const onlyAdds = adds.length > 0 && removes.length === 0 && changes.length === 0;
+  const onlyRemoves = removes.length > 0 && adds.length === 0 && changes.length === 0;
+  const onlyChanges = changes.length > 0 && adds.length === 0 && removes.length === 0;
+  if (onlyAdds) {
+    name = adds.length === 1 ? "Added 1 line" : `Added ${adds.length} lines`;
+  } else if (onlyRemoves) {
+    name =
+      removes.length === 1 ? "Trimmed 1 line" : `Trimmed ${removes.length} lines`;
+  } else if (onlyChanges) {
+    name =
+      changes.length === 1 ? "Rewrote 1 line" : `Rewrote ${changes.length} lines`;
+  } else {
+    const parts: string[] = [];
+    if (adds.length) parts.push(`+${adds.length}`);
+    if (changes.length) parts.push(`↻${changes.length}`);
+    if (removes.length) parts.push(`−${removes.length}`);
+    name = `Edited (${parts.join(" ")})`;
+  }
+
+  // Build up to two preview lines. Rewrites are the most informative, then
+  // additions, then deletions.
+  const previewLines: PreviewLine[] = [];
+  for (const c of changes) {
+    if (previewLines.length >= 2) break;
+    previewLines.push({
+      kind: "change",
+      from: clip(c.from, 28),
+      to: clip(c.to, 28),
+    });
+  }
+  for (const a of adds) {
+    if (previewLines.length >= 2) break;
+    previewLines.push({ kind: "add", text: clip(a, 64) });
+  }
+  if (previewLines.length === 0) {
+    for (const r of removes) {
+      if (previewLines.length >= 2) break;
+      previewLines.push({ kind: "remove", text: clip(r, 64) });
+    }
+  }
+
+  return { name, previewLines };
 }
 
 type BucketKey = "today" | "yesterday" | "week" | "older";
@@ -155,9 +289,12 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
       const words = wordCount(s.body);
       const deltaLines = older ? lines - lineCount(older.body) : null;
       const deltaWords = older ? words - wordCount(older.body) : null;
+      const preview = buildChangePreview(s, older);
       return {
         snap: s,
-        previewLines: previewLinesFor(s.body),
+        autoName: preview.autoName,
+        autoNameKind: preview.autoNameKind,
+        previewLines: preview.previewLines,
         lines,
         words,
         deltaLines,
@@ -209,20 +346,62 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         className={`snap-card${isDuplicate ? " is-duplicate" : ""}${isDiffActive ? " is-diff-active" : ""}`}
       >
         <div className="snap-card-body">
-          {s.label ? (
-            <p className="snap-card-label" title={s.label}>
-              {s.label}
-            </p>
-          ) : null}
+          <p
+            className={`snap-card-name snap-card-name-${row.autoNameKind}`}
+            title={
+              row.autoNameKind === "manual"
+                ? row.autoName
+                : `Auto-named from changes: ${row.autoName}`
+            }
+          >
+            {row.autoName}
+          </p>
           <div
             className="snap-snippet snap-snippet-multiline"
             title={s.body || "(empty)"}
           >
-            {row.previewLines.map((ln, idx) => (
-              <span key={idx} className="snap-snippet-line">
-                {ln}
-              </span>
-            ))}
+            {row.previewLines.map((ln, idx) => {
+              if (ln.kind === "change") {
+                return (
+                  <span
+                    key={idx}
+                    className="snap-snippet-line snap-snippet-line-change"
+                  >
+                    <span className="snap-snippet-marker" aria-hidden="true">↻</span>
+                    <span className="snap-snippet-change-from">{ln.from}</span>
+                    <span className="snap-snippet-change-arrow" aria-hidden="true">→</span>
+                    <span className="snap-snippet-change-to">{ln.to}</span>
+                  </span>
+                );
+              }
+              if (ln.kind === "add") {
+                return (
+                  <span
+                    key={idx}
+                    className="snap-snippet-line snap-snippet-line-add"
+                  >
+                    <span className="snap-snippet-marker" aria-hidden="true">+</span>
+                    {ln.text}
+                  </span>
+                );
+              }
+              if (ln.kind === "remove") {
+                return (
+                  <span
+                    key={idx}
+                    className="snap-snippet-line snap-snippet-line-remove"
+                  >
+                    <span className="snap-snippet-marker" aria-hidden="true">−</span>
+                    {ln.text}
+                  </span>
+                );
+              }
+              return (
+                <span key={idx} className="snap-snippet-line">
+                  {ln.text}
+                </span>
+              );
+            })}
           </div>
           <div className="snap-meta">
             <span

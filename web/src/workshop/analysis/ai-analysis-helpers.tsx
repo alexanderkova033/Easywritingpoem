@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
-import { STORAGE_KEY_AI_MODEL, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
-
-export const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
-export const DEFAULT_MODEL = "gpt-5-nano";
-export const LEGACY_MODEL_MAP: Record<string, string> = {
-  "gpt-4o-mini": "gpt-5-nano",
-  "gpt-4o": "gpt-5",
-};
+import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 
 export const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
 export const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
@@ -144,19 +137,6 @@ export function loadScoringEnabled(): boolean {
     if (raw === "0" || raw === "false") return false;
   } catch { /* ignore */ }
   return true;
-}
-
-export function loadStoredModel(): string {
-  try {
-    const raw = localStorage.getItem(LS_KEY_MODEL);
-    if (!raw) return DEFAULT_MODEL;
-    const migrated = LEGACY_MODEL_MAP[raw];
-    if (migrated) {
-      try { localStorage.setItem(LS_KEY_MODEL, migrated); } catch { /* ignore */ }
-      return migrated;
-    }
-    return raw;
-  } catch { return DEFAULT_MODEL; }
 }
 
 export function scoreColor(score: number): string {

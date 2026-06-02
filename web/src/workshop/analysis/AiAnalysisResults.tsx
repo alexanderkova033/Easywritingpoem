@@ -3,6 +3,7 @@ import {
   type AnalysisIssue,
   type ComparisonChanges,
   type LocalAnalysisContext,
+  type PillarScores,
   type PoemAnalysis,
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
@@ -148,6 +149,40 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
+function PillarBars({ pillars }: { pillars: PillarScores }) {
+  const rows: { key: keyof PillarScores; label: string }[] = [
+    { key: "musicality",       label: "Musicality" },
+    { key: "technique",        label: "Technique" },
+    { key: "imagery_theme",    label: "Imagery / Theme" },
+    { key: "originality_form", label: "Originality / Form" },
+  ];
+  const pillarColor = (v: number): string => {
+    if (v >= 19) return "var(--ai-score-high, #5fba7d)";
+    if (v >= 13) return "var(--ai-score-mid, #e6a817)";
+    return "var(--ai-score-low, #d95f5f)";
+  };
+  return (
+    <div className="ai-pillars" aria-label="Pillar score breakdown">
+      {rows.map(({ key, label }) => {
+        const v = pillars[key];
+        const pct = Math.max(0, Math.min(100, (v / 25) * 100));
+        const color = pillarColor(v);
+        return (
+          <div key={key} className="ai-pillar-row">
+            <span className="ai-pillar-label">{label}</span>
+            <span className="ai-pillar-track" aria-hidden>
+              <span className="ai-pillar-fill" style={{ width: `${pct}%`, background: color }} />
+            </span>
+            <span className="ai-pillar-value" style={{ color }}>
+              {v}<span className="ai-pillar-outof">/25</span>
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 interface FormCoachLine { lineNumber: number; syllables: number; target: number; ok: boolean; }
 
 function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
@@ -208,7 +243,7 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 }
 
 export function AnalysisResults({
-  result, onJump, onJumpToWord, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle, model,
+  result, onJump, onJumpToWord, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
   activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
 }: {
@@ -227,7 +262,6 @@ export function AnalysisResults({
   /** Lines of the poem at the time of the analysis — used by the per-issue re-check button. */
   originalLines?: string[];
   poemTitle?: string;
-  model?: string;
   poemId?: string;
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
   openIssueLineSignal?: { line: number; nonce: number; scroll?: boolean } | null;
@@ -238,6 +272,7 @@ export function AnalysisResults({
   localAnalysis?: LocalAnalysisContext;
 }) {
   const isCompare = "comparison" in result;
+  const isDraft = result.draft === true;
 
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => loadIdSet(LS_RESOLVED_PREFIX, poemId));
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => loadIdSet(LS_IGNORED_PREFIX, poemId));
@@ -270,6 +305,11 @@ export function AnalysisResults({
     setTab(externalTabSignal.tab);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalTabSignal?.nonce]);
+
+  useEffect(() => {
+    if (isDraft && tab === "issues") setTab("overview");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDraft]);
 
   useEffect(() => { saveIdSet(LS_RESOLVED_PREFIX, poemId, resolvedIds); }, [poemId, resolvedIds]);
   useEffect(() => { saveIdSet(LS_IGNORED_PREFIX, poemId, ignoredIds); }, [poemId, ignoredIds]);
@@ -431,7 +471,6 @@ export function AnalysisResults({
       poemLines={poemLines}
       originalLines={originalLines}
       poemTitle={poemTitle}
-      model={model}
     />
   );
 
@@ -444,15 +483,17 @@ export function AnalysisResults({
           onClick={() => setTab("overview")}>
           Overview
         </button>
-        <button type="button" role="tab" aria-selected={tab === "issues"}
-          className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
-          onClick={() => setTab("issues")}>
-          Issues
-          {issuesBadge > 0 && (
-            <span className="ai-tab-badge">{issuesBadge}</span>
-          )}
-        </button>
-        {poemLines && poemTitle !== undefined && model && (
+        {!isDraft && (
+          <button type="button" role="tab" aria-selected={tab === "issues"}
+            className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
+            onClick={() => setTab("issues")}>
+            Issues
+            {issuesBadge > 0 && (
+              <span className="ai-tab-badge">{issuesBadge}</span>
+            )}
+          </button>
+        )}
+        {poemLines && poemTitle !== undefined && (
           <button type="button" role="tab" aria-selected={tab === "chat"}
             className={`ai-tab${tab === "chat" ? " is-active" : ""}`}
             onClick={() => setTab("chat")}>
@@ -482,23 +523,33 @@ export function AnalysisResults({
           {/* 1. Hero — score + verdict + sparkline + warm reaction */}
           <div className="ai-hero">
             {scoringEnabled && (
-              <div className="ai-hero-score">
-                <div className="ai-score-wrap">
-                  <ScoreRing score={result.overall_score} />
-                  <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
-                    {result.overall_score}
-                    <span className="ai-score-outof">/100</span>
-                  </span>
+              <>
+                <div className="ai-hero-score">
+                  <div className="ai-score-wrap">
+                    <ScoreRing score={result.overall_score} />
+                    <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
+                      {result.overall_score}
+                      <span className="ai-score-outof">/100</span>
+                    </span>
+                  </div>
+                  <div className="ai-hero-meta">
+                    <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+                      {scoreLabel(result.overall_score)}
+                    </span>
+                    {isDraft && (
+                      <span className="ai-draft-badge" title="Draft read — feedback is forward-looking, not corrective">
+                        ✎ Draft read
+                      </span>
+                    )}
+                    {scoreHistory && scoreHistory.length >= 2 && (
+                      <ScoreSparkline history={scoreHistory} />
+                    )}
+                  </div>
                 </div>
-                <div className="ai-hero-meta">
-                  <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-                    {scoreLabel(result.overall_score)}
-                  </span>
-                  {scoreHistory && scoreHistory.length >= 2 && (
-                    <ScoreSparkline history={scoreHistory} />
-                  )}
-                </div>
-              </div>
+                {result.pillar_scores && (
+                  <PillarBars pillars={result.pillar_scores} />
+                )}
+              </>
             )}
             {result.warm_reaction && (
               <p className="ai-warm-reaction">&ldquo;{result.warm_reaction}&rdquo;</p>
@@ -513,12 +564,15 @@ export function AnalysisResults({
             )}
           </div>
 
-          {/* 2. Strengths + weaknesses */}
+          {/* 2. Strengths + weaknesses (draft mode: "Already landing" / "Threads to develop") */}
           {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
             <div className="ai-sw-pair">
               {(result.strengths?.length ?? 0) > 0 && (
                 <div className="ai-card ai-card-strengths">
-                  <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>+</span> Strengths</span>
+                  <span className="ai-card-label">
+                    <span className="ai-card-icon" aria-hidden>+</span>
+                    {isDraft ? " Already landing" : " Strengths"}
+                  </span>
                   <ul className="ai-sw-list">
                     {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
@@ -526,7 +580,10 @@ export function AnalysisResults({
               )}
               {(result.weaknesses?.length ?? 0) > 0 && (
                 <div className="ai-card ai-card-weaknesses">
-                  <span className="ai-card-label"><span className="ai-card-icon" aria-hidden>−</span> Work on</span>
+                  <span className="ai-card-label">
+                    <span className="ai-card-icon" aria-hidden>{isDraft ? "→" : "−"}</span>
+                    {isDraft ? " Threads to develop" : " Work on"}
+                  </span>
                   <ul className="ai-sw-list">
                     {result.weaknesses!.map((s, i) => (
                       <li key={i}>
@@ -540,7 +597,7 @@ export function AnalysisResults({
           )}
 
           {/* 3. Strongest line — compact horizontal pill row */}
-          {result.strongest_line && (
+          {!isDraft && result.strongest_line && (
             <div className="ai-strongest-pill">
               <span className="ai-strongest-pill-icon" aria-hidden>★</span>
               <span className="ai-strongest-pill-label">Strongest line</span>
@@ -595,7 +652,7 @@ export function AnalysisResults({
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
           {/* 7. CTA — jump to issues */}
-          {visibleIssues.length > 0 && (
+          {!isDraft && visibleIssues.length > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
               onClick={() => setTab("issues")}>
               See {visibleIssues.length} issue{visibleIssues.length !== 1 ? "s" : ""} →
@@ -727,9 +784,9 @@ export function AnalysisResults({
       )}
 
       {/* Chat tab */}
-      {tab === "chat" && poemLines && poemTitle !== undefined && model && (
+      {tab === "chat" && poemLines && poemTitle !== undefined && (
         <div className="ai-tab-panel ai-tab-chat">
-          <AiChat title={poemTitle} lines={poemLines} result={result} model={model} poemId={poemId} />
+          <AiChat title={poemTitle} lines={poemLines} result={result} poemId={poemId} />
         </div>
       )}
     </div>

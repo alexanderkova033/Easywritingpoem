@@ -49,6 +49,7 @@ import {
   SPELL_ANALYSIS_DEBOUNCE_MS,
 } from "@/spellcheck/spell-timing";
 import { evaluateGoals } from "@/workshop/goals/metrics";
+import { removeWorkshopGoalsForPoem } from "@/workshop/goals/storage";
 import { linesFromBody } from "@/workshop/analysis/lines-from-body";
 import {
   computeDocumentStats,
@@ -213,7 +214,7 @@ export function usePoemWorkshopModel(
     setSyllablePattern,
     toggleGoalSoft,
     applyGoalPreset,
-  } = useGoalsState(setPersistenceError, clearPersistenceErrorIfMatches);
+  } = useGoalsState(activePoemId, setPersistenceError, clearPersistenceErrorIfMatches);
 
   const {
     meta,
@@ -722,6 +723,7 @@ export function usePoemWorkshopModel(
     }
     const id = activePoemId;
     removeRevisionsForPoem(id);
+    removeWorkshopGoalsForPoem(id);
     const flushed = upsertActivePoem(library, {
       title,
       body: bodyLiveRef.current,

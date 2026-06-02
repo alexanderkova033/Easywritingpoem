@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type {
   RepeatedWord,
+  Severity,
 } from "@/workshop/analysis/repeated-words";
 import {
   buildPhraseRegex,
@@ -9,6 +10,22 @@ import {
   escapeRegex,
   highlightInLine,
 } from "./helpers";
+
+const SEVERITY_LABEL: Record<Severity, string> = {
+  low: "Light echo",
+  med: "Moderate echo",
+  high: "Heavy echo",
+};
+
+function SeverityDot({ severity }: { severity: Severity }) {
+  return (
+    <span
+      className={`rep-sev-dot rep-sev-dot-${severity}`}
+      aria-label={SEVERITY_LABEL[severity]}
+      title={SEVERITY_LABEL[severity]}
+    />
+  );
+}
 
 export function RepeatedWordCard({
   item,
@@ -34,8 +51,12 @@ export function RepeatedWordCard({
   }, [item.word, item.variants]);
   const previewOccurrences = open ? item.occurrences : item.occurrences.slice(0, 2);
   return (
-    <li className="rep-card" data-repeat-card-id={cardId}>
+    <li
+      className={`rep-card rep-card-sev-${item.severity}`}
+      data-repeat-card-id={cardId}
+    >
       <div className="rep-card-header">
+        <SeverityDot severity={item.severity} />
         <span className="rep-card-title">{item.display}</span>
         <span className="rep-card-count">×{item.count}</span>
         {variantList ? (
@@ -108,8 +129,12 @@ export function PhraseRepeatCard({
   const previewSnippets = open ? item.snippets : item.snippets.slice(0, 2);
   const phraseRe = useMemo(() => buildPhraseRegex(item.phrase), [item.phrase]);
   return (
-    <li className="rep-card" data-repeat-card-id={cardId}>
+    <li
+      className={`rep-card rep-card-sev-${item.severity}`}
+      data-repeat-card-id={cardId}
+    >
       <div className="rep-card-header">
+        <SeverityDot severity={item.severity} />
         <span className="rep-card-title">"{item.display}"</span>
         <span className="rep-card-count">×{item.count}</span>
         <span className="rep-card-meta muted small">{item.n}-word</span>

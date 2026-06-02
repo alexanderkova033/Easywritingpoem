@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { loadWorkshopGoals, saveWorkshopGoals } from "@/workshop/goals/storage";
 import { FORM_PRESETS, type WorkshopGoals } from "@/workshop/goals/types";
 import { parseGoalInput } from "@/workshop/shell/workshop-helpers";
@@ -19,18 +19,32 @@ export interface GoalsState {
 }
 
 export function useGoalsState(
+  activePoemId: string,
   onPersistenceError: (msg: string) => void,
   clearPersistenceErrorIfMatches: (msg: string) => void,
 ): GoalsState {
-  const [goals, setGoals] = useState<WorkshopGoals>(() => loadWorkshopGoals());
+  const [goals, setGoals] = useState<WorkshopGoals>(() =>
+    loadWorkshopGoals(activePoemId),
+  );
+
+  // Track which poem the current `goals` belongs to so we don't write a poem's
+  // goals into another poem's slot during the render that follows a switch.
+  const goalsPoemIdRef = useRef(activePoemId);
 
   useEffect(() => {
-    if (!saveWorkshopGoals(goals)) {
+    if (goalsPoemIdRef.current === activePoemId) return;
+    goalsPoemIdRef.current = activePoemId;
+    setGoals(loadWorkshopGoals(activePoemId));
+  }, [activePoemId]);
+
+  useEffect(() => {
+    if (goalsPoemIdRef.current !== activePoemId) return;
+    if (!saveWorkshopGoals(activePoemId, goals)) {
       onPersistenceError(GOALS_STORAGE_MSG);
       return;
     }
     clearPersistenceErrorIfMatches(GOALS_STORAGE_MSG);
-  }, [goals, onPersistenceError, clearPersistenceErrorIfMatches]);
+  }, [activePoemId, goals, onPersistenceError, clearPersistenceErrorIfMatches]);
 
   const updateGoal =
     (key: keyof WorkshopGoals) => (e: ChangeEvent<HTMLInputElement>) => {

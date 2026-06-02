@@ -18,7 +18,10 @@ export const STORAGE_KEY_SPELL_DICT = "easy-poems:spell:personal:v1";
 export const STORAGE_KEY_SPELL_IGNORE_SESSION = "easy-poems:spell:ignore-session:v1";
 
 // Workshop metadata
+/** Legacy global goals store (pre per-poem) */
 export const STORAGE_KEY_GOALS = "easy-poems:goals:v1";
+/** Per-poem goals map */
+export const STORAGE_KEY_GOALS_V2 = "easy-poems:goals:v2";
 export const STORAGE_KEY_IDEAS_NOTEBOOK = "easy-poems:ideas-notebook:v1";
 export const STORAGE_KEY_LIBRARY_META = "easy-poems:libraryMeta:v1";
 export const STORAGE_KEY_APPEARANCE = "easy-poems:appearance:v1";
@@ -45,7 +48,6 @@ export const STORAGE_KEY_STARRED_WORDS = "easy-poems:starred-words:v1";
 export const STORAGE_KEY_LOOKED_UP_WORDS = "easy-poems:looked-up-words:v1";
 
 // AI settings
-export const STORAGE_KEY_AI_MODEL = "ep_openai_model";
 export const STORAGE_KEY_AI_SCORING_ENABLED = "easy-poems:ai-scoring-enabled";
 
 // Landing page

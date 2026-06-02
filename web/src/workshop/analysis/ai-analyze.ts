@@ -47,6 +47,8 @@ export interface PoemAnalysis {
   overall_score: number;
   /** 4 × 25 pillar breakdown. Sum (with hard cap) = overall_score. */
   pillar_scores?: PillarScores;
+  /** True when the request was sent in draft mode (work-in-progress). */
+  draft?: boolean;
   warm_reaction?: string;
   summary?: string;
   strengths?: string[];
@@ -197,12 +199,13 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
 
   return {
     meta: {
-      model: typeof meta.model === "string" ? meta.model : "gpt-5-nano",
+      model: typeof meta.model === "string" ? meta.model : "gpt-5-mini",
       analyzedAt:
         typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
     },
     overall_score: reconcileOverallScore(pillars, clampScore(obj.overall_score)),
     pillar_scores: pillars,
+    draft: obj.draft === true,
     warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
       ? obj.warm_reaction.trim() : undefined,
     summary: typeof obj.summary === "string" ? obj.summary : undefined,
@@ -333,6 +336,7 @@ export async function comparePoem(
     scoreHistory,
     previousWeaknesses,
     previousIssues,
+    draftMode,
   }: {
     title: string;
     lines: string[];
@@ -344,8 +348,8 @@ export async function comparePoem(
     scoreHistory?: number[];
     previousWeaknesses?: string[];
     previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
+    draftMode?: boolean;
   },
-  model = "gpt-5-nano",
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
   const changesText = buildChangesText(previousLines, lines);
@@ -354,8 +358,8 @@ export async function comparePoem(
     signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title, lines, changesText, previousScores, model, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues,
+      title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
+      previousWeaknesses, previousIssues, draftMode,
     }),
   });
 
@@ -392,14 +396,13 @@ export async function recheckIssue(
     headline?: string;
     lineRange?: string;
   },
-  model = "gpt-5-nano",
   signal?: AbortSignal,
 ): Promise<RecheckResult> {
   const response = await fetch("/api/recheck", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ oldLine, newLine, context, rationale, headline, lineRange, model }),
+    body: JSON.stringify({ oldLine, newLine, context, rationale, headline, lineRange }),
   });
   if (!response.ok) {
     const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "recheck");
@@ -427,6 +430,7 @@ export async function analyzePoem(
     goals,
     harshness,
     writingFocus,
+    draftMode,
   }: {
     title: string;
     lines: string[];
@@ -434,15 +438,15 @@ export async function analyzePoem(
     goals?: Record<string, number>;
     harshness?: HarshnessLevel;
     writingFocus?: string;
+    draftMode?: boolean;
   },
-  model = "gpt-5-nano",
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
   const response = await fetch("/api/analyze", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness, writingFocus }),
+    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, draftMode }),
   });
 
   if (!response.ok) {

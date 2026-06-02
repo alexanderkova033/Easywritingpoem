@@ -12,13 +12,11 @@ export function AiChat({
   title,
   lines,
   result,
-  model,
   poemId,
 }: {
   title: string;
   lines: string[];
   result: PoemAnalysis | PoemComparison;
-  model: string;
   poemId?: string;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadChat(poemId));
@@ -58,7 +56,7 @@ export function AiChat({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, lines, message: text, analysisContext, history: priorHistory, model }),
+        body: JSON.stringify({ title, lines, message: text, analysisContext, history: priorHistory }),
       });
       if (!res.ok) {
         const { message } = await parseAiErrorAndNotify(res, "chat");
@@ -75,7 +73,7 @@ export function AiChat({
       setChatError((err as Error).message);
       setChatStatus("error");
     }
-  }, [chatStatus, messages, title, lines, analysisContext, model]);
+  }, [chatStatus, messages, title, lines, analysisContext]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();

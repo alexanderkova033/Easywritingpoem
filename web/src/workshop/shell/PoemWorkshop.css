@@ -6958,6 +6958,58 @@
   border-color: var(--accent);
 }
 
+/* Collapsible "Hidden (N)" section under the Words subtab. */
+.rep-hidden-section {
+  margin-top: 0.65rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.rep-hidden-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  font-weight: 600;
+  opacity: 0.78;
+}
+
+.rep-hidden-toggle:hover {
+  opacity: 1;
+}
+
+.rep-hidden-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rep-hidden-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--border) 30%, transparent);
+}
+
+.rep-hidden-word {
+  font-size: 0.86rem;
+  opacity: 0.78;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.rep-hidden-actions {
+  margin-top: 0.2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* ============================================================
    Snapshots panel — clean visual rework
    ============================================================ */
@@ -7317,24 +7369,107 @@ button.snap-dupes-strip:hover {
 }
 
 .snap-snippet-line + .snap-snippet-line {
-  color: color-mix(in srgb, var(--text) 70%, var(--muted));
   font-size: 0.86rem;
 }
 
-.snap-card-label {
+.snap-snippet-marker {
+  display: inline-block;
+  width: 0.95rem;
+  margin-right: 0.25rem;
+  text-align: center;
+  font-weight: 800;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.snap-snippet-line-add {
+  color: color-mix(in srgb, var(--ai-score-high, #5fba7d) 85%, var(--text));
+}
+.snap-snippet-line-add .snap-snippet-marker {
+  color: var(--ai-score-high, #5fba7d);
+}
+
+.snap-snippet-line-remove {
+  color: color-mix(in srgb, var(--danger) 70%, var(--muted));
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.snap-snippet-line-remove .snap-snippet-marker {
+  color: var(--danger);
+  text-decoration: none;
+}
+
+.snap-snippet-line-change {
+  display: flex;
+  align-items: baseline;
+  gap: 0.32rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.snap-snippet-line-change .snap-snippet-marker {
+  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+}
+.snap-snippet-change-from {
+  color: color-mix(in srgb, var(--danger) 65%, var(--muted));
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snap-snippet-change-arrow {
+  color: var(--muted);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.snap-snippet-change-to {
+  color: color-mix(in srgb, var(--ai-score-high, #5fba7d) 80%, var(--text));
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card name pill — manual label, auto-summary, "Initial draft", or empty. */
+.snap-card-name {
   margin: 0 0 0.05rem;
   align-self: flex-start;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: color-mix(in srgb, var(--accent) 92%, var(--text));
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  padding: 0.1rem 0.5rem;
+  padding: 0.1rem 0.55rem;
   border-radius: 999px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.snap-card-name-manual {
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.snap-card-name-edit {
+  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  font-style: italic;
+  font-weight: 600;
+}
+
+.snap-card-name-initial {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.snap-card-name-none {
+  color: var(--muted);
+  background: transparent;
+  font-weight: 500;
+  font-style: italic;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .snap-meta {
