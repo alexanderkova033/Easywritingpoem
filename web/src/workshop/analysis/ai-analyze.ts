@@ -36,14 +36,14 @@ export interface StrongestLine {
 }
 
 export interface PillarScores {
-  pull: number;
+  chord: number;
   craft: number;
   spark: number;
   echo: number;
 }
 
 export interface PillarRationales {
-  pull?: string;
+  chord?: string;
   craft?: string;
   spark?: string;
   echo?: string;
@@ -117,13 +117,13 @@ function parsePillarScores(v: unknown): PillarScores | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
   const hasAny =
-    o.pull !== undefined ||
+    o.chord !== undefined ||
     o.craft !== undefined ||
     o.spark !== undefined ||
     o.echo !== undefined;
   if (!hasAny) return undefined;
   return {
-    pull: clampPillar(o.pull),
+    chord: clampPillar(o.chord),
     craft: clampPillar(o.craft),
     spark: clampPillar(o.spark),
     echo: clampPillar(o.echo),
@@ -138,12 +138,12 @@ function parsePillarRationales(v: unknown): PillarRationales | undefined {
     return typeof val === "string" && val.trim() ? val.trim() : undefined;
   };
   const out: PillarRationales = {
-    pull: pick("pull"),
+    chord: pick("chord"),
     craft: pick("craft"),
     spark: pick("spark"),
     echo: pick("echo"),
   };
-  if (!out.pull && !out.craft && !out.spark && !out.echo) return undefined;
+  if (!out.chord && !out.craft && !out.spark && !out.echo) return undefined;
   return out;
 }
 
@@ -152,7 +152,7 @@ function parsePillarRationales(v: unknown): PillarRationales | undefined {
  *  too so a sloppy model can't sneak past with an inflated overall_score. */
 function reconcileOverallScore(pillars: PillarScores | undefined, modelOverall: number): number {
   if (!pillars) return modelOverall;
-  const values = [pillars.pull, pillars.craft, pillars.spark, pillars.echo];
+  const values = [pillars.chord, pillars.craft, pillars.spark, pillars.echo];
   const sum = values.reduce((a, b) => a + b, 0);
   const lowest = Math.min(...values);
   const cap = lowest * 4 + 20;

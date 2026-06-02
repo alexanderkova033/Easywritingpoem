@@ -378,11 +378,12 @@
   min-height: 9.5rem;
 }
 
-/* ---- A single book ---- */
+/* ---- A single book ----
+   Note: --book-hue/--book-sat/--book-light come from inline style on the
+   .shelf-item wrapper (set per draft in JS). Do NOT redeclare them here,
+   or the inline value won't cascade through. Each var() below carries a
+   fallback used only when no wrapper var is present. */
 .book {
-  --book-hue: 30;
-  --book-sat: 45%;
-  --book-light: 35%;
   --book-w: 3.4rem;
   --book-h: 9rem;
   flex: 0 0 auto;
@@ -423,13 +424,13 @@
   border-radius: 2px 3px 3px 2px;
   background:
     linear-gradient(90deg,
-      hsl(var(--book-hue) calc(var(--book-sat) * 0.7) calc(var(--book-light) * 0.45)) 0%,
-      hsl(var(--book-hue) calc(var(--book-sat) * 0.85) calc(var(--book-light) * 0.7)) 4%,
-      hsl(var(--book-hue) var(--book-sat) var(--book-light)) 12%,
-      hsl(var(--book-hue) calc(var(--book-sat) * 1.05) calc(var(--book-light) * 1.18)) 50%,
-      hsl(var(--book-hue) var(--book-sat) var(--book-light)) 88%,
-      hsl(var(--book-hue) calc(var(--book-sat) * 0.85) calc(var(--book-light) * 0.7)) 96%,
-      hsl(var(--book-hue) calc(var(--book-sat) * 0.7) calc(var(--book-light) * 0.45)) 100%);
+      hsl(var(--book-hue, 30) calc(var(--book-sat, 45%) * 0.7) calc(var(--book-light, 35%) * 0.45)) 0%,
+      hsl(var(--book-hue, 30) calc(var(--book-sat, 45%) * 0.85) calc(var(--book-light, 35%) * 0.7)) 4%,
+      hsl(var(--book-hue, 30) var(--book-sat, 45%) var(--book-light, 35%)) 12%,
+      hsl(var(--book-hue, 30) calc(var(--book-sat, 45%) * 1.05) calc(var(--book-light, 35%) * 1.18)) 50%,
+      hsl(var(--book-hue, 30) var(--book-sat, 45%) var(--book-light, 35%)) 88%,
+      hsl(var(--book-hue, 30) calc(var(--book-sat, 45%) * 0.85) calc(var(--book-light, 35%) * 0.7)) 96%,
+      hsl(var(--book-hue, 30) calc(var(--book-sat, 45%) * 0.7) calc(var(--book-light, 35%) * 0.45)) 100%);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #000 40%, transparent),

@@ -1,5 +1,7 @@
-import type { FormEvent, KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
+import { STORAGE_KEY_FOCUS_NOTES_POS } from "@/shared/storage-keys";
 import {
   createIdea,
   IDEA_TEXT_MAX,
@@ -8,6 +10,40 @@ import {
 import { sortPinnedFirst, useIdeasNotebook } from "./useIdeasNotebook";
 
 const COLLAPSED_PREVIEW_COUNT = 3;
+const DRAG_THRESHOLD_PX = 4;
+const VIEWPORT_EDGE_MARGIN = 8;
+
+interface PanelPos {
+  left: number;
+  top: number;
+}
+
+function loadStoredPos(): PanelPos | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FOCUS_NOTES_POS);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as unknown;
+    if (!v || typeof v !== "object") return null;
+    const o = v as Record<string, unknown>;
+    if (typeof o.left !== "number" || typeof o.top !== "number") return null;
+    return { left: o.left, top: o.top };
+  } catch {
+    return null;
+  }
+}
+
+function clampToViewport(pos: PanelPos, width: number): PanelPos {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const minLeft = VIEWPORT_EDGE_MARGIN - (width - 32); // keep ≥32px visible
+  const maxLeft = vw - 32 - VIEWPORT_EDGE_MARGIN;
+  const minTop = VIEWPORT_EDGE_MARGIN;
+  const maxTop = vh - 32 - VIEWPORT_EDGE_MARGIN;
+  return {
+    left: Math.max(minLeft, Math.min(maxLeft, pos.left)),
+    top: Math.max(minTop, Math.min(maxTop, pos.top)),
+  };
+}
 
 /**
  * Side panel that appears in focus mode showing pinned + active ideas from the
@@ -23,6 +59,16 @@ export function FocusNotesPanel() {
   const [editingText, setEditingText] = useState("");
   const editRef = useRef<HTMLTextAreaElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const [pos, setPos] = useState<PanelPos | null>(() => loadStoredPos());
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originLeft: number;
+    originTop: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const active = useMemo(
     () => sortPinnedFirst(ideas.filter((i) => !i.done)),
@@ -116,6 +162,103 @@ export function FocusNotesPanel() {
     };
   }, [expanded]);
 
+  // Re-clamp stored position when viewport shrinks so panel never sits offscreen.
+  useEffect(() => {
+    if (!pos) return;
+    const onResize = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const clamped = clampToViewport(pos, rect.width);
+      if (clamped.left !== pos.left || clamped.top !== pos.top) {
+        setPos(clamped);
+        tryLocalStorageSetItem(
+          STORAGE_KEY_FOCUS_NOTES_POS,
+          JSON.stringify(clamped),
+        );
+      }
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [pos]);
+
+  const isInteractiveTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof Element)) return false;
+    return !!target.closest(
+      "input, textarea, select, .focus-notes-add-btn, .focus-notes-sheet-close, .focus-notes-pin, .focus-notes-done, .focus-notes-text, .focus-notes-edit",
+    );
+  };
+
+  const onPanelPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    // When expanded, only the header/empty areas drag — let inputs/buttons work.
+    if (expanded && isInteractiveTarget(e.target)) return;
+    const el = panelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    dragRef.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      originLeft: rect.left,
+      originTop: rect.top,
+      moved: false,
+    };
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const onPanelPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+    drag.moved = true;
+    const el = panelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const next = clampToViewport(
+      { left: drag.originLeft + dx, top: drag.originTop + dy },
+      rect.width,
+    );
+    setPos(next);
+  };
+
+  const onPanelPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const el = panelRef.current;
+    try {
+      el?.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    dragRef.current = null;
+    if (drag.moved) {
+      suppressClickRef.current = true;
+      // Reset shortly after the click event would have fired.
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 0);
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const final = clampToViewport(
+          { left: rect.left, top: rect.top },
+          rect.width,
+        );
+        setPos(final);
+        tryLocalStorageSetItem(
+          STORAGE_KEY_FOCUS_NOTES_POS,
+          JSON.stringify(final),
+        );
+      }
+    }
+  };
+
   const onEditKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -133,12 +276,24 @@ export function FocusNotesPanel() {
       ref={panelRef}
       className={`focus-notes-panel${expanded ? " is-expanded" : ""}`}
       data-has-ideas={active.length > 0 ? "1" : "0"}
+      style={
+        pos
+          ? { top: `${pos.top}px`, left: `${pos.left}px`, right: "auto", bottom: "auto" }
+          : undefined
+      }
+      onPointerDown={onPanelPointerDown}
+      onPointerMove={onPanelPointerMove}
+      onPointerUp={onPanelPointerUp}
+      onPointerCancel={onPanelPointerUp}
     >
       {!expanded ? (
         <button
           type="button"
           className="focus-notes-toggle"
-          onClick={() => setExpanded(true)}
+          onClick={() => {
+            if (suppressClickRef.current) return;
+            setExpanded(true);
+          }}
           aria-label={
             active.length === 0
               ? "Open notes"

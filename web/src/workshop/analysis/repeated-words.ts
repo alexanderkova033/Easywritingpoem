@@ -192,11 +192,36 @@ export function analyzeRepetition(
     if (b.count !== a.count) return b.count - a.count;
     return a.word.localeCompare(b.word);
   });
-  const words = rawWords.slice(0, maxWords);
 
   const phrases: PhraseRepeat[] = includePhrases
     ? findPhrases(lines, minCount).slice(0, maxPhrases)
     : [];
+
+  // Phrase repeats dominate: drop a word repeat if every one of its occurrences
+  // sits inside a phrase occurrence. Otherwise the same span lights up twice
+  // (once as a phrase, once per constituent word) and the Phrases panel and
+  // editor highlights disagree on what's a "real" repeat.
+  const phraseRangesByLine = new Map<number, Array<{ start: number; end: number }>>();
+  for (const p of phrases) {
+    for (const o of p.occurrences) {
+      let arr = phraseRangesByLine.get(o.line);
+      if (!arr) {
+        arr = [];
+        phraseRangesByLine.set(o.line, arr);
+      }
+      arr.push({ start: o.start, end: o.end });
+    }
+  }
+  const occCoveredByPhrase = (occ: WordOccurrence): boolean => {
+    const ranges = phraseRangesByLine.get(occ.line);
+    if (!ranges) return false;
+    return ranges.some((r) => occ.start >= r.start && occ.end <= r.end);
+  };
+  const dedupedWords = rawWords.filter(
+    (w) => !w.occurrences.every(occCoveredByPhrase),
+  );
+
+  const words = dedupedWords.slice(0, maxWords);
 
   const anaphora = findEdgeRepeats(lines, "start");
   const epistrophe = findEdgeRepeats(lines, "end");
@@ -259,95 +284,105 @@ function mergeStems(words: RepeatedWord[]): RepeatedWord[] {
   return out;
 }
 
+const PHRASE_MAX_N = 12;
+
 function findPhrases(lines: string[], minCount: number): PhraseRepeat[] {
   type Slot = { line: number; text: string; start: number; end: number };
-  const bigrams = new Map<string, Slot[]>();
-  const trigrams = new Map<string, Slot[]>();
+  // Bucket candidate n-grams per width so we can walk widest→narrowest.
+  const byN: Array<Map<string, Slot[]>> = [];
+  for (let n = 0; n <= PHRASE_MAX_N; n++) byN.push(new Map());
 
   for (let i = 0; i < lines.length; i++) {
     const lineText = lines[i]!;
     const spans = wordSpansInLine(lineText);
+    if (spans.length < 2) continue;
     const norms = spans.map((s) => normalizeWordToken(s.raw));
-    for (let j = 0; j + 1 < spans.length; j++) {
-      const a = norms[j]!;
-      const b = norms[j + 1]!;
-      if (!a || !b) continue;
-      if (STOP.has(a) && STOP.has(b)) continue;
-      const key = `${a} ${b}`;
-      let arr = bigrams.get(key);
-      if (!arr) {
-        arr = [];
-        bigrams.set(key, arr);
+    const maxN = Math.min(PHRASE_MAX_N, spans.length);
+    for (let n = 2; n <= maxN; n++) {
+      const map = byN[n]!;
+      for (let j = 0; j + n <= spans.length; j++) {
+        // Skip runs that are entirely stop words — those are filler, not echoes.
+        let allStop = true;
+        let anyEmpty = false;
+        for (let k = 0; k < n; k++) {
+          const tok = norms[j + k]!;
+          if (!tok) {
+            anyEmpty = true;
+            break;
+          }
+          if (!STOP.has(tok)) allStop = false;
+        }
+        if (anyEmpty || allStop) continue;
+        const parts = norms.slice(j, j + n);
+        const key = parts.join(" ");
+        let arr = map.get(key);
+        if (!arr) {
+          arr = [];
+          map.set(key, arr);
+        }
+        arr.push({
+          line: i + 1,
+          text: lineText,
+          start: spans[j]!.start,
+          end: spans[j + n - 1]!.end,
+        });
       }
-      arr.push({
-        line: i + 1,
-        text: lineText,
-        start: spans[j]!.start,
-        end: spans[j + 1]!.end,
-      });
-    }
-    for (let j = 0; j + 2 < spans.length; j++) {
-      const a = norms[j]!;
-      const b = norms[j + 1]!;
-      const c = norms[j + 2]!;
-      if (!a || !b || !c) continue;
-      if (STOP.has(a) && STOP.has(b) && STOP.has(c)) continue;
-      const key = `${a} ${b} ${c}`;
-      let arr = trigrams.get(key);
-      if (!arr) {
-        arr = [];
-        trigrams.set(key, arr);
-      }
-      arr.push({
-        line: i + 1,
-        text: lineText,
-        start: spans[j]!.start,
-        end: spans[j + 2]!.end,
-      });
     }
   }
 
-  const out: PhraseRepeat[] = [];
-  const trigramKeys = new Set<string>();
-  for (const [phrase, slots] of trigrams) {
-    if (slots.length < minCount) continue;
-    trigramKeys.add(phrase);
-    const lineNums = uniqLines(slots);
-    const minGap = computeMinGap(lineNums);
-    out.push({
-      phrase,
-      display: phrase,
-      n: 3,
-      count: slots.length,
-      lines: lineNums,
-      severity: phraseSeverity(slots.length, minGap, 3),
-      snippets: dedupeSnippets(slots),
-      occurrences: slotsToPhraseOccurrences(slots),
+  // Walk widest n first. Accept any phrase that still has an occurrence not
+  // covered by an already-accepted (longer) phrase; mark its spans as covered.
+  type Range = { line: number; start: number; end: number };
+  type Accepted = { phrase: string; n: number; slots: Slot[] };
+  const covered: Range[] = [];
+  const accepted: Accepted[] = [];
+  const isCovered = (s: { line: number; start: number; end: number }) =>
+    covered.some(
+      (r) => r.line === s.line && s.start >= r.start && s.end <= r.end,
+    );
+
+  for (let n = PHRASE_MAX_N; n >= 2; n--) {
+    const candidates: Array<{ phrase: string; slots: Slot[] }> = [];
+    for (const [phrase, slots] of byN[n]!) {
+      if (slots.length < minCount) continue;
+      candidates.push({ phrase, slots });
+    }
+    // Stable order across runs: highest count first, then phrase text.
+    candidates.sort((a, b) => {
+      if (b.slots.length !== a.slots.length) return b.slots.length - a.slots.length;
+      return a.phrase.localeCompare(b.phrase);
     });
-  }
-  for (const [phrase, slots] of bigrams) {
-    if (slots.length < minCount) continue;
-    let coveredByTrigram = false;
-    for (const t of trigramKeys) {
-      if (t.includes(phrase)) {
-        coveredByTrigram = true;
-        break;
+    for (const cand of candidates) {
+      // If every occurrence is already inside a wider accepted phrase, drop.
+      let allCovered = true;
+      for (const s of cand.slots) {
+        if (!isCovered(s)) {
+          allCovered = false;
+          break;
+        }
+      }
+      if (allCovered) continue;
+      accepted.push({ phrase: cand.phrase, n, slots: cand.slots });
+      for (const s of cand.slots) {
+        covered.push({ line: s.line, start: s.start, end: s.end });
       }
     }
-    if (coveredByTrigram) continue;
+  }
+
+  const out: PhraseRepeat[] = accepted.map(({ phrase, n, slots }) => {
     const lineNums = uniqLines(slots);
     const minGap = computeMinGap(lineNums);
-    out.push({
+    return {
       phrase,
       display: phrase,
-      n: 2,
+      n,
       count: slots.length,
       lines: lineNums,
-      severity: phraseSeverity(slots.length, minGap, 2),
+      severity: phraseSeverity(slots.length, minGap, n),
       snippets: dedupeSnippets(slots),
       occurrences: slotsToPhraseOccurrences(slots),
-    });
-  }
+    };
+  });
 
   out.sort((a, b) => {
     const sev = severityRank(b.severity) - severityRank(a.severity);

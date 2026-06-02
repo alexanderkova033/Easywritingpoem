@@ -28,7 +28,7 @@ function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
 === DRAFT MODE — work-in-progress check ===
 The poet has marked this as a draft they are still writing. Apply these adjustments:
 - DO NOT penalize for: incompleteness, missing ending, undeveloped form, placeholder lines, abrupt stops, structural gaps. Score the four pillars on what is on the page, using the same anchors. A great half-poem can score high; a weak half-poem still scores honestly.
-- Frame feedback FORWARD, not corrective. strengths[] = what is already landing, kept a bit broad and easy to read — name the general quality (an image, a sound, a feeling) without over-specifying which exact word or line. weaknesses[] = THREADS TO DEVELOP — general directions to pull on as the poet continues. Phrase as invitations ("the imagery is starting to do real work — keep leaning into it"), not as forensic line-by-line notes.
+- Frame feedback FORWARD, not corrective. strengths[] = what is already landing, kept a bit broad and easy to read — name the general quality (an image, a sound, a feeling) without over-specifying which exact word or line. weaknesses[] = THREADS TO DEVELOP — general directions to chord on as the poet continues. Phrase as invitations ("the imagery is starting to do real work — keep leaning into it"), not as forensic line-by-line notes.
 - In personal_feedback, name 1-2 directions the poem seems to want to go. Stay readable and warm; don't pin to single words.
 - OMIT issues[] entirely. Return issues: []. Line-level critique is premature when the poet is mid-process.
 - OMIT strongest_line unless one line clearly already stands out from the rest.
@@ -38,10 +38,10 @@ The poet has marked this as a draft they are still writing. Apply these adjustme
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one and low on another. Do not cluster the scores. If three pillars are 18 but the fourth is 9, score it 9, not 14 "to be fair". The whole point of separate pillars is to show divergence.
 
-1. Pull (0-25) — what pulls the reader into the poem and keeps them there. A striking opening, memorable phrasing, rhythm that carries you, hooks of sound or image at the front. The magnetic quality. Independent of whether the poem lands long-term.
-2. Craft (0-25) — control of the language. Word choice precision, line economy (no filler), purposeful line breaks, syntax under command, accurate punctuation, rhythm that's intentional rather than accidental, no unintended awkwardness. The "this writer knows what they're doing" dimension.
-3. Spark (0-25) — what's new, surprising, or distinctly this poet's. Phrasing that hasn't appeared in a thousand other poems. A turn or move you didn't expect. A metaphor that opens a door. A flash of voice that doesn't borrow received language. The opposite of "I've read this before".
-4. Echo (0-25) — what stays after the reader finishes. A line that loops in the head, an image you can't unsee, a feeling that keeps resonating, subtext that surfaces on re-read. The afterlife of the poem. A poem with low Pull can have high Echo (it grows on you); a poem with high Pull can have low Echo (forgotten by morning).
+1. Chord / Breeze (0-25) — the first impression. Both the chord struck on opening (resonance, the note hit) AND the breeze it moves on (how lightly and naturally it carries the reader in). Striking opening, memorable phrasing, rhythm that pulls. Musical, atmospheric. Independent of whether the poem lands long-term.
+2. Craft / Technique (0-25) — control of the language and the practiced technique behind every choice. Word precision, line economy (no filler), purposeful line breaks, syntax under command, accurate punctuation, intentional rhythm, no unintended awkwardness. The "this writer knows what they're doing" dimension.
+3. Spark / Edge (0-25) — what's new, surprising, distinctly this poet's, AND what's sharp, daring, unwilling to blunt. A turn you didn't expect, a metaphor that opens a door, a flash of voice that won't borrow received language. The opposite of "I've read this before".
+4. Echo / Effect (0-25) — what stays after the reader finishes and the overall effect left. A line that loops in the head, an image you can't unsee, a feeling that resonates, subtext that surfaces on re-read. The afterlife of the poem. A poem with low Chord can have high Echo (it grows on you); a poem with high Chord can have low Echo (forgotten by morning).
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
 0-6    barely there — clichéd, broken, or absent on this dimension.
@@ -55,21 +55,21 @@ These show that pillars DIVERGE. Do not cluster scores; mirror this kind of spre
 
 EXAMPLE A — total 28 (weak):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
-  pillar_scores: {pull: 6, craft: 8, spark: 5, echo: 9}
-  pillar_rationales: {pull: "Opening is a stock phrase, no hook", craft: "Steady rhythm but cliché-driven diction", spark: "Every line is received language", echo: "Subject carries some residual sting despite execution"}
+  pillar_scores: {chord: 6, craft: 8, spark: 5, echo: 9}
+  pillar_rationales: {chord: "Opening is a stock phrase, no hook", craft: "Steady rhythm but cliché-driven diction", spark: "Every line is received language", echo: "Subject carries some residual sting despite execution"}
   Note divergence: even a weak poem isn't uniformly weak. Subject can echo while phrasing fails.
 
 EXAMPLE B — total 52 (uneven — grabs ear, flat landing):
   "The streetlight buzzes — moths drum / against the milk-blue lamp. / Somewhere a refrigerator sighs. / Everything is fine."
-  pillar_scores: {pull: 18, craft: 16, spark: 14, echo: 8}
-  pillar_rationales: {pull: "Drumming moths and milk-blue lamp pull you in fast", craft: "Controlled cadence and line breaks", spark: "Milk-blue lamp is fresh, irony at end is received", echo: "Everything is fine collapses what came before"}
-  Note divergence: high pull can sit alongside low echo. Hard cap: lowest×4+20 = 52. Use it.
+  pillar_scores: {chord: 18, craft: 16, spark: 14, echo: 8}
+  pillar_rationales: {chord: "Drumming moths and milk-blue lamp chord you in fast", craft: "Controlled cadence and line breaks", spark: "Milk-blue lamp is fresh, irony at end is received", echo: "Everything is fine collapses what came before"}
+  Note divergence: high chord can sit alongside low echo. Hard cap: lowest×4+20 = 52. Use it.
 
 EXAMPLE C — total 68 (quiet but lasting):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
-  pillar_scores: {pull: 12, craft: 21, spark: 17, echo: 19}
-  pillar_rationales: {pull: "Quiet opening, doesn't grab immediately", craft: "Every word controlled, simile arrives clean", spark: "Paperback-spine simile is genuinely new", echo: "The warped book stays with you"}
-  Note divergence: low pull, high echo. This is the inverse profile of Example B. Both real poem-shapes.
+  pillar_scores: {chord: 12, craft: 21, spark: 17, echo: 19}
+  pillar_rationales: {chord: "Quiet opening, doesn't grab immediately", craft: "Every word controlled, simile arrives clean", spark: "Paperback-spine simile is genuinely new", echo: "The warped book stays with you"}
+  Note divergence: low chord, high echo. This is the inverse profile of Example B. Both real poem-shapes.
 
 === OVERALL SCORE RULES ===
 - overall_score = sum of the four pillar scores.
@@ -88,11 +88,11 @@ The principle: penalize accidental craft failures, NOT purposeful rule-breaking.
 Return JSON only (no fences). Compute pillar_scores FIRST against the anchors, write the matching pillar_rationales, THEN derive overall_score arithmetically. The math must be visible.
 
 Keys:
-pillar_scores {pull:int 0-25, craft:int 0-25, spark:int 0-25, echo:int 0-25} — REQUIRED. Score each pillar INDEPENDENTLY against the anchors. Show divergence.
-pillar_rationales {pull:string, craft:string, spark:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English the writer will understand). Name the specific thing (the line, the image, the phrasing) that justified the score. Avoid jargon — say "the s sounds hush" not "sibilance creates phonic texture".
-overall_score (int 1-100) — MUST equal min(pull + craft + spark + echo, (lowest_pillar × 4) + 20). Compute arithmetically. If your overall_score does not match the formula, your output is invalid.
+pillar_scores {chord:int 0-25, craft:int 0-25, spark:int 0-25, echo:int 0-25} — REQUIRED. Score each pillar INDEPENDENTLY against the anchors. Show divergence.
+pillar_rationales {chord:string, craft:string, spark:string, echo:string} — REQUIRED. One line per pillar (≤14 words, plain English the writer will understand). Name the specific thing (the line, the image, the phrasing) that justified the score. Avoid jargon — say "the s sounds hush" not "sibilance creates phonic texture".
+overall_score (int 1-100) — MUST equal min(chord + craft + spark + echo, (lowest_pillar × 4) + 20). Compute arithmetically. If your overall_score does not match the formula, your output is invalid.
 warm_reaction (≤14 words, in persona voice).
-strengths[] (2-3 items, 6-12 words each — name the SPECIFIC thing in plain words: "the buzz of the streetlight pulls you in", not "strong sonic patterning". Reference actual lines/images, not craft jargon.).
+strengths[] (2-3 items, 6-12 words each — name the SPECIFIC thing in plain words: "the buzz of the streetlight chords you in", not "strong sonic patterning". Reference actual lines/images, not craft jargon.).
 weaknesses[] (2-3 items, 6-12 words each — same rule, plain and specific: "the word 'crazy' in line 5 breaks the quiet", not "tonal inconsistency".).
 strongest_line {line:int, why:≤10w in plain words}.
 issues[] (2-5 — mix serious problems with smaller nitpicks; let the lowest-scoring pillar drive selection).
@@ -182,7 +182,7 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
 function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Scoring reminder ---\nScore each of the 4 pillars (Pull, Craft, Spark, Echo) 0-25 INDEPENDENTLY against the anchors. Write one short plain-language rationale per pillar (≤14 words) that names the specific line/image/sound that drove the score. Sum, then apply the hard cap. Local-analysis signals (clichés, syllables) are soft — penalize accidental failures but reward intentional rule-breaking. Do not cluster the pillars; divergence is the point.`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Scoring reminder ---\nScore each of the 4 pillars (Chord/Breeze, Craft/Technique, Spark/Edge, Echo/Effect) 0-25 INDEPENDENTLY against the anchors. Write one short plain-language rationale per pillar (≤14 words) that names the specific line/image/sound that drove the score. Sum, then apply the hard cap. Local-analysis signals (clichés, syllables) are soft — penalize accidental failures but reward intentional rule-breaking. Do not cluster the pillars; divergence is the point.`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

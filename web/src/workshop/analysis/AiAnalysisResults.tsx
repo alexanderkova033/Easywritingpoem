@@ -152,10 +152,10 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 
 function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales?: PillarRationales }) {
   const rows: { key: keyof PillarScores; label: string; hint: string }[] = [
-    { key: "pull",  label: "Pull",  hint: "What pulls you into the poem" },
-    { key: "craft", label: "Craft", hint: "Control over language" },
-    { key: "spark", label: "Spark", hint: "What's new, surprising, or distinctly yours" },
-    { key: "echo",  label: "Echo",  hint: "What stays after reading" },
+    { key: "chord", label: "Chord / Breeze",   hint: "The chord struck on first read — the breeze of the opening that carries you in" },
+    { key: "craft", label: "Craft / Technique", hint: "Control over language — the practiced technique behind every choice" },
+    { key: "spark", label: "Spark / Edge",      hint: "What's new and surprising — and what's sharp, daring, and distinctly yours" },
+    { key: "echo",  label: "Echo / Effect",     hint: "What stays after reading — the overall effect left on the reader" },
   ];
   const pillarColor = (v: number): string => {
     if (v >= 19) return "var(--ai-score-high, #5fba7d)";
@@ -166,18 +166,6 @@ function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales
   const hasAnyRationale = !!rationales && rows.some((r) => rationales[r.key]);
   return (
     <div className="ai-pillars" aria-label="Pillar score breakdown">
-      {hasAnyRationale && (
-        <button
-          type="button"
-          className="ai-pillars-toggle"
-          onClick={() => setShowRationales((v) => !v)}
-          aria-expanded={showRationales}
-          aria-label={showRationales ? "Hide pillar comments" : "Show pillar comments"}
-          title={showRationales ? "Hide why" : "Show why each pillar got its score"}
-        >
-          {showRationales ? "Hide why ▴" : "Why? ▾"}
-        </button>
-      )}
       {rows.map(({ key, label, hint }) => {
         const v = pillars[key];
         const pct = Math.max(0, Math.min(100, (v / 25) * 100));
@@ -198,6 +186,20 @@ function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales
           </div>
         );
       })}
+      {hasAnyRationale && (
+        <div className="ai-pillars-toggle-row">
+          <button
+            type="button"
+            className="ai-pillars-toggle"
+            onClick={() => setShowRationales((v) => !v)}
+            aria-expanded={showRationales}
+            aria-label={showRationales ? "Hide pillar comments" : "Show pillar comments"}
+            title={showRationales ? "Hide why" : "Show why each pillar got its score"}
+          >
+            {showRationales ? "Hide why ▴" : "Why? ▾"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

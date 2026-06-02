@@ -325,11 +325,12 @@
  * Fades with chrome on idle, brightens on hover. */
 .focus-notes-panel {
   position: fixed;
-  top: 6rem;
+  top: 9rem;
   left: max(0.6rem, calc(50% - 42rem));
   z-index: 69;
   max-width: 12rem;
   transition: opacity 0.5s ease;
+  touch-action: none;
 }
 
 .focus-notes-toggle {
@@ -345,7 +346,7 @@
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   border: 1px solid var(--border);
   border-radius: 10px;
-  cursor: pointer;
+  cursor: grab;
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   opacity: 0.55;
@@ -353,6 +354,10 @@
     opacity 0.25s ease,
     border-color 0.15s ease,
     background 0.15s ease;
+}
+
+.focus-notes-toggle:active {
+  cursor: grabbing;
 }
 
 .focus-notes-toggle:hover {
@@ -444,6 +449,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  cursor: grab;
+}
+
+.focus-notes-sheet-header:active {
+  cursor: grabbing;
 }
 
 .focus-notes-sheet-title {

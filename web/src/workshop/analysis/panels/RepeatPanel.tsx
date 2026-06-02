@@ -52,9 +52,10 @@ export function RepeatPanel({
     return out.sort((a, b) => a.localeCompare(b));
   }, [ignored]);
 
-  // Priority: Words > Phrases > Patterns. If a token is already represented in
-  // a higher tier, suppress its lower-tier card so the same word/phrase does
-  // not surface in multiple subtabs.
+  // Priority: Phrases > Words > Patterns. Word/phrase dedup runs inside
+  // analyzeRepetition so the panel count and the editor highlights stay in
+  // sync (both read the same already-cleaned `repetition.phrases`). Only the
+  // line-edge patterns still need a local suppression pass.
   const repeatedWordTokens = useMemo(() => {
     const s = new Set<string>();
     for (const r of repeated) {
@@ -64,18 +65,8 @@ export function RepeatPanel({
     return s;
   }, [repeated]);
 
-  const dedupedPhrases = useMemo(() => {
-    if (repeatedWordTokens.size === 0) return repetition.phrases;
-    return repetition.phrases.filter((p) => {
-      for (const t of p.phrase.split(/\s+/)) {
-        if (repeatedWordTokens.has(t)) return false;
-      }
-      return true;
-    });
-  }, [repetition.phrases, repeatedWordTokens]);
-
   const dedupedPatterns = useMemo(() => {
-    const phraseTokenSeqs = dedupedPhrases.map((p) => p.phrase.split(/\s+/));
+    const phraseTokenSeqs = repetition.phrases.map((p) => p.phrase.split(/\s+/));
     const prefixSurvives = (prefix: string) => {
       const prefixTokens = prefix.split(/\s+/);
       // Drop prefixes that contain any repeated word.
@@ -102,7 +93,7 @@ export function RepeatPanel({
       anaphora: repetition.anaphora.filter((a) => prefixSurvives(a.prefix)),
       epistrophe: repetition.epistrophe.filter((e) => prefixSurvives(e.prefix)),
     };
-  }, [repetition.anaphora, repetition.epistrophe, dedupedPhrases, repeatedWordTokens]);
+  }, [repetition.anaphora, repetition.epistrophe, repetition.phrases, repeatedWordTokens]);
 
   const filteredRepeated = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
@@ -118,17 +109,17 @@ export function RepeatPanel({
 
   const filteredPhrases = useMemo(() => {
     const t = repeatWordFilter.trim().toLowerCase();
-    if (!t) return dedupedPhrases;
-    return dedupedPhrases.filter((p) => p.phrase.toLowerCase().includes(t));
-  }, [dedupedPhrases, repeatWordFilter]);
+    if (!t) return repetition.phrases;
+    return repetition.phrases.filter((p) => p.phrase.toLowerCase().includes(t));
+  }, [repetition.phrases, repeatWordFilter]);
 
   const repetitionCounts = useMemo(
     () => ({
       words: repeated.length,
-      phrases: dedupedPhrases.length,
+      phrases: repetition.phrases.length,
       patterns: dedupedPatterns.anaphora.length + dedupedPatterns.epistrophe.length,
     }),
-    [repeated, dedupedPhrases, dedupedPatterns],
+    [repeated, repetition.phrases, dedupedPatterns],
   );
 
   return (
@@ -266,12 +257,10 @@ export function RepeatPanel({
       ) : null}
 
       {repeatSubTab === "phrases" ? (
-        dedupedPhrases.length === 0 ? (
+        repetition.phrases.length === 0 ? (
           <EmptyState title="No phrase echoes">
             <p className="muted small">
-              {repetition.phrases.length > 0
-                ? "Every phrase echo here is already shown as a word."
-                : "No 2- or 3-word phrases repeat across your poem."}
+              No multi-word phrases repeat across your poem.
             </p>
           </EmptyState>
         ) : filteredPhrases.length === 0 ? (

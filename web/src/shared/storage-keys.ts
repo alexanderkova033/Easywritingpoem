@@ -23,6 +23,7 @@ export const STORAGE_KEY_GOALS = "easy-poems:goals:v1";
 /** Per-poem goals map */
 export const STORAGE_KEY_GOALS_V2 = "easy-poems:goals:v2";
 export const STORAGE_KEY_IDEAS_NOTEBOOK = "easy-poems:ideas-notebook:v1";
+export const STORAGE_KEY_FOCUS_NOTES_POS = "easy-poems:focus-notes-pos:v1";
 export const STORAGE_KEY_LIBRARY_META = "easy-poems:libraryMeta:v1";
 export const STORAGE_KEY_APPEARANCE = "easy-poems:appearance:v1";
 export const STORAGE_KEY_FIRST_HINT_DISMISSED = "easy-poems:first-hint-dismissed";

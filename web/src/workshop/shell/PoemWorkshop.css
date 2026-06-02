@@ -526,6 +526,11 @@
   .tools-resize-gutter { right: calc(var(--tools-col, min(300px, 28vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
+  /* Rail gutter extends down through the AI Analysis row so it stays
+     draggable alongside the centered analysis section. Tools gutter
+     keeps the row-1 confinement above. */
+  .rail-resize-gutter { grid-row: 1 / -1; }
+
   /* Drag line — faintly visible at rest, bright on hover */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
