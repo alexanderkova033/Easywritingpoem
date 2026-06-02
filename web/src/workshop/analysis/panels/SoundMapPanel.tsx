@@ -82,28 +82,6 @@ const ALL_CLASSES: SoundClass[] = [
   "liquid",
 ];
 
-const CLASS_HEADLINE: Record<SoundClass, string> = {
-  alliteration: "Words sharing a starting sound chime through your poem.",
-  assonance: "Vowel sounds chime through your lines.",
-  consonance: "Repeated consonants thread through your lines.",
-  sibilance: "Hissing s / sh sounds run through your poem.",
-  plosive: "Hard, punchy consonants give your lines weight.",
-  liquid: "Soft l / r / m / n sounds carry your lines along.",
-};
-
-function pickDominantClass(
-  byClass: Record<SoundClass, SoundEcho[]>,
-): SoundClass | null {
-  let best: { cls: SoundClass; weight: number } | null = null;
-  for (const cls of ALL_CLASSES) {
-    let weight = 0;
-    for (const e of byClass[cls]) weight += e.members.length;
-    if (weight === 0) continue;
-    if (best === null || weight > best.weight) best = { cls, weight };
-  }
-  return best?.cls ?? null;
-}
-
 type VowelBucket = "bright" | "mid" | "dark";
 
 interface VowelVerdict {
@@ -409,8 +387,6 @@ export function SoundMapPanel({
     for (const { id, echo } of echoesWithId) m.set(id, echo);
     return m;
   }, [echoesWithId]);
-
-  const dominantClass = useMemo(() => pickDominantClass(byClass), [byClass]);
 
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
