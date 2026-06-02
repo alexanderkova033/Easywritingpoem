@@ -65,11 +65,6 @@ const VOWEL_BUCKET: Record<string, "bright" | "mid" | "dark"> = {
   oy: "dark", oo: "dark", o: "dark", u: "dark",
 };
 const VOWEL_BUCKET_LABEL = { bright: "Bright", mid: "Mid", dark: "Dark" } as const;
-const VOWEL_BUCKET_EXAMPLES = {
-  bright: "ee, ay, i",
-  mid: "uh, er",
-  dark: "oo, oh, ah",
-} as const;
 const VOWEL_BUCKET_HUE = {
   bright: "#e6b550",
   mid:    "#88a596",
@@ -109,14 +104,109 @@ function pickDominantClass(
   return best?.cls ?? null;
 }
 
-function pickStrongestEcho(echoes: SoundEcho[]): SoundEcho | null {
-  if (echoes.length === 0) return null;
-  let best = echoes[0]!;
-  for (const e of echoes) {
-    if (e.members.length > best.members.length) best = e;
-    else if (e.members.length === best.members.length && e.minGap < best.minGap) best = e;
+type VowelBucket = "bright" | "mid" | "dark";
+
+interface VowelVerdict {
+  /** Plain-English summary of the vowel arc, written for the user. */
+  sentence: string;
+  /** Whole-percent share per bucket; sums to 100 (or 0 if no scored lines). */
+  pct: Record<VowelBucket, number>;
+  /** Where the tonal shift kicks in (line number), if one was detected. */
+  turnAt: number | null;
+  /** Direction of the shift, if any. */
+  turnDirection: "brightening" | "darkening" | null;
+  /** Dominant bucket overall — null if no clear dominance. */
+  dominant: VowelBucket | null;
+}
+
+function computeVowelVerdict(
+  perLine: Array<{ lineNumber: number; bucket: VowelBucket | null }>,
+): VowelVerdict | null {
+  const scored = perLine.filter(
+    (x): x is { lineNumber: number; bucket: VowelBucket } => x.bucket !== null,
+  );
+  if (scored.length === 0) return null;
+
+  const counts: Record<VowelBucket, number> = { bright: 0, mid: 0, dark: 0 };
+  for (const s of scored) counts[s.bucket]++;
+  const total = scored.length;
+  const pctRaw = {
+    bright: (100 * counts.bright) / total,
+    mid: (100 * counts.mid) / total,
+    dark: (100 * counts.dark) / total,
+  };
+  const pct: Record<VowelBucket, number> = {
+    bright: Math.round(pctRaw.bright),
+    mid: Math.round(pctRaw.mid),
+    dark: Math.round(pctRaw.dark),
+  };
+
+  const score = (b: VowelBucket): number => (b === "bright" ? 1 : b === "dark" ? -1 : 0);
+  const numericScores: number[] = scored.map((s) => score(s.bucket));
+
+  const half = Math.floor(scored.length / 2);
+  let firstAvg = 0;
+  let secondAvg = 0;
+  if (half > 0) {
+    firstAvg = numericScores.slice(0, half).reduce((a, b) => a + b, 0) / half;
   }
-  return best;
+  const secondCount = scored.length - half;
+  if (secondCount > 0) {
+    secondAvg = numericScores.slice(half).reduce((a, b) => a + b, 0) / secondCount;
+  }
+  const diff = secondAvg - firstAvg;
+
+  let dominant: VowelBucket | null = null;
+  if (pct.bright >= 60) dominant = "bright";
+  else if (pct.dark >= 60) dominant = "dark";
+  else if (pct.mid >= 60) dominant = "mid";
+
+  const SHIFT_THRESHOLD = 0.6;
+
+  if (scored.length >= 4 && Math.abs(diff) >= SHIFT_THRESHOLD) {
+    const direction: "brightening" | "darkening" = diff > 0 ? "brightening" : "darkening";
+    const turnAt = scored[half]?.lineNumber ?? null;
+    const sentence =
+      direction === "brightening"
+        ? `Your poem opens darker and brightens from L${turnAt} — a tonal lift.`
+        : `Your poem opens bright and darkens from L${turnAt} — a tonal shift.`;
+    return { sentence, pct, turnAt, turnDirection: direction, dominant };
+  }
+
+  if (dominant === "bright") {
+    return {
+      sentence: "Your poem stays bright throughout — open, sharp vowels carry the mood.",
+      pct,
+      turnAt: null,
+      turnDirection: null,
+      dominant,
+    };
+  }
+  if (dominant === "dark") {
+    return {
+      sentence: "Your poem stays dark throughout — deep, hushed vowels carry the mood.",
+      pct,
+      turnAt: null,
+      turnDirection: null,
+      dominant,
+    };
+  }
+  if (dominant === "mid") {
+    return {
+      sentence: "Your poem hovers in the mid range — neutral, even vowel colour.",
+      pct,
+      turnAt: null,
+      turnDirection: null,
+      dominant,
+    };
+  }
+  return {
+    sentence: "Your vowels alternate without a clear arc — a restless tonal pattern.",
+    pct,
+    turnAt: null,
+    turnDirection: null,
+    dominant: null,
+  };
 }
 
 function EchoCard({
@@ -215,6 +305,7 @@ export function SoundMapPanel({
   const [subTab, setSubTab] = useState<SoundSubTab>("echoes");
   const [classFilter, setClassFilter] = useState<SoundClass | "all">("all");
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
+  const [hoveredEchoLine, setHoveredEchoLine] = useState<number | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
   const [hoveredFlowLine, setHoveredFlowLine] = useState<number | null>(null);
   const [pinnedEchoes, setPinnedEchoes] = useState<Set<string>>(() => new Set());
@@ -273,6 +364,16 @@ export function SoundMapPanel({
     return [...seen].sort();
   }, [lineSounds]);
 
+  const vowelVerdict = useMemo(() => {
+    const perLine = lineSounds
+      .filter((ls) => ls.text.trim().length > 0)
+      .map((ls) => ({
+        lineNumber: ls.lineNumber,
+        bucket: ls.dominantVowel ? (VOWEL_BUCKET[ls.dominantVowel] ?? null) : null,
+      }));
+    return computeVowelVerdict(perLine);
+  }, [lineSounds]);
+
   // Caesura token index → column position in the line text.
   const caesuraColumnsByLine = useMemo(() => {
     const m = new Map<number, number | null>();
@@ -300,15 +401,61 @@ export function SoundMapPanel({
     return m;
   }, [echoesWithId]);
 
+  // Which echo IDs touch each line (so stripe hover can preview a line's echoes).
+  const echoIdsByLine = useMemo(() => {
+    const m = new Map<number, string[]>();
+    for (const { id, echo } of echoesWithId) {
+      const seenLines = new Set<number>();
+      for (const member of echo.members) {
+        if (seenLines.has(member.lineNumber)) continue;
+        seenLines.add(member.lineNumber);
+        const list = m.get(member.lineNumber);
+        if (list) list.push(id);
+        else m.set(member.lineNumber, [id]);
+      }
+    }
+    return m;
+  }, [echoesWithId]);
+
   const dominantClass = useMemo(() => pickDominantClass(byClass), [byClass]);
-  const headlineEcho = useMemo(
-    () => (dominantClass ? pickStrongestEcho(byClass[dominantClass]) : null),
-    [byClass, dominantClass],
-  );
-  const headlineEchoId = useMemo(() => {
-    if (!headlineEcho) return null;
-    return echoesWithId.find((x) => x.echo === headlineEcho)?.id ?? null;
-  }, [echoesWithId, headlineEcho]);
+
+  const echoStats = useMemo(() => {
+    const tokensByLine = new Map<number, Set<number>>();
+    const classCountsByLine = new Map<number, Record<SoundClass, number>>();
+    let largestCluster = 0;
+    for (const e of echoes) {
+      if (e.members.length > largestCluster) largestCluster = e.members.length;
+      for (const m of e.members) {
+        let s = tokensByLine.get(m.lineNumber);
+        if (!s) { s = new Set(); tokensByLine.set(m.lineNumber, s); }
+        s.add(m.tokenIndex);
+        let c = classCountsByLine.get(m.lineNumber);
+        if (!c) {
+          c = { alliteration: 0, assonance: 0, consonance: 0, sibilance: 0, plosive: 0, liquid: 0 };
+          classCountsByLine.set(m.lineNumber, c);
+        }
+        c[e.className]++;
+      }
+    }
+    const nonEmptyLines = lineSounds.filter((ls) => ls.text.trim().length > 0);
+    const totalLines = nonEmptyLines.length;
+    let linesWithEchoes = 0;
+    const flatLines: number[] = [];
+    for (const ls of nonEmptyLines) {
+      if (tokensByLine.has(ls.lineNumber)) linesWithEchoes++;
+      else flatLines.push(ls.lineNumber);
+    }
+    const dominantClassByLine = new Map<number, SoundClass>();
+    for (const [ln, counts] of classCountsByLine) {
+      let best: { cls: SoundClass; n: number } | null = null;
+      for (const cls of ALL_CLASSES) {
+        if (counts[cls] === 0) continue;
+        if (best === null || counts[cls] > best.n) best = { cls, n: counts[cls] };
+      }
+      if (best) dominantClassByLine.set(ln, best.cls);
+    }
+    return { tokensByLine, totalLines, linesWithEchoes, flatLines, largestCluster, dominantClassByLine };
+  }, [echoes, lineSounds]);
 
   function membersToHighlights(echo: SoundEcho): EditorEchoHighlight[] {
     const out: EditorEchoHighlight[] = [];
@@ -331,7 +478,8 @@ export function SoundMapPanel({
 
   // Echo highlights are a union of:
   //   • every echo the user has toggled on (persistent)
-  //   • the currently hovered echo (transient preview)
+  //   • the currently hovered echo card (transient preview)
+  //   • every echo touching the line currently hovered on the density stripe
   // No pinned echoes + no hover ⇒ nothing in the editor.
   const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
     if (subTab !== "echoes") return null;
@@ -345,11 +493,25 @@ export function SoundMapPanel({
     }
     if (hoveredEchoId && !usedIds.has(hoveredEchoId)) {
       const e = echoesById.get(hoveredEchoId);
-      if (e) out.push(...membersToHighlights(e));
+      if (e) {
+        usedIds.add(hoveredEchoId);
+        out.push(...membersToHighlights(e));
+      }
+    }
+    if (hoveredEchoLine !== null) {
+      const ids = echoIdsByLine.get(hoveredEchoLine) ?? [];
+      for (const id of ids) {
+        if (usedIds.has(id)) continue;
+        const e = echoesById.get(id);
+        if (e) {
+          usedIds.add(id);
+          out.push(...membersToHighlights(e));
+        }
+      }
     }
     return out.length > 0 ? out : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subTab, hoveredEchoId, echoesById, pinnedEchoes, lineSoundsByLine]);
+  }, [subTab, hoveredEchoId, hoveredEchoLine, echoesById, echoIdsByLine, pinnedEchoes, lineSoundsByLine]);
 
   // Line-level vowel tints (3 buckets) — active when on vowels subtab.
   const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
@@ -451,14 +613,10 @@ export function SoundMapPanel({
       {/* ── Echoes ── */}
       {subTab === "echoes" && (
         <>
-          {headlineEcho && dominantClass && (
+          {dominantClass && (
             <section
               className="sound-echo-summary"
               style={{ ["--echo-hue" as string]: SOUND_CLASS_HUES[dominantClass] }}
-              onMouseEnter={() => headlineEchoId && setHoveredEchoId(headlineEchoId)}
-              onMouseLeave={() => setHoveredEchoId(null)}
-              onFocus={() => headlineEchoId && setHoveredEchoId(headlineEchoId)}
-              onBlur={() => setHoveredEchoId(null)}
             >
               <header className="sound-echo-summary-head">
                 <span
@@ -469,63 +627,75 @@ export function SoundMapPanel({
                 <span className="sound-echo-summary-eyebrow">At a glance</span>
               </header>
               <p className="sound-echo-summary-line">{CLASS_HEADLINE[dominantClass]}</p>
-              <div className="sound-echo-summary-pick">
-                <span className="sound-echo-summary-label">Strongest echo</span>
-                <div className="sound-echo-summary-chips">
-                  {headlineEcho.members.slice(0, 5).map((m, i) => (
-                    <button
-                      key={`hl-${m.lineNumber}-${i}`}
-                      type="button"
-                      className="sound-echo-chip"
-                      onClick={() => {
-                        const ls = lineSoundsByLine.get(m.lineNumber);
-                        const tok = ls?.tokens[m.tokenIndex];
-                        if (tok && goToWord) {
-                          goToWord(m.lineNumber, tok.start, tok.end);
-                        } else {
-                          goToLine(m.lineNumber);
-                        }
-                      }}
-                      title={`"${m.word}" on line ${m.lineNumber}`}
-                      style={{ borderColor: SOUND_CLASS_HUES[dominantClass] }}
-                    >
-                      <span className="sound-echo-chip-word">{m.word}</span>
-                      <span className="sound-echo-chip-line">L{m.lineNumber}</span>
-                    </button>
-                  ))}
-                  {headlineEcho.members.length > 5 && (
-                    <span className="sound-echo-summary-more muted small">
-                      +{headlineEcho.members.length - 5} more
-                    </span>
-                  )}
-                </div>
-                {headlineEchoId && (
-                  <button
-                    type="button"
-                    className={`sound-echo-pin sound-echo-summary-pin${pinnedEchoes.has(headlineEchoId) ? " is-pinned" : ""}`}
-                    onClick={() => togglePinnedEcho(headlineEchoId)}
-                    aria-pressed={pinnedEchoes.has(headlineEchoId)}
-                    title={pinnedEchoes.has(headlineEchoId) ? "Hide this echo in the poem" : "Show this echo in the poem"}
-                    style={
-                      pinnedEchoes.has(headlineEchoId)
-                        ? { borderColor: SOUND_CLASS_HUES[dominantClass], color: SOUND_CLASS_HUES[dominantClass] }
-                        : undefined
-                    }
-                  >
-                    <span
-                      className="sound-echo-pin-dot"
-                      aria-hidden
-                      style={
-                        pinnedEchoes.has(headlineEchoId)
-                          ? { background: SOUND_CLASS_HUES[dominantClass] }
-                          : undefined
-                      }
-                    />
-                    {pinnedEchoes.has(headlineEchoId) ? "Shown in poem" : "Show in poem"}
-                  </button>
-                )}
-              </div>
             </section>
+          )}
+
+          {echoes.length > 0 && (
+            <div className="sound-flow-summary" aria-label="Echo statistics">
+              <div className="sound-flow-stat sound-echo-stat-total">
+                <span className="sound-flow-stat-value">{echoes.length}</span>
+                <span className="sound-flow-stat-label">echoes</span>
+              </div>
+              <div className="sound-flow-stat sound-echo-stat-musical">
+                <span className="sound-flow-stat-value">
+                  {echoStats.linesWithEchoes}
+                  <span className="sound-echo-stat-denom">/{echoStats.totalLines}</span>
+                </span>
+                <span className="sound-flow-stat-label">musical lines</span>
+              </div>
+              <div className="sound-flow-stat sound-echo-stat-flat">
+                <span className="sound-flow-stat-value">{echoStats.flatLines.length}</span>
+                <span className="sound-flow-stat-label">flat lines</span>
+              </div>
+              <div className="sound-flow-stat sound-echo-stat-cluster">
+                <span className="sound-flow-stat-value">{echoStats.largestCluster}</span>
+                <span className="sound-flow-stat-label">top cluster</span>
+              </div>
+            </div>
+          )}
+
+          {echoes.length > 0 && (
+            <div
+              className="sound-echo-strip"
+              role="list"
+              aria-label="Echo density across the poem"
+            >
+              {lineSounds.map((ls) => {
+                if (ls.text.trim().length === 0) {
+                  return (
+                    <span
+                      key={ls.lineNumber}
+                      className="sound-echo-strip-seg sound-echo-strip-seg-blank"
+                      aria-hidden
+                    />
+                  );
+                }
+                const count = echoStats.tokensByLine.get(ls.lineNumber)?.size ?? 0;
+                const cls = echoStats.dominantClassByLine.get(ls.lineNumber);
+                const isFlat = count === 0;
+                const isActive = hoveredEchoLine === ls.lineNumber;
+                const bg = cls ? SOUND_CLASS_HUES[cls] : undefined;
+                const flatLabel = isFlat ? "flat — no echoes" : `${count} echo word${count === 1 ? "" : "s"}`;
+                return (
+                  <button
+                    key={ls.lineNumber}
+                    type="button"
+                    role="listitem"
+                    className={`sound-echo-strip-seg${isFlat ? " is-flat" : ""}${isActive ? " is-active" : ""}`}
+                    onClick={() => goToLine(ls.lineNumber)}
+                    onMouseEnter={() => setHoveredEchoLine(ls.lineNumber)}
+                    onMouseLeave={() => setHoveredEchoLine(null)}
+                    onFocus={() => setHoveredEchoLine(ls.lineNumber)}
+                    onBlur={() => setHoveredEchoLine(null)}
+                    title={`L${ls.lineNumber} — ${flatLabel}`}
+                    aria-label={`Line ${ls.lineNumber}, ${flatLabel}`}
+                    style={bg ? { background: bg } : undefined}
+                  >
+                    <span className="sound-echo-strip-num">{ls.lineNumber}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {echoes.length > 0 && (
@@ -643,7 +813,61 @@ export function SoundMapPanel({
             </EmptyState>
           ) : (
             <>
-              <div className="sound-vowel-legend" aria-label="Vowel colour key">
+              {vowelVerdict && (
+                <section
+                  className={`sound-echo-summary sound-vowel-summary${
+                    vowelVerdict.dominant ? ` sound-vowel-summary-${vowelVerdict.dominant}` : ""
+                  }`}
+                  style={{
+                    ["--echo-hue" as string]: vowelVerdict.dominant
+                      ? VOWEL_BUCKET_HUE[vowelVerdict.dominant]
+                      : "var(--border)",
+                  }}
+                >
+                  <header className="sound-echo-summary-head">
+                    <span
+                      className="sound-echo-summary-dot"
+                      style={{
+                        background: vowelVerdict.dominant
+                          ? VOWEL_BUCKET_HUE[vowelVerdict.dominant]
+                          : "var(--muted)",
+                      }}
+                      aria-hidden
+                    />
+                    <span className="sound-echo-summary-eyebrow">At a glance</span>
+                  </header>
+                  <p className="sound-echo-summary-line">{vowelVerdict.sentence}</p>
+                </section>
+              )}
+
+              {vowelVerdict && (
+                <div className="sound-flow-summary" aria-label="Vowel mood statistics">
+                  <div className="sound-flow-stat sound-vowel-stat-bright">
+                    <span className="sound-flow-stat-value">{vowelVerdict.pct.bright}%</span>
+                    <span className="sound-flow-stat-label">bright</span>
+                  </div>
+                  <div className="sound-flow-stat sound-vowel-stat-mid">
+                    <span className="sound-flow-stat-value">{vowelVerdict.pct.mid}%</span>
+                    <span className="sound-flow-stat-label">mid</span>
+                  </div>
+                  <div className="sound-flow-stat sound-vowel-stat-dark">
+                    <span className="sound-flow-stat-value">{vowelVerdict.pct.dark}%</span>
+                    <span className="sound-flow-stat-label">dark</span>
+                  </div>
+                  <div className="sound-flow-stat sound-vowel-stat-turn">
+                    <span className="sound-flow-stat-value">
+                      {vowelVerdict.turnAt !== null
+                        ? `${vowelVerdict.turnDirection === "brightening" ? "↗" : "↘"} L${vowelVerdict.turnAt}`
+                        : "→"}
+                    </span>
+                    <span className="sound-flow-stat-label">
+                      {vowelVerdict.turnAt !== null ? "tonal turn" : "no turn"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="sound-vowel-legend sound-vowel-legend-plain" aria-label="Vowel colour key">
                 {(["bright", "mid", "dark"] as const).map((b) => (
                   <span key={b} className="sound-vowel-legend-item">
                     <span
@@ -652,10 +876,9 @@ export function SoundMapPanel({
                       aria-hidden
                     />
                     <span className="sound-vowel-legend-label">
-                      {VOWEL_BUCKET_LABEL[b]}
-                      <span className="sound-vowel-legend-eg muted small">
-                        {" "}{VOWEL_BUCKET_EXAMPLES[b]}
-                      </span>
+                      {b === "bright" ? "Bright — open, sharp" :
+                       b === "mid"    ? "Mid — neutral" :
+                                        "Dark — deep, hushed"}
                     </span>
                   </span>
                 ))}

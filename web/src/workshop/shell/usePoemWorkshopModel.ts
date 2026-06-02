@@ -9,7 +9,6 @@ import {
   useTransition,
 } from "react";
 import { isLocalStorageNearlyFull } from "@/shared/platform/browser-storage";
-import { diffPoemLines } from "@/workshop/library/diff-lines";
 import {
   duplicateActivePoem,
   duplicatePoemById as duplicatePoemByIdInLib,
@@ -72,13 +71,7 @@ import {
 import { isTypingInField } from "@/workshop/hints/keyboard-field-target";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
 import { readFirstVisitHintDismissed } from "./firstVisitHintStorage";
-import {
-  COMPARE_CURRENT_ID,
-  compareBodyForId,
-  formatRelativeSnapshotWhen,
-  formatSnapshotWhen,
-  type ToolTab,
-} from "@/workshop/shell/workshop-helpers";
+import { type ToolTab } from "@/workshop/shell/workshop-helpers";
 import {
   STORAGE_KEY_LAST_EXPORT_AT,
   STORAGE_KEY_LAST_TOOL_TAB,
@@ -184,9 +177,6 @@ export function usePoemWorkshopModel(
   const [revisions, setRevisions] = useState<RevisionSnapshot[]>([]);
   const [snapshotLabel, setSnapshotLabel] = useState("");
   const [lastAiScore, setLastAiScore] = useState<number | null>(null);
-  const [compareLeftId, setCompareLeftId] = useState(COMPARE_CURRENT_ID);
-  const [compareRightId, setCompareRightId] = useState(COMPARE_CURRENT_ID);
-  const [compareViewMode, setCompareViewMode] = useState<"side" | "diff">("side");
   const [snapshotFlash, setSnapshotFlash] = useState<"saved" | "duplicate" | null>(null);
   const snapshotFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
@@ -304,18 +294,6 @@ export function usePoemWorkshopModel(
   useEffect(() => {
     if (wordlist) setSpellBump((n) => n + 1);
   }, [wordlist]);
-
-  useEffect(() => {
-    setCompareLeftId((left) => {
-      if (left === COMPARE_CURRENT_ID) return left;
-      return revisions.some((s) => s.id === left) ? left : COMPARE_CURRENT_ID;
-    });
-    setCompareRightId((right) => {
-      if (right === COMPARE_CURRENT_ID) return right;
-      if (revisions.some((s) => s.id === right)) return right;
-      return revisions[0]?.id ?? COMPARE_CURRENT_ID;
-    });
-  }, [revisions]);
 
   const persistActiveDraft = useCallback(() => {
     setLibrary((prev) => {
@@ -449,37 +427,6 @@ export function usePoemWorkshopModel(
       }),
     [title, docStats, spellHits.length, wordlist, goalEvaluation],
   );
-
-  const compareLeftBody = useMemo(
-    () => compareBodyForId(compareLeftId, body, revisions),
-    [compareLeftId, body, revisions],
-  );
-  const compareRightBody = useMemo(
-    () => compareBodyForId(compareRightId, body, revisions),
-    [compareRightId, body, revisions],
-  );
-
-  const compareDiffRows = useMemo(() => {
-    if (compareLeftId === compareRightId) return [];
-    return diffPoemLines(compareLeftBody, compareRightBody);
-  }, [
-    compareLeftBody,
-    compareRightBody,
-    compareLeftId,
-    compareRightId,
-  ]);
-
-  const compareSnapshotOptions = useMemo(() => {
-    const opts: { id: string; label: string; optionTitle?: string }[] = [
-      { id: COMPARE_CURRENT_ID, label: "Current draft" },
-      ...revisions.map((s) => ({
-        id: s.id,
-        label: `${formatRelativeSnapshotWhen(s.createdAt)}${s.label ? ` — ${s.label}` : ""}`,
-        optionTitle: formatSnapshotWhen(s.createdAt),
-      })),
-    ];
-    return opts;
-  }, [revisions]);
 
   const goToLine = useCallback((line1Based: number) => {
     const view = editorViewRef.current;
@@ -868,8 +815,7 @@ export function usePoemWorkshopModel(
     setPersistenceError((prev) =>
       prev === SNAPSHOT_SAVE_MSG ? null : prev,
     );
-    const next = result.revisions;
-    setRevisions(next);
+    setRevisions(result.revisions);
     if (!result.duplicate) setSnapshotLabel("");
     setSnapshotFlash(result.duplicate ? "duplicate" : "saved");
     if (snapshotFlashTimer.current) clearTimeout(snapshotFlashTimer.current);
@@ -877,16 +823,6 @@ export function usePoemWorkshopModel(
       setSnapshotFlash(null);
       snapshotFlashTimer.current = null;
     }, 1800);
-    setCompareLeftId((left) =>
-      left === COMPARE_CURRENT_ID || (left && next.some((s) => s.id === left))
-        ? left
-        : COMPARE_CURRENT_ID,
-    );
-    setCompareRightId((right) => {
-      if (right === COMPARE_CURRENT_ID) return right;
-      if (right && next.some((s) => s.id === right)) return right;
-      return next[0]?.id ?? COMPARE_CURRENT_ID;
-    });
   }, [activePoemId, revisions, title, formNote, snapshotLabel, lastAiScore]);
 
   const lastAutoSnapshotBodyRef = useRef<string>("");
@@ -1032,31 +968,9 @@ export function usePoemWorkshopModel(
       setPersistenceError((prev) =>
         prev === SNAPSHOT_DELETE_MSG ? null : prev,
       );
-      const next = result.revisions;
-      setRevisions(next);
-      if (next.length === 0) {
-        setCompareLeftId(COMPARE_CURRENT_ID);
-        setCompareRightId(COMPARE_CURRENT_ID);
-        return;
-      }
-      let newLeft = compareLeftId;
-      let newRight = compareRightId;
-      if (newLeft !== COMPARE_CURRENT_ID && !next.some((s) => s.id === newLeft)) {
-        newLeft = COMPARE_CURRENT_ID;
-      }
-      if (newRight !== COMPARE_CURRENT_ID && !next.some((s) => s.id === newRight)) {
-        newRight = next[0]!.id;
-      }
-      if (newLeft === COMPARE_CURRENT_ID && newRight === COMPARE_CURRENT_ID) {
-        newRight = next[0]!.id;
-      } else if (newLeft === newRight) {
-        newRight =
-          next.find((s) => s.id !== newLeft)?.id ?? COMPARE_CURRENT_ID;
-      }
-      setCompareLeftId(newLeft);
-      setCompareRightId(newRight);
+      setRevisions(result.revisions);
     },
-    [activePoemId, revisions, compareLeftId, compareRightId],
+    [activePoemId, revisions],
   );
 
   const deleteDuplicateRevisions = useCallback(() => {
@@ -1069,33 +983,8 @@ export function usePoemWorkshopModel(
       prev === SNAPSHOT_DELETE_MSG ? null : prev,
     );
     if (result.removed === 0) return;
-    const next = result.revisions;
-    setRevisions(next);
-    let newLeft = compareLeftId;
-    let newRight = compareRightId;
-    if (
-      newLeft !== COMPARE_CURRENT_ID &&
-      !next.some((s) => s.id === newLeft)
-    ) {
-      newLeft = COMPARE_CURRENT_ID;
-    }
-    if (
-      newRight !== COMPARE_CURRENT_ID &&
-      !next.some((s) => s.id === newRight)
-    ) {
-      newRight = next[0]?.id ?? COMPARE_CURRENT_ID;
-    }
-    if (
-      newLeft !== COMPARE_CURRENT_ID &&
-      newRight !== COMPARE_CURRENT_ID &&
-      newLeft === newRight
-    ) {
-      newRight =
-        next.find((s) => s.id !== newLeft)?.id ?? COMPARE_CURRENT_ID;
-    }
-    setCompareLeftId(newLeft);
-    setCompareRightId(newRight);
-  }, [activePoemId, revisions, compareLeftId, compareRightId]);
+    setRevisions(result.revisions);
+  }, [activePoemId, revisions]);
 
   const duplicateRevisionCount = useMemo(
     () => countDuplicateRevisions(revisions),
@@ -1158,16 +1047,6 @@ export function usePoemWorkshopModel(
     deleteDuplicateRevisions,
     duplicateRevisionCount,
     revisions,
-    compareLeftId,
-    compareRightId,
-    setCompareLeftId,
-    setCompareRightId,
-    compareViewMode,
-    setCompareViewMode,
-    compareSnapshotOptions,
-    compareLeftBody,
-    compareRightBody,
-    compareDiffRows,
     copyExportFlash,
     quickCopyFlash,
     snapshotFlash,

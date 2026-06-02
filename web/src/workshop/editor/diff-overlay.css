@@ -36,59 +36,96 @@
 /* Diff status pill — sits above editor when in diff mode. */
 .poem-diff-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.4rem 0.7rem;
-  margin-bottom: 0.35rem;
-  border: 1px solid var(--hairline, var(--border));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
-  font-size: 0.78rem;
+  gap: 0.45rem 0.7rem;
+  padding: 0.45rem 0.7rem;
+  margin-bottom: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-2));
+  font-size: 0.8rem;
 }
 
 .poem-diff-bar-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
   color: var(--text);
   font-weight: 600;
+  flex-wrap: wrap;
 }
 
 .poem-diff-bar-label::before {
   content: "↶";
   color: var(--accent);
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .poem-diff-bar-snapshot {
-  color: var(--muted);
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
   font-style: italic;
+  font-weight: 700;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .poem-diff-bar-stats {
-  margin-left: auto;
   display: inline-flex;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-metric);
-  font-size: 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .poem-diff-bar-stat-add  { color: var(--ai-score-high, #5fba7d); }
 .poem-diff-bar-stat-rem  { color: var(--ai-score-low,  #d95f5f); }
 
+.poem-diff-bar-stats-empty {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.poem-diff-bar-actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.poem-diff-bar-restore,
 .poem-diff-bar-exit {
   appearance: none;
   border: 1px solid var(--hairline, var(--border));
   background: var(--surface);
   color: var(--text);
-  padding: 0.25rem 0.65rem;
+  padding: 0.3rem 0.7rem;
   font: inherit;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease;
 }
+
+.poem-diff-bar-restore {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+}
+
+.poem-diff-bar-restore:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #fff);
+}
+
 .poem-diff-bar-exit:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));

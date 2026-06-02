@@ -281,22 +281,6 @@ export function IssueCard({
           {isResolved && <span className="ai-issue-resolved-label">Addressed</span>}
         </span>
         <div className="ai-issue-actions" onClick={(e) => e.stopPropagation()}>
-          {recheckAvailable && !isResolved && (
-            <button
-              type="button"
-              className="ai-recheck-btn-compact"
-              onClick={handleRecheck}
-              disabled={recheckLoading || lineUnchanged}
-              title={
-                lineUnchanged
-                  ? "Edit the line first — nothing has changed since the analysis"
-                  : "Re-check fix — ask the AI if your edit addressed this issue"
-              }
-              aria-label="Re-check fix"
-            >
-              {recheckLoading ? <span className="ai-chat-dot" /> : <span aria-hidden>↻</span>}
-            </button>
-          )}
           <button
             type="button"
             className={`ai-resolve-btn${isResolved ? " is-resolved" : ""}`}
@@ -306,6 +290,22 @@ export function IssueCard({
           >
             {isResolved ? "↩" : "✓"}
           </button>
+          {recheckAvailable && !isResolved && (
+            <button
+              type="button"
+              className="ai-recheck-btn-compact"
+              onClick={handleRecheck}
+              disabled={recheckLoading || lineUnchanged}
+              title={
+                lineUnchanged
+                  ? "Edit the line first, then click to ask the AI if your fix addressed this issue"
+                  : "Re-check fix — ask the AI if your edit addressed this issue"
+              }
+              aria-label="Re-check fix"
+            >
+              {recheckLoading ? <span className="ai-chat-dot" /> : <span aria-hidden>↻</span>}
+            </button>
+          )}
           <button
             type="button"
             className="ai-ignore-btn"

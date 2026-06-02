@@ -507,6 +507,10 @@
     align-items: center;
     justify-content: center;
     position: absolute;
+    /* Confine the gutter to row 1 of the grid so it doesn't extend down into
+       the AI Analysis section in row 2. */
+    grid-row: 1;
+    grid-column: 1 / -1;
     top: 0;
     bottom: 0;
     width: calc(1rem + 16px);
@@ -1424,17 +1428,6 @@
 
 .spell-sync-note {
   margin: 0 0 0.5rem;
-}
-
-.meter-threshold input {
-  width: 4.25rem;
-  font: inherit;
-  font-size: 0.86rem;
-  padding: 0.25rem 0.4rem;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
 }
 
 .tool-block-meter .tool-heading-live {
@@ -3599,43 +3592,6 @@
   flex-shrink: 0;
 }
 
-.revision-compare-quick-btn {
-  font-size: 0.7rem;
-  padding: 0.18rem 0.45rem;
-  line-height: 1.4;
-}
-
-.revision-pick-row {
-  display: inline-flex;
-  gap: 0.25rem;
-  align-self: flex-start;
-}
-
-.revision-pick-chip {
-  font-size: 0.68rem;
-  font-weight: 640;
-  letter-spacing: 0.04em;
-  padding: 0.18rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.revision-pick-chip:hover {
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-  color: var(--text);
-}
-
-.revision-pick-chip.is-active {
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
-  color: var(--text);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
 .revision-snippet {
   margin: 0;
   font-family: var(--font-poem), Georgia, serif;
@@ -3737,10 +3693,6 @@
 .revision-date-pill-yesterday {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: color-mix(in srgb, var(--accent) 78%, var(--text));
-}
-
-.revision-compare-summary {
-  margin: 0 0 0.4rem;
 }
 
 .snapshot-saved-flash-duplicate {
@@ -3867,148 +3819,8 @@
   color: color-mix(in srgb, var(--accent) 90%, var(--text));
 }
 
-.revision-compare-details {
-  margin-top: 0.6rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-  padding-top: 0.4rem;
-}
-
-.revision-compare-summary-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  list-style: none;
-  padding: 0.25rem 0;
-  user-select: none;
-}
-
-.revision-compare-summary-row::-webkit-details-marker {
-  display: none;
-}
-
-.revision-compare-summary-row::before {
-  content: "▸";
-  font-size: 0.72rem;
-  color: var(--muted);
-  transition: transform 0.15s ease;
-}
-
-.revision-compare-details[open] .revision-compare-summary-row::before {
-  content: "▾";
-}
-
-.revision-compare-summary-label {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.revision-compare-summary-pair {
-  flex: 1 1 auto;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .danger-link {
   color: var(--danger);
-}
-
-.compare-select-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.compare-select-arrow {
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.compare-select {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: var(--muted);
-}
-
-.compare-select select {
-  font: inherit;
-  font-size: 0.8rem;
-  padding: 0.3rem 0.45rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  min-width: 9rem;
-  max-width: 14rem;
-}
-
-.compare-panels {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
-  max-height: 18rem;
-}
-
-@media (max-width: 700px) {
-  .compare-panels {
-    grid-template-columns: 1fr;
-    max-height: none;
-  }
-}
-
-.compare-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-width: 0;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
-}
-
-.compare-panel-head {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-.compare-pre {
-  margin: 0;
-  flex: 1;
-  padding: 0.55rem 0.65rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.8rem;
-  line-height: 1.45;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: auto;
-  max-height: 16rem;
-}
-
-.compare-mode-toggle {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin: 0.5rem 0 0.55rem;
-  padding: 0.2rem;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
 }
 
 .segment-btn {
@@ -4142,85 +3954,6 @@
   margin: 0.55rem 0 0;
   padding-top: 0.45rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-.compare-diff-wrap {
-  max-height: 18rem;
-  overflow: auto;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.compare-diff-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.76rem;
-  line-height: 1.4;
-}
-
-.compare-diff-table th,
-.compare-diff-table td {
-  padding: 0.35rem 0.45rem;
-  vertical-align: top;
-  border-bottom: 1px solid var(--border);
-}
-
-.compare-diff-table th {
-  position: sticky;
-  top: 0;
-  background: var(--surface);
-  color: var(--muted);
-  font-weight: 650;
-  text-align: left;
-  z-index: 1;
-}
-
-.diff-th-tag {
-  width: 1.75rem;
-}
-
-.diff-th-from,
-.diff-th-to {
-  width: 50%;
-}
-
-.diff-tag {
-  width: 1.75rem;
-  text-align: center;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--muted);
-}
-
-.diff-remove-row .diff-tag { color: var(--danger); }
-.diff-add-row .diff-tag    { color: var(--accent); }
-.diff-change .diff-tag     { color: color-mix(in srgb, var(--text) 50%, transparent); }
-
-.diff-cell {
-  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.diff-same .diff-cell {
-  color: var(--muted);
-}
-
-.diff-remove-row {
-  background: color-mix(in srgb, var(--danger) 8%, transparent);
-}
-
-.diff-add-row {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.diff-removed {
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
-}
-
-.diff-added {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 /* ── Goal cards ───────────────────────────────────────────────────────────── */
@@ -7550,15 +7283,6 @@ button.snap-dupes-strip:hover {
   opacity: 1;
 }
 
-.snap-card-live {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 7%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 3%, transparent) 100%
-  );
-}
-
 .snap-card-body {
   display: flex;
   flex-direction: column;
@@ -7577,27 +7301,40 @@ button.snap-dupes-strip:hover {
   text-overflow: ellipsis;
 }
 
-.snap-snippet-live {
+.snap-snippet-multiline {
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-style: italic;
-  color: color-mix(in srgb, var(--text) 80%, var(--muted));
+  flex-direction: column;
+  gap: 0.05rem;
+  white-space: normal;
+  overflow: hidden;
 }
 
-.snap-live-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--accent) 80%, var(--text));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-  animation: snap-live-pulse 2s ease-in-out infinite;
-  flex-shrink: 0;
+.snap-snippet-line {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-@keyframes snap-live-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
-  50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 8%, transparent); }
+.snap-snippet-line + .snap-snippet-line {
+  color: color-mix(in srgb, var(--text) 70%, var(--muted));
+  font-size: 0.86rem;
+}
+
+.snap-card-label {
+  margin: 0 0 0.05rem;
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .snap-meta {
@@ -7612,6 +7349,13 @@ button.snap-dupes-strip:hover {
 .snap-meta-time {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.snap-meta-counts {
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--muted) 85%, var(--text));
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 
 .snap-meta-delta {
@@ -7663,17 +7407,7 @@ button.snap-dupes-strip:hover {
   color: var(--muted);
 }
 
-.snap-meta-live {
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  padding: 0.08rem 0.45rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 24%, transparent);
-  color: color-mix(in srgb, var(--accent) 95%, var(--text));
-}
-
-/* ---- Card side: pick + actions ---- */
+/* ---- Card side: compare button + secondary actions ---- */
 .snap-card-side {
   display: flex;
   flex-direction: column;
@@ -7683,45 +7417,42 @@ button.snap-dupes-strip:hover {
   flex-shrink: 0;
 }
 
-.snap-pick {
-  display: inline-flex;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 8%, transparent);
-  padding: 2px;
-  gap: 2px;
-}
-
-.snap-pick-chip {
+.snap-compare-btn {
   appearance: none;
-  border: none;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  color: color-mix(in srgb, var(--accent) 92%, var(--text));
   font: inherit;
-  font-size: 0.68rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 0.18rem 0.55rem;
+  letter-spacing: 0.01em;
+  padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  color: var(--muted);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease,
+    box-shadow 0.13s ease;
 }
 
-.snap-pick-chip:hover {
-  color: var(--text);
+.snap-compare-btn::before {
+  content: "↔";
+  margin-right: 0.28rem;
+  font-weight: 800;
 }
 
-.snap-pick-chip.is-active {
-  background: var(--bg);
-  color: var(--text);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 18%, transparent);
+.snap-compare-btn:hover {
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+  border-color: var(--accent);
 }
 
-.snap-pick-from.is-active {
-  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+.snap-compare-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
-.snap-pick-to.is-active {
-  color: color-mix(in srgb, var(--accent) 92%, var(--text));
+.snap-compare-btn.is-active::before {
+  content: "●";
 }
 
 .snap-actions {

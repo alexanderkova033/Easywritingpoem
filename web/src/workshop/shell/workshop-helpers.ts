@@ -1,7 +1,3 @@
-import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
-
-export const COMPARE_CURRENT_ID = "__current__";
-
 export type ToolTab =
   | "issues"
   | "goals"
@@ -51,15 +47,6 @@ export function tabsForBucket(bucket: ToolBucket): ToolTab[] {
 
 export function defaultTabForBucket(bucket: ToolBucket): ToolTab {
   return tabsForBucket(bucket)[0]!;
-}
-
-export function compareBodyForId(
-  id: string,
-  currentBody: string,
-  revisions: RevisionSnapshot[],
-): string {
-  if (id === COMPARE_CURRENT_ID) return currentBody;
-  return revisions.find((s) => s.id === id)?.body ?? "";
 }
 
 export function formatWhen(iso?: string): string | null {

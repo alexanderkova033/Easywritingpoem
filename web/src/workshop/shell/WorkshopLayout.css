@@ -325,10 +325,10 @@
  * Fades with chrome on idle, brightens on hover. */
 .focus-notes-panel {
   position: fixed;
-  top: 7rem;
+  top: 11rem;
   right: 0.6rem;
   z-index: 69;
-  max-width: 18rem;
+  max-width: 12rem;
   transition: opacity 0.5s ease;
 }
 
@@ -383,7 +383,7 @@
   font-size: 0.78rem;
   line-height: 1.25;
   color: var(--muted);
-  max-width: 16rem;
+  max-width: 11rem;
 }
 
 .focus-notes-preview-line {

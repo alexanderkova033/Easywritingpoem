@@ -14,10 +14,13 @@ import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import {
   LS_LAST_ANALYSIS_PREFIX,
+  LS_LAST_ANALYZED_LINES_PREFIX,
   LS_RESOLVED_PREFIX,
   LS_IGNORED_PREFIX,
   loadLastAnalysis,
   saveLastAnalysis,
+  loadLastAnalyzedLines,
+  saveLastAnalyzedLines,
   loadIgnoredIssueIds,
 } from "./ai-analysis-storage";
 import {
@@ -85,7 +88,9 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const [savedResult, setSavedResult] = useState<PoemAnalysis | null>(
     () => loadLastAnalysis(poemId),
   );
-  const [savedLines, setSavedLines] = useState<string[]>([]);
+  const [savedLines, setSavedLines] = useState<string[]>(
+    () => loadLastAnalyzedLines(poemId),
+  );
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
@@ -100,7 +105,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       const next = loadLastAnalysis(poemId);
       setResult(next);
       setSavedResult(next);
-      setSavedLines([]);
+      setSavedLines(loadLastAnalyzedLines(poemId));
       setStatus(next ? "done" : "idle");
       setErrorMsg("");
       setIsUnconfigured(false);
@@ -204,6 +209,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       setSavedResult(res);
       setSavedLines(lines);
       saveLastAnalysis(poemId, res);
+      saveLastAnalyzedLines(poemId, lines);
       saveLastHash(poemId, inputHash);
       pushSnapshot(poemId, res);
       onAnalysisDone?.(res.issues, res.overall_score);
@@ -236,6 +242,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     if (poemId) {
       try {
         localStorage.removeItem(LS_LAST_ANALYSIS_PREFIX + poemId);
+        localStorage.removeItem(LS_LAST_ANALYZED_LINES_PREFIX + poemId);
         localStorage.removeItem(LS_RESOLVED_PREFIX + poemId);
         localStorage.removeItem(LS_IGNORED_PREFIX + poemId);
         localStorage.removeItem(LS_SCORE_HISTORY_PREFIX + poemId);

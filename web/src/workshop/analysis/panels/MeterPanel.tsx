@@ -28,8 +28,6 @@ function flipMark(ch: string): string {
   return ch === "/" ? "x" : "/";
 }
 
-const SCANSION_STORAGE_KEY = "easy-poems:meter-scansion-on";
-
 export function MeterPanel({
   docStats,
   meterHints,
@@ -44,34 +42,15 @@ export function MeterPanel({
   onRemoveStressOverride,
 }: MeterPanelProps) {
   const [meterHideBlank, setMeterHideBlank] = useState(true);
-  const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
-  const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
   const [meterEditMode, setMeterEditMode] = useState(false);
-  const [showScansion, setShowScansion] = useState<boolean>(() => {
-    try { return localStorage.getItem(SCANSION_STORAGE_KEY) === "1"; } catch { return false; }
-  });
-  const toggleScansion = () => {
-    setShowScansion((v) => {
-      const next = !v;
-      try { localStorage.setItem(SCANSION_STORAGE_KEY, next ? "1" : "0"); } catch { /* ignore */ }
-      return next;
-    });
-  };
 
   const displayedMeterHints = useMemo(() => {
     const rows = meterHints.slice(0, METER_TABLE_MAX);
     return rows.filter((r) => {
       if (meterHideBlank && !r.stressPattern) return false;
-      if (!meterOnlyLowFit) return true;
-      if (r.iambicFitPercent == null) return false;
-      return r.iambicFitPercent < meterLowFitThreshold;
+      return true;
     });
-  }, [
-    meterHideBlank,
-    meterHints,
-    meterLowFitThreshold,
-    meterOnlyLowFit,
-  ]);
+  }, [meterHideBlank, meterHints]);
 
   const wordSegmentsByLine = useMemo(() => {
     const map = new Map<number, WordPatternSegment[]>();
@@ -116,20 +95,6 @@ export function MeterPanel({
         <label className="meter-toggle">
           <input type="checkbox" checked={meterHideBlank} onChange={(e) => setMeterHideBlank(e.target.checked)} />
           Hide blanks
-        </label>
-        <label className="meter-toggle">
-          <input type="checkbox" checked={meterOnlyLowFit} onChange={(e) => setMeterOnlyLowFit(e.target.checked)} />
-          Low fit only
-        </label>
-        {meterOnlyLowFit ? (
-          <label className="meter-threshold">
-            Below <input type="number" min={0} max={100} step={5} value={meterLowFitThreshold}
-              onChange={(e) => setMeterLowFitThreshold(Number.isFinite(e.target.valueAsNumber) ? e.target.valueAsNumber : 60)} /> %
-          </label>
-        ) : null}
-        <label className="meter-toggle">
-          <input type="checkbox" checked={showScansion} onChange={toggleScansion} />
-          Scansion
         </label>
         <button
           type="button"
@@ -218,49 +183,6 @@ export function MeterPanel({
 
       {meterHints.length > METER_TABLE_MAX ? (
         <p className="muted small">Showing first {METER_TABLE_MAX} of {meterHints.length} lines.</p>
-      ) : null}
-
-      {showScansion ? (
-        <div className="meter-scansion" aria-label="Traditional scansion view">
-          <p className="muted small meter-scansion-hint">
-            ˘ = unstressed · ¯ = stressed. Marks sit above each syllable of the actual text.
-          </p>
-          <ol className="meter-scansion-list">
-            {displayedMeterHints.map((row) => {
-              const segments = wordSegmentsByLine.get(row.lineNumber) ?? [];
-              if (segments.length === 0) return null;
-              return (
-                <li
-                  key={row.lineNumber}
-                  className="meter-scansion-row"
-                  onClick={() => goToLine(row.lineNumber)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e: KeyboardEvent<HTMLLIElement>) => {
-                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); goToLine(row.lineNumber); }
-                  }}
-                  title={`Line ${row.lineNumber} — click to jump`}
-                >
-                  <span className="meter-scansion-line-num">{row.lineNumber}</span>
-                  <span className="meter-scansion-words">
-                    {segments.map((seg, si) => (
-                      <span key={si} className="meter-scansion-word">
-                        <span className="meter-scansion-marks" aria-hidden>
-                          {seg.pattern.split("").map((ch, i) => (
-                            <span key={i} className={`meter-scansion-mark${ch === "/" ? " is-stress" : ""}`}>
-                              {ch === "/" ? "¯" : "˘"}
-                            </span>
-                          ))}
-                        </span>
-                        <span className="meter-scansion-word-text">{seg.word}</span>
-                      </span>
-                    ))}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
       ) : null}
 
       {overrideEntries.length > 0 ? (

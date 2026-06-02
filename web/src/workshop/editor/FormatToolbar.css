@@ -863,25 +863,19 @@ button.primary:disabled {
     inset 0 -1px 0 hsl(var(--repeat-hue) / 0.62);
 }
 
-/* Count badge — small pill at top-right showing how many times this group
-   repeats. Same number + same colour = members of the same echo. */
+/* Count badge — small coloured number at top-right showing how many times
+   this group repeats. Same number + same colour = members of the same echo. */
 .cm-repeat-mark[data-repeat-count]::after {
   content: attr(data-repeat-count);
   position: absolute;
-  top: -0.55em;
-  right: -0.35em;
-  min-width: 1.05em;
-  padding: 0 0.32em;
-  font-size: 0.62em;
-  line-height: 1.45;
+  top: -0.15em;
+  right: -0.15em;
+  font-size: 0.5em;
+  line-height: 1;
   font-weight: 700;
-  text-align: center;
-  color: #fff;
-  background: hsl(var(--repeat-hue) / 0.92);
-  border-radius: 999px;
+  color: hsl(var(--repeat-hue) / 0.95);
   pointer-events: none;
   z-index: 2;
-  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
 

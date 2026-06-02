@@ -12,14 +12,10 @@ import type {
   RepetitionAnalysis,
 } from "@/workshop/analysis/repeated-words";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
-import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type { LineMeterHint, ManualStressOverrides } from "@/workshop/meter/meter-hints";
 import { StuckHelper } from "./StuckHelper";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
-import {
-  RevisionCompareSection,
-  type CompareSnapshotOption,
-} from "./RevisionCompareSection";
+import { RevisionCompareSection } from "./RevisionCompareSection";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import type { RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { IssuesPanel } from "./panels/IssuesPanel";
@@ -88,16 +84,6 @@ export interface WorkshopToolPanelsProps {
   onDiffSnapshot?: (snap: RevisionSnapshot) => void;
   /** ID of snapshot currently shown as inline diff, or null. */
   activeDiffSnapshotId?: string | null;
-  compareLeftId: string;
-  compareRightId: string;
-  onCompareLeftChange: (id: string) => void;
-  onCompareRightChange: (id: string) => void;
-  compareViewMode: "side" | "diff";
-  onCompareViewModeChange: (mode: "side" | "diff") => void;
-  compareSnapshotOptions: CompareSnapshotOption[];
-  compareLeftBody: string;
-  compareRightBody: string;
-  compareDiffRows: LineDiffRow[];
   onOpenToolTab: (tab: ToolTab) => void;
   focusPoemTitle: () => void;
   stressLexiconReady: boolean;
@@ -273,16 +259,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             duplicateCount={props.duplicateRevisionCount}
             onDiffSnapshot={props.onDiffSnapshot}
             activeDiffSnapshotId={props.activeDiffSnapshotId}
-            compareLeftId={props.compareLeftId}
-            compareRightId={props.compareRightId}
-            onCompareLeftChange={props.onCompareLeftChange}
-            onCompareRightChange={props.onCompareRightChange}
-            compareViewMode={props.compareViewMode}
-            onCompareViewModeChange={props.onCompareViewModeChange}
-            compareSnapshotOptions={props.compareSnapshotOptions}
-            compareLeftBody={props.compareLeftBody}
-            compareRightBody={props.compareRightBody}
-            compareDiffRows={props.compareDiffRows}
           />
         </div>
       ) : null}

@@ -1,17 +1,9 @@
 import { useMemo, useState } from "react";
-import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
-  COMPARE_CURRENT_ID,
   formatRelativeSnapshotWhen,
   formatSnapshotWhen,
 } from "@/workshop/shell/workshop-helpers";
-
-export interface CompareSnapshotOption {
-  id: string;
-  label: string;
-  optionTitle?: string;
-}
 
 export interface RevisionCompareSectionProps {
   embedInTools?: boolean;
@@ -26,25 +18,15 @@ export interface RevisionCompareSectionProps {
   duplicateCount?: number;
   onDiffSnapshot?: (snap: RevisionSnapshot) => void;
   activeDiffSnapshotId?: string | null;
-  compareLeftId: string;
-  compareRightId: string;
-  onCompareLeftChange: (id: string) => void;
-  onCompareRightChange: (id: string) => void;
-  compareViewMode: "side" | "diff";
-  onCompareViewModeChange: (mode: "side" | "diff") => void;
-  compareSnapshotOptions: CompareSnapshotOption[];
-  compareLeftBody: string;
-  compareRightBody: string;
-  compareDiffRows: LineDiffRow[];
 }
 
 interface RowMeta {
   snap: RevisionSnapshot;
-  snippet: string;
+  previewLines: string[];
+  lines: number;
+  words: number;
   deltaLines: number | null;
   deltaWords: number | null;
-  datePill: string;
-  dateTone: "today" | "yesterday" | "older";
 }
 
 function lineCount(body: string): number {
@@ -58,40 +40,19 @@ function wordCount(body: string): number {
   return m ? m.length : 0;
 }
 
-function buildSnippet(body: string): string {
-  const flat = body.replace(/\s+/g, " ").trim();
-  if (!flat) return "(empty)";
-  return flat.length > 32 ? flat.slice(0, 32).trimEnd() + "…" : flat;
-}
-
-function datePillFor(iso: string): {
-  label: string;
-  tone: "today" | "yesterday" | "older";
-} {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return { label: "", tone: "older" };
-  const now = new Date();
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  if (sameDay) return { label: "Today", tone: "today" };
-  const y = new Date(now);
-  y.setDate(y.getDate() - 1);
-  const isYesterday =
-    d.getFullYear() === y.getFullYear() &&
-    d.getMonth() === y.getMonth() &&
-    d.getDate() === y.getDate();
-  if (isYesterday) return { label: "Yesterday", tone: "yesterday" };
-  const sameYear = d.getFullYear() === now.getFullYear();
-  const label = sameYear
-    ? d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-    : d.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-  return { label, tone: "older" };
+/**
+ * Up to two non-empty lines, each clipped, so cards differ visually even
+ * when their first lines happen to match.
+ */
+function previewLinesFor(body: string): string[] {
+  if (!body) return ["(empty)"];
+  const lines = body
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .slice(0, 2)
+    .map((l) => (l.length > 64 ? l.slice(0, 64).trimEnd() + "…" : l));
+  return lines.length === 0 ? ["(empty)"] : lines;
 }
 
 type BucketKey = "today" | "yesterday" | "week" | "older";
@@ -167,15 +128,6 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     duplicateCount = 0,
     onDiffSnapshot,
     activeDiffSnapshotId,
-    compareLeftId,
-    compareRightId,
-    onCompareLeftChange,
-    onCompareRightChange,
-    compareViewMode,
-    onCompareViewModeChange,
-    compareLeftBody,
-    compareRightBody,
-    compareDiffRows,
   } = props;
 
   const [pendingRestore, setPendingRestore] = useState<RevisionSnapshot | null>(
@@ -199,20 +151,17 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
   const rowsMeta = useMemo<RowMeta[]>(() => {
     return revisions.map((s, i) => {
       const older = revisions[i + 1];
-      const deltaLines = older
-        ? lineCount(s.body) - lineCount(older.body)
-        : null;
-      const deltaWords = older
-        ? wordCount(s.body) - wordCount(older.body)
-        : null;
-      const pill = datePillFor(s.createdAt);
+      const lines = lineCount(s.body);
+      const words = wordCount(s.body);
+      const deltaLines = older ? lines - lineCount(older.body) : null;
+      const deltaWords = older ? words - wordCount(older.body) : null;
       return {
         snap: s,
-        snippet: buildSnippet(s.body),
+        previewLines: previewLinesFor(s.body),
+        lines,
+        words,
         deltaLines,
         deltaWords,
-        datePill: pill.label,
-        dateTone: pill.tone,
       };
     });
   }, [revisions]);
@@ -243,57 +192,6 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         ? "duplicate"
         : null;
 
-  const pickAs = (id: string, side: "from" | "to") => {
-    if (side === "from") {
-      if (compareLeftId === id) {
-        onCompareLeftChange(COMPARE_CURRENT_ID);
-        return;
-      }
-      onCompareLeftChange(id);
-      if (compareRightId === id) {
-        const fallback = revisions.find((r) => r.id !== id);
-        onCompareRightChange(fallback ? fallback.id : COMPARE_CURRENT_ID);
-      }
-    } else {
-      if (compareRightId === id) {
-        onCompareRightChange(COMPARE_CURRENT_ID);
-        return;
-      }
-      onCompareRightChange(id);
-      if (compareLeftId === id) {
-        const fallback = revisions.find((r) => r.id !== id);
-        onCompareLeftChange(fallback ? fallback.id : COMPARE_CURRENT_ID);
-      }
-    }
-  };
-
-  const renderRowControls = (snap: RevisionSnapshot) => {
-    const isFrom = compareLeftId === snap.id;
-    const isTo = compareRightId === snap.id;
-    return (
-      <div className="snap-pick" role="group" aria-label="Pick for compare">
-        <button
-          type="button"
-          className={`snap-pick-chip snap-pick-from${isFrom ? " is-active" : ""}`}
-          aria-pressed={isFrom}
-          title={isFrom ? "Currently the From snapshot" : "Use as From"}
-          onClick={() => pickAs(snap.id, "from")}
-        >
-          From
-        </button>
-        <button
-          type="button"
-          className={`snap-pick-chip snap-pick-to${isTo ? " is-active" : ""}`}
-          aria-pressed={isTo}
-          title={isTo ? "Currently the To snapshot" : "Use as To"}
-          onClick={() => pickAs(snap.id, "to")}
-        >
-          To
-        </button>
-      </div>
-    );
-  };
-
   const renderSnapItem = (row: RowMeta) => {
     const s = row.snap;
     const phrase = deltaPhrase(row.deltaLines, row.deltaWords);
@@ -311,9 +209,21 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         className={`snap-card${isDuplicate ? " is-duplicate" : ""}${isDiffActive ? " is-diff-active" : ""}`}
       >
         <div className="snap-card-body">
-          <p className="snap-snippet" title={s.body || "(empty)"}>
-            {row.snippet}
-          </p>
+          {s.label ? (
+            <p className="snap-card-label" title={s.label}>
+              {s.label}
+            </p>
+          ) : null}
+          <div
+            className="snap-snippet snap-snippet-multiline"
+            title={s.body || "(empty)"}
+          >
+            {row.previewLines.map((ln, idx) => (
+              <span key={idx} className="snap-snippet-line">
+                {ln}
+              </span>
+            ))}
+          </div>
           <div className="snap-meta">
             <span
               className="snap-meta-time"
@@ -321,17 +231,15 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
             >
               {formatRelativeSnapshotWhen(s.createdAt)}
             </span>
+            <span className="snap-meta-counts" title="Lines · words">
+              {row.lines} ln · {row.words} w
+            </span>
             {phrase ? (
               <span
                 className={`snap-meta-delta snap-meta-delta-${netSign}`}
                 title="Change since previous snapshot"
               >
                 {phrase}
-              </span>
-            ) : null}
-            {s.label ? (
-              <span className="snap-meta-label" title={s.label}>
-                {s.label}
               </span>
             ) : null}
             {isDuplicate ? (
@@ -345,23 +253,22 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
           </div>
         </div>
         <div className="snap-card-side">
-          {renderRowControls(s)}
+          {onDiffSnapshot && (
+            <button
+              type="button"
+              className={`snap-compare-btn${isDiffActive ? " is-active" : ""}`}
+              title={
+                isDiffActive
+                  ? "Stop comparing in the editor"
+                  : "Compare against current draft, inline in the editor"
+              }
+              aria-pressed={isDiffActive}
+              onClick={() => onDiffSnapshot(s)}
+            >
+              {isDiffActive ? "Comparing" : "Compare"}
+            </button>
+          )}
           <div className="snap-actions">
-            {onDiffSnapshot && (
-              <button
-                type="button"
-                className={`snap-action-btn${isDiffActive ? " is-active" : ""}`}
-                title={
-                  isDiffActive
-                    ? "Exit inline diff in editor"
-                    : "Show word-level diff inline in editor"
-                }
-                aria-label={isDiffActive ? "Exit editor diff" : "Show in editor"}
-                onClick={() => onDiffSnapshot(s)}
-              >
-                {isDiffActive ? "Exit" : "Editor"}
-              </button>
-            )}
             <button
               type="button"
               className="snap-action-btn"
@@ -452,28 +359,6 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     );
   };
 
-  const isDraftFrom = compareLeftId === COMPARE_CURRENT_ID;
-  const isDraftTo = compareRightId === COMPARE_CURRENT_ID;
-  const sameSelection = compareLeftId === compareRightId;
-  const fromLabel =
-    compareLeftId === COMPARE_CURRENT_ID
-      ? "Current draft"
-      : (() => {
-          const s = revisions.find((r) => r.id === compareLeftId);
-          return s
-            ? s.label || formatRelativeSnapshotWhen(s.createdAt)
-            : "Current draft";
-        })();
-  const toLabel =
-    compareRightId === COMPARE_CURRENT_ID
-      ? "Current draft"
-      : (() => {
-          const s = revisions.find((r) => r.id === compareRightId);
-          return s
-            ? s.label || formatRelativeSnapshotWhen(s.createdAt)
-            : "Current draft";
-        })();
-
   return (
     <div
       className="snap-section"
@@ -490,7 +375,9 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
             <span className="snap-section-count-max">/50</span>
           </span>
         </div>
-        <p className="snap-section-hint muted small">Stored on this device</p>
+        <p className="snap-section-hint muted small">
+          Stored on this device. Compare opens the diff inside the editor.
+        </p>
       </header>
 
       <div className="snap-save-bar">
@@ -582,53 +469,6 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         )
       ) : null}
 
-      <div className="snap-card snap-card-live">
-        <div className="snap-card-body">
-          <p className="snap-snippet snap-snippet-live">
-            <span className="snap-live-dot" aria-hidden="true" />
-            Current draft
-          </p>
-          <div className="snap-meta">
-            <span className="snap-meta-time">Editing now</span>
-            <span className="snap-meta-live">LIVE</span>
-          </div>
-        </div>
-        <div className="snap-card-side">
-          <div className="snap-pick" role="group" aria-label="Pick current draft for compare">
-            <button
-              type="button"
-              className={`snap-pick-chip snap-pick-from${isDraftFrom ? " is-active" : ""}`}
-              aria-pressed={isDraftFrom}
-              onClick={() => {
-                if (isDraftFrom) return;
-                onCompareLeftChange(COMPARE_CURRENT_ID);
-                if (compareRightId === COMPARE_CURRENT_ID) {
-                  const first = revisions[0];
-                  onCompareRightChange(first ? first.id : COMPARE_CURRENT_ID);
-                }
-              }}
-            >
-              From
-            </button>
-            <button
-              type="button"
-              className={`snap-pick-chip snap-pick-to${isDraftTo ? " is-active" : ""}`}
-              aria-pressed={isDraftTo}
-              onClick={() => {
-                if (isDraftTo) return;
-                onCompareRightChange(COMPARE_CURRENT_ID);
-                if (compareLeftId === COMPARE_CURRENT_ID) {
-                  const first = revisions[0];
-                  onCompareLeftChange(first ? first.id : COMPARE_CURRENT_ID);
-                }
-              }}
-            >
-              To
-            </button>
-          </div>
-        </div>
-      </div>
-
       {revisions.length === 0 ? (
         <div className="snap-empty">
           <span className="snap-empty-icon" aria-hidden="true">⌛</span>
@@ -652,118 +492,6 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
           ))}
         </div>
       )}
-
-      <details className="revision-compare-details" open={!sameSelection && revisions.length > 0}>
-        <summary className="revision-compare-summary-row">
-          <span className="revision-compare-summary-label">Compare</span>
-          {revisions.length > 0 && !sameSelection ? (
-            <span className="revision-compare-summary-pair muted small">
-              <strong>{fromLabel}</strong> → <strong>{toLabel}</strong>
-            </span>
-          ) : (
-            <span className="muted small">
-              {revisions.length === 0
-                ? "Save a snapshot first."
-                : "Pick From / To above."}
-            </span>
-          )}
-        </summary>
-        {revisions.length === 0 || sameSelection ? null : (
-          <>
-          <div
-            className="compare-mode-toggle"
-            role="group"
-            aria-label="Compare view mode"
-          >
-            <button
-              type="button"
-              className={`segment-btn ${compareViewMode === "side" ? "active" : ""}`}
-              onClick={() => onCompareViewModeChange("side")}
-            >
-              Side by side
-            </button>
-            <button
-              type="button"
-              className={`segment-btn ${compareViewMode === "diff" ? "active" : ""}`}
-              onClick={() => onCompareViewModeChange("diff")}
-            >
-              Changes
-            </button>
-          </div>
-          {compareViewMode === "side" ? (
-            <div className="compare-panels" aria-label="Compared poem text">
-              <div className="compare-panel">
-                <div className="compare-panel-head">From</div>
-                <pre className="compare-pre">{compareLeftBody}</pre>
-              </div>
-              <div className="compare-panel">
-                <div className="compare-panel-head">To</div>
-                <pre className="compare-pre">{compareRightBody}</pre>
-              </div>
-            </div>
-          ) : (
-            <div className="compare-diff-wrap" aria-label="Line diff">
-              <table className="compare-diff-table">
-                <thead>
-                  <tr>
-                    <th scope="col" className="diff-th-tag"></th>
-                    <th scope="col" className="diff-th-from">From</th>
-                    <th scope="col" className="diff-th-to">To</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {compareDiffRows.map((row, idx) => {
-                    if (row.kind === "same") {
-                      return (
-                        <tr key={`s-${idx}`} className="diff-same">
-                          <td colSpan={3} className="diff-cell">
-                            {row.text || " "}
-                          </td>
-                        </tr>
-                      );
-                    }
-                    if (row.kind === "change") {
-                      return (
-                        <tr key={`c-${idx}`} className="diff-change">
-                          <td className="diff-tag">~</td>
-                          <td className="diff-cell diff-removed">
-                            {row.left || " "}
-                          </td>
-                          <td className="diff-cell diff-added">
-                            {row.right || " "}
-                          </td>
-                        </tr>
-                      );
-                    }
-                    if (row.kind === "left") {
-                      return (
-                        <tr key={`l-${idx}`} className="diff-remove-row">
-                          <td className="diff-tag">−</td>
-                          <td
-                            className="diff-cell diff-removed"
-                            colSpan={2}
-                          >
-                            {row.text || " "}
-                          </td>
-                        </tr>
-                      );
-                    }
-                    return (
-                      <tr key={`r-${idx}`} className="diff-add-row">
-                        <td className="diff-tag">+</td>
-                        <td className="diff-cell diff-added" colSpan={2}>
-                          {row.text || " "}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-          </>
-        )}
-      </details>
     </div>
   );
 }

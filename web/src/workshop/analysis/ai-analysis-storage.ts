@@ -1,6 +1,7 @@
 import type { PoemAnalysis } from "@/workshop/analysis/ai-analyze";
 
 export const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
+export const LS_LAST_ANALYZED_LINES_PREFIX = "easy-poems:ai-last-lines:";
 export const LS_RESOLVED_PREFIX = "easy-poems:ai-resolved:";
 export const LS_IGNORED_PREFIX = "easy-poems:ai-ignored:";
 
@@ -16,6 +17,23 @@ export function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
 export function saveLastAnalysis(poemId: string | undefined, analysis: PoemAnalysis) {
   if (!poemId) return;
   try { localStorage.setItem(LS_LAST_ANALYSIS_PREFIX + poemId, JSON.stringify(analysis)); }
+  catch { /* storage full */ }
+}
+
+export function loadLastAnalyzedLines(poemId?: string): string[] {
+  if (!poemId) return [];
+  try {
+    const raw = localStorage.getItem(LS_LAST_ANALYZED_LINES_PREFIX + poemId);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as unknown;
+    if (!Array.isArray(arr)) return [];
+    return arr.map((x) => String(x));
+  } catch { return []; }
+}
+
+export function saveLastAnalyzedLines(poemId: string | undefined, lines: string[]) {
+  if (!poemId) return;
+  try { localStorage.setItem(LS_LAST_ANALYZED_LINES_PREFIX + poemId, JSON.stringify(lines)); }
   catch { /* storage full */ }
 }
 

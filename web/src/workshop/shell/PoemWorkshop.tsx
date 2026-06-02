@@ -64,6 +64,7 @@ import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopov
 import { checkShareHash } from "@/workshop/sharing/sharing";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
+import { diffWords } from "@/workshop/editor/word-diff";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
   TOOL_BUCKET_LABEL,
@@ -265,6 +266,22 @@ export function PoemWorkshop() {
     setDiffSnapshot((cur) => (cur?.id === snap.id ? null : snap));
   }, []);
   const exitDiffSnapshot = useCallback(() => setDiffSnapshot(null), []);
+
+  // Word-level adds/removes for the diff bar stats. Word tokens only — skip
+  // whitespace/punctuation so the count matches what the writer sees.
+  const diffStats = useMemo(() => {
+    if (!diffSnapshot) return null;
+    const ops = diffWords(diffSnapshot.body, m.body);
+    let added = 0;
+    let removed = 0;
+    for (const op of ops) {
+      if (op.kind === "keep") continue;
+      const words = (op.text.match(/[A-Za-z0-9_']+/g) ?? []).length;
+      if (op.kind === "add") added += words;
+      else removed += words;
+    }
+    return { added, removed };
+  }, [diffSnapshot, m.body]);
 
   const [aiResult, setAiResult] = useState<PoemAnalysis | PoemComparison | null>(null);
   const [aiVisibleIssues, setAiVisibleIssues] = useState<AnalysisIssue[]>([]);
@@ -1866,17 +1883,40 @@ export function PoemWorkshop() {
                     {diffSnapshot && (
                       <div className="poem-diff-bar" role="status" aria-live="polite">
                         <span className="poem-diff-bar-label">
-                          Diff vs.&nbsp;
+                          Comparing draft against
                           <span className="poem-diff-bar-snapshot">
                             {diffSnapshot.label || formatRelativeSnapshotWhen(diffSnapshot.createdAt)}
                           </span>
                         </span>
-                        <button
-                          type="button"
-                          className="poem-diff-bar-exit"
-                          onClick={exitDiffSnapshot}
-                          title="Exit diff overlay"
-                        >Exit diff</button>
+                        {diffStats && (diffStats.added > 0 || diffStats.removed > 0) ? (
+                          <span className="poem-diff-bar-stats" aria-label="Word changes">
+                            {diffStats.added > 0 && (
+                              <span className="poem-diff-bar-stat-add">+{diffStats.added}</span>
+                            )}
+                            {diffStats.removed > 0 && (
+                              <span className="poem-diff-bar-stat-rem">−{diffStats.removed}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="poem-diff-bar-stats poem-diff-bar-stats-empty">no changes</span>
+                        )}
+                        <div className="poem-diff-bar-actions">
+                          <button
+                            type="button"
+                            className="poem-diff-bar-restore"
+                            onClick={() => {
+                              m.restoreRevision(diffSnapshot);
+                              exitDiffSnapshot();
+                            }}
+                            title="Replace the current draft with this snapshot"
+                          >Restore this version</button>
+                          <button
+                            type="button"
+                            className="poem-diff-bar-exit"
+                            onClick={exitDiffSnapshot}
+                            title="Stop comparing"
+                          >Done</button>
+                        </div>
                       </div>
                     )}
                     <div className="poem-editor-body-wrap" style={{ position: "relative" }} onClick={handleEditorClickForRhyme}>
@@ -2273,16 +2313,6 @@ export function PoemWorkshop() {
             duplicateRevisionCount={m.duplicateRevisionCount}
             onDiffSnapshot={handleDiffSnapshot}
             activeDiffSnapshotId={diffSnapshot?.id ?? null}
-            compareLeftId={m.compareLeftId}
-            compareRightId={m.compareRightId}
-            onCompareLeftChange={m.setCompareLeftId}
-            onCompareRightChange={m.setCompareRightId}
-            compareViewMode={m.compareViewMode}
-            onCompareViewModeChange={m.setCompareViewMode}
-            compareSnapshotOptions={m.compareSnapshotOptions}
-            compareLeftBody={m.compareLeftBody}
-            compareRightBody={m.compareRightBody}
-            compareDiffRows={m.compareDiffRows}
             onOpenToolTab={m.setToolTab}
             focusPoemTitle={focusPoemTitle}
             stressLexiconReady={m.stressLexiconReady}
