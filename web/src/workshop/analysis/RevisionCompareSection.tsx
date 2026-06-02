@@ -52,7 +52,7 @@ function wordCount(body: string): number {
 function clip(text: string, max: number): string {
   const t = text.trim();
   if (t.length <= max) return t;
-  return t.slice(0, max).trimEnd() + "…";
+  return t.slice(0, max).trimEnd();
 }
 
 /** First non-empty body lines, used when there are no changes to highlight. */

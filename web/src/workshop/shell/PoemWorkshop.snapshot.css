@@ -95,16 +95,19 @@
 
 .snapshot-diff-del {
   text-decoration: line-through;
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-  color: var(--danger);
-  border-radius: 2px;
-  padding: 0 0.05em;
+  text-decoration-thickness: 1.5px;
+  background: color-mix(in srgb, var(--danger) 26%, transparent);
+  color: color-mix(in srgb, var(--danger) 92%, var(--text));
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 0.15em;
 }
 
 .snapshot-diff-add {
   text-decoration: none;
-  background: color-mix(in srgb, var(--ai-score-high) 14%, transparent);
-  color: color-mix(in srgb, var(--ai-score-high) 80%, var(--text));
-  border-radius: 2px;
-  padding: 0 0.05em;
+  background: color-mix(in srgb, var(--ai-score-high) 28%, transparent);
+  color: var(--ai-score-high);
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 0.15em;
 }

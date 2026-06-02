@@ -64,14 +64,14 @@ const VOWEL_BUCKET: Record<string, "bright" | "mid" | "dark"> = {
   ah: "dark", aw: "dark", ow: "dark", oh: "dark",
   oy: "dark", oo: "dark", o: "dark", u: "dark",
 };
-const VOWEL_BUCKET_LABEL = { bright: "Bright", mid: "Mid", dark: "Dark" } as const;
+const VOWEL_BUCKET_LABEL = { bright: "bright", mid: "mid", dark: "dark" } as const;
 const VOWEL_BUCKET_HUE = {
   bright: "#e6b550",
   mid:    "#88a596",
   dark:   "#6a78b8",
 } as const;
 
-type SoundSubTab = "echoes" | "vowels" | "flow";
+type SoundSubTab = "sound" | "flow";
 
 const ALL_CLASSES: SoundClass[] = [
   "alliteration",
@@ -210,8 +210,8 @@ function computeVowelVerdict(
 }
 
 function friendlyEchoKey(echo: SoundEcho): string {
-  const upper = echo.key.toUpperCase();
-  return echo.className === "assonance" ? `${upper} vowel` : `${upper} sound`;
+  const shortKey = echo.key.replace(/\s*\([^)]*\)\s*/g, "").trim();
+  return echo.className === "assonance" ? `${shortKey} vowel` : `${shortKey} sound`;
 }
 
 function echoLineRange(echo: SoundEcho): string {
@@ -313,7 +313,7 @@ export function SoundMapPanel({
   onLineVowelTintsChange,
   onFlowMarkersChange,
 }: SoundMapPanelProps) {
-  const [subTab, setSubTab] = useState<SoundSubTab>("echoes");
+  const [subTab, setSubTab] = useState<SoundSubTab>("sound");
   const [classFilter, setClassFilter] = useState<SoundClass | "all">("all");
   const [hoveredEchoId, setHoveredEchoId] = useState<string | null>(null);
   const [hoveredVowelLine, setHoveredVowelLine] = useState<number | null>(null);
@@ -371,13 +371,6 @@ export function SoundMapPanel({
     const m = new Map<number, (typeof lineSounds)[number]>();
     for (const ls of lineSounds) m.set(ls.lineNumber, ls);
     return m;
-  }, [lineSounds]);
-
-  // Which vowels actually appear in this poem (for the legend).
-  const usedVowels = useMemo(() => {
-    const seen = new Set<string>();
-    for (const ls of lineSounds) if (ls.dominantVowel) seen.add(ls.dominantVowel);
-    return [...seen].sort();
   }, [lineSounds]);
 
   const vowelVerdict = useMemo(() => {
@@ -443,7 +436,7 @@ export function SoundMapPanel({
   //   • the currently hovered echo (transient preview)
   // No pinned echoes + no hover ⇒ nothing in the editor.
   const editorEchoHighlights = useMemo<EditorEchoHighlight[] | null>(() => {
-    if (subTab !== "echoes") return null;
+    if (subTab !== "sound") return null;
     const usedIds = new Set<string>();
     const out: EditorEchoHighlight[] = [];
     for (const id of pinnedEchoes) {
@@ -460,9 +453,9 @@ export function SoundMapPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subTab, hoveredEchoId, echoesById, pinnedEchoes, lineSoundsByLine]);
 
-  // Line-level vowel tints (3 buckets) — active when on vowels subtab.
+  // Line-level vowel tints (3 buckets) — active when on the combined sound subtab.
   const editorLineVowelTints = useMemo<EditorLineVowelTint[] | null>(() => {
-    if (subTab !== "vowels") return null;
+    if (subTab !== "sound") return null;
     const out: EditorLineVowelTint[] = [];
     for (const ls of lineSounds) {
       if (ls.text.trim().length === 0 || !ls.dominantVowel) continue;
@@ -531,20 +524,11 @@ export function SoundMapPanel({
         <button
           type="button"
           role="tab"
-          aria-selected={subTab === "echoes"}
-          className={`rep-subtab${subTab === "echoes" ? " active" : ""}`}
-          onClick={() => setSubTab("echoes")}
+          aria-selected={subTab === "sound"}
+          className={`rep-subtab${subTab === "sound" ? " active" : ""}`}
+          onClick={() => setSubTab("sound")}
         >
-          Sound echoes <span className="rep-subtab-count">{echoes.length}</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={subTab === "vowels"}
-          className={`rep-subtab${subTab === "vowels" ? " active" : ""}`}
-          onClick={() => setSubTab("vowels")}
-        >
-          Vowel music <span className="rep-subtab-count">{usedVowels.length}</span>
+          Sound &amp; vowels <span className="rep-subtab-count">{echoes.length}</span>
         </button>
         <button
           type="button"
@@ -557,201 +541,52 @@ export function SoundMapPanel({
         </button>
       </div>
 
-      {/* ── Echoes ── */}
-      {subTab === "echoes" && (
+      {/* ── Sound & vowels (combined) ── */}
+      {subTab === "sound" && (
         <>
-          {dominantClass && (
-            <section
-              className="sound-echo-summary"
-              style={{ ["--echo-hue" as string]: SOUND_CLASS_HUES[dominantClass] }}
-            >
-              <header className="sound-echo-summary-head">
-                <span
-                  className="sound-echo-summary-dot"
-                  style={{ background: SOUND_CLASS_HUES[dominantClass] }}
-                  aria-hidden
-                />
-                <span className="sound-echo-summary-eyebrow">At a glance</span>
-              </header>
-              <p className="sound-echo-summary-line">{CLASS_HEADLINE[dominantClass]}</p>
-            </section>
-          )}
-
-          {echoes.length > 0 && (
-            <p className="sound-echo-purpose muted small">
-              Echoes shows words that share a sound. Use it to spot patterns you didn&apos;t
-              notice, strengthen the ones you like, or find lines where adding sound would help.
+          {(dominantClass || vowelVerdict) && (
+            <p className="sound-subtab-hint muted small">
+              {dominantClass ? `${CLASS_HEADLINE[dominantClass]} ` : ""}
+              {vowelVerdict ? `${vowelVerdict.sentence} ` : ""}
+              Click any item below to jump.
             </p>
           )}
 
-          {echoes.length > 0 && (
-            <div className="sound-filter-chips" role="group" aria-label="Filter echoes by sound type">
-              <button
-                type="button"
-                className={`sound-filter-chip${classFilter === "all" ? " is-active" : ""}`}
-                onClick={() => setClassFilter("all")}
-                title="Show every echo group below"
-              >
-                All <span className="sound-filter-count">{echoes.length}</span>
-              </button>
-              {ALL_CLASSES.map((c) => {
-                const count = classCounts[c];
-                if (count === 0) return null;
-                const active = classFilter === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    className={`sound-filter-chip${active ? " is-active" : ""}`}
-                    onClick={() => setClassFilter(active ? "all" : c)}
-                    title={SOUND_CLASS_BLURB[c]}
-                    style={
-                      active
-                        ? { borderColor: SOUND_CLASS_HUES[c], color: SOUND_CLASS_HUES[c] }
-                        : undefined
-                    }
-                  >
-                    <span
-                      className="sound-filter-dot"
-                      style={{ background: SOUND_CLASS_HUES[c] }}
-                      aria-hidden
-                    />
-                    {SOUND_CLASS_LABELS[c]}
-                    <span className="sound-filter-count">{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {echoes.length === 0 ? (
-            <EmptyState title="No strong echoes yet">
+          {echoes.length === 0 && !vowelVerdict && (
+            <EmptyState title="No strong patterns yet">
               <p className="muted small">
-                Echoes appear once three or more words share a sound — keep writing.
+                Echoes and vowel mood appear once you have a few lines — keep writing.
               </p>
             </EmptyState>
-          ) : visibleClassesWithEchoes.length === 0 ? (
-            <p className="muted small">No echoes of this type. Try another filter.</p>
-          ) : (
-            <div className="sound-echo-groups">
-              {visibleClassesWithEchoes.map((cls) => {
-                const items = byClass[cls];
-                const hue = SOUND_CLASS_HUES[cls];
-                return (
-                  <section
-                    key={cls}
-                    className="sound-echo-group"
-                    style={{ ["--echo-hue" as string]: hue }}
-                  >
-                    <header
-                      className="sound-echo-group-head"
-                      title={SOUND_CLASS_BLURB[cls]}
-                    >
-                      <span
-                        className="sound-echo-group-dot"
-                        style={{ background: hue }}
-                        aria-hidden
-                      />
-                      <span className="sound-echo-group-label">
-                        {SOUND_CLASS_LABELS[cls]}
-                      </span>
-                      <span className="sound-echo-group-count">{items.length}</span>
-                    </header>
-                    <ul className="rep-card-list sound-echo-list">
-                      {items.map((e, i) => {
-                        const id = `${cls}-${e.key}-${i}`;
-                        return (
-                          <EchoCard
-                            key={id}
-                            echo={e}
-                            onMemberClick={(m) => {
-                              const ls = lineSoundsByLine.get(m.lineNumber);
-                              const tok = ls?.tokens[m.tokenIndex];
-                              if (tok && goToWord) {
-                                goToWord(m.lineNumber, tok.start, tok.end);
-                              } else {
-                                goToLine(m.lineNumber);
-                              }
-                            }}
-                            echoId={id}
-                            isActive={hoveredEchoId === id}
-                            isPinned={pinnedEchoes.has(id)}
-                            onTogglePin={togglePinnedEcho}
-                            onHoverChange={setHoveredEchoId}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </section>
-                );
-              })}
-            </div>
           )}
-        </>
-      )}
 
-      {/* ── Vowel music ── */}
-      {subTab === "vowels" && (
-        <>
-          {usedVowels.length === 0 ? (
-            <EmptyState title="Not enough words yet">
-              <p className="muted small">Write a few words and the shape will appear.</p>
-            </EmptyState>
-          ) : (
-            <>
-              {vowelVerdict && (
-                <section
-                  className={`sound-echo-summary sound-vowel-summary${
-                    vowelVerdict.dominant ? ` sound-vowel-summary-${vowelVerdict.dominant}` : ""
-                  }`}
-                  style={{
-                    ["--echo-hue" as string]: vowelVerdict.dominant
-                      ? VOWEL_BUCKET_HUE[vowelVerdict.dominant]
-                      : "var(--border)",
-                  }}
-                >
-                  <header className="sound-echo-summary-head">
-                    <span
-                      className="sound-echo-summary-dot"
-                      style={{
-                        background: vowelVerdict.dominant
-                          ? VOWEL_BUCKET_HUE[vowelVerdict.dominant]
-                          : "var(--muted)",
-                      }}
-                      aria-hidden
-                    />
-                    <span className="sound-echo-summary-eyebrow">At a glance</span>
-                  </header>
-                  <p className="sound-echo-summary-line">{vowelVerdict.sentence}</p>
-                </section>
-              )}
-
-              {vowelVerdict && (
-                <div className="sound-flow-summary" aria-label="Vowel mood statistics">
-                  <div className="sound-flow-stat sound-vowel-stat-bright">
-                    <span className="sound-flow-stat-value">{vowelVerdict.pct.bright}%</span>
-                    <span className="sound-flow-stat-label">bright</span>
-                  </div>
-                  <div className="sound-flow-stat sound-vowel-stat-mid">
-                    <span className="sound-flow-stat-value">{vowelVerdict.pct.mid}%</span>
-                    <span className="sound-flow-stat-label">mid</span>
-                  </div>
-                  <div className="sound-flow-stat sound-vowel-stat-dark">
-                    <span className="sound-flow-stat-value">{vowelVerdict.pct.dark}%</span>
-                    <span className="sound-flow-stat-label">dark</span>
-                  </div>
-                  <div className="sound-flow-stat sound-vowel-stat-turn">
-                    <span className="sound-flow-stat-value">
-                      {vowelVerdict.turnAt !== null
-                        ? `${vowelVerdict.turnDirection === "brightening" ? "↗" : "↘"} L${vowelVerdict.turnAt}`
-                        : "→"}
-                    </span>
-                    <span className="sound-flow-stat-label">
-                      {vowelVerdict.turnAt !== null ? "tonal turn" : "no turn"}
-                    </span>
-                  </div>
+          {vowelVerdict && (
+            <section className="sound-subsection">
+              <h4 className="tool-subheading">vowel arc</h4>
+              <div className="sound-flow-summary" aria-label="Vowel mood statistics">
+                <div className="sound-flow-stat sound-vowel-stat-bright">
+                  <span className="sound-flow-stat-value">{vowelVerdict.pct.bright}%</span>
+                  <span className="sound-flow-stat-label">bright</span>
                 </div>
-              )}
+                <div className="sound-flow-stat sound-vowel-stat-mid">
+                  <span className="sound-flow-stat-value">{vowelVerdict.pct.mid}%</span>
+                  <span className="sound-flow-stat-label">mid</span>
+                </div>
+                <div className="sound-flow-stat sound-vowel-stat-dark">
+                  <span className="sound-flow-stat-value">{vowelVerdict.pct.dark}%</span>
+                  <span className="sound-flow-stat-label">dark</span>
+                </div>
+                <div className="sound-flow-stat sound-vowel-stat-turn">
+                  <span className="sound-flow-stat-value">
+                    {vowelVerdict.turnAt !== null
+                      ? `${vowelVerdict.turnDirection === "brightening" ? "↗" : "↘"} L${vowelVerdict.turnAt}`
+                      : "→"}
+                  </span>
+                  <span className="sound-flow-stat-label">
+                    {vowelVerdict.turnAt !== null ? "tonal turn" : "no turn"}
+                  </span>
+                </div>
+              </div>
 
               <div className="sound-vowel-legend sound-vowel-legend-plain" aria-label="Vowel colour key">
                 {(["bright", "mid", "dark"] as const).map((b) => (
@@ -762,9 +597,9 @@ export function SoundMapPanel({
                       aria-hidden
                     />
                     <span className="sound-vowel-legend-label">
-                      {b === "bright" ? "Bright — open, sharp" :
-                       b === "mid"    ? "Mid — neutral" :
-                                        "Dark — deep, hushed"}
+                      {b === "bright" ? "bright — open, sharp" :
+                       b === "mid"    ? "mid — neutral" :
+                                        "dark — deep, hushed"}
                     </span>
                   </span>
                 ))}
@@ -808,7 +643,108 @@ export function SoundMapPanel({
                   );
                 })}
               </div>
-            </>
+            </section>
+          )}
+
+          {echoes.length > 0 && (
+            <section className="sound-subsection">
+              <h4 className="tool-subheading">sound echoes</h4>
+              <div className="sound-filter-chips" role="group" aria-label="Filter echoes by sound type">
+                <button
+                  type="button"
+                  className={`sound-filter-chip${classFilter === "all" ? " is-active" : ""}`}
+                  onClick={() => setClassFilter("all")}
+                  title="Show every echo group below"
+                >
+                  All <span className="sound-filter-count">{echoes.length}</span>
+                </button>
+                {ALL_CLASSES.map((c) => {
+                  const count = classCounts[c];
+                  if (count === 0) return null;
+                  const active = classFilter === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`sound-filter-chip${active ? " is-active" : ""}`}
+                      onClick={() => setClassFilter(active ? "all" : c)}
+                      title={SOUND_CLASS_BLURB[c]}
+                      style={
+                        active
+                          ? { borderColor: SOUND_CLASS_HUES[c], color: SOUND_CLASS_HUES[c] }
+                          : undefined
+                      }
+                    >
+                      <span
+                        className="sound-filter-dot"
+                        style={{ background: SOUND_CLASS_HUES[c] }}
+                        aria-hidden
+                      />
+                      {SOUND_CLASS_LABELS[c]}
+                      <span className="sound-filter-count">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {visibleClassesWithEchoes.length === 0 ? (
+                <p className="muted small">No echoes of this type. Try another filter.</p>
+              ) : (
+                <div className="sound-echo-groups">
+                  {visibleClassesWithEchoes.map((cls) => {
+                    const items = byClass[cls];
+                    const hue = SOUND_CLASS_HUES[cls];
+                    return (
+                      <section
+                        key={cls}
+                        className="sound-echo-group"
+                        style={{ ["--echo-hue" as string]: hue }}
+                      >
+                        <header
+                          className="sound-echo-group-head"
+                          title={SOUND_CLASS_BLURB[cls]}
+                        >
+                          <span
+                            className="sound-echo-group-dot"
+                            style={{ background: hue }}
+                            aria-hidden
+                          />
+                          <span className="sound-echo-group-label">
+                            {SOUND_CLASS_LABELS[cls]}
+                          </span>
+                          <span className="sound-echo-group-count">{items.length}</span>
+                        </header>
+                        <ul className="rep-card-list sound-echo-list">
+                          {items.map((e, i) => {
+                            const id = `${cls}-${e.key}-${i}`;
+                            return (
+                              <EchoCard
+                                key={id}
+                                echo={e}
+                                onMemberClick={(m) => {
+                                  const ls = lineSoundsByLine.get(m.lineNumber);
+                                  const tok = ls?.tokens[m.tokenIndex];
+                                  if (tok && goToWord) {
+                                    goToWord(m.lineNumber, tok.start, tok.end);
+                                  } else {
+                                    goToLine(m.lineNumber);
+                                  }
+                                }}
+                                echoId={id}
+                                isActive={hoveredEchoId === id}
+                                isPinned={pinnedEchoes.has(id)}
+                                onTogglePin={togglePinnedEcho}
+                                onHoverChange={setHoveredEchoId}
+                              />
+                            );
+                          })}
+                        </ul>
+                      </section>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           )}
         </>
       )}

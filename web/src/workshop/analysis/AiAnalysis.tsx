@@ -318,7 +318,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <div className="ai-harshness-toggle" role="group" aria-label="Feedback tone">
                 {([
                   { id: "casual" as const, label: "Gentle", icon: "♡" },
-                  { id: "editor" as const, label: "Honest", icon: "✦" },
+                  { id: "editor" as const, label: "Honest", icon: "※" },
                   { id: "critic" as const, label: "Critic", icon: "⚡" },
                 ]).map((opt) => (
                   <button
@@ -368,7 +368,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 {status === "loading"
                   ? (effectiveMode === "compare" ? "Refining…" : (draftMode ? "Checking…" : "Reading…"))
                   : effectiveMode === "compare"
-                    ? "✦ Refine"
+                    ? "↻ Refine"
                     : draftMode ? "✎ Check draft" : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (

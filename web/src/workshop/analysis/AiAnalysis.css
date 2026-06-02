@@ -2671,7 +2671,7 @@ button.ai-flagged-cliche:focus-visible {
   display: grid;
   grid-template-columns: 6.5rem 1fr 3.2rem;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.55rem 0.55rem;
   font-size: 0.82rem;
 }
 
@@ -2681,6 +2681,16 @@ button.ai-flagged-cliche:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: help;
+}
+
+.ai-pillar-rationale {
+  grid-column: 2 / 4;
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: -0.05rem;
+  line-height: 1.35;
 }
 
 .ai-pillar-track {
@@ -3159,6 +3169,10 @@ button.ai-flagged-cliche:focus-visible {
 
 .ai-feedback-overall { background: color-mix(in srgb, var(--accent, #5fba7d) 4%, var(--surface)); }
 .ai-feedback-personal { background: color-mix(in srgb, var(--ai-score-high, #5fba7d) 5%, var(--surface)); }
+.ai-feedback-summary {
+  background: color-mix(in srgb, var(--accent, #5fba7d) 5%, var(--surface));
+  border-left: 4px solid color-mix(in srgb, var(--accent, #5fba7d) 60%, var(--border));
+}
 
 .ai-feedback-overall .ai-feedback-label::before {
   content: "◇ ";
@@ -3169,6 +3183,12 @@ button.ai-flagged-cliche:focus-visible {
 .ai-feedback-personal .ai-feedback-label::before {
   content: "♡ ";
   color: var(--ai-score-high, #5fba7d);
+  font-weight: 700;
+}
+
+.ai-feedback-summary .ai-feedback-label::before {
+  content: "❝ ";
+  color: var(--accent, #5fba7d);
   font-weight: 700;
 }
 

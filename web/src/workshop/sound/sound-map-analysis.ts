@@ -259,12 +259,12 @@ export function buildRhymeWebPairs(
 }
 
 export const SOUND_CLASS_LABELS: Record<SoundClass, string> = {
-  alliteration: "Alliteration",
-  assonance: "Assonance",
-  consonance: "Consonance",
-  sibilance: "Sibilance",
-  plosive: "Plosives",
-  liquid: "Liquids",
+  alliteration: "alliteration",
+  assonance: "assonance",
+  consonance: "consonance",
+  sibilance: "sibilance",
+  plosive: "plosives",
+  liquid: "liquids",
 };
 
 export const SOUND_CLASS_HUES: Record<SoundClass, string> = {

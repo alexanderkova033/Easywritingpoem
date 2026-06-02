@@ -3,6 +3,7 @@ import {
   type AnalysisIssue,
   type ComparisonChanges,
   type LocalAnalysisContext,
+  type PillarRationales,
   type PillarScores,
   type PoemAnalysis,
   type PoemComparison,
@@ -149,12 +150,12 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
-function PillarBars({ pillars }: { pillars: PillarScores }) {
-  const rows: { key: keyof PillarScores; label: string }[] = [
-    { key: "musicality",       label: "Musicality" },
-    { key: "technique",        label: "Technique" },
-    { key: "imagery_theme",    label: "Imagery / Theme" },
-    { key: "originality_form", label: "Originality / Form" },
+function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales?: PillarRationales }) {
+  const rows: { key: keyof PillarScores; label: string; hint: string }[] = [
+    { key: "catch",     label: "Catch",     hint: "How it grabs the reader" },
+    { key: "craft",     label: "Craft",     hint: "Control over language" },
+    { key: "freshness", label: "Freshness", hint: "What's new or surprising" },
+    { key: "echo",      label: "Echo",      hint: "What stays after reading" },
   ];
   const pillarColor = (v: number): string => {
     if (v >= 19) return "var(--ai-score-high, #5fba7d)";
@@ -163,19 +164,23 @@ function PillarBars({ pillars }: { pillars: PillarScores }) {
   };
   return (
     <div className="ai-pillars" aria-label="Pillar score breakdown">
-      {rows.map(({ key, label }) => {
+      {rows.map(({ key, label, hint }) => {
         const v = pillars[key];
         const pct = Math.max(0, Math.min(100, (v / 25) * 100));
         const color = pillarColor(v);
+        const rationale = rationales?.[key];
         return (
           <div key={key} className="ai-pillar-row">
-            <span className="ai-pillar-label">{label}</span>
+            <span className="ai-pillar-label" title={hint}>{label}</span>
             <span className="ai-pillar-track" aria-hidden>
               <span className="ai-pillar-fill" style={{ width: `${pct}%`, background: color }} />
             </span>
             <span className="ai-pillar-value" style={{ color }}>
               {v}<span className="ai-pillar-outof">/25</span>
             </span>
+            {rationale && (
+              <span className="ai-pillar-rationale">{rationale}</span>
+            )}
           </div>
         );
       })}
@@ -547,7 +552,7 @@ export function AnalysisResults({
                   </div>
                 </div>
                 {result.pillar_scores && (
-                  <PillarBars pillars={result.pillar_scores} />
+                  <PillarBars pillars={result.pillar_scores} rationales={result.pillar_rationales} />
                 )}
               </>
             )}
@@ -626,10 +631,19 @@ export function AnalysisResults({
             />
           )}
 
-          {/* 5. Mentor feedback — Personal first (more emotional), Overall second */}
+          {/* 5. Mentor feedback — single merged summary (new format).
+              Falls back to two cards for old cached results that still split them. */}
           {(result.personal_feedback || result.overall_feedback) && (
             <div className="ai-feedback-blocks">
-              {result.personal_feedback && (
+              {result.personal_feedback && !result.overall_feedback && (
+                <div className="ai-feedback-card ai-feedback-summary is-expanded">
+                  <span className="ai-feedback-label">Summary</span>
+                  <p className="ai-feedback-text">
+                    <FlaggedText text={result.personal_feedback} flagged={flaggedEntries} onJumpToWord={onJumpToWord} />
+                  </p>
+                </div>
+              )}
+              {result.personal_feedback && result.overall_feedback && (
                 <div className="ai-feedback-card ai-feedback-personal is-expanded">
                   <span className="ai-feedback-label">For you</span>
                   <p className="ai-feedback-text">

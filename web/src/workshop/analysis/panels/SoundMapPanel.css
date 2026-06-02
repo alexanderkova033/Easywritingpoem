@@ -16,50 +16,25 @@
 }
 .sound-help strong { color: var(--text); font-weight: 600; }
 
-/* ── At-a-glance summary (Echoes view) ── */
-.sound-echo-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.55rem 0.7rem 0.6rem 0.85rem;
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--echo-hue, var(--border));
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--echo-hue, var(--border)) 5%, var(--bg));
-  transition: background 0.15s ease;
-}
-.sound-echo-summary:hover {
-  background: color-mix(in srgb, var(--echo-hue, var(--border)) 9%, var(--bg));
-}
-.sound-echo-summary-head {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.sound-echo-summary-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--echo-hue, var(--border)) 22%, transparent);
-}
-.sound-echo-summary-eyebrow {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.sound-echo-summary-line {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.35;
-  color: var(--text);
-}
-
-/* Sound echoes: "what this is for" tagline below the at-a-glance. */
-.sound-echo-purpose {
+/* Subtab hint sentence — matches RhymePanel's .rhyme-live-sub pattern. */
+.sound-subtab-hint {
   margin: 0;
   line-height: 1.45;
+}
+
+/* Subsections inside the combined Sound & vowels subtab. */
+.sound-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.sound-subsection + .sound-subsection {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.sound-subsection > .tool-subheading {
+  margin: 0;
 }
 
 /* Vowel-music stats row tints. */
@@ -67,10 +42,6 @@
 .sound-vowel-stat-mid    .sound-flow-stat-value { color: #6e8d80; }
 .sound-vowel-stat-dark   .sound-flow-stat-value { color: #5d6ba6; }
 .sound-vowel-stat-turn   .sound-flow-stat-value { color: var(--text); }
-
-/* The vowel-music verdict card inherits .sound-echo-summary; nothing extra needed
-   apart from the dominant-bucket tint via inline --echo-hue. */
-.sound-vowel-summary { /* placeholder for future tweaks */ }
 
 /* Plain legend (no phoneme examples). */
 .sound-vowel-legend-plain .sound-vowel-legend-label { font-weight: 500; }
@@ -323,10 +294,9 @@
   color: var(--text);
 }
 .sound-flow-stat-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 .sound-flow-stat-hard .sound-flow-stat-value { color: #b07466; }
 .sound-flow-stat-soft .sound-flow-stat-value { color: #c08210; }

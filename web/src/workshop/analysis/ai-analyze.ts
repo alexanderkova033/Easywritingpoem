@@ -36,10 +36,17 @@ export interface StrongestLine {
 }
 
 export interface PillarScores {
-  musicality: number;
-  technique: number;
-  imagery_theme: number;
-  originality_form: number;
+  catch: number;
+  craft: number;
+  freshness: number;
+  echo: number;
+}
+
+export interface PillarRationales {
+  catch?: string;
+  craft?: string;
+  freshness?: string;
+  echo?: string;
 }
 
 export interface PoemAnalysis {
@@ -47,6 +54,8 @@ export interface PoemAnalysis {
   overall_score: number;
   /** 4 × 25 pillar breakdown. Sum (with hard cap) = overall_score. */
   pillar_scores?: PillarScores;
+  /** One short rationale per pillar (≤14 words) — what justified the score. */
+  pillar_rationales?: PillarRationales;
   /** True when the request was sent in draft mode (work-in-progress). */
   draft?: boolean;
   warm_reaction?: string;
@@ -108,17 +117,34 @@ function parsePillarScores(v: unknown): PillarScores | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
   const hasAny =
-    o.musicality !== undefined ||
-    o.technique !== undefined ||
-    o.imagery_theme !== undefined ||
-    o.originality_form !== undefined;
+    o.catch !== undefined ||
+    o.craft !== undefined ||
+    o.freshness !== undefined ||
+    o.echo !== undefined;
   if (!hasAny) return undefined;
   return {
-    musicality: clampPillar(o.musicality),
-    technique: clampPillar(o.technique),
-    imagery_theme: clampPillar(o.imagery_theme),
-    originality_form: clampPillar(o.originality_form),
+    catch: clampPillar(o.catch),
+    craft: clampPillar(o.craft),
+    freshness: clampPillar(o.freshness),
+    echo: clampPillar(o.echo),
   };
+}
+
+function parsePillarRationales(v: unknown): PillarRationales | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const pick = (key: string): string | undefined => {
+    const val = o[key];
+    return typeof val === "string" && val.trim() ? val.trim() : undefined;
+  };
+  const out: PillarRationales = {
+    catch: pick("catch"),
+    craft: pick("craft"),
+    freshness: pick("freshness"),
+    echo: pick("echo"),
+  };
+  if (!out.catch && !out.craft && !out.freshness && !out.echo) return undefined;
+  return out;
 }
 
 /** If the model emitted pillar_scores, enforce overall = min(sum, lowest×4 + 20).
@@ -126,7 +152,7 @@ function parsePillarScores(v: unknown): PillarScores | undefined {
  *  too so a sloppy model can't sneak past with an inflated overall_score. */
 function reconcileOverallScore(pillars: PillarScores | undefined, modelOverall: number): number {
   if (!pillars) return modelOverall;
-  const values = [pillars.musicality, pillars.technique, pillars.imagery_theme, pillars.originality_form];
+  const values = [pillars.catch, pillars.craft, pillars.freshness, pillars.echo];
   const sum = values.reduce((a, b) => a + b, 0);
   const lowest = Math.min(...values);
   const cap = lowest * 4 + 20;
@@ -196,6 +222,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
   const pillars = parsePillarScores(obj.pillar_scores);
+  const rationales = parsePillarRationales(obj.pillar_rationales);
 
   return {
     meta: {
@@ -205,6 +232,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     },
     overall_score: reconcileOverallScore(pillars, clampScore(obj.overall_score)),
     pillar_scores: pillars,
+    pillar_rationales: rationales,
     draft: obj.draft === true,
     warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
       ? obj.warm_reaction.trim() : undefined,

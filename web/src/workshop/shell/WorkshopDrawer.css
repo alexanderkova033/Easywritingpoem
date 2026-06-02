@@ -381,6 +381,8 @@
 /* ---- A single book ---- */
 .book {
   --book-hue: 30;
+  --book-sat: 45%;
+  --book-light: 35%;
   --book-w: 3.4rem;
   --book-h: 9rem;
   flex: 0 0 auto;
@@ -421,13 +423,13 @@
   border-radius: 2px 3px 3px 2px;
   background:
     linear-gradient(90deg,
-      hsl(var(--book-hue) 30% 14%) 0%,
-      hsl(var(--book-hue) 35% 22%) 4%,
-      hsl(var(--book-hue) 40% 32%) 12%,
-      hsl(var(--book-hue) 45% 40%) 50%,
-      hsl(var(--book-hue) 40% 32%) 88%,
-      hsl(var(--book-hue) 35% 22%) 96%,
-      hsl(var(--book-hue) 30% 14%) 100%);
+      hsl(var(--book-hue) calc(var(--book-sat) * 0.7) calc(var(--book-light) * 0.45)) 0%,
+      hsl(var(--book-hue) calc(var(--book-sat) * 0.85) calc(var(--book-light) * 0.7)) 4%,
+      hsl(var(--book-hue) var(--book-sat) var(--book-light)) 12%,
+      hsl(var(--book-hue) calc(var(--book-sat) * 1.05) calc(var(--book-light) * 1.18)) 50%,
+      hsl(var(--book-hue) var(--book-sat) var(--book-light)) 88%,
+      hsl(var(--book-hue) calc(var(--book-sat) * 0.85) calc(var(--book-light) * 0.7)) 96%,
+      hsl(var(--book-hue) calc(var(--book-sat) * 0.7) calc(var(--book-light) * 0.45)) 100%);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent),
     inset 0 -1px 0 color-mix(in srgb, #000 40%, transparent),
@@ -467,7 +469,7 @@
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   line-height: 1.2;
 }
 
@@ -518,18 +520,100 @@
 .shelf-row-head {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-wrap: nowrap;
 }
 
-.shelf-row-head .draft-first-line {
+.shelf-row-titlewrap {
   flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.shelf-row-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
+.shelf-row-head .draft-first-line {
+  display: block;
   min-width: 0;
 }
 
 .shelf-row-head .draft-first-line.is-blank {
   font-style: italic;
   opacity: 0.5;
+}
+
+/* Tag chips row visible under the title — colored by tag */
+.shelf-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  margin-top: 0.05rem;
+}
+
+/* Action row: edit toggle + dup + archive */
+.shelf-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.shelf-row-actions .draft-row-dup,
+.shelf-row-actions .small-btn {
+  margin-left: auto;
+}
+.shelf-row-actions .small-btn + .small-btn {
+  margin-left: 0;
+}
+
+.shelf-row-edit-toggle {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.13s ease, color 0.13s ease, border-color 0.13s ease;
+}
+
+.shelf-row-edit-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.shelf-row-edit-toggle.is-on {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.draft-edit-hint {
+  grid-column: 1 / -1;
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .shelf-archived-badge {
@@ -987,29 +1071,189 @@
 }
 
 .draft-tag-chip {
+  --chip-color: hsl(var(--book-hue, 220) var(--book-sat, 40%) var(--book-light, 38%));
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem;
+  gap: 0.3rem;
+  padding: 0.12rem 0.55rem 0.12rem 0.45rem;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--border) 75%, var(--accent));
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--chip-color) 38%, var(--border));
+  background: color-mix(in srgb, var(--chip-color) 10%, var(--bg));
   font: inherit;
   font-size: 0.72rem;
-  color: var(--muted);
+  font-weight: 600;
+  color: color-mix(in srgb, var(--chip-color) 80%, var(--text));
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.12s;
 }
 
 .draft-tag-chip:hover {
-  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
-  border-color: var(--accent);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--chip-color) 22%, var(--bg));
+  border-color: var(--chip-color);
+  color: var(--chip-color);
+  transform: translateY(-1px);
 }
 
 .draft-tag-chip.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--chip-color);
+  border-color: var(--chip-color);
   color: #fff;
+}
+
+.draft-tag-chip-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--chip-color);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+  flex-shrink: 0;
+}
+
+.draft-tag-chip.is-active .draft-tag-chip-dot {
+  background: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 20%, transparent);
+}
+
+/* ---- Library tag-cloud filter row ---- */
+.library-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.32rem 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
+}
+
+.library-tag-cloud-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 0.2rem;
+}
+
+.library-tag-cloud-chip {
+  --chip-color: hsl(var(--book-hue, 220) var(--book-sat, 40%) var(--book-light, 38%));
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.18rem 0.55rem 0.18rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--chip-color) 38%, var(--border));
+  background: color-mix(in srgb, var(--chip-color) 10%, var(--bg));
+  color: color-mix(in srgb, var(--chip-color) 82%, var(--text));
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.12s;
+}
+
+.library-tag-cloud-chip:hover {
+  background: color-mix(in srgb, var(--chip-color) 22%, var(--bg));
+  border-color: var(--chip-color);
+  color: var(--chip-color);
+  transform: translateY(-1px);
+}
+
+.library-tag-cloud-chip.is-active {
+  background: var(--chip-color);
+  border-color: var(--chip-color);
+  color: #fff;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--chip-color) 30%, transparent);
+}
+
+.library-tag-cloud-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--chip-color);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+  flex-shrink: 0;
+}
+
+.library-tag-cloud-chip.is-active .library-tag-cloud-dot {
+  background: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 20%, transparent);
+}
+
+.library-tag-cloud-text {
+  line-height: 1;
+}
+
+.library-tag-cloud-count {
+  font-size: 0.66rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0.02rem 0.32rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #000 14%, transparent);
+  color: inherit;
+  opacity: 0.85;
+}
+
+.library-tag-cloud-chip.is-active .library-tag-cloud-count {
+  background: color-mix(in srgb, #fff 22%, transparent);
+  opacity: 1;
+}
+
+.library-tag-cloud-clear {
+  margin-left: auto;
+  appearance: none;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.library-tag-cloud-clear:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+/* ---- Snapshot section embedded in the library accordion ---- */
+.library-snap-body {
+  padding: 0.4rem 1.1rem 1.1rem;
+}
+
+.library-snap-body .snap-list-scroll {
+  max-height: 22rem;
+}
+
+.library-snap-body .snap-group-heading {
+  background: color-mix(in srgb, var(--surface) 92%, var(--bg));
+}
+
+.library-snap-body .snap-card {
+  background: color-mix(in srgb, var(--surface) 60%, var(--bg));
+}
+
+.library-snap-body .snap-card:hover {
+  background: color-mix(in srgb, var(--surface) 72%, var(--bg));
+}
+
+.library-snap-body .snap-card.is-diff-active {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.library-snap-body .snap-save-bar {
+  background: color-mix(in srgb, var(--surface) 65%, var(--bg));
+}
+
+.library-snap-body .snap-empty {
+  background: color-mix(in srgb, var(--surface) 50%, var(--bg));
 }
 
 .modal {

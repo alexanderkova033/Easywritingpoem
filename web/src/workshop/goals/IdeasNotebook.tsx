@@ -22,6 +22,18 @@ function nextMood(current: IdeaMood | undefined): IdeaMood {
   return NEXT_MOOD[current];
 }
 
+// Rough chars-per-line at the narrow (≈150px) card width in the Caveat font.
+const APPROX_CHARS_PER_LINE = 16;
+const WIDE_CARD_LINE_THRESHOLD = 5;
+
+function estimateLineCount(text: string): number {
+  return text.split("\n").reduce(
+    (sum, line) =>
+      sum + Math.max(1, Math.ceil(line.length / APPROX_CHARS_PER_LINE)),
+    0,
+  );
+}
+
 function moodLabel(mood: IdeaMood | undefined): string {
   const found = IDEA_MOOD_OPTIONS.find((o) => o.mood === (mood ?? "neutral"));
   return found?.label ?? "Neutral";
@@ -182,10 +194,12 @@ export function IdeasNotebook() {
     const moodKey = idea.mood ?? "neutral";
     const isDragging = dragId === idea.id;
     const isDragOver = dragOverId === idea.id && dragId && dragId !== idea.id;
+    const isWide =
+      estimateLineCount(idea.text) > WIDE_CARD_LINE_THRESHOLD;
     return (
       <li
         key={idea.id}
-        className={`ideas-card ideas-card--${moodKey}${idea.done ? " ideas-card--done" : ""}${idea.pinned ? " ideas-card--pinned" : ""}${isDragging ? " ideas-card--dragging" : ""}${isDragOver ? " ideas-card--drop-target" : ""}`}
+        className={`ideas-card ideas-card--${moodKey}${idea.done ? " ideas-card--done" : ""}${idea.pinned ? " ideas-card--pinned" : ""}${isWide ? " ideas-card--wide" : ""}${isDragging ? " ideas-card--dragging" : ""}${isDragOver ? " ideas-card--drop-target" : ""}`}
         draggable={!editingId || editingId !== idea.id}
         onDragStart={onDragStart(idea.id)}
         onDragOver={onDragOver(idea.id)}

@@ -14,47 +14,36 @@ import {
 // ---- Decoration classes ---- //
 const boldMark = Decoration.mark({ class: "cm-fmt-bold" });
 const underlineMark = Decoration.mark({ class: "cm-fmt-underline" });
-// Hidden bracket: replaces the `**` / `__` characters with nothing.
+// Replace decoration with no widget = hide the characters entirely.
 const hiddenBracket = Decoration.replace({});
-// Visible bracket: shown faintly while the cursor is inside the wrapped range
-// so the user can still see and edit the markers when they want to.
-const visibleBracket = Decoration.mark({ class: "cm-fmt-bracket" });
 
 // Marks must stay on a single line — the styling regex below doesn't cross newlines.
 const BOLD_RE = /\*\*([^*\n]+?)\*\*/g;
 const UNDERLINE_RE = /__([^_\n]+?)__/g;
 
-function rangeTouchesSelection(
-  from: number,
-  to: number,
-  view: EditorView,
-): boolean {
-  for (const r of view.state.selection.ranges) {
-    if (r.from <= to && r.to >= from) return true;
-  }
-  return false;
-}
+type Built = { decorations: DecorationSet; atomics: DecorationSet };
 
-function buildDecorations(view: EditorView): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>();
-  const entries: Array<{ from: number; to: number; deco: Decoration }> = [];
+function build(view: EditorView): Built {
+  const decoBuilder = new RangeSetBuilder<Decoration>();
+  const atomBuilder = new RangeSetBuilder<Decoration>();
+  const entries: Array<{
+    from: number;
+    to: number;
+    deco: Decoration;
+    atomic: boolean;
+  }> = [];
 
   for (const { from, to } of view.visibleRanges) {
     const text = view.state.sliceDoc(from, to);
 
-    const addWrapped = (
-      m: RegExpMatchArray,
-      innerDeco: Decoration,
-    ) => {
+    const addWrapped = (m: RegExpMatchArray, innerDeco: Decoration) => {
       const start = from + m.index!;
       const end = start + m[0].length;
       const inner = start + 2;
       const innerEnd = end - 2;
-      const showBrackets = rangeTouchesSelection(start, end, view);
-      const bracket = showBrackets ? visibleBracket : hiddenBracket;
-      entries.push({ from: start, to: inner, deco: bracket });
-      entries.push({ from: inner, to: innerEnd, deco: innerDeco });
-      entries.push({ from: innerEnd, to: end, deco: bracket });
+      entries.push({ from: start, to: inner, deco: hiddenBracket, atomic: true });
+      entries.push({ from: inner, to: innerEnd, deco: innerDeco, atomic: false });
+      entries.push({ from: innerEnd, to: end, deco: hiddenBracket, atomic: true });
     };
 
     for (const m of text.matchAll(BOLD_RE)) addWrapped(m, boldMark);
@@ -62,67 +51,60 @@ function buildDecorations(view: EditorView): DecorationSet {
   }
 
   entries.sort((a, b) => a.from - b.from || a.to - b.to);
-  for (const { from, to, deco } of entries) {
-    builder.add(from, to, deco);
+  for (const e of entries) {
+    decoBuilder.add(e.from, e.to, e.deco);
+    if (e.atomic) atomBuilder.add(e.from, e.to, e.deco);
   }
-  return builder.finish();
+  return { decorations: decoBuilder.finish(), atomics: atomBuilder.finish() };
 }
 
 export const formatMarksExtension = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
+    atomics: DecorationSet;
     constructor(view: EditorView) {
-      this.decorations = buildDecorations(view);
+      const b = build(view);
+      this.decorations = b.decorations;
+      this.atomics = b.atomics;
     }
     update(update: ViewUpdate) {
-      if (
-        update.docChanged ||
-        update.viewportChanged ||
-        update.selectionSet
-      ) {
-        this.decorations = buildDecorations(update.view);
+      if (update.docChanged || update.viewportChanged) {
+        const b = build(update.view);
+        this.decorations = b.decorations;
+        this.atomics = b.atomics;
       }
     }
   },
-  { decorations: (v) => v.decorations },
+  {
+    decorations: (v) => v.decorations,
+    provide: (plugin) =>
+      EditorView.atomicRanges.of((view) => {
+        const p = view.plugin(plugin);
+        return p ? p.atomics : Decoration.none;
+      }),
+  },
 );
 
 export const formatMarksTheme = EditorView.baseTheme({
   ".cm-fmt-bold": { fontWeight: "bold" },
   ".cm-fmt-underline": { textDecoration: "underline" },
-  ".cm-fmt-bracket": {
-    opacity: "0.32",
-    fontWeight: "normal",
-    textDecoration: "none",
-  },
 });
 
 // ---- Toggle helpers ---- //
 
 /**
  * Wrap a single segment of text with `open` / `close`, or unwrap if it already
- * starts and ends with them. Returns the rewritten segment and the offsets of
- * the inner content within it (used to position the selection afterwards).
+ * starts and ends with them.
  */
-function wrapOrUnwrapSegment(
-  text: string,
-  open: string,
-  close: string,
-): { result: string; innerStart: number; innerEnd: number } {
+function wrapOrUnwrapSegment(text: string, open: string, close: string): string {
   if (
     text.startsWith(open) &&
     text.endsWith(close) &&
     text.length > open.length + close.length
   ) {
-    const inner = text.slice(open.length, text.length - close.length);
-    return { result: inner, innerStart: 0, innerEnd: inner.length };
+    return text.slice(open.length, text.length - close.length);
   }
-  const result = open + text + close;
-  return {
-    result,
-    innerStart: open.length,
-    innerEnd: open.length + text.length,
-  };
+  return open + text + close;
 }
 
 /** Wraps or unwraps the selection with `open` / `close` markers. */
@@ -141,6 +123,33 @@ function toggleWrap(view: EditorView, open: string, close: string) {
     return;
   }
 
+  // If the selection sits exactly inside an existing wrap (e.g. user
+  // selected the visible "hello" inside the hidden `**hello**`), unwrap by
+  // removing the surrounding markers.
+  const before = state.sliceDoc(
+    Math.max(0, range.from - open.length),
+    range.from,
+  );
+  const after = state.sliceDoc(
+    range.to,
+    Math.min(state.doc.length, range.to + close.length),
+  );
+  if (before === open && after === close) {
+    const selected = state.sliceDoc(range.from, range.to);
+    view.dispatch({
+      changes: [
+        { from: range.from - open.length, to: range.from, insert: "" },
+        { from: range.to, to: range.to + close.length, insert: "" },
+      ],
+      selection: {
+        anchor: range.from - open.length,
+        head: range.from - open.length + selected.length,
+      },
+    });
+    view.focus();
+    return;
+  }
+
   const selected = state.sliceDoc(range.from, range.to);
 
   // Multi-line selection — wrap each non-empty line on its own, since the
@@ -154,8 +163,7 @@ function toggleWrap(view: EditorView, open: string, close: string) {
       const trailing = trailingLen > 0 ? line.slice(line.length - trailingLen) : "";
       const core = line.slice(leadingLen, line.length - trailingLen);
       if (!core) return line;
-      const { result } = wrapOrUnwrapSegment(core, open, close);
-      return leading + result + trailing;
+      return leading + wrapOrUnwrapSegment(core, open, close) + trailing;
     });
     const replacement = rewritten.join("\n");
     view.dispatch({
@@ -167,16 +175,13 @@ function toggleWrap(view: EditorView, open: string, close: string) {
   }
 
   // Single-line selection.
-  const { result, innerStart, innerEnd } = wrapOrUnwrapSegment(
-    selected,
-    open,
-    close,
-  );
+  const result = wrapOrUnwrapSegment(selected, open, close);
+  const wrapped = result.length > selected.length;
   view.dispatch({
     changes: { from: range.from, to: range.to, insert: result },
     selection: {
-      anchor: range.from + innerStart,
-      head: range.from + innerEnd,
+      anchor: range.from + (wrapped ? open.length : 0),
+      head: range.from + (wrapped ? open.length + selected.length : result.length),
     },
   });
   view.focus();
