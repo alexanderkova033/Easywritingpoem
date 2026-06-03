@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v8"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v9"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -135,6 +135,7 @@ The user message may include detected clichés, syllables, rhyme scheme, repeate
 - Detected clichés normally lower Spark — UNLESS used ironically or subverted.
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption (a stumble that mirrors content).
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation, accumulation).
+- Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence). Test: does the voice register hold? If yes, the plainness is doing tonal work — don't flag it.
 Principle: penalize accidental craft failures, NOT purposeful rule-breaking. Decide which before docking.
 
 === ISSUE RATIONALE STYLE — match this pattern exactly ===

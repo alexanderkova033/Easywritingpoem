@@ -78,6 +78,7 @@ Plain English, like a smart friend talking — not a literature professor. Commo
 - Detected clichés normally lower Spark — UNLESS used ironically or subverted.
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption.
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation).
+- Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence). Test: does the voice register hold? If yes, the plainness is doing tonal work — don't flag it.
 Principle: penalize accidental craft failures, NOT purposeful rule-breaking.
 
 === ISSUE RATIONALE STYLE — match this pattern exactly ===

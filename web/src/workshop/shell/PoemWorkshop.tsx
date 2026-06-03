@@ -44,7 +44,7 @@ import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { FORM_PRESETS } from "@/workshop/goals/types";
 import { FocusNotesPanel } from "@/workshop/goals/FocusNotesPanel";
-import { loadLastAnalysis, loadIgnoredIssueIds } from "@/workshop/analysis/ai-analysis-storage";
+import { loadLastAnalysis, loadIgnoredIssueIds, loadDismissedIssueIds, LS_DISMISSED_PREFIX, LS_IGNORED_PREFIX } from "@/workshop/analysis/ai-analysis-storage";
 // Lazy-load the AI analysis panel — it pulls in the analyze/compare client,
 // chat UI, and rationale renderer, none of which are needed for first paint.
 const AiAnalysis = lazy(
@@ -290,6 +290,11 @@ export function PoemWorkshop() {
   const [aiResult, setAiResult] = useState<PoemAnalysis | PoemComparison | null>(null);
   const [aiVisibleIssues, setAiVisibleIssues] = useState<AnalysisIssue[]>([]);
   const [aiIgnoredIds, setAiIgnoredIds] = useState<Set<string>>(() => loadIgnoredIssueIds(undefined));
+  const [aiDismissedIds, setAiDismissedIds] = useState<Set<string>>(() => loadDismissedIssueIds(undefined));
+  const aiDismissedIssues = useMemo<AnalysisIssue[]>(
+    () => (aiResult ? aiResult.issues.filter((i) => aiDismissedIds.has(i.id)) : []),
+    [aiResult, aiDismissedIds],
+  );
   const aiScoringEnabled = (() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_AI_SCORING_ENABLED);
@@ -453,6 +458,7 @@ export function PoemWorkshop() {
       setAiResult(saved);
       const ignored = loadIgnoredIssueIds(m.activePoemId);
       setAiIgnoredIds(ignored);
+      setAiDismissedIds(loadDismissedIssueIds(m.activePoemId));
       setAiVisibleIssues(saved ? saved.issues.filter((i) => !ignored.has(i.id)) : []);
     }
   }, [m.activePoemId]);
@@ -465,6 +471,7 @@ export function PoemWorkshop() {
     setAiResult(saved);
     const ignored = loadIgnoredIssueIds(m.activePoemId);
     setAiIgnoredIds(ignored);
+    setAiDismissedIds(loadDismissedIssueIds(m.activePoemId));
     setAiVisibleIssues(saved.issues.filter((i) => !ignored.has(i.id)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -497,17 +504,59 @@ export function PoemWorkshop() {
   }, [m]);
 
   const ribbonIgnore = useCallback((id: string) => {
+    const poemId = m.activePoemId;
     setAiIgnoredIds((prev) => {
       const s = new Set(prev);
       s.add(id);
-      const poemId = m.activePoemId;
       if (poemId) {
-        try { localStorage.setItem("easy-poems:ai-ignored:" + poemId, JSON.stringify([...s])); } catch { /* ignore */ }
+        try { localStorage.setItem(LS_IGNORED_PREFIX + poemId, JSON.stringify([...s])); } catch { /* ignore */ }
+      }
+      return s;
+    });
+    setAiDismissedIds((prev) => {
+      const s = new Set(prev);
+      s.add(id);
+      if (poemId) {
+        try { localStorage.setItem(LS_DISMISSED_PREFIX + poemId, JSON.stringify([...s])); } catch { /* ignore */ }
       }
       return s;
     });
     setAiVisibleIssues((prev) => prev.filter((i) => i.id !== id));
   }, [m.activePoemId]);
+
+  const ribbonRestore = useCallback((id: string) => {
+    const poemId = m.activePoemId;
+    setAiIgnoredIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const s = new Set(prev);
+      s.delete(id);
+      if (poemId) {
+        try {
+          if (s.size === 0) localStorage.removeItem(LS_IGNORED_PREFIX + poemId);
+          else localStorage.setItem(LS_IGNORED_PREFIX + poemId, JSON.stringify([...s]));
+        } catch { /* ignore */ }
+      }
+      return s;
+    });
+    setAiDismissedIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const s = new Set(prev);
+      s.delete(id);
+      if (poemId) {
+        try {
+          if (s.size === 0) localStorage.removeItem(LS_DISMISSED_PREFIX + poemId);
+          else localStorage.setItem(LS_DISMISSED_PREFIX + poemId, JSON.stringify([...s]));
+        } catch { /* ignore */ }
+      }
+      return s;
+    });
+    setAiVisibleIssues((prev) => {
+      if (prev.some((i) => i.id === id)) return prev;
+      const restored = aiResult?.issues.find((i) => i.id === id);
+      if (!restored) return prev;
+      return [...prev, restored];
+    });
+  }, [m.activePoemId, aiResult]);
 
   // Alt+Enter: apply the rewrite for the issue covering the cursor's line.
   const handleApplyRewriteAtCursor = useCallback((line: number): boolean => {
@@ -2295,8 +2344,10 @@ export function PoemWorkshop() {
             repetition={m.repetition}
             spellHits={m.spellHits}
             aiIssues={aiVisibleIssues}
+            aiDismissedIssues={aiDismissedIssues}
             onAiApply={ribbonApply}
             onAiIgnore={ribbonIgnore}
+            onAiRestore={ribbonRestore}
             wordlist={m.wordlist}
             wordlistErr={m.wordlistErr}
             goToLine={m.goToLine}

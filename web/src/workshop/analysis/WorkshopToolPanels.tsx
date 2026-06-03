@@ -48,8 +48,10 @@ export interface WorkshopToolPanelsProps {
   repetition: RepetitionAnalysis;
   spellHits: SpellHit[];
   aiIssues: AnalysisIssue[];
+  aiDismissedIssues: AnalysisIssue[];
   onAiApply: (iss: AnalysisIssue) => void;
   onAiIgnore: (id: string) => void;
+  onAiRestore: (id: string) => void;
   wordlist: Set<string> | null;
   wordlistErr: string | null;
   goToLine: (line1Based: number) => void;
@@ -139,6 +141,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           spellHits={props.spellHits}
           clicheHits={props.clicheHits}
           aiIssues={props.aiIssues}
+          aiDismissedIssues={props.aiDismissedIssues}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
           goToSpellHitAt={props.goToSpellHitAt}
@@ -147,6 +150,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           refreshSpell={props.refreshSpell}
           onAiApply={props.onAiApply}
           onAiIgnore={props.onAiIgnore}
+          onAiRestore={props.onAiRestore}
           onOpenToolTab={props.onOpenToolTab}
           focusPoemTitle={props.focusPoemTitle}
         />

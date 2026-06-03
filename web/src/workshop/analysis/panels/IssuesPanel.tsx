@@ -16,6 +16,9 @@ export interface IssuesPanelProps {
   spellHits: SpellHit[];
   clicheHits: ClicheHit[];
   aiIssues: AnalysisIssue[];
+  /** AI issues the user manually dismissed via Ignore — surfaced as a
+   *  restorable list at the bottom of the queue so misclicks aren't permanent. */
+  aiDismissedIssues: AnalysisIssue[];
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
   goToSpellHitAt: (hit: SpellHit) => void;
@@ -24,6 +27,7 @@ export interface IssuesPanelProps {
   refreshSpell: () => void;
   onAiApply: (iss: AnalysisIssue) => void;
   onAiIgnore: (id: string) => void;
+  onAiRestore: (id: string) => void;
   onOpenToolTab: (tab: ToolTab) => void;
   focusPoemTitle: () => void;
 }
@@ -274,6 +278,7 @@ export function IssuesPanel({
   spellHits,
   clicheHits,
   aiIssues,
+  aiDismissedIssues,
   heavyToolsStale,
   goToLine,
   goToSpellHitAt,
@@ -282,6 +287,7 @@ export function IssuesPanel({
   refreshSpell,
   onAiApply,
   onAiIgnore,
+  onAiRestore,
   onOpenToolTab,
   focusPoemTitle,
 }: IssuesPanelProps) {
@@ -490,6 +496,72 @@ export function IssuesPanel({
           ) : null}
         </div>
       )}
+      {aiDismissedIssues.length > 0 ? (
+        <DismissedSection
+          items={aiDismissedIssues}
+          onRestore={onAiRestore}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function DismissedSection({
+  items,
+  onRestore,
+}: {
+  items: AnalysisIssue[];
+  onRestore: (id: string) => void;
+}) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("easy-poems:ai-dismissed-collapsed") !== "0"; }
+    catch { return true; }
+  });
+  const toggle = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem("easy-poems:ai-dismissed-collapsed", next ? "1" : "0"); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  return (
+    <section className={`queue-dismissed${collapsed ? " is-collapsed" : ""}`}>
+      <button
+        type="button"
+        className="queue-dismissed-toggle"
+        onClick={toggle}
+        aria-expanded={!collapsed}
+        title={collapsed ? "Show dismissed AI issues" : "Hide dismissed AI issues"}
+      >
+        <span className={`queue-dismissed-chevron${collapsed ? "" : " is-open"}`} aria-hidden>▸</span>
+        <span className="queue-dismissed-label">Dismissed</span>
+        <span className="queue-dismissed-count">{items.length}</span>
+      </button>
+      {collapsed ? null : (
+        <ul className="queue-dismissed-list">
+          {items.map((iss) => {
+            const title = iss.headline?.trim() || iss.excerpt?.trim() || `AI flagged line ${iss.line_start}`;
+            const rangeLabel =
+              iss.line_end > iss.line_start
+                ? `L${iss.line_start}–${iss.line_end}`
+                : `L${iss.line_start}`;
+            return (
+              <li key={iss.id} className="queue-dismissed-item">
+                <span className="queue-dismissed-range">{rangeLabel}</span>
+                <span className="queue-dismissed-title">{title}</span>
+                <button
+                  type="button"
+                  className="queue-dismissed-restore"
+                  onClick={() => onRestore(iss.id)}
+                  title="Bring this issue back to the queue"
+                >
+                  Restore
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }

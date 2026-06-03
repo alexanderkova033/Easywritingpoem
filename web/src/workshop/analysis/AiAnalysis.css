@@ -2222,8 +2222,8 @@ button.ai-flagged-cliche:focus-visible {
 .ai-chat-quickreply:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ----- Low-confidence issue dim ----- */
-.ai-issue-conf-low { opacity: 0.62; }
-.ai-issue-conf-low:hover { opacity: 0.95; }
+.ai-issue-conf-low { opacity: 0.85; }
+.ai-issue-conf-low:hover { opacity: 1; }
 
 /* ----- Tabs (Overview / Issues) ----- */
 .ai-tabs {

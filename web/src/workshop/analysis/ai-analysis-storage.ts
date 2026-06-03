@@ -4,6 +4,11 @@ export const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
 export const LS_LAST_ANALYZED_LINES_PREFIX = "easy-poems:ai-last-lines:";
 export const LS_RESOLVED_PREFIX = "easy-poems:ai-resolved:";
 export const LS_IGNORED_PREFIX = "easy-poems:ai-ignored:";
+/** Subset of ignored ids that the user manually dismissed (vs. Apply, which
+ *  also marks an issue ignored). Tracked separately so we can show a "Dismissed"
+ *  list with a Restore action without offering to restore already-applied
+ *  rewrites whose lines have changed. */
+export const LS_DISMISSED_PREFIX = "easy-poems:ai-dismissed:";
 
 export function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
   if (!poemId) return null;
@@ -58,4 +63,8 @@ export function saveIdSet(prefix: string, poemId: string | undefined, set: Set<s
 
 export function loadIgnoredIssueIds(poemId?: string): Set<string> {
   return loadIdSet(LS_IGNORED_PREFIX, poemId);
+}
+
+export function loadDismissedIssueIds(poemId?: string): Set<string> {
+  return loadIdSet(LS_DISMISSED_PREFIX, poemId);
 }
