@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { GoalEvaluation } from "@/workshop/goals/metrics";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
@@ -81,6 +81,190 @@ function aiSeverityToQueueSeverity(sev: AnalysisIssue["severity"]): QueueSeverit
   if (sev === "high") return "now";
   if (sev === "low") return "optional";
   return "soon";
+}
+
+function SparkleIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+      <circle cx="12" cy="12" r="3.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function ArrowDownIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <polyline points="19 12 12 19 5 12" />
+    </svg>
+  );
+}
+
+/** AI items get a richer card treatment matching the goal-card / rhyme-cluster-card
+ *  visual language: severity-tinted frame, sparkle icon, prominent headline, an
+ *  inset "Now → Try" preview, and a primary-styled Apply button. */
+function QueueAiCard({ item: it }: { item: QueueIssue }) {
+  const [showWhy, setShowWhy] = useState(false);
+  const hasWhy = Boolean(it.detail || it.excerpt);
+
+  return (
+    <li className={`queue-ai queue-ai-sev-${it.severity}`}>
+      <div className="queue-ai-frame">
+        <div className="queue-ai-head">
+          <span className="queue-ai-sparkle" aria-hidden><SparkleIcon /></span>
+          <span className="queue-ai-headline">{it.title}</span>
+          {it.line != null && it.onJump ? (
+            <button
+              type="button"
+              className="queue-ai-line-link"
+              onClick={it.onJump}
+              title={
+                it.lineEnd != null
+                  ? `Jump to lines ${it.line}–${it.lineEnd}`
+                  : `Jump to line ${it.line}`
+              }
+            >
+              L{it.line}{it.lineEnd != null ? `–${it.lineEnd}` : ""}
+            </button>
+          ) : null}
+        </div>
+
+        {it.rewrite ? (
+          <div className="queue-ai-preview" aria-label="Suggested rewrite">
+            {showWhy && it.excerpt ? (
+              <div className="queue-ai-preview-row queue-ai-preview-now">
+                <span className="queue-ai-preview-tag queue-ai-preview-tag-now">Now</span>
+                <span className="queue-ai-preview-text">
+                  {highlightProblemWords(it.excerpt, it.problemWords)}
+                </span>
+              </div>
+            ) : null}
+            {showWhy && it.excerpt ? (
+              <span className="queue-ai-preview-arrow" aria-hidden><ArrowDownIcon /></span>
+            ) : null}
+            <div className="queue-ai-preview-row queue-ai-preview-try">
+              <span className="queue-ai-preview-tag queue-ai-preview-tag-try">Try</span>
+              <span className="queue-ai-preview-text">{it.rewrite}</span>
+            </div>
+          </div>
+        ) : null}
+
+        {showWhy && it.detail ? (
+          <p className="queue-ai-rationale">{it.detail}</p>
+        ) : null}
+
+        <div className="queue-ai-actions">
+          {it.primary ? (
+            <button
+              type="button"
+              className="queue-ai-apply"
+              disabled={it.primary.disabled}
+              onClick={it.primary.onClick}
+            >
+              <span className="queue-ai-apply-icon" aria-hidden><CheckIcon /></span>
+              <span>{it.primary.label}</span>
+            </button>
+          ) : null}
+          {it.secondary ? (
+            <button
+              type="button"
+              className="queue-ai-ignore"
+              onClick={it.secondary.onClick}
+            >
+              {it.secondary.label}
+            </button>
+          ) : null}
+          {hasWhy ? (
+            <button
+              type="button"
+              className="queue-ai-why"
+              onClick={() => setShowWhy((v) => !v)}
+              aria-expanded={showWhy}
+              title={showWhy ? "Hide rationale" : "Show rationale"}
+            >
+              {showWhy ? "Less" : "Why?"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+/** Non-AI queue items: spell, cliché, goal warnings, checklist. Simpler layout
+ *  since they don't have a rewrite preview or rationale to show. */
+function QueueGenericRow({ item: it }: { item: QueueIssue }) {
+  return (
+    <li className={`queue-item queue-item-${it.category}`}>
+      <div className="queue-item-header">
+        <span
+          className={`queue-cat queue-cat-${it.category}`}
+          title={it.categoryLabel}
+        >
+          {it.categoryLabel}
+        </span>
+        {it.line != null && it.onJump ? (
+          <button
+            type="button"
+            className="queue-line-link"
+            onClick={it.onJump}
+            title={
+              it.lineEnd != null
+                ? `Jump to lines ${it.line}–${it.lineEnd}`
+                : `Jump to line ${it.line}`
+            }
+          >
+            L{it.line}{it.lineEnd != null ? `–${it.lineEnd}` : ""}
+          </button>
+        ) : null}
+      </div>
+      <div className="queue-body">
+        <div className="queue-title-row">
+          <span className="queue-title">{it.title}</span>
+        </div>
+        {it.detail ? (
+          <p className="queue-detail muted small">{it.detail}</p>
+        ) : null}
+      </div>
+      {it.primary || it.secondary ? (
+        <div className="queue-actions">
+          {it.primary ? (
+            <button
+              type="button"
+              className="small-btn queue-primary-btn"
+              disabled={it.primary.disabled}
+              onClick={it.primary.onClick}
+            >
+              {it.primary.label}
+            </button>
+          ) : null}
+          {it.secondary ? (
+            <button
+              type="button"
+              className="small-btn queue-secondary-btn"
+              onClick={it.secondary.onClick}
+            >
+              {it.secondary.label}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+function QueueItemRow({ item: it }: { item: QueueIssue }) {
+  if (it.category === "ai") return <QueueAiCard item={it} />;
+  return <QueueGenericRow item={it} />;
 }
 
 export function IssuesPanel({
@@ -289,84 +473,7 @@ export function IssuesPanel({
                 </header>
                 <ul className="queue-list" aria-label={`${label} issues`}>
                   {items.map((it) => (
-                    <li
-                      key={it.id}
-                      className={`queue-item queue-item-${it.category}`}
-                    >
-                      <div className="queue-item-header">
-                        <span
-                          className={`queue-cat queue-cat-${it.category}`}
-                          title={it.categoryLabel}
-                        >
-                          {it.categoryLabel}
-                        </span>
-                        {it.line != null && it.onJump ? (
-                          <button
-                            type="button"
-                            className="queue-line-link"
-                            onClick={it.onJump}
-                            title={
-                              it.lineEnd != null
-                                ? `Jump to lines ${it.line}–${it.lineEnd}`
-                                : `Jump to line ${it.line}`
-                            }
-                          >
-                            L{it.line}{it.lineEnd != null ? `–${it.lineEnd}` : ""}
-                          </button>
-                        ) : null}
-                      </div>
-                      <div className="queue-body">
-                        <div className="queue-title-row">
-                          <span className="queue-title">{it.title}</span>
-                        </div>
-                        {it.detail ? (
-                          <p className="queue-detail muted small">
-                            {it.detail}
-                          </p>
-                        ) : null}
-                        {it.excerpt || it.rewrite ? (
-                          <div className="queue-diff" aria-label="Suggested change">
-                            {it.excerpt ? (
-                              <p className="queue-diff-line queue-diff-from">
-                                <span className="queue-diff-marker" aria-hidden>“</span>
-                                <span className="queue-diff-text">
-                                  {highlightProblemWords(it.excerpt, it.problemWords)}
-                                </span>
-                              </p>
-                            ) : null}
-                            {it.rewrite ? (
-                              <p className="queue-diff-line queue-diff-to">
-                                <span className="queue-diff-marker" aria-hidden>→</span>
-                                <span className="queue-diff-text">{it.rewrite}</span>
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : null}
-                      </div>
-                      {it.primary || it.secondary ? (
-                        <div className="queue-actions">
-                          {it.primary ? (
-                            <button
-                              type="button"
-                              className="small-btn queue-primary-btn"
-                              disabled={it.primary.disabled}
-                              onClick={it.primary.onClick}
-                            >
-                              {it.primary.label}
-                            </button>
-                          ) : null}
-                          {it.secondary ? (
-                            <button
-                              type="button"
-                              className="small-btn queue-secondary-btn"
-                              onClick={it.secondary.onClick}
-                            >
-                              {it.secondary.label}
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </li>
+                    <QueueItemRow key={it.id} item={it} />
                   ))}
                 </ul>
               </section>

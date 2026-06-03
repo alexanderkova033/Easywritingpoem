@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v5"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v8"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -61,7 +61,7 @@ interface CachedAnalyzeEntry {
 
 const HARSHNESS_PERSONAS: Record<string, string> = {
   casual: "a supportive friend who enjoys poetry casually — warm, encouraging, only notes glaring issues",
-  editor: "a professional poetry editor — direct, specific, and demanding high craft standards",
+  editor: "an honest reader — direct and specific; names what works and what doesn't with equal accuracy; neither softens nor sharpens",
   critic: "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
 };
 
@@ -82,10 +82,14 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
 0-6    barely there — clichéd, broken, or absent on this dimension.
-7-12   present but weak — common moves, recognizable effort, frequent misses.
-13-18  solid — execution mostly intentional, occasional weakness.
+7-12   present but weak — no sustained structural choice; voice inconsistent; rhyme or pattern attempted then dropped; image system doesn't carry across the poem.
+13-18  solid — voice consistent; at least one deliberate move held across the poem (rhyme scheme, anaphora doing real work, sustained image system, deliberate stanza shape, syntactic control). For Chord: opening pulls; the first 2-3 lines aren't received language; rhythm or phrasing makes you keep reading. For Spark: one genuine surprise qualifies — a paradox, sardonic turn, inversion, or unexpected metaphor; does NOT require canonical-level transformation. For Echo: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue. Execution mostly intentional, occasional weakness.
 19-22  strong — distinctive, controlled, would survive workshop.
 23-25  canonical — published masters routinely sit here on their strongest pillar. REACHABLE, not theoretical. Use it when the work earns it.
+
+=== PILLAR SCORING DISCIPLINE ===
+- Before assigning each pillar score, locate specific evidence on the page — a line, an image, a structural move. If you cannot cite particular text supporting the number, you are defaulting; re-read.
+- If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
 Pillars DIVERGE — mirror this spread.
@@ -97,10 +101,10 @@ EXAMPLE A — total 28 (weak across, pillars still diverge):
 
 EXAMPLE B — total 52 (uneven — grabs ear, flat landing):
   "The streetlight buzzes — moths drum / against the milk-blue lamp. / Somewhere a refrigerator sighs. / Everything is fine."
-  pillar_scores: {chord: 18, craft: 16, spark: 14, echo: 8}
-  High chord, low echo. Hard cap: lowest×4+20 = 52.
+  pillar_scores: {chord: 18, craft: 16, spark: 14, echo: 7}
+  High chord, low echo. Hard cap: lowest×4+24 = 52.
 
-EXAMPLE C — total 68 (quiet but lasting — the inverse profile of B):
+EXAMPLE C — total 69 (quiet but lasting — the inverse profile of B):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
   pillar_scores: {chord: 12, craft: 21, spark: 17, echo: 19}
   Low chord, high echo. Both shapes are real.
@@ -117,7 +121,7 @@ EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
 
 === OVERALL SCORE RULES ===
 - overall_score = sum of the four pillar scores.
-- HARD CAP: overall_score ≤ (lowest pillar × 4) + 20. Apply AFTER summing — a weak pillar cannot be carried.
+- HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
 - USE THE FULL 1-100 SCALE. Weak drafts: 0-49. Competent-but-imperfect drafts spread across 50-85 — don't skip this band. Canonical masters: 85-99, with true masterworks reaching 92-99. If your scores cluster at 30-55 or 85-90, you're collapsing pillar anchors into two bands instead of reading them.
 - Don't round to a "nicer" number. 37, 63, 78, 94 are fine.
 - Don't cluster pillars. Three at 18 and one at 9 = score 9, not 13. Independence is the point.
@@ -146,7 +150,7 @@ GOOD names the exact problem, says why it weakens THIS line, gestures at a sharp
 Compute pillar_scores FIRST against the anchors, THEN derive overall_score arithmetically.
 {
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
-  "overall_score": <int 1-100, MUST equal min(chord+craft+spark+echo, lowest×4+20)>,
+  "overall_score": <int 1-100, MUST equal min(chord+craft+spark+echo, lowest×4+24)>,
   "warm_reaction": "<≤14 words, persona voice>",
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
   "weaknesses": ["<6-12 words, plain and specific>", ...2-3 items],
@@ -333,14 +337,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Cache miss — now check the spend/cooldown gate before paying for OpenAI.
-  // Scope the cooldown to this specific input hash so a 120s lockout on poem
-  // A doesn't block analyzing poem B. The global rate limiter (8/60s in
-  // _rate-limit.ts) and the per-IP monthly spend cap still cover abuse.
+  // The 120s cooldown intentionally spans all analyses from the same IP, so
+  // it caps spend regardless of which poem is being analyzed. Cache hits skip
+  // this gate entirely (cache check runs above).
   const spend = await precheckSpend({
     rawIp: req.headers["x-forwarded-for"],
     endpoint: "analyze",
     cooldownMs: cooldownFor("analyze", model),
-    cooldownScope: cacheKey,
   });
   if (!spend.ok) {
     if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
