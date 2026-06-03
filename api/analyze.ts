@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v11"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v12"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -96,6 +96,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 - Before assigning each pillar score, locate specific evidence on the page — a line, an image, a structural move. If you cannot cite particular text supporting the number, you are defaulting; re-read.
 - If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
+- Issues follow the poem, NOT the score. If the draft is strong, an empty or 1-item issues[] is the correct output. Never manufacture an issue to "justify" a number — the score reports what's on the page; it doesn't oblige you to find faults that match it. If you find yourself thinking "I gave a high score, so I need fewer issues" or "I gave a low score, so I need more," stop. Issue count comes from evidence, not from the number.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
 Pillars DIVERGE — mirror this spread.
@@ -188,7 +189,7 @@ Compute pillar_scores FIRST against the anchors, THEN derive overall_score arith
   "personal_feedback": "<2-3 short sentences addressed to 'you' — holistic read + one concrete next move, no preamble>"
 }
 
-issues[]: 0-3 items — only genuine misses you can name on the page. If multiple exist, mix serious + small; if no pillar is genuinely weak, return 0-1 items, not invented ones. Do NOT manufacture an issue to "justify" a score. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
 
 function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
   const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";

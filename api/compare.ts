@@ -74,10 +74,11 @@ EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, 
   IMPORTANT: this is where most workshop-grade revised drafts should sit. Clear voice, specific observation, one quiet resonance — but not canonical. The 70-85 band exists for craft that lands without breaking new ground. Do NOT skip past this band by jumping competent poems straight to 85+ or docking them to 60-.
 
 === RE-SCORING RULES (override any instinct to be encouraging) ===
-- Previous score is reference ONLY for the trend in comparison{}. NOT a floor, NOT an anchor.
+- Previous score is reference ONLY for the trend in comparison{}. NOT a floor, NOT an anchor. The previous score may have been over- or under-calibrated; do NOT trend toward it for smoothness. A genuinely improved revision may still score lower if the prior reading was generous. A flat revision may score higher if you under-read it last time. Read CURRENT against the rubric, not against the number.
 - Compute overall_score by reading the current draft FRESH, as if you'd never seen the previous version.
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
+- DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 issues — an empty issues[] array is correct for a strong poem. Issues follow what's on the page, NOT the score. The score never determines the issue count; if you find yourself thinking "I gave an 82, so I need 3 weaknesses," stop and re-read for actual evidence first.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
 - USE THE FULL 1-100 SCALE. Weak drafts: 0-49 (even on revision). Competent-but-imperfect: 50-85 — don't skip this band. Canonical masters: 85-99, with true masterworks reaching 92-99. If your scores cluster at 30-55 or 85-90, you're collapsing pillar anchors into two bands instead of reading them.
 - Don't cluster pillars. A pillar genuinely at 9 stays at 9 — don't drift it up to 13 because the other three are at 18. Independence is the point.
@@ -132,7 +133,7 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
   "personal_feedback": "<2-3 sentences addressed to 'you' — holistic read of CURRENT + the revision arc + one concrete next move, no preamble>"
 }
 
-issues[]: 0-3 items — only genuine misses you can name on the page. If multiple exist, mix serious + small; if no pillar is genuinely weak, return 0-1 items, not invented ones. Do NOT manufacture an issue to "justify" a score. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
