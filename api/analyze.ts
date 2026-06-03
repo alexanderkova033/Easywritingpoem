@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v13"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v14"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -98,8 +98,16 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
 - Issues follow evidence on the page, NOT the score. Strong drafts can return 0-1 issues; weak drafts may have 3. Never manufacture issues to justify a number, or skip real ones because the score is high.
 
-=== CALIBRATION EXAMPLES — apply the same scale ===
-Pillars DIVERGE — mirror this spread.
+=== CALIBRATION EXAMPLES — match before scoring ===
+Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match the poem to one of the examples below by structural PROFILE (not topic):
+  A = weak-across (clichéd)
+  B = high chord, low echo (grabs but doesn't last)
+  C = low chord, high echo (quiet but lasting)
+  D = canonical breadth (sonnet-grade)
+  E = purposeful roughness (looseness as craft)
+  F = plainspoken insight / paradox without imagery
+  G = workshop-competent voice (real observation, sustained metaphor or extended structure, not canonical)
+Anchor your pillar reads against the matched example. Reading the anchor table without matching first defaults borderline poems to mid-band — which is exactly how insight-driven and sustained-metaphor work gets underscored.
 
 EXAMPLE A — total 28 (weak across, pillars still diverge):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
