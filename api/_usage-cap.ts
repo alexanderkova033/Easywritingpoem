@@ -17,11 +17,16 @@ const PER_IP_MONTHLY_CAP_CENTS = 500;
 const GLOBAL_DAILY_CAP_CENTS = 500;
 
 const DEFAULT_COOLDOWN_MS = 5_000;
+// Cooldown is a soft anti-spam backstop on top of:
+//   - the 8-per-60s sliding-window rate limit in _rate-limit.ts
+//   - the server-side response cache (cache hits skip this gate entirely)
+// Keep it short enough that legitimate users analyzing different poems back-to-back
+// aren't blocked, but long enough to discourage accidental rapid resubmits.
 const ANALYZE_COOLDOWN_BY_MODEL_MS: Record<string, number> = {
-  "gpt-5-nano": 60_000,
-  "gpt-5-mini": 120_000,
+  "gpt-5-nano": 15_000,
+  "gpt-5-mini": 30_000,
 };
-const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
+const ANALYZE_COOLDOWN_FALLBACK_MS = 30_000;
 
 interface ModelPrice {
   inCentsPerMTok: number;

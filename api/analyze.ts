@@ -296,16 +296,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
-
-  const spend = await precheckSpend({
-    rawIp: req.headers["x-forwarded-for"],
-    endpoint: "analyze",
-    cooldownMs: cooldownFor("analyze", model),
-  });
-  if (!spend.ok) {
-    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
-    return res.status(spend.status).json(spend.body);
-  }
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
@@ -323,11 +313,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Poem too long (max ${MAX_TOTAL_CHARS} characters).` });
   }
 
-  // Server-side cache check — if this exact input was analyzed recently
-  // (any user, any device), reuse the OpenAI response and skip the call.
-  // analyze runs at temperature 0 so this returns the same answer the model
-  // would generate. sendParsedResponse rewrites meta.analyzedAt to "now",
-  // so the cached response feels freshly produced to the client.
+  // Server-side cache check — done BEFORE precheckSpend so cache hits don't
+  // burn the per-IP cooldown. analyze runs at temperature 0, so identical
+  // inputs return the same answer the model would generate.
   const cacheKey = analyzeCacheKey({
     title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode,
   });
@@ -342,6 +330,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch {
       // Corrupted entry — fall through and regenerate.
     }
+  }
+
+  // Cache miss — now check the spend/cooldown gate before paying for OpenAI.
+  const spend = await precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "analyze",
+    cooldownMs: cooldownFor("analyze", model),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
   }
 
   const gib = await gibberishGuard({

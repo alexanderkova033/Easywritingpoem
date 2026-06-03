@@ -230,9 +230,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       if (msg.toLowerCase().includes("not configured") || msg.toLowerCase().includes("api key")) {
         setIsUnconfigured(true);
         setStatus("idle");
-      } else if (isRateLimit && result) {
-        // Rate-limited but we still have a previous result — keep it on screen.
-        // The retry banner already communicates the wait; no need for a full error UI.
+      } else if (result) {
+        // Keep the previous result on screen no matter what failed — a stale
+        // read is strictly better than a blank panel. Rate limits are signalled
+        // via the retry banner; other failures get a small error banner shown
+        // above the results.
+        if (!isRateLimit) setErrorMsg(msg);
         setStatus("done");
       } else {
         setErrorMsg(msg);
@@ -460,6 +463,20 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               <p className="ai-error-text">{errorMsg}</p>
               <button type="button" className="small-btn"
                 onClick={() => { setStatus("idle"); setErrorMsg(""); }}>
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* When a refresh fails but a prior result is on screen, surface the
+              error as a small banner above the stale results. */}
+          {status === "done" && result && errorMsg && (
+            <div className="ai-error ai-error-inline" role="alert">
+              <p className="ai-error-text">
+                Couldn't refresh: {errorMsg} — showing your last analysis.
+              </p>
+              <button type="button" className="small-btn"
+                onClick={() => setErrorMsg("")}>
                 Dismiss
               </button>
             </div>

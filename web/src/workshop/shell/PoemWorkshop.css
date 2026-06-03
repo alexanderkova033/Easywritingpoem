@@ -672,14 +672,34 @@
 
 /* Desktop only — sticky scroll behavior. Gated to ≥1050px so it doesn't conflict
    with the tablet drawer at 900-1049px (which uses position: fixed + translateX).
-   The translateY shift is set by JS in PoemWorkshop to push the panel up as the
-   AI Analysis section approaches, so the panel never overlaps it. */
+   The .tools-panel-cell wrapper holds the row-1 grid slot so the sticky panel's
+   containing block ends at the row-1/row-2 boundary — the browser then parks the
+   panel just above the AI Analysis section atomically on the compositor, with no
+   JS scroll handler needed (the prior --tools-shift approach wobbled because the
+   compositor moved sticky on its own thread while main-thread JS lagged a frame). */
+.tools-panel-cell {
+  display: contents;
+}
+
 @media (min-width: 1050px) {
+  .tools-panel-cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
   .tools-panel {
     position: sticky;
     top: 1.15rem;
-    transform: translateY(var(--tools-shift, 0px));
+    align-self: stretch;
   }
+}
+
+/* Hide the wrapper alongside the panel whenever the panel itself is hidden,
+   so it doesn't leave an empty grid cell behind. */
+.workshop-grid.tools-collapsed .tools-panel-cell,
+.poem-workshop.is-focus-mode .tools-panel-cell {
+  display: none;
 }
 
 

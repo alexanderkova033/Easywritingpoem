@@ -224,28 +224,10 @@
   width: 100%;
   display: flex;
   justify-content: center;
-  padding: clamp(3rem, 6vw, 7rem) clamp(1rem, 3vw, 3rem) clamp(2.5rem, 5vw, 5.5rem);
+  padding: clamp(2rem, 4vw, 4.5rem) clamp(1rem, 3vw, 3rem) clamp(2rem, 4vw, 4.5rem);
   position: relative;
   overflow: hidden;
   isolation: isolate;
-}
-
-/* Faint dot grid backplate — adds techy texture under aurora */
-.landing-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    color-mix(in srgb, var(--accent) 28%, transparent) 1px,
-    transparent 1px
-  );
-  background-size: 28px 28px;
-  background-position: 0 0;
-  opacity: 0.18;
-  mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
-  z-index: 0;
-  pointer-events: none;
 }
 
 .landing-hero-inner {
@@ -255,85 +237,13 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: clamp(1.2rem, 2vw, 2.6rem);
+  gap: clamp(0.9rem, 1.4vw, 1.8rem);
   position: relative;
   z-index: 2;
 }
 
-/* ── Aurora gradient blobs (legacy — superseded by .landing-bg) ── */
-.landing-aurora {
-  display: none;
-}
-
-.landing-aurora-legacy {
-  position: absolute;
-  inset: -10% -5%;
-  z-index: 0;
-  pointer-events: none;
-  filter: blur(60px);
-  opacity: 0.55;
-}
-
-.landing-aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  mix-blend-mode: screen;
-  will-change: transform;
-}
-
-.landing-aurora-blob-1 {
-  width: 42vw;
-  height: 42vw;
-  top: -8%;
-  left: -8%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 80%, transparent) 0%, transparent 65%);
-  animation: aurora-drift-1 22s ease-in-out infinite alternate;
-}
-
-.landing-aurora-blob-2 {
-  width: 38vw;
-  height: 38vw;
-  top: 10%;
-  right: -10%;
-  background: radial-gradient(circle, color-mix(in srgb, #6b8cff 80%, transparent) 0%, transparent 65%);
-  animation: aurora-drift-2 28s ease-in-out infinite alternate;
-}
-
-.landing-aurora-blob-3 {
-  width: 36vw;
-  height: 36vw;
-  bottom: -10%;
-  left: 30%;
-  background: radial-gradient(circle, color-mix(in srgb, #c490e8 75%, transparent) 0%, transparent 65%);
-  animation: aurora-drift-3 32s ease-in-out infinite alternate;
-}
-
-@keyframes aurora-drift-1 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(6vw, 4vh) scale(1.08); }
-}
-@keyframes aurora-drift-2 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-5vw, 6vh) scale(1.12); }
-}
-@keyframes aurora-drift-3 {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(-4vw, -5vh) scale(1.06); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-aurora-blob-1,
-  .landing-aurora-blob-2,
-  .landing-aurora-blob-3 { animation: none; }
-}
-
-/* Hero offscreen — pause aurora drift + floater animations. The hero
-   IntersectionObserver in LandingPage.tsx sets data-offscreen="true" once
-   the hero is fully out of view. Invisible animations cost nothing
-   visually but still drive compositor work; pausing them is free win. */
-.landing-hero[data-offscreen="true"] .landing-aurora-blob-1,
-.landing-hero[data-offscreen="true"] .landing-aurora-blob-2,
-.landing-hero[data-offscreen="true"] .landing-aurora-blob-3,
+/* Hero offscreen — pause floater animations when hero is out of view.
+   IntersectionObserver in LandingPage.tsx sets data-offscreen="true". */
 .landing-hero[data-offscreen="true"] .landing-floater {
   animation-play-state: paused;
 }
@@ -379,85 +289,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .landing-floater { display: none; }
-}
-
-/* ── Constellation overlay (replaces floating words) ── */
-.landing-constellation {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
-  overflow: visible;
-  /* Fade dots toward bottom — sky thins to ground */
-  mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
-  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
-  /* Light parallax so sky lags behind foreground while scrolling */
-  transform: translateY(calc(var(--landing-scroll-y, 0) * -0.12px));
-  will-change: transform;
-}
-
-.lc-link {
-  fill: none;
-  stroke: color-mix(in srgb, var(--accent) 38%, transparent);
-  stroke-width: 0.8;
-  stroke-dasharray: 3 7;
-  opacity: 0;
-  animation: lc-link-in 1.6s ease-out forwards, lc-link-flow 12s linear infinite;
-}
-
-.lc-link-1 { animation-delay: 0.2s, 1.8s; }
-.lc-link-2 { animation-delay: 0.4s, 2s; }
-.lc-link-3 { animation-delay: 0.55s, 2.15s; }
-.lc-link-4 { animation-delay: 0.3s, 1.9s; }
-.lc-link-5 { animation-delay: 0.5s, 2.1s; }
-.lc-link-6 { animation-delay: 0.7s, 2.3s; }
-.lc-link-7 { animation-delay: 0.85s, 2.45s; }
-.lc-link-8 { animation-delay: 1s, 2.6s; }
-
-@keyframes lc-link-in {
-  from { opacity: 0; stroke-dashoffset: 80; }
-  to   { opacity: 0.32; stroke-dashoffset: 0; }
-}
-
-@keyframes lc-link-flow {
-  from { stroke-dashoffset: 0; }
-  to   { stroke-dashoffset: -100; }
-}
-
-.lc-dot {
-  fill: var(--accent);
-  opacity: 0;
-  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 50%, transparent));
-  animation: lc-dot-in 0.45s ease-out forwards, lc-dot-pulse 4s ease-in-out infinite;
-}
-
-.lc-dot-1 { animation-delay: 0.1s, 1.4s; }
-.lc-dot-2 { animation-delay: 0.25s, 1.7s; }
-.lc-dot-3 { animation-delay: 0.4s, 2s; }
-.lc-dot-4 { animation-delay: 0.55s, 2.3s; }
-.lc-dot-5 { animation-delay: 0.3s, 1.6s; }
-.lc-dot-6 { animation-delay: 0.45s, 1.9s; }
-.lc-dot-7 { animation-delay: 0.6s, 2.2s; }
-.lc-dot-8 { animation-delay: 0.75s, 2.5s; }
-
-@keyframes lc-dot-in {
-  from { opacity: 0; transform: scale(0); transform-origin: center; }
-  to   { opacity: 0.55; transform: scale(1); }
-}
-
-@keyframes lc-dot-pulse {
-  0%, 100% { opacity: 0.35; }
-  50%      { opacity: 0.7; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lc-link, .lc-dot { animation: none; opacity: 0.5; }
-}
-
-@media (max-width: 680px) {
-  .landing-constellation { opacity: 0.5; }
 }
 
 .landing-hero-eyebrow {
@@ -509,8 +340,6 @@
   letter-spacing: -0.035em;
   color: color-mix(in srgb, var(--text) 92%, transparent);
   text-wrap: balance;
-  /* Soft halo blur — adds depth without making text hard to read */
-  text-shadow: 0 0 14px color-mix(in srgb, var(--text) 16%, transparent);
 }
 
 .landing-headline-accent {
@@ -546,7 +375,6 @@
   line-height: 1.55;
   color: color-mix(in srgb, var(--muted) 88%, transparent);
   max-width: min(62ch, 720px);
-  text-shadow: 0 0 10px color-mix(in srgb, var(--muted) 12%, transparent);
 }
 
 .landing-ctas {
@@ -592,18 +420,18 @@
   animation: demo-halo-pulse 7s ease-in-out infinite;
 }
 
-/* Ground-cast shadow — elliptical blur beneath card anchors it to floor */
+/* Ground-cast shadow — soft elliptical blur beneath card anchors it to floor */
 .landing-demo::after {
   content: "";
   position: absolute;
-  left: 8%;
-  right: 8%;
-  bottom: -28px;
-  height: 36px;
+  left: 14%;
+  right: 14%;
+  bottom: -22px;
+  height: 28px;
   background: radial-gradient(ellipse at center,
-    color-mix(in srgb, #000 40%, transparent) 0%,
-    transparent 70%);
-  filter: blur(10px);
+    color-mix(in srgb, #000 14%, transparent) 0%,
+    transparent 75%);
+  filter: blur(14px);
   z-index: -3;
   pointer-events: none;
 }
@@ -628,12 +456,10 @@
   font-family: var(--font-poem);
   font-size: clamp(0.95rem, 1.1vw, 1.4rem);
   text-align: left;
-  /* Layered shadow: tight contact + soft long-cast = grounded */
+  /* Soft long-cast only — keeps card grounded without dark halos */
   box-shadow:
-    0 1px 0 color-mix(in srgb, #fff 8%, transparent) inset,
-    0 2px 4px color-mix(in srgb, #000 30%, transparent),
-    0 12px 28px color-mix(in srgb, #000 28%, transparent),
-    0 32px 60px color-mix(in srgb, #000 22%, transparent);
+    0 1px 0 color-mix(in srgb, #fff 6%, transparent) inset,
+    0 24px 48px color-mix(in srgb, #000 14%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   position: relative;

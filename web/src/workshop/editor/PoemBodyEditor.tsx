@@ -681,7 +681,8 @@ const wordHighlightField = StateField.define<DecorationSet>({
               : "cm-word-issue cm-word-issue-low";
           const startLine = Math.max(1, lineStart);
           const endLine = Math.min(doc.lines, lineEnd);
-          const tip = headline?.trim() || "AI suggestion — click to open";
+          const baseTip = headline?.trim() || "AI suggestion";
+          const tip = `${baseTip} — Alt+Click to open`;
           const attrs: Record<string, string> = {
             "data-issue-line": String(lineStart),
             title: tip,

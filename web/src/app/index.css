@@ -698,16 +698,12 @@ html[data-backdrop-power="very-low"]::before {
   opacity: 0 !important;
 }
 
-/* 4. Calm landing aurora — reduce blur radius (60px → 24px) and freeze
-      drift. Blobs stay visible; per-frame compositor cost collapses. */
-html[data-backdrop-power="very-low"] .landing-aurora {
-  filter: blur(24px) !important;
-  opacity: 0.42 !important;
-}
-html[data-backdrop-power="very-low"] .landing-aurora-blob-1,
-html[data-backdrop-power="very-low"] .landing-aurora-blob-2,
-html[data-backdrop-power="very-low"] .landing-aurora-blob-3 {
-  animation: none !important;
+/* 4. Calm landing backdrop aurora — reduce blur radius and freeze
+      drift on the full-page atmospheric wash for low-power mode. */
+html[data-backdrop-power="very-low"] .landing-bg-aurora {
+  filter: blur(60px) !important;
+  opacity: 0.22 !important;
+  transform: none !important;
   will-change: auto !important;
 }
 

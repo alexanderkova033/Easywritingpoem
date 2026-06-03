@@ -307,6 +307,19 @@
   flex: 1 1 200px;
 }
 
+/* Inline variant: a refresh failed but the prior result is still on screen,
+   so the banner sits above the results in a softer key. */
+.ai-error.ai-error-inline {
+  padding: 0.45rem 0.7rem;
+  background: color-mix(in srgb, var(--danger) 5%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+}
+
+.ai-error.ai-error-inline .ai-error-text {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 /* Ghost results shown while re-analysing */
 .ai-ghost-results {
   opacity: 0.28;

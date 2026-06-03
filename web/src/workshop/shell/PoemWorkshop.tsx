@@ -117,9 +117,11 @@ function deriveAiHighlights(poemId: string | undefined): {
   const issues = saved.issues.filter((i) => !ignored.has(i.id));
   return {
     lines: issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?]),
+    // Keep editor highlights sparse — one word per issue is enough to draw the
+    // eye to where the issue lives without turning the poem into a heatmap.
     words: issues
       .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
-      .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
+      .map((iss) => ({ words: iss.problem_words!.slice(0, 1), lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
   };
 }
 
@@ -379,14 +381,16 @@ export function PoemWorkshop() {
 
   // Click delegation: when in the rhyme tab, clicking any highlighted
   // end-word in the editor refills the Rhyme Finder with that word.
-  // Also handles AI word-issue clicks: opens the matching issue panel.
+  // Also handles AI word-issue Alt+clicks: opens the matching issue panel.
   const handleEditorBodyClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement | null;
     const issueHit = target?.closest(".cm-word-issue") as HTMLElement | null;
-    if (issueHit) {
+    if (issueHit && event.altKey) {
       const raw = issueHit.getAttribute("data-issue-line");
       const line = raw ? Number(raw) : NaN;
       if (Number.isFinite(line) && line > 0) {
+        event.preventDefault();
+        event.stopPropagation();
         openIssueAtLineRef.current?.(line, true);
       }
       return;
@@ -473,7 +477,7 @@ export function PoemWorkshop() {
     setWordHighlights(
       issues
         .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
-        .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
+        .map((iss) => ({ words: iss.problem_words!.slice(0, 1), lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
     );
   }, []);
 
@@ -763,61 +767,6 @@ export function PoemWorkshop() {
       if (!wasOnBefore) setShowRhymeScheme(false);
     }
   }, [m.toolTab]);
-
-
-  // Desktop sticky tools panel: keep `--tools-shift` in sync so the panel
-  // never slides down over the AI Analysis section in row 2. CSS gives the
-  // panel `position: sticky; top: 1.15rem` at ≥1050px; this measures the gap
-  // to the AI section and translates the panel up by the overlap, so its
-  // bottom edge stops just above AI Analysis. Pure CSS can't do this because
-  // a sticky grid item's containing block is the whole grid (not its cell).
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.innerWidth < 1050) return;
-    const panel = toolsPanelRef.current;
-    if (!panel) return;
-
-    let raf = 0;
-    let aiSection: HTMLElement | null = null;
-
-    const update = () => {
-      raf = 0;
-      if (!aiSection || !aiSection.isConnected) {
-        aiSection = document.querySelector(".ai-analysis-section") as HTMLElement | null;
-      }
-      const h = panel.offsetHeight;
-      if (!aiSection || h === 0) {
-        panel.style.setProperty("--tools-shift", "0px");
-        return;
-      }
-      const stickyTop = parseFloat(getComputedStyle(panel).top) || 18.4;
-      const gap = 12;
-      const aiTop = aiSection.getBoundingClientRect().top;
-      const overlap = stickyTop + h + gap - aiTop;
-      panel.style.setProperty("--tools-shift", overlap > 0 ? `${-overlap}px` : "0px");
-    };
-
-    const schedule = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(update);
-    };
-
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    const ro = new ResizeObserver(schedule);
-    ro.observe(panel);
-    aiSection = document.querySelector(".ai-analysis-section") as HTMLElement | null;
-    if (aiSection) ro.observe(aiSection);
-
-    return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      ro.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-      panel.style.removeProperty("--tools-shift");
-    };
-  }, [m.activePoemId, isFocusMode]);
 
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
@@ -2186,6 +2135,7 @@ export function PoemWorkshop() {
           />
         )}
 
+        <div className="tools-panel-cell">
         <aside
           ref={toolsPanelRef}
           className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
@@ -2450,6 +2400,7 @@ export function PoemWorkshop() {
             </button>
           </div>
         </aside>
+        </div>
 
         {/* AI Analysis — second row of the workshop grid, spans editor+tools columns so the rail can stay beside it on desktop. Hidden on mobile (results flow into the Issues tab). */}
         <Suspense fallback={null}>
