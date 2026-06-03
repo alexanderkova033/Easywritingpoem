@@ -4,6 +4,7 @@
  * Receives { title, lines, changesText, previousScores, localAnalysis?, goals? }
  * and asks the model to analyse the current poem AND compare it to the previous version.
  */
+import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
@@ -48,10 +49,10 @@ EXAMPLE C — total 68 (quiet but lasting):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
   pillar_scores: {chord: 12, craft: 21, spark: 17, echo: 19}
 
-EXAMPLE D — total 91 (canonical sonnet, formal mastery):
+EXAMPLE D — total 96 (canonical sonnet, near the top of the scale):
   "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May, / And summer's lease hath all too short a date."
-  pillar_scores: {chord: 23, craft: 25, spark: 21, echo: 22}
-  This is what canonical published work scores. The top of the scale is not reserved.
+  pillar_scores: {chord: 24, craft: 25, spark: 23, echo: 24}
+  Masterworks live in the 92-99 band. Don't park canonical work at 90 — the top is for work like this.
 
 EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
   "there's a bluebird in my heart that / wants to get out / but I'm too tough for him, / I say, stay in there, I'm not going / to let anybody see you."
@@ -64,9 +65,8 @@ EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 20. Apply AFTER summing.
-- Don't default to the polite middle (55-85). Weak drafts belong in 0-49 even on revision.
+- USE THE FULL 1-100 SCALE. Weak drafts: 0-49 (even on revision). Competent-but-imperfect: 50-85 — don't skip this band. Canonical masters: 85-99, with true masterworks reaching 92-99. If your scores cluster at 30-55 or 85-90, you're collapsing pillar anchors into two bands instead of reading them.
 - Don't cluster pillars. Three at 18 and one at 9 = score 9, not 13.
-- DON'T PARK THE TOP. Canonical work (Shakespeare, Bukowski, Plath) lands 85-95. If nothing ever goes above 80, you're being too conservative.
 
 === STYLE ===
 Plain English, like a smart friend talking — not a literature professor. Common terms (metaphor, image, rhythm, voice) fine; skip scholarly jargon. Every feedback string.
@@ -263,10 +263,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(gib.status).json(gib.body);
   }
 
+  // Scope the cooldown to this specific input so analyzing one poem doesn't
+  // lock out a different poem on the same IP. Hash is short on purpose — the
+  // cooldown is a soft lockout, not a security boundary.
+  const compareScope = createHash("sha256")
+    .update(`${model}|${title}|${lines.join("\n")}|${changesText}|${draftMode ? "draft" : "final"}`)
+    .digest("hex")
+    .slice(0, 24);
   const spend = await precheckSpend({
     rawIp: req.headers["x-forwarded-for"],
     endpoint: "compare",
     cooldownMs: cooldownFor("compare", model),
+    cooldownScope: compareScope,
   });
   if (!spend.ok) {
     if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));

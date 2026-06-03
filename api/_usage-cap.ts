@@ -17,16 +17,13 @@ const PER_IP_MONTHLY_CAP_CENTS = 500;
 const GLOBAL_DAILY_CAP_CENTS = 500;
 
 const DEFAULT_COOLDOWN_MS = 5_000;
-// Cooldown is a soft anti-spam backstop on top of:
-//   - the 8-per-60s sliding-window rate limit in _rate-limit.ts
-//   - the server-side response cache (cache hits skip this gate entirely)
-// Keep it short enough that legitimate users analyzing different poems back-to-back
-// aren't blocked, but long enough to discourage accidental rapid resubmits.
+// Cooldown is a soft anti-spam backstop. Cache hits skip this gate entirely
+// because the cache lookup in analyze.ts runs before precheckSpend.
 const ANALYZE_COOLDOWN_BY_MODEL_MS: Record<string, number> = {
-  "gpt-5-nano": 15_000,
-  "gpt-5-mini": 30_000,
+  "gpt-5-nano": 60_000,
+  "gpt-5-mini": 120_000,
 };
-const ANALYZE_COOLDOWN_FALLBACK_MS = 30_000;
+const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
 
 interface ModelPrice {
   inCentsPerMTok: number;
@@ -95,6 +92,11 @@ export interface PrecheckOpts {
   rawIp: string | string[] | undefined;
   endpoint: string;
   cooldownMs?: number;
+  /** Optional sub-key appended to the cooldown bucket. Use it to scope the
+   *  cooldown to a specific input (e.g. a poem hash) so the same IP analyzing
+   *  *different* inputs doesn't share a single lockout window. When omitted
+   *  the cooldown is per-IP per-endpoint (legacy behavior). */
+  cooldownScope?: string;
 }
 
 function block(
@@ -149,8 +151,11 @@ export async function precheckSpend(
   }
 
   const cooldownMs = opts.cooldownMs ?? DEFAULT_COOLDOWN_MS;
+  const cooldownEndpoint = opts.cooldownScope
+    ? `${opts.endpoint}:${opts.cooldownScope}`
+    : opts.endpoint;
   const installed = await kvSetPxIfAbsent(
-    cooldownKvKey(ip, opts.endpoint),
+    cooldownKvKey(ip, cooldownEndpoint),
     Date.now() + cooldownMs,
     cooldownMs,
   );

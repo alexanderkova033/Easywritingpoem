@@ -136,6 +136,26 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             </span>
           ))}
         </div>
+        <svg className="landing-constellation" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden>
+          {/* Connecting paths (drawn behind nodes) */}
+          <path className="lc-link lc-link-1" d="M 180 170 L 410 320" />
+          <path className="lc-link lc-link-2" d="M 410 320 L 250 540" />
+          <path className="lc-link lc-link-3" d="M 250 540 L 480 680" />
+          <path className="lc-link lc-link-4" d="M 1220 200 L 1410 380" />
+          <path className="lc-link lc-link-5" d="M 1410 380 L 1180 540" />
+          <path className="lc-link lc-link-6" d="M 1180 540 L 1320 760" />
+          <path className="lc-link lc-link-7" d="M 410 320 L 1220 200" />
+          <path className="lc-link lc-link-8" d="M 480 680 L 1180 540" />
+          {/* Nodes */}
+          <circle className="lc-dot lc-dot-1" cx="180" cy="170" r="3" />
+          <circle className="lc-dot lc-dot-2" cx="410" cy="320" r="4" />
+          <circle className="lc-dot lc-dot-3" cx="250" cy="540" r="3" />
+          <circle className="lc-dot lc-dot-4" cx="480" cy="680" r="3.5" />
+          <circle className="lc-dot lc-dot-5" cx="1220" cy="200" r="3.5" />
+          <circle className="lc-dot lc-dot-6" cx="1410" cy="380" r="3" />
+          <circle className="lc-dot lc-dot-7" cx="1180" cy="540" r="4" />
+          <circle className="lc-dot lc-dot-8" cx="1320" cy="760" r="3" />
+        </svg>
         <div className="landing-hero-inner">
           <div className="landing-hero-eyebrow landing-hero-eyebrow-desktop">
             <svg className="landing-hero-feather" viewBox="0 0 24 24" aria-hidden width="22" height="22">

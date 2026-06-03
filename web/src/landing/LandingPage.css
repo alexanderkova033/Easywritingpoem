@@ -230,6 +230,24 @@
   isolation: isolate;
 }
 
+/* Faint dot grid backplate — adds techy texture under aurora */
+.landing-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--accent) 28%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+  background-position: 0 0;
+  opacity: 0.18;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+  z-index: 0;
+  pointer-events: none;
+}
+
 .landing-hero-inner {
   width: 100%;
   max-width: min(94vw, 1800px);
@@ -289,6 +307,85 @@
 
 @media (prefers-reduced-motion: reduce) {
   .landing-floater { display: none; }
+}
+
+/* ── Constellation overlay (drifts subtly behind copy) ── */
+.landing-constellation {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  overflow: visible;
+  /* Fade dots toward bottom — sky thins to ground */
+  mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 92%);
+  /* Light parallax so sky lags behind foreground while scrolling */
+  transform: translateY(calc(var(--landing-scroll-y, 0) * -0.12px));
+  will-change: transform;
+}
+
+.lc-link {
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 38%, transparent);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 7;
+  opacity: 0;
+  animation: lc-link-in 1.6s ease-out forwards, lc-link-flow 12s linear infinite;
+}
+
+.lc-link-1 { animation-delay: 0.2s, 1.8s; }
+.lc-link-2 { animation-delay: 0.4s, 2s; }
+.lc-link-3 { animation-delay: 0.55s, 2.15s; }
+.lc-link-4 { animation-delay: 0.3s, 1.9s; }
+.lc-link-5 { animation-delay: 0.5s, 2.1s; }
+.lc-link-6 { animation-delay: 0.7s, 2.3s; }
+.lc-link-7 { animation-delay: 0.85s, 2.45s; }
+.lc-link-8 { animation-delay: 1s, 2.6s; }
+
+@keyframes lc-link-in {
+  from { opacity: 0; stroke-dashoffset: 80; }
+  to   { opacity: 0.32; stroke-dashoffset: 0; }
+}
+
+@keyframes lc-link-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -100; }
+}
+
+.lc-dot {
+  fill: var(--accent);
+  opacity: 0;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 50%, transparent));
+  animation: lc-dot-in 0.45s ease-out forwards, lc-dot-pulse 4s ease-in-out infinite;
+}
+
+.lc-dot-1 { animation-delay: 0.1s, 1.4s; }
+.lc-dot-2 { animation-delay: 0.25s, 1.7s; }
+.lc-dot-3 { animation-delay: 0.4s, 2s; }
+.lc-dot-4 { animation-delay: 0.55s, 2.3s; }
+.lc-dot-5 { animation-delay: 0.3s, 1.6s; }
+.lc-dot-6 { animation-delay: 0.45s, 1.9s; }
+.lc-dot-7 { animation-delay: 0.6s, 2.2s; }
+.lc-dot-8 { animation-delay: 0.75s, 2.5s; }
+
+@keyframes lc-dot-in {
+  from { opacity: 0; transform: scale(0); transform-origin: center; }
+  to   { opacity: 0.55; transform: scale(1); }
+}
+
+@keyframes lc-dot-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-link, .lc-dot { animation: none; opacity: 0.5; }
+}
+
+@media (max-width: 680px) {
+  .landing-constellation { opacity: 0.5; }
 }
 
 .landing-hero-eyebrow {
