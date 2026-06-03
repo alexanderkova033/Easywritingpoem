@@ -109,7 +109,7 @@ function endWordOfLineRaw(line: string | undefined): string {
 
 function deriveAiHighlights(poemId: string | undefined): {
   lines: Array<[number, number, string?]>;
-  words: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
+  words: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string; headline?: string }>;
 } {
   const saved = loadLastAnalysis(poemId);
   if (!saved) return { lines: [], words: [] };
@@ -119,7 +119,7 @@ function deriveAiHighlights(poemId: string | undefined): {
     lines: issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?]),
     words: issues
       .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
-      .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity })),
+      .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
   };
 }
 
@@ -283,6 +283,8 @@ export function PoemWorkshop() {
     return { added, removed };
   }, [diffSnapshot, m.body]);
 
+  const openIssueAtLineRef = useRef<((line: number, scroll?: boolean) => void) | null>(null);
+
   const [aiResult, setAiResult] = useState<PoemAnalysis | PoemComparison | null>(null);
   const [aiVisibleIssues, setAiVisibleIssues] = useState<AnalysisIssue[]>([]);
   const [aiIgnoredIds, setAiIgnoredIds] = useState<Set<string>>(() => loadIgnoredIssueIds(undefined));
@@ -301,7 +303,7 @@ export function PoemWorkshop() {
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>(
     () => deriveAiHighlights(m.activePoemId).lines,
   );
-  const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>(
+  const [wordHighlights, setWordHighlights] = useState<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string; headline?: string }>>(
     () => deriveAiHighlights(m.activePoemId).words,
   );
   const rhymeIgnored = useIgnoredRhymes();
@@ -377,16 +379,24 @@ export function PoemWorkshop() {
 
   // Click delegation: when in the rhyme tab, clicking any highlighted
   // end-word in the editor refills the Rhyme Finder with that word.
-  const handleEditorClickForRhyme = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (m.toolTab !== "rhyme") return;
+  // Also handles AI word-issue clicks: opens the matching issue panel.
+  const handleEditorBodyClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement | null;
+    const issueHit = target?.closest(".cm-word-issue") as HTMLElement | null;
+    if (issueHit) {
+      const raw = issueHit.getAttribute("data-issue-line");
+      const line = raw ? Number(raw) : NaN;
+      if (Number.isFinite(line) && line > 0) {
+        openIssueAtLineRef.current?.(line, true);
+      }
+      return;
+    }
+    if (m.toolTab !== "rhyme") return;
     const hit = target?.closest(".cm-rhyme-end") as HTMLElement | null;
     if (!hit) return;
     const word = (hit.textContent || "").trim();
     if (!word) return;
     rhymeBumpRef.current += 1;
-    // Click on a highlighted end-word fills the Rhyme Finder query but
-    // doesn't pop a collapsed panel open — keeps the layout calm.
     setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
   }, [m.toolTab]);
 
@@ -463,7 +473,7 @@ export function PoemWorkshop() {
     setWordHighlights(
       issues
         .filter((iss) => iss.problem_words && iss.problem_words.length > 0)
-        .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity })),
+        .map((iss) => ({ words: iss.problem_words!, lineStart: iss.line_start, lineEnd: iss.line_end, severity: iss.severity, headline: iss.headline })),
     );
   }, []);
 
@@ -564,7 +574,6 @@ export function PoemWorkshop() {
   const editorScrollPos = useRef(0);
   const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
-  const openIssueAtLineRef = useRef<((line: number, scroll?: boolean) => void) | null>(null);
   const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
   const cursorLineGetterRef = useRef<(() => number) | null>(null);
   const [peekLine, setPeekLine] = useState<number | null>(null);
@@ -1975,7 +1984,7 @@ export function PoemWorkshop() {
                         </div>
                       </div>
                     )}
-                    <div className="poem-editor-body-wrap" style={{ position: "relative" }} onClick={handleEditorClickForRhyme}>
+                    <div className="poem-editor-body-wrap" style={{ position: "relative" }} onClick={handleEditorBodyClick}>
                     <PoemBodyEditor
                       id="poem-body"
                       aria-describedby="poem-body-hint"

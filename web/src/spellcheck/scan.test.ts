@@ -58,6 +58,14 @@ describe("spellHitsFromText", () => {
     expect(hits.map((h) => h.word)).toEqual([]);
   });
 
+  it("accepts contractions written with a typographic apostrophe", () => {
+    const dict = new Set(["could", "do", "does", "is", "are", "you", "we"]);
+    // U+2019 right single quotation mark — what most editors autocorrect to.
+    const contractions = ["couldn’t", "don’t", "doesn’t", "isn’t", "aren’t", "you’re", "we’ve"];
+    const hits = spellHitsFromText(contractions.join(" "), dict, new Set(), new Set());
+    expect(hits.map((h) => h.word)).toEqual([]);
+  });
+
   it("reports correct line numbers for second line", () => {
     const text = "okayy\nbadwordx";
     const dict = new Set(["okay"]);

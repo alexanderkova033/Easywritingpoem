@@ -8,7 +8,7 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
-import { callOpenAI, sendParsedResponse } from "./_openai";
+import { sendParsedResponse, streamOpenAI, STREAM_META_SEPARATOR } from "./_openai";
 import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
@@ -19,7 +19,12 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v2"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v4"; // bump when prompt structure changes
+
+// FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
+// retries) as an opt-in for deep reads. Removed for cost/latency reasons.
+// Re-introduction points: client toggle in AiAnalysis.tsx, request body field,
+// callOpenAI's reasoningEffort/timeoutMs/retries below, matching block in compare.ts.
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -41,7 +46,6 @@ function analyzeCacheKey(inputs: {
   harshness: string | undefined;
   writingFocus: string | undefined;
   draftMode: boolean;
-  thinkingMode: boolean;
 }): string {
   const hash = createHash("sha256")
     .update(stableStringify(inputs))
@@ -61,16 +65,7 @@ const HARSHNESS_PERSONAS: Record<string, string> = {
   critic: "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
 };
 
-const DRAFT_BLOCK = `
-
-=== DRAFT MODE — work-in-progress ===
-The poet has marked this as a draft. Adjustments:
-- Don't penalize for incompleteness, missing ending, undeveloped form, placeholder lines, abrupt stops. Score the pillars on what's there. A great half-poem scores high; a weak one still scores honest.
-- Frame feedback FORWARD. strengths[] = broad qualities already landing (an image, a sound, a feeling), not pinned to single words. weaknesses[] = THREADS TO DEVELOP, phrased as invitations ("the imagery is starting to do real work — keep leaning into it"), not forensic notes.
-- personal_feedback: name 1-2 directions the poem seems to want. Warm, readable, not word-pinned.
-- OMIT issues[] entirely (return []). Line-level critique is premature mid-process.
-- OMIT strongest_line unless one line clearly already stands out.
-`;
+const DRAFT_BLOCK = `\n\nNote: the poem is not fully written yet — treat it as a work-in-progress draft.`;
 
 // Static rubric — never changes between requests. Kept first so OpenAI's
 // automatic prompt cache hits across every analyze call (persona + draft
@@ -163,7 +158,7 @@ Compute pillar_scores FIRST against the anchors, THEN derive overall_score arith
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
       "headline": "<≤6 words>",
-      "problem_words": ["<lowercase exact token from the poem>"],
+      "problem_words": ["<1-2 lowercase tokens — the actual offending word(s), never stopwords like 'the/and/is'>"],
       "rationale": "<exactly 3 short sentences, GOOD-style above>",
       "improvements": ["<concrete move, ≤14 words>", ...1-3 items],
       "rewrite": "<omit field entirely unless clearly stronger>",
@@ -173,7 +168,7 @@ Compute pillar_scores FIRST against the anchors, THEN derive overall_score arith
   "personal_feedback": "<2-3 short sentences addressed to 'you' — holistic read + one concrete next move, no preamble>"
 }
 
-issues[]: 2-5 items, mix serious + small, driven by the lowest-scoring pillar. Prefer single-line. problem_words REQUIRED for word-level issues. Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 2-3 items, mix serious + small, driven by the lowest-scoring pillar. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
 
 function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
   const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";
@@ -292,7 +287,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     harshness?: unknown;
     writingFocus?: unknown;
     draftMode?: unknown;
-    thinkingMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -317,7 +311,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
   const draftMode = body.draftMode === true;
-  const thinkingMode = body.thinkingMode === true;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -336,7 +329,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // would generate. sendParsedResponse rewrites meta.analyzedAt to "now",
   // so the cached response feels freshly produced to the client.
   const cacheKey = analyzeCacheKey({
-    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode, thinkingMode,
+    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode,
   });
   const cachedRaw = await kvGetString(cacheKey);
   if (cachedRaw) {
@@ -361,7 +354,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(gib.status).json(gib.body);
   }
 
-  const result = await callOpenAI(
+  // Streaming path — content bytes flow to the client as OpenAI emits them.
+  // Body shape: <model JSON content>${STREAM_META_SEPARATOR}<meta JSON>
+  // The client splits on the separator, parses each half, and reassembles the
+  // same envelope shape sendParsedResponse would have built.
+  let headersSent = false;
+  const result = await streamOpenAI(
     apiKey,
     {
       model,
@@ -369,19 +367,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness, draftMode) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: thinkingMode ? 6000 : 4000,
-      temperature: 0,
-      // Normal: low reasoning, fast (~10-20s, 2 retries OK).
-      // Thinking: medium reasoning, slow (30-60s), single attempt with long
-      // timeout — retries just compound the wait on a call that's slow for
-      // structural reasons, not transient ones.
-      reasoningEffort: thinkingMode ? "medium" : "low",
-      timeoutMs: thinkingMode ? 90_000 : 30_000,
-      retries: thinkingMode ? 0 : 2,
+      max_tokens: 4000,
+      reasoningEffort: "low",
+      timeoutMs: 30_000,
     },
     res,
+    (delta) => {
+      if (!headersSent) {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.setHeader("X-Accel-Buffering", "no");
+        res.status(200);
+        headersSent = true;
+      }
+      res.write(delta);
+    },
   );
-  if (!result) return;
+  if (!result) {
+    // Pre-stream errors already wrote a JSON error to res. Mid-stream failures
+    // returned null after headers — close the connection so the client throws.
+    if (headersSent) res.end();
+    return;
+  }
 
   await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
   // Store the raw OpenAI content + resolved model so future identical inputs
@@ -391,5 +398,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     JSON.stringify({ content: result.content, model: result.model } satisfies CachedAnalyzeEntry),
     ANALYZE_CACHE_MS,
   ).catch(() => {});
-  sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
+
+  const meta: Record<string, unknown> = {
+    model: result.model,
+    analyzedAt: new Date().toISOString(),
+  };
+  if (draftMode) meta.draft = true;
+  res.write(STREAM_META_SEPARATOR + JSON.stringify(meta));
+  res.end();
 }

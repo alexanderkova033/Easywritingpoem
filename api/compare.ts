@@ -10,17 +10,7 @@ import { callOpenAI, sendParsedResponse } from "./_openai";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 
-const DRAFT_BLOCK = `
-
-=== DRAFT MODE — work-in-progress ===
-The poet has marked this revision as in-progress. Adjustments:
-- Don't penalize for incompleteness, missing ending, undeveloped form, structural gaps. Score the pillars on what's there.
-- Frame feedback FORWARD. strengths[] = broad qualities already landing (image/sound/feeling), not pinned to single words. weaknesses[] = THREADS TO DEVELOP, phrased as invitations, not problems.
-- personal_feedback: name 1-2 directions the poem seems to want. Warm, readable, not word-pinned.
-- OMIT issues[] entirely (return []). Line-level critique is premature.
-- OMIT strongest_line unless one line clearly stands out.
-- comparison{} still applies: describe what changed. improvements/regressions reference craft moves, not "fix this".
-`;
+const DRAFT_BLOCK = `\n\nNote: the poem is not fully written yet — treat it as a work-in-progress draft.`;
 
 function buildSystemPrompt(draftMode?: boolean): string {
   return BASE_SYSTEM_PROMPT + (draftMode ? DRAFT_BLOCK : "");
@@ -112,7 +102,7 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
       "headline": "<≤6 words>",
-      "problem_words": ["<lowercase exact token from the poem>"],
+      "problem_words": ["<1-2 lowercase tokens — the actual offending word(s), never stopwords like 'the/and/is'>"],
       "rationale": "<exactly 3 short sentences, GOOD-style above>",
       "improvements": ["<concrete move, ≤14 words>", ...1-3 items],
       "rewrite": "<omit field entirely unless clearly stronger>",
@@ -127,7 +117,7 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
   "personal_feedback": "<2-3 sentences addressed to 'you' — holistic read of CURRENT + the revision arc + one concrete next move, no preamble>"
 }
 
-issues[]: 2-5 items, mix serious + small. Prefer single-line. problem_words REQUIRED for word-level issues. Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 2-3 items, mix serious + small. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -239,7 +229,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousWeaknesses?: unknown;
     previousIssues?: unknown;
     draftMode?: unknown;
-    thinkingMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -263,7 +252,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const draftMode = body.draftMode === true;
-  const thinkingMode = body.thinkingMode === true;
 
   const gib = await gibberishGuard({
     rawIp: req.headers["x-forwarded-for"],
@@ -347,13 +335,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(draftMode) },
         { role: "user", content: userMessage },
       ],
-      max_tokens: thinkingMode ? 7000 : 5000,
+      max_tokens: 5000,
       temperature: 0,
-      // Normal: low reasoning, fast. Thinking: medium reasoning, slow —
-      // long timeout, no retries (a structurally slow call won't turn fast).
-      reasoningEffort: thinkingMode ? "medium" : "low",
-      timeoutMs: thinkingMode ? 90_000 : 30_000,
-      retries: thinkingMode ? 0 : 2,
+      reasoningEffort: "low",
+      timeoutMs: 30_000,
+      retries: 2,
     },
     res,
   );

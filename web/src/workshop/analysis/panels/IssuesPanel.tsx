@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { GoalEvaluation } from "@/workshop/goals/metrics";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
@@ -37,9 +37,44 @@ interface QueueIssue {
   title: string;
   detail?: string;
   line?: number;
+  lineEnd?: number;
+  /** Original poem text the AI is flagging — rendered as a quoted preview. */
+  excerpt?: string;
+  /** Proposed rewrite — rendered as a diff-style preview under the excerpt. */
+  rewrite?: string;
+  /** Specific words within the excerpt the AI considers weak. */
+  problemWords?: string[];
   onJump?: () => void;
   primary?: { label: string; onClick: () => void; disabled?: boolean };
   secondary?: { label: string; onClick: () => void };
+}
+
+/** Wrap each occurrence of any problem word in a marked span. Case-insensitive,
+ * word-boundary aware. Returns the original string when there is no match. */
+function highlightProblemWords(text: string, words: string[] | undefined): ReactNode {
+  if (!text || !words || words.length === 0) return text;
+  const cleaned = words.map((w) => w.trim()).filter(Boolean);
+  if (cleaned.length === 0) return text;
+  const escaped = cleaned
+    .sort((a, b) => b.length - a.length)
+    .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const re = new RegExp(`(?:^|[^\\p{L}\\p{N}'])(${escaped.join("|")})(?=$|[^\\p{L}\\p{N}'])`, "giu");
+  const out: ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const full = m[0]!;
+    const word = m[1]!;
+    const start = m.index + (full.length - word.length);
+    if (start > last) out.push(text.slice(last, start));
+    out.push(<mark key={key++} className="queue-excerpt-mark">{word}</mark>);
+    last = start + word.length;
+    if (re.lastIndex === m.index) re.lastIndex++;
+  }
+  if (out.length === 0) return text;
+  if (last < text.length) out.push(text.slice(last));
+  return out;
 }
 
 function aiSeverityToQueueSeverity(sev: AnalysisIssue["severity"]): QueueSeverity {
@@ -75,7 +110,13 @@ export function IssuesPanel({
         iss.line_end > iss.line_start
           ? `lines ${iss.line_start}–${iss.line_end}`
           : `line ${iss.line_start}`;
-      const title = iss.headline?.trim() || iss.excerpt?.trim() || `AI flagged ${rangeLabel}`;
+      const headline = iss.headline?.trim();
+      const excerpt = iss.excerpt?.trim();
+      // Prefer the headline as the title (it summarizes the craft point).
+      // Fall back to the excerpt only when no headline exists — but in that
+      // case don't also render the excerpt block, to avoid duplication.
+      const title = headline || excerpt || `AI flagged ${rangeLabel}`;
+      const excerptForBlock = headline ? excerpt : undefined;
       list.push({
         id: `ai:${iss.id}`,
         severity: aiSeverityToQueueSeverity(iss.severity),
@@ -84,6 +125,10 @@ export function IssuesPanel({
         title,
         detail: iss.rationale,
         line: iss.line_start,
+        lineEnd: iss.line_end > iss.line_start ? iss.line_end : undefined,
+        excerpt: excerptForBlock,
+        rewrite: iss.rewrite?.trim() || undefined,
+        problemWords: iss.problem_words,
         onJump: () => goToLine(iss.line_start),
         primary: iss.rewrite
           ? { label: "Apply rewrite", onClick: () => onAiApply(iss) }
@@ -260,9 +305,13 @@ export function IssuesPanel({
                             type="button"
                             className="queue-line-link"
                             onClick={it.onJump}
-                            title={`Jump to line ${it.line}`}
+                            title={
+                              it.lineEnd != null
+                                ? `Jump to lines ${it.line}–${it.lineEnd}`
+                                : `Jump to line ${it.line}`
+                            }
                           >
-                            L{it.line}
+                            L{it.line}{it.lineEnd != null ? `–${it.lineEnd}` : ""}
                           </button>
                         ) : null}
                       </div>
@@ -274,6 +323,24 @@ export function IssuesPanel({
                           <p className="queue-detail muted small">
                             {it.detail}
                           </p>
+                        ) : null}
+                        {it.excerpt || it.rewrite ? (
+                          <div className="queue-diff" aria-label="Suggested change">
+                            {it.excerpt ? (
+                              <p className="queue-diff-line queue-diff-from">
+                                <span className="queue-diff-marker" aria-hidden>“</span>
+                                <span className="queue-diff-text">
+                                  {highlightProblemWords(it.excerpt, it.problemWords)}
+                                </span>
+                              </p>
+                            ) : null}
+                            {it.rewrite ? (
+                              <p className="queue-diff-line queue-diff-to">
+                                <span className="queue-diff-marker" aria-hidden>→</span>
+                                <span className="queue-diff-text">{it.rewrite}</span>
+                              </p>
+                            ) : null}
+                          </div>
                         ) : null}
                       </div>
                       {it.primary || it.secondary ? (

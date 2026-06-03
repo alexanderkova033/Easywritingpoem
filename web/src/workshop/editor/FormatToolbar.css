@@ -1054,24 +1054,58 @@ button.primary:disabled {
   opacity: 0.65;
 }
 
-/* ---- Word-level problem highlights ---- */
+/* ---- Word-level problem highlights ----
+   Interactive: click opens the matching issue panel.
+   Hover/cursor signals affordance; native title shows the issue headline. */
 .cm-word-issue {
-  border-bottom: 1px solid;
-  border-radius: 1px;
+  border-bottom: 2px solid;
+  border-radius: 2px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-bottom-color 0.12s ease,
+              box-shadow 0.12s ease;
+}
+
+.cm-word-issue:hover,
+.cm-word-issue:focus-visible {
+  outline: none;
+  border-bottom-width: 2px;
+}
+
+.cm-word-issue:active {
+  transform: translateY(0.5px);
 }
 
 .cm-word-issue-high {
-  border-bottom-color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 60%, transparent);
-  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 4%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--ai-score-low, #d95f5f) 75%, transparent);
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 9%, transparent);
+}
+.cm-word-issue-high:hover,
+.cm-word-issue-high:focus-visible {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 22%, transparent);
+  border-bottom-color: var(--ai-score-low, #d95f5f);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ai-score-low, #d95f5f) 35%, transparent);
 }
 
 .cm-word-issue-medium {
-  border-bottom-color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 55%, transparent);
-  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 3%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 70%, transparent);
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 8%, transparent);
+}
+.cm-word-issue-medium:hover,
+.cm-word-issue-medium:focus-visible {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 22%, transparent);
+  border-bottom-color: var(--ai-score-mid, #e6a817);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ai-score-mid, #e6a817) 35%, transparent);
 }
 
 .cm-word-issue-low {
-  border-bottom-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  background: color-mix(in srgb, var(--accent) 3%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+.cm-word-issue-low:hover,
+.cm-word-issue-low:focus-visible {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-bottom-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 

@@ -1,4 +1,6 @@
-const WORD_RE = /[a-zA-Z']+/g;
+// Allow curly apostrophes (U+2018, U+2019) so smart-quoted contractions like
+// "doesn’t" stay one token instead of splitting into "doesn" + "t".
+const WORD_RE = /[a-zA-Z'‘’]+/g;
 
 export interface WordSpan {
   start: number;
@@ -27,5 +29,10 @@ export function lastWordInLine(line: string): string | null {
 }
 
 export function normalizeWordToken(raw: string): string {
-  return raw.replace(/^'+|'+$/g, "").toLowerCase();
+  // Fold curly apostrophes to ASCII so dictionary lookups and contraction
+  // detection (e.g. "doesn't") work regardless of the source text's quotes.
+  return raw
+    .replace(/[‘’]/g, "'")
+    .replace(/^'+|'+$/g, "")
+    .toLowerCase();
 }

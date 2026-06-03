@@ -1798,6 +1798,67 @@
   line-height: 1.4;
 }
 
+/* AI-only: side-by-side preview of the original line and the suggested rewrite.
+ * Sits below the rationale so the writer can evaluate the change without
+ * jumping into the editor or applying it blind. */
+.queue-diff {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.queue-diff-line {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1.1rem 1fr;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.queue-diff-marker {
+  font-weight: 700;
+  font-family: var(--font-metric);
+  text-align: center;
+  user-select: none;
+}
+
+.queue-diff-from .queue-diff-marker {
+  color: color-mix(in srgb, var(--muted) 80%, var(--text));
+  font-size: 1.05rem;
+  line-height: 1;
+  transform: translateY(0.15rem);
+}
+
+.queue-diff-to .queue-diff-marker {
+  color: color-mix(in srgb, var(--accent) 80%, var(--text));
+}
+
+.queue-diff-from .queue-diff-text {
+  color: color-mix(in srgb, var(--text) 75%, var(--muted));
+  font-style: italic;
+}
+
+.queue-diff-to .queue-diff-text {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.queue-excerpt-mark {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: color-mix(in srgb, var(--danger) 95%, var(--text));
+  padding: 0 0.18rem;
+  border-radius: 3px;
+  font-style: normal;
+}
+
 .queue-actions {
   grid-area: action;
   align-self: center;
@@ -1858,6 +1919,14 @@
     flex: 1 1 auto;
     width: auto;
     padding-block: 0.45rem;
+  }
+  .queue-diff {
+    padding: 0.4rem 0.5rem;
+  }
+  .queue-diff-line {
+    font-size: 0.82rem;
+    grid-template-columns: 1rem 1fr;
+    gap: 0.35rem;
   }
 }
 

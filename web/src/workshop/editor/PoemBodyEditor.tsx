@@ -657,7 +657,7 @@ const echoHighlightField = StateField.define<DecorationSet>({
 });
 
 // ---- Word-level problem highlights ---- //
-const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>>();
+const setWordHighlights = StateEffect.define<Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string; headline?: string }>>();
 const clearWordHighlights = StateEffect.define<void>();
 
 const wordHighlightField = StateField.define<DecorationSet>({
@@ -669,7 +669,10 @@ const wordHighlightField = StateField.define<DecorationSet>({
       if (e.is(setWordHighlights)) {
         const decos: Range<Decoration>[] = [];
         const doc = tr.state.doc;
-        for (const { words, lineStart, lineEnd, severity } of e.value) {
+        // Track which (from..to) ranges have been claimed already so two
+        // issues that name the same word don't double-mark it.
+        const claimed = new Set<string>();
+        for (const { words, lineStart, lineEnd, severity, headline } of e.value) {
           if (!words.length) continue;
           const cls = severity === "high"
             ? "cm-word-issue cm-word-issue-high"
@@ -678,18 +681,36 @@ const wordHighlightField = StateField.define<DecorationSet>({
               : "cm-word-issue cm-word-issue-low";
           const startLine = Math.max(1, lineStart);
           const endLine = Math.min(doc.lines, lineEnd);
-          for (let n = startLine; n <= endLine; n++) {
-            const line = doc.line(n);
-            const text = line.text.toLowerCase();
-            for (const word of words) {
-              const needle = word.toLowerCase();
-              let pos = 0;
-              while (pos < text.length) {
-                const idx = text.indexOf(needle, pos);
-                if (idx === -1) break;
-                decos.push(Decoration.mark({ class: cls }).range(line.from + idx, line.from + idx + needle.length));
-                pos = idx + needle.length;
-              }
+          const tip = headline?.trim() || "AI suggestion — click to open";
+          const attrs: Record<string, string> = {
+            "data-issue-line": String(lineStart),
+            title: tip,
+            role: "button",
+            "aria-label": tip,
+            tabindex: "-1",
+          };
+          // Mark only the FIRST whole-word occurrence of each problem word
+          // within this issue's line range. Prior behavior used indexOf,
+          // which both matched substrings ("the" inside "there") and fired
+          // on every occurrence — the result felt like noise.
+          for (const rawWord of words) {
+            const needle = rawWord.toLowerCase().trim();
+            if (!needle) continue;
+            const esc = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            // Word boundaries that also treat apostrophes/hyphens as part of the word.
+            const re = new RegExp(`(?<![A-Za-z0-9'’-])${esc}(?![A-Za-z0-9'’-])`, "i");
+            let placed = false;
+            for (let n = startLine; n <= endLine && !placed; n++) {
+              const line = doc.line(n);
+              const m = re.exec(line.text);
+              if (!m) continue;
+              const from = line.from + m.index;
+              const to = from + m[0].length;
+              const key = `${from}-${to}`;
+              if (claimed.has(key)) { placed = true; continue; }
+              claimed.add(key);
+              decos.push(Decoration.mark({ class: cls, attributes: attrs }).range(from, to));
+              placed = true;
             }
           }
         }
@@ -758,7 +779,7 @@ export interface PoemBodyEditorProps {
   /** Alt+Enter on a flagged line — apply that issue's rewrite if available. */
   onApplyRewriteAtCursor?: (line: number) => boolean;
   /** Word-level problem highlights from AI issues. */
-  wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string }>;
+  wordHighlights?: Array<{ words: string[]; lineStart: number; lineEnd: number; severity?: string; headline?: string }>;
   /** Per-line rhyme end-word highlights — colors the last word in each listed line by cluster index. */
   rhymeEndHighlights?: Array<{ line: number; colorKey: string }>;
   /** Internal-rhyme highlights — subtle marks on word ranges that rhyme with another word in the same line. */

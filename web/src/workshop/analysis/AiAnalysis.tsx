@@ -11,7 +11,7 @@ import {
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
-import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED, STORAGE_KEY_AI_THINKING_MODE } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import {
   LS_LAST_ANALYSIS_PREFIX,
   LS_LAST_ANALYZED_LINES_PREFIX,
@@ -34,7 +34,6 @@ import {
   loadLastHash,
   loadScoreHistory,
   loadScoringEnabled,
-  loadThinkingMode,
   pushSnapshot,
   saveLastHash,
 } from "./ai-analysis-helpers";
@@ -77,11 +76,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   const setDraftMode = useCallback((next: boolean) => {
     setDraftModeState(next);
     tryLocalStorageSetItem(STORAGE_KEY_AI_DRAFT_MODE, next ? "1" : "0");
-  }, []);
-  const [thinkingMode, setThinkingModeState] = useState<boolean>(loadThinkingMode);
-  const setThinkingMode = useCallback((next: boolean) => {
-    setThinkingModeState(next);
-    tryLocalStorageSetItem(STORAGE_KEY_AI_THINKING_MODE, next ? "1" : "0");
   }, []);
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
@@ -184,7 +178,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       harshness,
       mainIdea ?? "",
       draftMode ? "draft" : "final",
-      thinkingMode ? "think" : "normal",
     ].join("|"));
     if (result && loadLastHash(poemId) === inputHash) {
       setStatus("done");
@@ -210,12 +203,11 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 headline: i.headline,
               })),
             draftMode,
-            thinkingMode,
           },
           ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, draftMode, thinkingMode }, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, draftMode }, ctrl.signal);
       }
       setResult(res);
       setSavedResult(res);
@@ -247,7 +239,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, draftMode, thinkingMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
+  }, [canCompare, hasPoem, harshness, draftMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
 
 
   useEffect(() => {
@@ -380,26 +372,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 </button>
               </div>
 
-              <div className="ai-thinking-toggle" role="group" aria-label="Reasoning depth">
-                <button
-                  type="button"
-                  className={`ai-thinking-btn${!thinkingMode ? " is-active" : ""} ai-thinking-normal`}
-                  onClick={() => setThinkingMode(false)}
-                  title="Faster analysis — light reasoning effort"
-                  aria-pressed={!thinkingMode}
-                >
-                  <span aria-hidden>⚡</span> Normal
-                </button>
-                <button
-                  type="button"
-                  className={`ai-thinking-btn${thinkingMode ? " is-active" : ""} ai-thinking-deep`}
-                  onClick={() => setThinkingMode(true)}
-                  title="Slower, more careful — medium reasoning effort. Takes up to ~90s."
-                  aria-pressed={thinkingMode}
-                >
-                  <span aria-hidden>◐</span> Thinking
-                </button>
-              </div>
             </div>
 
             <div className="ai-analyze-actions">

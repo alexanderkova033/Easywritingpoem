@@ -178,6 +178,148 @@ export async function callOpenAI(
 }
 
 /**
+ * Streaming variant of callOpenAI. Forwards each content delta to `onChunk`
+ * as soon as it arrives so the caller can write it to its HTTP response
+ * before the full model output is ready. Returns the fully accumulated
+ * content + model + usage at the end for caching / spend accounting.
+ *
+ * On any pre-stream failure (network, 4xx/5xx upstream, missing body) writes
+ * a JSON error to `res` and returns null — the caller should NOT have written
+ * any response body before calling. On mid-stream failures the partial body
+ * already written is preserved and the function returns null; the caller is
+ * responsible for closing the connection.
+ */
+export async function streamOpenAI(
+  apiKey: string,
+  opts: {
+    model: string;
+    messages: OpenAIMessage[];
+    max_tokens: number;
+    jsonMode?: boolean;
+    reasoningEffort?: "minimal" | "low" | "medium" | "high";
+    timeoutMs?: number;
+  },
+  res: VercelResponse,
+  onChunk: (delta: string) => void,
+): Promise<OpenAICallResult | null> {
+  const body: Record<string, unknown> = {
+    model: opts.model,
+    messages: opts.messages,
+    max_completion_tokens: opts.max_tokens,
+    stream: true,
+    stream_options: { include_usage: true },
+  };
+  if (opts.model.startsWith("gpt-5") || opts.model.startsWith("o")) {
+    body.reasoning_effort = opts.reasoningEffort ?? "minimal";
+  }
+  if (opts.jsonMode !== false) {
+    body.response_format = { type: "json_object" };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), opts.timeoutMs ?? 30000);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(OPENAI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    console.error("OpenAI stream fetch failed:", err);
+    res.status(502).json({
+      error: `Could not reach OpenAI: ${err instanceof Error ? err.message : String(err)}`,
+    });
+    return null;
+  }
+
+  if (!upstream.ok || !upstream.body) {
+    clearTimeout(timeout);
+    let msg = `OpenAI returned HTTP ${upstream.status}`;
+    try {
+      const errBody = (await upstream.json()) as { error?: { message?: string } };
+      if (errBody?.error?.message) msg = errBody.error.message;
+    } catch {
+      /* ignore */
+    }
+    console.error("OpenAI stream returned an error:", msg);
+    const status = upstream.status === 429 ? 429 : 502;
+    res.status(status).json({ error: msg });
+    return null;
+  }
+
+  let content = "";
+  let resolvedModel = opts.model;
+  let usage: OpenAIUsage = { promptTokens: 0, completionTokens: 0 };
+
+  const reader = upstream.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      // SSE events are separated by blank lines; each event has one or more
+      // `data: <json>` lines. We split per-line, ignore comments/empties, and
+      // parse each `data:` payload as it arrives.
+      let nl: number;
+      while ((nl = buffer.indexOf("\n")) !== -1) {
+        const line = buffer.slice(0, nl).replace(/\r$/, "");
+        buffer = buffer.slice(nl + 1);
+        if (!line.startsWith("data:")) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(data) as {
+            choices?: { delta?: { content?: string } }[];
+            model?: string;
+            usage?: { prompt_tokens?: number; completion_tokens?: number };
+          };
+          const delta = evt.choices?.[0]?.delta?.content;
+          if (delta) {
+            content += delta;
+            onChunk(delta);
+          }
+          if (evt.model) resolvedModel = evt.model;
+          if (evt.usage) {
+            usage = {
+              promptTokens: evt.usage.prompt_tokens ?? 0,
+              completionTokens: evt.usage.completion_tokens ?? 0,
+            };
+          }
+        } catch {
+          /* skip unparseable SSE frame */
+        }
+      }
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    console.error("OpenAI stream read failed mid-flight:", err);
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!content) {
+    console.error("OpenAI stream produced empty content");
+    return null;
+  }
+
+  return { ok: true, content, model: resolvedModel, usage };
+}
+
+/** Marker used to split the streamed analyze body into <model-content> + <meta-json>. */
+export const STREAM_META_SEPARATOR = "\n___META___\n";
+
+/**
  * Strict JSON parse first, then a salvage pass for the common failure mode:
  * the model truncates mid-array (max_tokens hit) leaving unbalanced braces.
  * We strip code fences, trim partial trailing strings/keys, and close any

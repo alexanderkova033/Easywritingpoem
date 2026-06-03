@@ -167,7 +167,7 @@ function parseStrongestLine(v: unknown): StrongestLine | undefined {
 /** Cap total issues at MAX_ISSUES and roughly balance high/medium/low buckets.
  * Round-robin pick from each severity bucket (high → medium → low) preserving
  * original order within each bucket. Issues with no severity fall into "low". */
-const MAX_ISSUES = 5;
+const MAX_ISSUES = 3;
 function balanceAndCapIssues<T extends { severity?: "high" | "medium" | "low" }>(issues: T[]): T[] {
   if (issues.length <= MAX_ISSUES) return issues;
   const high: T[] = [];
@@ -337,7 +337,6 @@ export async function comparePoem(
     previousWeaknesses,
     previousIssues,
     draftMode,
-    thinkingMode,
   }: {
     title: string;
     lines: string[];
@@ -350,7 +349,6 @@ export async function comparePoem(
     previousWeaknesses?: string[];
     previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
     draftMode?: boolean;
-    thinkingMode?: boolean;
   },
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
@@ -361,7 +359,7 @@ export async function comparePoem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues, draftMode, thinkingMode,
+      previousWeaknesses, previousIssues, draftMode,
     }),
   });
 
@@ -424,6 +422,10 @@ export async function recheckIssue(
 
 export type HarshnessLevel = "casual" | "editor" | "critic";
 
+/** Matches STREAM_META_SEPARATOR in api/_openai.ts. Used to split the streamed
+ *  analyze body into <model JSON content> + <meta JSON>. */
+const STREAM_META_SEPARATOR = "\n___META___\n";
+
 export async function analyzePoem(
   {
     title,
@@ -433,7 +435,7 @@ export async function analyzePoem(
     harshness,
     writingFocus,
     draftMode,
-    thinkingMode,
+    onProgress,
   }: {
     title: string;
     lines: string[];
@@ -442,9 +444,9 @@ export async function analyzePoem(
     harshness?: HarshnessLevel;
     writingFocus?: string;
     draftMode?: boolean;
-    /** When true, the server uses medium reasoning effort for a slower but
-     *  more careful analysis. Default false = low reasoning, faster. */
-    thinkingMode?: boolean;
+    /** Optional: called with the running character count as content streams in.
+     *  Lets the UI show real progress instead of an indeterminate spinner. */
+    onProgress?: (charsReceived: number) => void;
   },
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
@@ -452,7 +454,7 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, draftMode, thinkingMode }),
+    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, draftMode }),
   });
 
   if (!response.ok) {
@@ -462,6 +464,50 @@ export async function analyzePoem(
     throw e;
   }
 
-  const data = (await response.json()) as Record<string, unknown>;
-  return parseAnalysis(data);
+  const contentType = response.headers.get("content-type") ?? "";
+  // Cache hits and other non-streaming responses come back as JSON like before.
+  if (contentType.includes("application/json")) {
+    const data = (await response.json()) as Record<string, unknown>;
+    return parseAnalysis(data);
+  }
+
+  // Streaming path: <model JSON content>${STREAM_META_SEPARATOR}<meta JSON>
+  let body = "";
+  if (response.body) {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      body += decoder.decode(value, { stream: true });
+      onProgress?.(body.length);
+    }
+  } else {
+    body = await response.text();
+  }
+
+  const sepIdx = body.lastIndexOf(STREAM_META_SEPARATOR);
+  const contentText = sepIdx >= 0 ? body.slice(0, sepIdx) : body;
+  const metaText = sepIdx >= 0 ? body.slice(sepIdx + STREAM_META_SEPARATOR.length) : "";
+
+  let modelJson: Record<string, unknown>;
+  try {
+    modelJson = JSON.parse(contentText) as Record<string, unknown>;
+  } catch {
+    // Model output got truncated mid-flight; surface as a normal error rather
+    // than half-rendered results.
+    throw new Error("AI response was cut off before it finished. Please try again.");
+  }
+  let meta: Record<string, unknown> = {};
+  if (metaText) {
+    try { meta = JSON.parse(metaText) as Record<string, unknown>; } catch { /* ignore */ }
+  }
+
+  const envelope: Record<string, unknown> = { ...modelJson };
+  envelope.meta = {
+    model: typeof meta.model === "string" ? meta.model : "gpt-5-mini",
+    analyzedAt: typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
+  };
+  if (meta.draft === true) envelope.draft = true;
+  return parseAnalysis(envelope);
 }
