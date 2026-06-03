@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v14"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v15"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -190,14 +190,13 @@ Compute pillar_scores FIRST against the anchors, THEN derive overall_score arith
       "problem_words": ["<1-2 lowercase tokens — the actual offending word(s), never stopwords like 'the/and/is'>"],
       "rationale": "<exactly 3 short sentences, GOOD-style above>",
       "improvements": ["<concrete move, ≤14 words>", ...1-3 items],
-      "rewrite": "<omit field entirely unless clearly stronger>",
-      "confidence": "low"
+      "rewrite": "<omit field entirely unless clearly stronger>"
     }
   ],
   "personal_feedback": "<2-3 short sentences addressed to 'you' — holistic read + one concrete next move, no preamble>"
 }
 
-issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence.`;
 
 function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
   const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";
