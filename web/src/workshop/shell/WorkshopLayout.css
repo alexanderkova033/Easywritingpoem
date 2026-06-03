@@ -939,12 +939,12 @@
   }
 }
 
-/* Only let the rail stay sticky alongside the page-centered AI section (max-width 78rem ≈ 1365px
-   at 17.5px root) when the viewport is wide enough that the rail fits comfortably in the empty
-   gutter to the left of the centered section. Below ~1700px the gutter would be less than the
-   rail width + breathing room, so the rail reverts to normal flow and scrolls off naturally
-   instead of overlapping the AI content. */
-@media (min-width: 900px) and (max-width: 1699px) {
+/* At 900-1049px the AI section centers with `max-width: 78rem; margin-inline: auto`,
+   so on narrower iPads/laptops it fills the viewport and a sticky rail would slide
+   down over the AI content. Revert to static there. At ≥1050px the AI section uses
+   `margin-inline: calc(var(--rail-col) + 1rem)`, which explicitly reserves a slot
+   for the rail — sticky is safe and matches the tools panel. */
+@media (min-width: 900px) and (max-width: 1049px) {
   .workshop-rail {
     position: static;
     top: auto;

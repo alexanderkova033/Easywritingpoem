@@ -756,6 +756,60 @@ export function PoemWorkshop() {
   }, [m.toolTab]);
 
 
+  // Desktop sticky tools panel: keep `--tools-shift` in sync so the panel
+  // never slides down over the AI Analysis section in row 2. CSS gives the
+  // panel `position: sticky; top: 1.15rem` at ≥1050px; this measures the gap
+  // to the AI section and translates the panel up by the overlap, so its
+  // bottom edge stops just above AI Analysis. Pure CSS can't do this because
+  // a sticky grid item's containing block is the whole grid (not its cell).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 1050) return;
+    const panel = toolsPanelRef.current;
+    if (!panel) return;
+
+    let raf = 0;
+    let aiSection: HTMLElement | null = null;
+
+    const update = () => {
+      raf = 0;
+      if (!aiSection || !aiSection.isConnected) {
+        aiSection = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+      }
+      const h = panel.offsetHeight;
+      if (!aiSection || h === 0) {
+        panel.style.setProperty("--tools-shift", "0px");
+        return;
+      }
+      const stickyTop = parseFloat(getComputedStyle(panel).top) || 18.4;
+      const gap = 12;
+      const aiTop = aiSection.getBoundingClientRect().top;
+      const overlap = stickyTop + h + gap - aiTop;
+      panel.style.setProperty("--tools-shift", overlap > 0 ? `${-overlap}px` : "0px");
+    };
+
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const ro = new ResizeObserver(schedule);
+    ro.observe(panel);
+    aiSection = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+    if (aiSection) ro.observe(aiSection);
+
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      panel.style.removeProperty("--tools-shift");
+    };
+  }, [m.activePoemId, isFocusMode]);
+
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
   useEffect(() => {

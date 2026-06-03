@@ -3456,6 +3456,50 @@ button.ai-flagged-cliche:focus-visible {
   background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 75%, #6b4e0e);
 }
 
+/* ======================================================
+   Thinking toggle: Normal (low reasoning) vs Thinking (medium reasoning)
+   Mirrors the draft toggle visually.
+   ====================================================== */
+.ai-thinking-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  gap: 1px;
+}
+
+.ai-thinking-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  padding: 0.28rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ai-thinking-btn:hover { color: var(--text); }
+
+.ai-thinking-btn.is-active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.ai-thinking-normal.is-active {
+  background: color-mix(in srgb, var(--muted) 55%, var(--text));
+}
+
+.ai-thinking-deep.is-active {
+  background: color-mix(in srgb, var(--accent, #6a8bb8) 70%, #2a3a55);
+}
+
 /* Draft badge in the hero meta row */
 .ai-draft-badge {
   display: inline-flex;

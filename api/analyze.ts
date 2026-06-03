@@ -41,6 +41,7 @@ function analyzeCacheKey(inputs: {
   harshness: string | undefined;
   writingFocus: string | undefined;
   draftMode: boolean;
+  thinkingMode: boolean;
 }): string {
   const hash = createHash("sha256")
     .update(stableStringify(inputs))
@@ -291,6 +292,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     harshness?: unknown;
     writingFocus?: unknown;
     draftMode?: unknown;
+    thinkingMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -315,6 +317,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
   const draftMode = body.draftMode === true;
+  const thinkingMode = body.thinkingMode === true;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -333,7 +336,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // would generate. sendParsedResponse rewrites meta.analyzedAt to "now",
   // so the cached response feels freshly produced to the client.
   const cacheKey = analyzeCacheKey({
-    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode,
+    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode, thinkingMode,
   });
   const cachedRaw = await kvGetString(cacheKey);
   if (cachedRaw) {
@@ -366,9 +369,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness, draftMode) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 6000,
+      max_tokens: thinkingMode ? 6000 : 4000,
       temperature: 0,
-      reasoningEffort: "medium",
+      // Normal: low reasoning, fast (~10-20s, 2 retries OK).
+      // Thinking: medium reasoning, slow (30-60s), single attempt with long
+      // timeout — retries just compound the wait on a call that's slow for
+      // structural reasons, not transient ones.
+      reasoningEffort: thinkingMode ? "medium" : "low",
+      timeoutMs: thinkingMode ? 90_000 : 30_000,
+      retries: thinkingMode ? 0 : 2,
     },
     res,
   );

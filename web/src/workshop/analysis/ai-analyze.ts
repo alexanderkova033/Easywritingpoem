@@ -337,6 +337,7 @@ export async function comparePoem(
     previousWeaknesses,
     previousIssues,
     draftMode,
+    thinkingMode,
   }: {
     title: string;
     lines: string[];
@@ -349,6 +350,7 @@ export async function comparePoem(
     previousWeaknesses?: string[];
     previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
     draftMode?: boolean;
+    thinkingMode?: boolean;
   },
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
@@ -359,7 +361,7 @@ export async function comparePoem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues, draftMode,
+      previousWeaknesses, previousIssues, draftMode, thinkingMode,
     }),
   });
 
@@ -431,6 +433,7 @@ export async function analyzePoem(
     harshness,
     writingFocus,
     draftMode,
+    thinkingMode,
   }: {
     title: string;
     lines: string[];
@@ -439,6 +442,9 @@ export async function analyzePoem(
     harshness?: HarshnessLevel;
     writingFocus?: string;
     draftMode?: boolean;
+    /** When true, the server uses medium reasoning effort for a slower but
+     *  more careful analysis. Default false = low reasoning, faster. */
+    thinkingMode?: boolean;
   },
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
@@ -446,7 +452,7 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, draftMode }),
+    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, draftMode, thinkingMode }),
   });
 
   if (!response.ok) {

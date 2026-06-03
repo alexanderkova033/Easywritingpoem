@@ -667,11 +667,18 @@
 @media (min-width: 900px) {
   .tools-panel {
     align-self: start;
+  }
+}
+
+/* Desktop only — sticky scroll behavior. Gated to ≥1050px so it doesn't conflict
+   with the tablet drawer at 900-1049px (which uses position: fixed + translateX).
+   The translateY shift is set by JS in PoemWorkshop to push the panel up as the
+   AI Analysis section approaches, so the panel never overlaps it. */
+@media (min-width: 1050px) {
+  .tools-panel {
     position: sticky;
     top: 1.15rem;
-    /* Containing block is the row-1 grid cell, so sticky naturally releases when
-       the AI Analysis section (row 2, grid-column: 1 / -1) scrolls into view —
-       the panel slides down with the page but stops before reaching AI Analysis. */
+    transform: translateY(var(--tools-shift, 0px));
   }
 }
 

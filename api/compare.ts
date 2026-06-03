@@ -239,6 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousWeaknesses?: unknown;
     previousIssues?: unknown;
     draftMode?: unknown;
+    thinkingMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -262,6 +263,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const draftMode = body.draftMode === true;
+  const thinkingMode = body.thinkingMode === true;
 
   const gib = await gibberishGuard({
     rawIp: req.headers["x-forwarded-for"],
@@ -345,9 +347,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(draftMode) },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 7000,
+      max_tokens: thinkingMode ? 7000 : 5000,
       temperature: 0,
-      reasoningEffort: "medium",
+      // Normal: low reasoning, fast. Thinking: medium reasoning, slow —
+      // long timeout, no retries (a structurally slow call won't turn fast).
+      reasoningEffort: thinkingMode ? "medium" : "low",
+      timeoutMs: thinkingMode ? 90_000 : 30_000,
+      retries: thinkingMode ? 0 : 2,
     },
     res,
   );

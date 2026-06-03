@@ -68,6 +68,14 @@ export async function callOpenAI(
     jsonMode?: boolean;
     /** GPT-5 reasoning budget. "minimal" sends nearly all tokens to output. */
     reasoningEffort?: "minimal" | "low" | "medium" | "high";
+    /** Per-attempt fetch timeout in ms. Default 30s. Long reasoning calls
+     *  (analyze/compare on "medium") should pass a higher value (e.g. 90_000)
+     *  so the OpenAI request isn't aborted mid-thought. */
+    timeoutMs?: number;
+    /** Number of retries after the initial attempt. Default 2. For long calls
+     *  set this to 0 — a slow call rarely turns fast on retry, retries just
+     *  multiply the user-visible wait before failure. */
+    retries?: number;
   },
   res: VercelResponse,
 ): Promise<OpenAICallResult | null> {
@@ -93,14 +101,19 @@ export async function callOpenAI(
       body.response_format = { type: "json_object" };
     }
 
-    upstream = await fetchWithRetry(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+    upstream = await fetchWithRetry(
+      OPENAI_URL,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+      opts.retries ?? 2,
+      opts.timeoutMs ?? 30000,
+    );
   } catch (err) {
     console.error("OpenAI fetch failed completely:", err);
 
