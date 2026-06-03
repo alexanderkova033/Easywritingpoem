@@ -975,13 +975,15 @@ export function PoemWorkshop() {
     return (
       checklistOpenCount +
       m.goalEvaluation.warnings.length +
-      spell
+      spell +
+      aiVisibleIssues.length
     );
   }, [
     checklistOpenCount,
     m.goalEvaluation.warnings.length,
     m.spellHits.length,
     m.wordlist,
+    aiVisibleIssues.length,
   ]);
 
   const libraryListRows = useMemo(() => {
@@ -2279,6 +2281,9 @@ export function PoemWorkshop() {
             repeated={m.repeated}
             repetition={m.repetition}
             spellHits={m.spellHits}
+            aiIssues={aiVisibleIssues}
+            onAiApply={ribbonApply}
+            onAiIgnore={ribbonIgnore}
             wordlist={m.wordlist}
             wordlistErr={m.wordlistErr}
             goToLine={m.goToLine}

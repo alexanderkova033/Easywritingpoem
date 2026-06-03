@@ -3,7 +3,6 @@ import {
   type AnalysisIssue,
   type ComparisonChanges,
   type LocalAnalysisContext,
-  type PillarRationales,
   type PillarScores,
   type PoemAnalysis,
   type PoemComparison,
@@ -150,56 +149,32 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
-function PillarBars({ pillars, rationales }: { pillars: PillarScores; rationales?: PillarRationales }) {
-  const rows: { key: keyof PillarScores; label: string; hint: string }[] = [
-    { key: "chord", label: "Chord / Breeze",   hint: "The chord struck on first read — the breeze of the opening that carries you in" },
-    { key: "craft", label: "Craft / Technique", hint: "Control over language — the practiced technique behind every choice" },
-    { key: "spark", label: "Spark / Edge",      hint: "What's new and surprising — and what's sharp, daring, and distinctly yours" },
-    { key: "echo",  label: "Echo / Effect",     hint: "What stays after reading — the overall effect left on the reader" },
+function PillarBars({ pillars }: { pillars: PillarScores }) {
+  const rows: { key: keyof PillarScores; label: string }[] = [
+    { key: "chord", label: "Chord / Breeze" },
+    { key: "craft", label: "Craft / Technique" },
+    { key: "spark", label: "Spark / Edge" },
+    { key: "echo",  label: "Echo / Effect" },
   ];
-  const pillarColor = (v: number): string => {
-    if (v >= 19) return "var(--ai-score-high, #5fba7d)";
-    if (v >= 13) return "var(--ai-score-mid, #e6a817)";
-    return "var(--ai-score-low, #d95f5f)";
-  };
-  const [showRationales, setShowRationales] = useState(false);
-  const hasAnyRationale = !!rationales && rows.some((r) => rationales[r.key]);
+  const pillarColor = (v: number): string => scoreColor(v, 25);
   return (
     <div className="ai-pillars" aria-label="Pillar score breakdown">
-      {rows.map(({ key, label, hint }) => {
+      {rows.map(({ key, label }) => {
         const v = pillars[key];
         const pct = Math.max(0, Math.min(100, (v / 25) * 100));
         const color = pillarColor(v);
-        const rationale = rationales?.[key];
         return (
           <div key={key} className="ai-pillar-row">
-            <span className="ai-pillar-label" title={hint}>{label}</span>
+            <span className="ai-pillar-label">{label}</span>
             <span className="ai-pillar-track" aria-hidden>
               <span className="ai-pillar-fill" style={{ width: `${pct}%`, background: color }} />
             </span>
             <span className="ai-pillar-value" style={{ color }}>
               {v}<span className="ai-pillar-outof">/25</span>
             </span>
-            {rationale && showRationales && (
-              <span className="ai-pillar-rationale">{rationale}</span>
-            )}
           </div>
         );
       })}
-      {hasAnyRationale && (
-        <div className="ai-pillars-toggle-row">
-          <button
-            type="button"
-            className="ai-pillars-toggle"
-            onClick={() => setShowRationales((v) => !v)}
-            aria-expanded={showRationales}
-            aria-label={showRationales ? "Hide pillar comments" : "Show pillar comments"}
-            title={showRationales ? "Hide why" : "Show why each pillar got its score"}
-          >
-            {showRationales ? "Hide why ▴" : "Why? ▾"}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -568,7 +543,7 @@ export function AnalysisResults({
                   </div>
                 </div>
                 {result.pillar_scores && (
-                  <PillarBars pillars={result.pillar_scores} rationales={result.pillar_rationales} />
+                  <PillarBars pillars={result.pillar_scores} />
                 )}
               </>
             )}

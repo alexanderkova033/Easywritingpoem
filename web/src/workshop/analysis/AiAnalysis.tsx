@@ -169,17 +169,17 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     const writingFocus = mainIdea?.trim() ? `Main idea: ${mainIdea.trim()}` : undefined;
 
     // Skip the API call when input + settings haven't changed since the last
-    // fresh analysis — no point burning tokens. Compare always re-runs because
-    // the diff itself is part of what the model evaluates.
+    // successful analysis — applies to BOTH fresh reads and Refines. The "compare
+    // vs fresh" mode is intentionally NOT part of the hash, so clicking Refine on
+    // an unchanged poem returns the same saved score instead of burning tokens.
     const inputHash = hashInput([
       lines.join("\n"),
       title,
       harshness,
       mainIdea ?? "",
-      canCompare ? "compare" : "fresh",
       draftMode ? "draft" : "final",
     ].join("|"));
-    if (!canCompare && result && loadLastHash(poemId) === inputHash) {
+    if (result && loadLastHash(poemId) === inputHash) {
       setStatus("done");
       return;
     }

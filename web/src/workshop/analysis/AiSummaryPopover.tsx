@@ -1,20 +1,7 @@
 import "./AiSummaryPopover.css";
 import { useEffect, useRef, useState } from "react";
 import type { PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
-
-function scoreColor(score: number): string {
-  if (score >= 80) return "var(--ai-score-high, #5fba7d)";
-  if (score >= 55) return "var(--ai-score-mid, #e6a817)";
-  return "var(--ai-score-low, #d95f5f)";
-}
-
-function scoreLabel(score: number): string {
-  if (score >= 88) return "Excellent";
-  if (score >= 75) return "Strong";
-  if (score >= 60) return "Solid";
-  if (score >= 45) return "Developing";
-  return "Needs work";
-}
+import { scoreColor, scoreLabel } from "./ai-analysis-helpers";
 
 function ScoreRing({ score }: { score: number }) {
   const r = 24;

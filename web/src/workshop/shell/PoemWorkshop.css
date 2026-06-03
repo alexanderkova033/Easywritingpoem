@@ -667,9 +667,11 @@
 @media (min-width: 900px) {
   .tools-panel {
     align-self: start;
-    /* Static positioning (no sticky) so the panel scrolls with the page and never
-       slides down over the AI Analysis section in the row below. Matches the rail's
-       behavior at the same breakpoints. */
+    position: sticky;
+    top: 1.15rem;
+    /* Containing block is the row-1 grid cell, so sticky naturally releases when
+       the AI Analysis section (row 2, grid-column: 1 / -1) scrolls into view —
+       the panel slides down with the page but stops before reaching AI Analysis. */
   }
 }
 
@@ -1730,6 +1732,11 @@
   color: var(--text);
 }
 
+.queue-cat-ai {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: color-mix(in srgb, var(--accent) 95%, var(--text));
+}
+
 .queue-body {
   grid-area: body;
   min-width: 0;
@@ -1784,11 +1791,29 @@
   line-height: 1.4;
 }
 
-.queue-primary-btn {
+.queue-actions {
   grid-area: action;
   align-self: center;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.queue-primary-btn,
+.queue-secondary-btn {
   white-space: nowrap;
   font-weight: 600;
+}
+
+.queue-secondary-btn {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.queue-secondary-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
 }
 
 @media (max-width: 720px) {
@@ -1817,9 +1842,14 @@
   .queue-title-row {
     font-size: 0.9rem;
   }
-  .queue-primary-btn {
-    justify-self: stretch;
-    width: 100%;
+  .queue-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .queue-primary-btn,
+  .queue-secondary-btn {
+    flex: 1 1 auto;
+    width: auto;
     padding-block: 0.45rem;
   }
 }

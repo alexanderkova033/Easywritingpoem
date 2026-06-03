@@ -12,6 +12,7 @@ import type {
 } from "@/workshop/analysis/repeated-words";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import type { LineMeterHint, ManualStressOverrides } from "@/workshop/meter/meter-hints";
+import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import { StuckHelper } from "./StuckHelper";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
 import { RevisionCompareSection } from "./RevisionCompareSection";
@@ -46,6 +47,9 @@ export interface WorkshopToolPanelsProps {
   repeated: RepeatedWord[];
   repetition: RepetitionAnalysis;
   spellHits: SpellHit[];
+  aiIssues: AnalysisIssue[];
+  onAiApply: (iss: AnalysisIssue) => void;
+  onAiIgnore: (id: string) => void;
   wordlist: Set<string> | null;
   wordlistErr: string | null;
   goToLine: (line1Based: number) => void;
@@ -134,12 +138,15 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           publication={props.publication}
           spellHits={props.spellHits}
           clicheHits={props.clicheHits}
+          aiIssues={props.aiIssues}
           heavyToolsStale={props.heavyToolsStale}
           goToLine={props.goToLine}
           goToSpellHitAt={props.goToSpellHitAt}
           applySpellSuggestion={props.applySpellSuggestion}
           applySpellSuggestionAll={props.applySpellSuggestionAll}
           refreshSpell={props.refreshSpell}
+          onAiApply={props.onAiApply}
+          onAiIgnore={props.onAiIgnore}
           onOpenToolTab={props.onOpenToolTab}
           focusPoemTitle={props.focusPoemTitle}
         />

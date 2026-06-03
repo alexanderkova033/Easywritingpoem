@@ -146,18 +146,22 @@ export function loadDraftMode(): boolean {
   } catch { return false; }
 }
 
-export function scoreColor(score: number): string {
-  if (score >= 80) return "var(--ai-score-high, #5fba7d)";
-  if (score >= 55) return "var(--ai-score-mid, #e6a817)";
-  return "var(--ai-score-low, #d95f5f)";
+/** Smooth red→green color for a score on a 0..scale range (default 0-100).
+ *  Pure HSL hue interpolation: 0=red, midpoint=yellow, scale=green. Saturation
+ *  and lightness are fixed at values that read cleanly on both light and dark
+ *  backgrounds, so no theme-aware branching is needed. */
+export function scoreColor(score: number, scale: number = 100): string {
+  const clamped = Math.max(0, Math.min(scale, score));
+  const hue = (clamped / scale) * 120;
+  return `hsl(${hue.toFixed(0)}, 50%, 52%)`;
 }
 
 export function scoreLabel(score: number): string {
   if (score >= 88) return "Excellent";
   if (score >= 75) return "Strong";
   if (score >= 60) return "Solid";
-  if (score >= 45) return "Developing";
-  return "Needs work";
+  if (score >= 45) return "Taking shape";
+  return "Early draft";
 }
 
 export const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [

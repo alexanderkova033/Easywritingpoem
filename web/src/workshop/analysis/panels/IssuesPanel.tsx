@@ -3,6 +3,7 @@ import type { SpellHit } from "@/spellcheck/scan";
 import type { GoalEvaluation } from "@/workshop/goals/metrics";
 import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
+import type { AnalysisIssue } from "@/workshop/analysis/ai-analyze";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import { EmptyState, JumpLineList } from "@/workshop/analysis/tools/shared";
 import { checklistJumpLabel } from "@/workshop/analysis/tools/helpers";
@@ -14,12 +15,15 @@ export interface IssuesPanelProps {
   publication: { items: ChecklistItem[]; tips: string[] };
   spellHits: SpellHit[];
   clicheHits: ClicheHit[];
+  aiIssues: AnalysisIssue[];
   heavyToolsStale: boolean;
   goToLine: (line1Based: number) => void;
   goToSpellHitAt: (hit: SpellHit) => void;
   applySpellSuggestion: (hit: SpellHit, replacement: string) => boolean;
   applySpellSuggestionAll: (normalized: string, replacement: string) => boolean;
   refreshSpell: () => void;
+  onAiApply: (iss: AnalysisIssue) => void;
+  onAiIgnore: (id: string) => void;
   onOpenToolTab: (tab: ToolTab) => void;
   focusPoemTitle: () => void;
 }
@@ -28,13 +32,20 @@ type QueueSeverity = "now" | "soon" | "optional";
 interface QueueIssue {
   id: string;
   severity: QueueSeverity;
-  category: "spell" | "checklist" | "goal" | "cliche";
+  category: "spell" | "checklist" | "goal" | "cliche" | "ai";
   categoryLabel: string;
   title: string;
   detail?: string;
   line?: number;
   onJump?: () => void;
   primary?: { label: string; onClick: () => void; disabled?: boolean };
+  secondary?: { label: string; onClick: () => void };
+}
+
+function aiSeverityToQueueSeverity(sev: AnalysisIssue["severity"]): QueueSeverity {
+  if (sev === "high") return "now";
+  if (sev === "low") return "optional";
+  return "soon";
 }
 
 export function IssuesPanel({
@@ -43,12 +54,15 @@ export function IssuesPanel({
   publication,
   spellHits,
   clicheHits,
+  aiIssues,
   heavyToolsStale,
   goToLine,
   goToSpellHitAt,
   applySpellSuggestion,
   applySpellSuggestionAll,
   refreshSpell,
+  onAiApply,
+  onAiIgnore,
   onOpenToolTab,
   focusPoemTitle,
 }: IssuesPanelProps) {
@@ -56,6 +70,27 @@ export function IssuesPanel({
 
   const queueIssues = useMemo<QueueIssue[]>(() => {
     const list: QueueIssue[] = [];
+    for (const iss of aiIssues) {
+      const rangeLabel =
+        iss.line_end > iss.line_start
+          ? `lines ${iss.line_start}–${iss.line_end}`
+          : `line ${iss.line_start}`;
+      const title = iss.headline?.trim() || iss.excerpt?.trim() || `AI flagged ${rangeLabel}`;
+      list.push({
+        id: `ai:${iss.id}`,
+        severity: aiSeverityToQueueSeverity(iss.severity),
+        category: "ai",
+        categoryLabel: "AI",
+        title,
+        detail: iss.rationale,
+        line: iss.line_start,
+        onJump: () => goToLine(iss.line_start),
+        primary: iss.rewrite
+          ? { label: "Apply rewrite", onClick: () => onAiApply(iss) }
+          : { label: "Jump", onClick: () => goToLine(iss.line_start) },
+        secondary: { label: "Ignore", onClick: () => onAiIgnore(iss.id) },
+      });
+    }
     for (const w of goalEvaluation.warnings) {
       list.push({
         id: `goal:${w}`,
@@ -141,11 +176,14 @@ export function IssuesPanel({
     }
     return list;
   }, [
+    aiIssues,
     goalEvaluation.warnings,
     openChecklistItems,
     spellHits,
     clicheHits,
     heavyToolsStale,
+    onAiApply,
+    onAiIgnore,
     onOpenToolTab,
     focusPoemTitle,
     goToLine,
@@ -238,15 +276,28 @@ export function IssuesPanel({
                           </p>
                         ) : null}
                       </div>
-                      {it.primary ? (
-                        <button
-                          type="button"
-                          className="small-btn queue-primary-btn"
-                          disabled={it.primary.disabled}
-                          onClick={it.primary.onClick}
-                        >
-                          {it.primary.label}
-                        </button>
+                      {it.primary || it.secondary ? (
+                        <div className="queue-actions">
+                          {it.primary ? (
+                            <button
+                              type="button"
+                              className="small-btn queue-primary-btn"
+                              disabled={it.primary.disabled}
+                              onClick={it.primary.onClick}
+                            >
+                              {it.primary.label}
+                            </button>
+                          ) : null}
+                          {it.secondary ? (
+                            <button
+                              type="button"
+                              className="small-btn queue-secondary-btn"
+                              onClick={it.secondary.onClick}
+                            >
+                              {it.secondary.label}
+                            </button>
+                          ) : null}
+                        </div>
                       ) : null}
                     </li>
                   ))}

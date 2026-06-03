@@ -5,10 +5,23 @@
  * a CustomBackgroundTheme JSON object with CSS variable values for the backdrop.
  */
 
+import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
+import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
+
+// Themes generated from a given prompt are deterministic-enough to reuse —
+// the user can always edit the colours after, and the cached theme spares
+// a gpt-5-nano call. 30 days is plenty for "I tried this prompt last week".
+const THEME_CACHE_MS = 30 * 24 * 60 * 60 * 1000;
+const THEME_PROMPT_VERSION = "v1"; // bump if SYSTEM_PROMPT below changes shape
+
+function themeCacheKey(prompt: string): string {
+  const hash = createHash("sha256").update(prompt).digest("hex").slice(0, 24);
+  return `theme:${THEME_PROMPT_VERSION}:${hash}`;
+}
 
 const SYSTEM_PROMPT = `You are a visual designer creating CSS colour themes for a poetry writing app. Given a description or poem, generate a cohesive colour palette that captures its mood and atmosphere.
 
@@ -109,6 +122,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const prompt = body.prompt.trim().slice(0, 1000);
 
+  // Cache hit on identical prompt — return the prior theme and skip the
+  // gpt-5-nano call entirely. The cached value already passed validation
+  // when it was first generated, so no need to re-check it.
+  const cacheKey = themeCacheKey(prompt);
+  const cached = await kvGetString(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached) as Record<string, unknown>;
+      return res.status(200).json(parsed);
+    } catch {
+      // Corrupted cache entry — fall through and regenerate.
+    }
+  }
+
   const result = await callOpenAI(
     apiKey,
     {
@@ -138,6 +165,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (validationError) {
     return res.status(502).json({ error: `Invalid theme from AI: ${validationError}` });
   }
+
+  // Best-effort store — failure here shouldn't block the response.
+  void kvSetStringPx(cacheKey, JSON.stringify(parsed), THEME_CACHE_MS).catch(() => {});
 
   return res.status(200).json(parsed);
 }

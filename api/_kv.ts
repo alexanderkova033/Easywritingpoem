@@ -15,7 +15,7 @@ const hasRemote =
   !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN;
 
 interface MemRecord {
-  value: number;
+  value: number | string;
   expiresAt: number; // ms epoch; 0 = never
 }
 
@@ -53,7 +53,7 @@ export async function kvIncrBy(
   const now = Date.now();
   gcMem(now);
   const existing = readMem(key);
-  if (!existing) {
+  if (!existing || typeof existing.value !== "number") {
     mem.set(key, {
       value: amount,
       expiresAt: ttlMs ? now + ttlMs : 0,
@@ -70,7 +70,7 @@ export async function kvGetNumber(key: string): Promise<number> {
     return typeof v === "number" ? v : 0;
   }
   const r = readMem(key);
-  return r?.value ?? 0;
+  return typeof r?.value === "number" ? r.value : 0;
 }
 
 export async function kvPttl(key: string): Promise<number> {
@@ -106,4 +106,29 @@ export async function kvSetPxIfAbsent(
 
 export function kvIsRemote(): boolean {
   return hasRemote;
+}
+
+/** Read a previously stored string value, or null if missing / expired. */
+export async function kvGetString(key: string): Promise<string | null> {
+  if (hasRemote) {
+    const v = await kv.get<string>(key);
+    return typeof v === "string" ? v : null;
+  }
+  const r = readMem(key);
+  return typeof r?.value === "string" ? r.value : null;
+}
+
+/** Write a string value with a millisecond TTL. Overwrites any existing entry. */
+export async function kvSetStringPx(
+  key: string,
+  value: string,
+  ttlMs: number,
+): Promise<void> {
+  if (hasRemote) {
+    await kv.set(key, value, { px: ttlMs });
+    return;
+  }
+  const now = Date.now();
+  gcMem(now);
+  mem.set(key, { value, expiresAt: now + ttlMs });
 }

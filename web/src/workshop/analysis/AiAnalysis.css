@@ -2660,38 +2660,11 @@ button.ai-flagged-cliche:focus-visible {
 
 /* Four pillar bars under the score ring */
 .ai-pillars {
-  position: relative;
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.3rem;
   padding: 0.55rem 0.15rem 0.25rem;
   border-top: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-/* Toggle row sits below the four bars, right-aligned so it never overlaps
-   sibling hero content like the sparkline or verdict label. */
-.ai-pillars-toggle-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.2rem;
-}
-
-.ai-pillars-toggle {
-  appearance: none;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  font-size: 0.72rem;
-  padding: 0.15rem 0.4rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.ai-pillars-toggle:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
 .ai-pillar-row {
@@ -2708,16 +2681,6 @@ button.ai-flagged-cliche:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: help;
-}
-
-.ai-pillar-rationale {
-  grid-column: 2 / 4;
-  font-size: 0.74rem;
-  color: var(--muted);
-  font-style: italic;
-  margin-top: -0.05rem;
-  line-height: 1.35;
 }
 
 .ai-pillar-track {

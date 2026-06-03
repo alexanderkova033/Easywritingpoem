@@ -10,13 +10,27 @@
  * check without ever touching OpenAI.
  */
 
-import { kvPttl, kvSetPxIfAbsent } from "./_kv";
+import { createHash } from "crypto";
+import { kvGetString, kvPttl, kvSetPxIfAbsent, kvSetStringPx } from "./_kv";
 
 export const GIBBERISH_COOLDOWN_MS = 15 * 60 * 1000;
 export const GIBBERISH_COOLDOWN_SEC = GIBBERISH_COOLDOWN_MS / 1000;
 
+/** TTL for caching the LLM gibberish verdict per text-hash. Same poem
+ *  re-analyzed/refined/chatted-about within this window reuses the verdict
+ *  instead of paying for another gpt-5-nano classification call. */
+const VERDICT_CACHE_MS = 60 * 60 * 1000;
+
 function gibKey(ip: string): string {
   return `gib-cooldown:${ip}`;
+}
+
+function verdictKey(textHash: string): string {
+  return `gib-verdict:${textHash}`;
+}
+
+function hashText(text: string): string {
+  return createHash("sha256").update(text).digest("hex").slice(0, 24);
 }
 
 export function normalizeIp(rawIp: string | string[] | undefined): string {
@@ -264,8 +278,20 @@ export async function gibberishGuard(opts: {
     await tripGibberishCooldown(ip);
     return block("gibberish", GIBBERISH_COOLDOWN_SEC);
   }
-  // ask-llm
-  const isGib = await llmIsGibberish(opts.apiKey, opts.text);
+  // ask-llm — but first check whether we've already classified this exact
+  // text in the recent past. Same poem re-submitted (analyze → refine →
+  // chat, etc.) should not pay for another gpt-5-nano call.
+  const cacheKey = verdictKey(hashText(opts.text));
+  const cached = await kvGetString(cacheKey);
+  let isGib: boolean;
+  if (cached === "1") {
+    isGib = true;
+  } else if (cached === "0") {
+    isGib = false;
+  } else {
+    isGib = await llmIsGibberish(opts.apiKey, opts.text);
+    await kvSetStringPx(cacheKey, isGib ? "1" : "0", VERDICT_CACHE_MS);
+  }
   if (isGib) {
     await tripGibberishCooldown(ip);
     return block("gibberish", GIBBERISH_COOLDOWN_SEC);

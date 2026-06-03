@@ -5,43 +5,84 @@
  * forwards to OpenAI, and returns the analysis JSON.
  */
 
+import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
+import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 
+// Server-side analyze response cache. analyze.ts runs at temperature 0, so the
+// model's output is effectively deterministic on its inputs — caching by an
+// exact-input hash returns the same answer the model would generate anyway.
+// Cross-user/cross-device: covers cleared localStorage, incognito, and any
+// second user typing the same lines.
+const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
+const ANALYZE_CACHE_VERSION = "v2"; // bump when prompt structure changes
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return "[" + value.map((v) => stableStringify(v)).join(",") + "]";
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return "{" + keys.map((k) =>
+    JSON.stringify(k) + ":" + stableStringify((value as Record<string, unknown>)[k]),
+  ).join(",") + "}";
+}
+
+function analyzeCacheKey(inputs: {
+  title: string;
+  lines: string[];
+  model: string;
+  localAnalysis: unknown;
+  goals: unknown;
+  harshness: string | undefined;
+  writingFocus: string | undefined;
+  draftMode: boolean;
+}): string {
+  const hash = createHash("sha256")
+    .update(stableStringify(inputs))
+    .digest("hex")
+    .slice(0, 24);
+  return `analyze:${ANALYZE_CACHE_VERSION}:${hash}`;
+}
+
+interface CachedAnalyzeEntry {
+  content: string;
+  model: string;
+}
+
 const HARSHNESS_PERSONAS: Record<string, string> = {
-  baby:    "a kind, encouraging reader who celebrates effort and only mentions one very obvious improvement gently",
-  casual:  "a supportive friend who enjoys poetry casually — warm, encouraging, only notes glaring issues",
-  student: "a writing workshop peer — honest and constructive, balanced praise and critique",
-  editor:  "a professional poetry editor — direct, specific, and demanding high craft standards",
-  critic:  "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
+  casual: "a supportive friend who enjoys poetry casually — warm, encouraging, only notes glaring issues",
+  editor: "a professional poetry editor — direct, specific, and demanding high craft standards",
+  critic: "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
 };
 
-function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
-  const persona = harshness && harshness in HARSHNESS_PERSONAS
-    ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
-    : HARSHNESS_PERSONAS.editor;
-  const draftBlock = draftMode ? `
+const DRAFT_BLOCK = `
 
-=== DRAFT MODE — work-in-progress check ===
-The poet has marked this as a draft they are still writing. Apply these adjustments:
-- DO NOT penalize for: incompleteness, missing ending, undeveloped form, placeholder lines, abrupt stops, structural gaps. Score the four pillars on what is on the page, using the same anchors. A great half-poem can score high; a weak half-poem still scores honestly.
-- Frame feedback FORWARD, not corrective. strengths[] = what is already landing, kept a bit broad and easy to read — name the general quality (an image, a sound, a feeling) without over-specifying which exact word or line. weaknesses[] = THREADS TO DEVELOP — general directions to chord on as the poet continues. Phrase as invitations ("the imagery is starting to do real work — keep leaning into it"), not as forensic line-by-line notes.
-- In personal_feedback, name 1-2 directions the poem seems to want to go. Stay readable and warm; don't pin to single words.
-- OMIT issues[] entirely. Return issues: []. Line-level critique is premature when the poet is mid-process.
-- OMIT strongest_line unless one line clearly already stands out from the rest.
-` : "";
-  return `You are ${persona}. Persona governs the TONE and word choice of your feedback strings ONLY — it does not shift the rubric or the score. Apply the same objective rubric below to every poem, then phrase the feedback in your persona's voice.${draftBlock}
+=== DRAFT MODE — work-in-progress ===
+The poet has marked this as a draft. Adjustments:
+- Don't penalize for incompleteness, missing ending, undeveloped form, placeholder lines, abrupt stops. Score the pillars on what's there. A great half-poem scores high; a weak one still scores honest.
+- Frame feedback FORWARD. strengths[] = broad qualities already landing (an image, a sound, a feeling), not pinned to single words. weaknesses[] = THREADS TO DEVELOP, phrased as invitations ("the imagery is starting to do real work — keep leaning into it"), not forensic notes.
+- personal_feedback: name 1-2 directions the poem seems to want. Warm, readable, not word-pinned.
+- OMIT issues[] entirely (return []). Line-level critique is premature mid-process.
+- OMIT strongest_line unless one line clearly already stands out.
+`;
+
+// Static rubric — never changes between requests. Kept first so OpenAI's
+// automatic prompt cache hits across every analyze call (persona + draft
+// suffixes are appended after, so the cache prefix stays stable).
+const STATIC_RUBRIC = `You are an objective poetry editor. Apply the rubric below to every poem. The persona at the end of this message controls TONE only — never the rubric or the score.
 
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
-These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one and low on another. Do not cluster the scores. If three pillars are 18 but the fourth is 9, score it 9, not 14 "to be fair". The whole point of separate pillars is to show divergence.
+These four pillars are INDEPENDENT — divergence is the point, not noise to smooth over.
 
-1. Chord / Breeze (0-25) — the first impression. Both the chord struck on opening (resonance, the note hit) AND the breeze it moves on (how lightly and naturally it carries the reader in). Striking opening, memorable phrasing, rhythm that pulls. Musical, atmospheric. Independent of whether the poem lands long-term.
-2. Craft / Technique (0-25) — control of the language and the practiced technique behind every choice. Word precision, line economy (no filler), purposeful line breaks, syntax under command, accurate punctuation, intentional rhythm, no unintended awkwardness. The "this writer knows what they're doing" dimension.
-3. Spark / Edge (0-25) — what's new, surprising, distinctly this poet's, AND what's sharp, daring, unwilling to blunt. A turn you didn't expect, a metaphor that opens a door, a flash of voice that won't borrow received language. The opposite of "I've read this before".
-4. Echo / Effect (0-25) — what stays after the reader finishes and the overall effect left. A line that loops in the head, an image you can't unsee, a feeling that resonates, subtext that surfaces on re-read. The afterlife of the poem. A poem with low Chord can have high Echo (it grows on you); a poem with high Chord can have low Echo (forgotten by morning).
+1. Chord / Breeze (0-25) — first impression. The note struck on opening + how lightly it carries the reader in. Memorable phrasing, rhythm that pulls. Independent of whether the poem lasts.
+2. Craft / Technique (0-25) — control over the language. Word precision, line economy, purposeful line breaks, syntax in command, accurate punctuation, intentional rhythm. The "this writer knows what they're doing" dimension.
+3. Spark / Edge (0-25) — new, surprising, daring, unwilling to blunt. A turn you didn't expect, a metaphor that opens a door, voice that won't borrow received language. The opposite of "I've read this before".
+4. Echo / Effect (0-25) — what stays after reading: the afterlife of the poem. A line that loops, an image you can't unsee, subtext that surfaces on re-read. Low Chord can have high Echo (grows on you); high Chord can have low Echo (forgotten by morning).
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
 0-6    barely there — clichéd, broken, or absent on this dimension.
@@ -51,7 +92,7 @@ These four pillars are INTENTIONALLY INDEPENDENT — a poem can be high on one a
 23-25  canonical — published masters routinely sit here on their strongest pillar. REACHABLE, not theoretical. Use it when the work earns it.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
-These show that pillars DIVERGE. Do not cluster scores; mirror this kind of spread.
+Pillars DIVERGE — mirror this spread.
 
 EXAMPLE A — total 28 (weak across, pillars still diverge):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
@@ -71,60 +112,75 @@ EXAMPLE C — total 68 (quiet but lasting — the inverse profile of B):
 EXAMPLE D — total 91 (canonical sonnet, formal mastery):
   "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May, / And summer's lease hath all too short a date."
   pillar_scores: {chord: 23, craft: 25, spark: 21, echo: 22}
-  pillar_rationales: {chord: "The opening question warms and pulls instantly", craft: "Flawless iambic pentameter, every word placed", spark: "Familiar conceit but turned in surprising ways", echo: "Lines that have stayed in memory for centuries"}
   This is what published canonical work scores. The top of the scale is not reserved — it is for work like this.
 
 EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
   "there's a bluebird in my heart that / wants to get out / but I'm too tough for him, / I say, stay in there, I'm not going / to let anybody see you."
   pillar_scores: {chord: 22, craft: 21, spark: 24, echo: 23}
-  pillar_rationales: {chord: "Intimate confession grabs immediately", craft: "Looseness is purposeful — the anti-craft IS the craft", spark: "Singular voice, couldn't be anyone else", echo: "The bluebird metaphor haunts long after"}
-  IMPORTANT: looseness and broken-feeling rhythm score HIGH Craft when the brokenness is the point. Do not mistake intentional roughness for amateur failure.
+  IMPORTANT: looseness scores HIGH Craft when the brokenness is the point. Do not mistake intentional roughness for amateur failure.
 
 === OVERALL SCORE RULES ===
 - overall_score = sum of the four pillar scores.
-- HARD CAP: overall_score must not exceed (lowest pillar × 4) + 20. One weak pillar cannot be carried by the others. Apply the cap AFTER summing.
-- Do NOT default to the polite middle (55-85). Weak drafts belong in 0-49 — use that range honestly. Persona changes wording, not math.
-- Do not round up to a "nicer" number. 37 is fine. 52 is fine. 84 is fine.
-- Do NOT cluster pillars. If three pillars naturally land at 18 and one at 9, the answer is 9 for that one, not 13 or 14. Independence is the point.
-- DO NOT PARK THE TOP. Canonical published poetry (Shakespeare, Bukowski, Plath, Bishop, the kind of work you would teach in a poetry class) should land 85-95 overall. The 19-25 per-pillar range is where published masters live. If you are scoring everything in the 12-20 range and never venturing above 80 overall, you are being too conservative — use the full scale.
+- HARD CAP: overall_score ≤ (lowest pillar × 4) + 20. Apply AFTER summing — a weak pillar cannot be carried.
+- Don't default to the polite middle (55-85). Weak drafts belong in 0-49. Persona changes wording, not math.
+- Don't round to a "nicer" number. 37, 52, 84 are fine numbers.
+- Don't cluster pillars. Three at 18 and one at 9 = score 9, not 13. Independence is the point.
+- DON'T PARK THE TOP. Canonical work (Shakespeare, Bukowski, Plath) lands 85-95. The 19-25 per-pillar range is where masters live. If nothing ever goes above 80, you're being too conservative.
 
-=== STYLE: PLAIN AND STRAIGHTFORWARD ===
-Talk like a smart friend, not a literature professor.
-- Lead with the point. No preambles ("The poem opens with...", "What's interesting here is...").
-- No hedging ("perhaps", "it seems", "one might say", "in some sense"). State it.
-- No filler ("really", "quite", "rather", "very", "actually", "truly", "indeed"). Cut them.
-- Short sentences. One idea each. Active voice. Concrete over abstract.
-- Common terms are FINE — keep them. metaphor, image, rhythm, stanza, voice, tone, rhyme, line break, simile, repetition, contrast. Most readers know these.
-- Only swap obscure scholarly terms for the effect they describe:
-  - sibilance → "the s sounds hush"
-  - anaphora → "the same opening repeated"
-  - caesura → "a pause inside the line"
-  - synecdoche / metonymy → describe what stands in for what
-  - prosody / metrical → "rhythm"
-  - diction → "word choice" (only when the simpler phrase fits)
-- Applies to every feedback string.
+=== STYLE ===
+Plain English, like a smart friend talking — not a literature professor. Common terms (metaphor, image, rhythm, voice) fine; skip scholarly jargon. Every feedback string.
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
-The user message may include detected clichés, syllable counts, rhyme scheme, repeated words. Treat these as SOFT signals:
-- Multiple detected clichés normally lower Spark substantially — UNLESS the clichés are being used ironically, subverted, or deliberately invoked. Sometimes brokenness IS the move; if it reads intentional, score the intention.
-- Broken syllable targets normally lower Craft — UNLESS the breakage lands as deliberate rhythmic disruption (a stumble that mirrors content, a line that breaks meter to break the mood). Reward earned breakage.
-- Heavy word repetition normally lowers Craft or Spark — UNLESS the repetition is doing visible work (incantation, refrain, semantic accumulation).
-The principle: penalize accidental craft failures, NOT purposeful rule-breaking. Decide which one this is before docking points.
+The user message may include detected clichés, syllables, rhyme scheme, repeated words. Treat as SOFT signals:
+- Detected clichés normally lower Spark — UNLESS used ironically or subverted.
+- Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption (a stumble that mirrors content).
+- Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation, accumulation).
+Principle: penalize accidental craft failures, NOT purposeful rule-breaking. Decide which before docking.
 
-Return JSON only (no fences). Compute pillar_scores FIRST, write pillar_rationales, THEN derive overall_score arithmetically.
+=== ISSUE RATIONALE STYLE — match this pattern exactly ===
+Each rationale = exactly 3 short concrete sentences. Compare:
 
-Keys:
-pillar_scores {chord, craft, spark, echo}: int 0-25 each, scored INDEPENDENTLY against the anchors.
-pillar_rationales {chord, craft, spark, echo}: one line per pillar, ≤14 words, plain English. Name the specific line/image/sound that drove the score.
-overall_score: int 1-100. MUST equal min(chord+craft+spark+echo, lowest×4+20). If not, output is invalid.
-warm_reaction: ≤14 words, persona voice.
-strengths[]: 2-3 items, 6-12 words each. Plain and specific — name the actual line or image.
-weaknesses[]: 2-3 items, 6-12 words each. Plain and specific.
-strongest_line: {line:int, why:≤10w plain}.
-issues[]: 2-5 items. Mix serious + small. Let the lowest-scoring pillar drive what you raise.
-personal_feedback: 2-3 short sentences, addressed to "you". Holistic read + one concrete next move. No preamble.
-Each issue: {id, severity ("high"|"medium"|"low"), line_start, line_end, headline (≤6w), problem_words[] (REQUIRED for word-level issues — exact lowercase tokens from the poem), rationale (2-3 short sentences — name the problem and which pillar it hurts, then how it lands on the reader), improvements[] (1-3 concrete moves, ≤14 words each), rewrite? (omit unless clearly stronger), confidence? ("low" only)}.
-Prefer single-line issues. 1-based line numbers. DO NOT emit overall_feedback — personal_feedback covers both holistic and addressed-to-you.`;
+GOOD: "The phrase 'gentle breeze' is the dictionary entry for breeze. It collapses what could be a tactile sensation into received language. A specific weather verb — needling, slack, brackish — would carry actual weight."
+
+BAD: "This line could be stronger. The image is okay but generic. Consider revising for more specificity."
+
+GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic — could apply to any poem. Write GOOD every time. No moralizing, no pillar lectures — just the concrete miss.
+
+=== RESPONSE SHAPE — return ONLY this JSON ===
+Compute pillar_scores FIRST against the anchors, THEN derive overall_score arithmetically.
+{
+  "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
+  "overall_score": <int 1-100, MUST equal min(chord+craft+spark+echo, lowest×4+20)>,
+  "warm_reaction": "<≤14 words, persona voice>",
+  "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
+  "weaknesses": ["<6-12 words, plain and specific>", ...2-3 items],
+  "strongest_line": {"line": <int>, "why": "<≤10 words plain>"},
+  "issues": [
+    {
+      "id": "<short kebab-case>",
+      "severity": "high" | "medium" | "low",
+      "line_start": <int, 1-based>,
+      "line_end": <int, 1-based>,
+      "headline": "<≤6 words>",
+      "problem_words": ["<lowercase exact token from the poem>"],
+      "rationale": "<exactly 3 short sentences, GOOD-style above>",
+      "improvements": ["<concrete move, ≤14 words>", ...1-3 items],
+      "rewrite": "<omit field entirely unless clearly stronger>",
+      "confidence": "low"
+    }
+  ],
+  "personal_feedback": "<2-3 short sentences addressed to 'you' — holistic read + one concrete next move, no preamble>"
+}
+
+issues[]: 2-5 items, mix serious + small, driven by the lowest-scoring pillar. Prefer single-line. problem_words REQUIRED for word-level issues. Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+
+function buildSystemPrompt(harshness?: string, draftMode?: boolean): string {
+  const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";
+  const persona = HARSHNESS_PERSONAS[personaKey]!;
+  const draftSuffix = draftMode ? DRAFT_BLOCK : "";
+  // Persona + draft tail come LAST so the STATIC_RUBRIC prefix is identical
+  // across every analyze request — OpenAI prompt cache can then hit on it.
+  return `${STATIC_RUBRIC}\n\n=== PERSONA (tone only — does not change the rubric or score) ===\nFor this response, write feedback in the voice of: ${persona}.${draftSuffix}`;
 }
 
 interface LocalAnalysis {
@@ -204,7 +260,7 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
 function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}\n\n--- Reminder ---\nScore each pillar independently. Don't park scores in the polite middle, and don't park them at the top — use the full scale. Local hints are soft; reward purposeful rule-breaking.`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -271,6 +327,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Poem too long (max ${MAX_TOTAL_CHARS} characters).` });
   }
 
+  // Server-side cache check — if this exact input was analyzed recently
+  // (any user, any device), reuse the OpenAI response and skip the call.
+  // analyze runs at temperature 0 so this returns the same answer the model
+  // would generate. sendParsedResponse rewrites meta.analyzedAt to "now",
+  // so the cached response feels freshly produced to the client.
+  const cacheKey = analyzeCacheKey({
+    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, draftMode,
+  });
+  const cachedRaw = await kvGetString(cacheKey);
+  if (cachedRaw) {
+    try {
+      const cached = JSON.parse(cachedRaw) as CachedAnalyzeEntry;
+      if (cached?.content && cached?.model) {
+        sendParsedResponse(res, cached.content, cached.model, draftMode ? { draft: true } : undefined);
+        return;
+      }
+    } catch {
+      // Corrupted entry — fall through and regenerate.
+    }
+  }
+
   const gib = await gibberishGuard({
     rawIp: req.headers["x-forwarded-for"],
     text: `${title}\n${lines.join("\n")}`,
@@ -289,14 +366,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness, draftMode) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 4000,
+      max_tokens: 6000,
       temperature: 0,
-      reasoningEffort: "low",
+      reasoningEffort: "medium",
     },
     res,
   );
   if (!result) return;
 
   await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  // Store the raw OpenAI content + resolved model so future identical inputs
+  // can skip the call. Best-effort; failure here must not break the response.
+  void kvSetStringPx(
+    cacheKey,
+    JSON.stringify({ content: result.content, model: result.model } satisfies CachedAnalyzeEntry),
+    ANALYZE_CACHE_MS,
+  ).catch(() => {});
   sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
 }
