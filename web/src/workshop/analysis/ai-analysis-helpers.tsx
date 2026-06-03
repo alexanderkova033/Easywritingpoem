@@ -164,13 +164,18 @@ export function scoreLabel(score: number): string {
   return "Early draft";
 }
 
+// Pillar-aligned categories: each issue is tagged with the pillar it most relates to.
+// Order matters — narrow patterns (Chord/Echo) match before the broader Spark, which
+// matches before the catch-all Craft. Tune carefully when changing.
 export const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
-  { label: "Imagery",     color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
-  { label: "Rhythm",      color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
-  { label: "Sound",       color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
-  { label: "Word choice", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
-  { label: "Structure",   color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
-  { label: "Clarity",     color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
+  // Chord — issues about the opening / first impression / how the poem starts pulling.
+  { label: "Chord", color: "var(--ai-cat-chord, #b0a0d8)", keywords: /opening|first line|first lines|first stanza|first impression|first beat|hook|how the poem begins/i },
+  // Echo — issues about closure / ending / what stays after the read.
+  { label: "Echo",  color: "var(--ai-cat-echo,  #c4a0a0)", keywords: /closure|landing|ending|\bclose\b|final line|last line|last stanza|resolution|residue|stays|after.*read|memorab|resonan|aftertaste|lingerin/i },
+  // Spark — distinctiveness OR insight: cliché, stock imagery, lack of surprise, weak observation.
+  { label: "Spark", color: "var(--ai-cat-spark, #d4a96a)", keywords: /cliché|cliche|received|stale|stock|familiar|derivative|expected|predictable|trite|abstract emotional|generic|imag|metaphor|simile|vivid|surpris|insight|observ|paradox|inversion|sardonic|fresh|novel/i },
+  // Craft — catch-all for technique: rhythm, syntax, sound, word choice, structure, clarity.
+  { label: "Craft", color: "var(--ai-cat-craft, #9ab89a)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow|line break|enjamb|syntax|sentence|stanza|structur|rhyme|alliter|assonance|consonance|word|diction|vocab|clarity|confus|obscure|ambig|awkward|hard to follow|grammar|punctuation|repeat|repetit|overwrit|purple prose/i },
 ];
 
 export function deriveCategory(issue: AnalysisIssue): { label: string; color: string } | null {

@@ -4,11 +4,56 @@
  * Receives { title, lines, changesText, previousScores, localAnalysis?, goals? }
  * and asks the model to analyse the current poem AND compare it to the previous version.
  */
+import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
+import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
+
+// Server-side compare response cache. Same rationale as analyze.ts: temperature 0
+// makes outputs deterministic on inputs, so identical revisions (same current poem,
+// same diff, same prior context) return the cached response without burning cooldown.
+// Hit cases: edit a line → compare → refresh page → compare again.
+const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
+const COMPARE_CACHE_VERSION = "v1"; // bump when prompt structure changes
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return "[" + value.map((v) => stableStringify(v)).join(",") + "]";
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return "{" + keys.map((k) =>
+    JSON.stringify(k) + ":" + stableStringify((value as Record<string, unknown>)[k]),
+  ).join(",") + "}";
+}
+
+function compareCacheKey(inputs: {
+  title: string;
+  lines: string[];
+  changesText: string;
+  previousScores: unknown;
+  previousWeaknesses: string[];
+  previousIssues: unknown;
+  model: string;
+  localAnalysis: unknown;
+  goals: unknown;
+  writingFocus: string | undefined;
+  draftMode: boolean;
+}): string {
+  const hash = createHash("sha256")
+    .update(stableStringify(inputs))
+    .digest("hex")
+    .slice(0, 24);
+  return `compare:${COMPARE_CACHE_VERSION}:${hash}`;
+}
+
+interface CachedCompareEntry {
+  content: string;
+  model: string;
+}
 
 const DRAFT_BLOCK = `\n\nNote: the poem is not fully written yet — treat it as a work-in-progress draft.`;
 
@@ -66,31 +111,31 @@ EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
 EXAMPLE F — total 92 (quiet plainspoken — insight without imagery):
   "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant."
   pillar_scores: {chord: 22, craft: 23, spark: 22, echo: 25}
-  IMPORTANT: insight and emotional precision can reach the top of the scale without imagery, metaphor, or formal flourish. The bare diction IS the craft. Spark comes from observation, not novelty. Do not park plainspoken work in the middle just because it isn't "literary."
+  IMPORTANT: insight and emotional precision reach the top of the scale without imagery. The bare diction IS the craft. Spark comes from observation, not novelty. Don't park plainspoken work mid-scale just because it isn't "literary."
 
 EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, doesn't break new ground):
   "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens, / the way I close my parentheses."
   pillar_scores: {chord: 18, craft: 19, spark: 19, echo: 22}
-  IMPORTANT: this is where most workshop-grade revised drafts should sit. Clear voice, specific observation, one quiet resonance — but not canonical. The 70-85 band exists for craft that lands without breaking new ground. Do NOT skip past this band by jumping competent poems straight to 85+ or docking them to 60-.
+  IMPORTANT: most workshop-grade revised drafts sit here. Clear voice, specific observation, one quiet resonance — not canonical. The 70-85 band exists for craft that lands without breaking new ground. Don't skip past this band.
 
 === RE-SCORING RULES (override any instinct to be encouraging) ===
-- Previous score is reference ONLY for the trend in comparison{}. NOT a floor, NOT an anchor. The previous score may have been over- or under-calibrated; do NOT trend toward it for smoothness. A genuinely improved revision may still score lower if the prior reading was generous. A flat revision may score higher if you under-read it last time. Read CURRENT against the rubric, not against the number.
+- Previous score is reference ONLY for comparison{}. NOT a floor, NOT an anchor. The prior reading may have been over- or under-calibrated; don't trend toward it for smoothness. A genuinely improved revision may score lower; a flat revision may score higher. Read CURRENT against the rubric, not against the number.
 - Compute overall_score by reading the current draft FRESH, as if you'd never seen the previous version.
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
-- DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 issues — an empty issues[] array is correct for a strong poem. Issues follow what's on the page, NOT the score. The score never determines the issue count; if you find yourself thinking "I gave an 82, so I need 3 weaknesses," stop and re-read for actual evidence first.
+- DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 (empty issues[] is correct for a strong poem). Issues follow evidence, NOT the score.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
-- USE THE FULL 1-100 SCALE. Weak drafts: 0-49 (even on revision). Competent-but-imperfect: 50-85 — don't skip this band. Canonical masters: 85-99, with true masterworks reaching 92-99. If your scores cluster at 30-55 or 85-90, you're collapsing pillar anchors into two bands instead of reading them.
-- Don't cluster pillars. A pillar genuinely at 9 stays at 9 — don't drift it up to 13 because the other three are at 18. Independence is the point.
+- USE THE FULL 1-100 SCALE: weak 0-49 (even on revision), competent-but-imperfect 50-85 (don't skip — see Example G), canonical 85-99, masterworks 92-99.
+- Don't cluster pillars. A pillar at 9 stays at 9 — don't drift it up to harmonize with three pillars at 18.
 
 === STYLE ===
-Plain English, like a smart friend talking — not a literature professor. Common terms (metaphor, image, rhythm, voice) fine; skip scholarly jargon. Applies to every feedback string in the response.
+Plain English, like a smart friend talking. Common terms fine; skip scholarly jargon. Applies to every feedback string.
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
 - Detected clichés normally lower Spark — UNLESS used ironically, subverted, or framing an observation/insight that resists received language.
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption.
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation).
-- Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence). Test: does the voice register hold? If yes, the plainness is doing tonal work — don't flag it.
+- Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence).
 Principle: penalize accidental craft failures, NOT purposeful rule-breaking.
 
 === ISSUE RATIONALE STYLE — match this pattern exactly ===
@@ -100,7 +145,7 @@ GOOD: "The phrase 'gentle breeze' is the dictionary entry for breeze. It collaps
 
 BAD: "This line could be stronger. The image is okay but generic. Consider revising for more specificity."
 
-GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic — could apply to any poem. Write GOOD every time. No moralizing, no pillar lectures — just the concrete miss.
+GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic. Write GOOD. No moralizing, no pillar lectures — just the concrete miss.
 
 === RESPONSE SHAPE — return ONLY this JSON ===
 Compute pillar_scores FIRST against the anchors, then derive overall_score arithmetically.
@@ -110,7 +155,7 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
   "warm_reaction": "<≤14 words, terse>",
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
   "weaknesses": ["<6-12 words, plain>", ...2-3 items],
-  "strongest_line": {"line": <int>, "why": "<≤10 words plain>"},
+  "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems). Don't invent significance.
   "issues": [
     {
       "id": "<short kebab-case>",
@@ -267,26 +312,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
   const draftMode = body.draftMode === true;
-
-  const gib = await gibberishGuard({
-    rawIp: req.headers["x-forwarded-for"],
-    text: `${title}\n${lines.join("\n")}\n${changesText}`,
-    apiKey,
-  });
-  if (!gib.ok) {
-    if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
-    return res.status(gib.status).json(gib.body);
-  }
-
-  const spend = await precheckSpend({
-    rawIp: req.headers["x-forwarded-for"],
-    endpoint: "compare",
-    cooldownMs: cooldownFor("compare", model),
-  });
-  if (!spend.ok) {
-    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
-    return res.status(spend.status).json(spend.body);
-  }
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
@@ -313,6 +338,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           headline: typeof iss.headline === "string" ? iss.headline.slice(0, 80) : "",
         }))
     : [];
+
+  // Cache check — done BEFORE precheckSpend and OpenAI so cache hits don't
+  // burn the per-IP cooldown. compare runs at temperature 0, so identical
+  // inputs return the same answer the model would generate.
+  const cacheKey = compareCacheKey({
+    title, lines, changesText, previousScores: prevScores, previousWeaknesses,
+    previousIssues, model, localAnalysis: local, goals, writingFocus, draftMode,
+  });
+  const cachedRaw = await kvGetString(cacheKey);
+  if (cachedRaw) {
+    try {
+      const cached = JSON.parse(cachedRaw) as CachedCompareEntry;
+      if (cached?.content && cached?.model) {
+        sendParsedResponse(res, cached.content, cached.model, draftMode ? { draft: true } : undefined);
+        return;
+      }
+    } catch {
+      // Corrupted entry — fall through and regenerate.
+    }
+  }
+
+  const gib = await gibberishGuard({
+    rawIp: req.headers["x-forwarded-for"],
+    text: `${title}\n${lines.join("\n")}\n${changesText}`,
+    apiKey,
+  });
+  if (!gib.ok) {
+    if (gib.retryAfterSec) res.setHeader("Retry-After", String(gib.retryAfterSec));
+    return res.status(gib.status).json(gib.body);
+  }
+
+  const spend = await precheckSpend({
+    rawIp: req.headers["x-forwarded-for"],
+    endpoint: "compare",
+    cooldownMs: cooldownFor("compare", model),
+  });
+  if (!spend.ok) {
+    if (spend.retryAfterSec) res.setHeader("Retry-After", String(spend.retryAfterSec));
+    return res.status(spend.status).json(spend.body);
+  }
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const prevScoreText = prevScores ? `\nPrevious score: ${JSON.stringify(prevScores)}\n` : "";
@@ -362,5 +427,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!result) return;
 
   await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  // Store raw OpenAI content + resolved model so future identical inputs skip
+  // the call. Best-effort; failure here must not break the response.
+  void kvSetStringPx(
+    cacheKey,
+    JSON.stringify({ content: result.content, model: result.model } satisfies CachedCompareEntry),
+    COMPARE_CACHE_MS,
+  ).catch(() => {});
   sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
 }
