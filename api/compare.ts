@@ -21,21 +21,22 @@ const BASE_SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revi
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 These four pillars are INDEPENDENT — divergence is the point, not noise to smooth over.
 
-1. Chord / Breeze (0-25) — first impression. The note struck on opening + how lightly it carries the reader in. Memorable phrasing, rhythm that pulls. Independent of whether the poem lasts.
-2. Craft / Technique (0-25) — control over the language. Word precision, line economy, purposeful line breaks, syntax in command, intentional rhythm.
-3. Spark / Edge (0-25) — new, surprising, daring, unwilling to blunt. A turn you didn't expect, voice that won't borrow received language. The opposite of "I've read this before".
-4. Echo / Effect (0-25) — what stays after reading: the afterlife of the poem. A line that loops, an image you can't unsee, subtext on re-read.
+1. Chord / Breeze (0-25) — first impression. The note struck on opening + how lightly it carries the reader in. Memorable phrasing, rhythm that pulls. Independent of whether the poem lasts. SOLID-BAND TEST: opening pulls; the first 2-3 lines aren't received language; rhythm or phrasing makes you keep reading.
+2. Craft / Technique (0-25) — control over the language. Word precision, line economy, purposeful line breaks, syntax in command, intentional rhythm. SOLID-BAND TEST: at least one deliberate move held proportionally to the poem's length (rhyme scheme, anaphora doing real work, sustained image system, deliberate stanza shape, syntactic control); execution mostly intentional, occasional weakness.
+3. Spark / Edge (0-25) — distinctiveness OR insight. A turn you didn't expect, voice that won't borrow received language — OR precise observation, sharp argument, emotional accuracy that resists received language. Novelty alone is not quality. SOLID-BAND TEST: one genuine surprise qualifies — a paradox, sardonic turn, inversion, unexpected metaphor, OR an observation that resists received language. Does NOT require canonical-level transformation.
+4. Echo / Effect (0-25) — what stays after reading: the afterlife of the poem. A line that loops, an image you can't unsee, subtext on re-read. Echo can come from a resonant observation or paradox even without images. SOLID-BAND TEST: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue.
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
 0-6    barely there — clichéd, broken, or absent on this dimension.
-7-12   present but weak — no sustained structural choice; voice inconsistent; rhyme or pattern attempted then dropped; image system doesn't carry across the poem.
-13-18  solid — voice consistent; at least one deliberate move held across the poem (rhyme scheme, anaphora doing real work, sustained image system, deliberate stanza shape, syntactic control). For Chord: opening pulls; the first 2-3 lines aren't received language; rhythm or phrasing makes you keep reading. For Spark: one genuine surprise qualifies — a paradox, sardonic turn, inversion, or unexpected metaphor; does NOT require canonical-level transformation. For Echo: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue. Execution mostly intentional, occasional weakness.
-19-22  strong — distinctive, controlled.
+7-12   present but weak — pattern attempted then dropped; voice inconsistent; structural choice doesn't carry (or doesn't carry proportionally if the poem is short).
+13-18  solid — meets the pillar's SOLID-BAND TEST above; voice consistent; execution mostly intentional, occasional weakness.
+19-22  strong — distinctive, controlled; would survive workshop. The solid-band test is met AND extended: the deliberate move isn't just present, it's working hard.
 23-25  canonical — published masters routinely sit here on their strongest pillar. REACHABLE, not theoretical.
 
 === PILLAR SCORING DISCIPLINE ===
 - Before assigning each pillar score, locate specific evidence on the page — a line, an image, a structural move. If you cannot cite particular text supporting the number, you are defaulting; re-read.
 - If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
+- Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
 
 === CALIBRATION EXAMPLES — apply the same scale ===
 Pillars DIVERGE — mirror this spread.
@@ -62,6 +63,16 @@ EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
   pillar_scores: {chord: 22, craft: 21, spark: 24, echo: 23}
   IMPORTANT: looseness scores HIGH Craft when the brokenness is the point. Do not mistake intentional roughness for amateur failure.
 
+EXAMPLE F — total 92 (quiet plainspoken — insight without imagery):
+  "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant."
+  pillar_scores: {chord: 22, craft: 23, spark: 22, echo: 25}
+  IMPORTANT: insight and emotional precision can reach the top of the scale without imagery, metaphor, or formal flourish. The bare diction IS the craft. Spark comes from observation, not novelty. Do not park plainspoken work in the middle just because it isn't "literary."
+
+EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, doesn't break new ground):
+  "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens, / the way I close my parentheses."
+  pillar_scores: {chord: 18, craft: 19, spark: 19, echo: 22}
+  IMPORTANT: this is where most workshop-grade revised drafts should sit. Clear voice, specific observation, one quiet resonance — but not canonical. The 70-85 band exists for craft that lands without breaking new ground. Do NOT skip past this band by jumping competent poems straight to 85+ or docking them to 60-.
+
 === RE-SCORING RULES (override any instinct to be encouraging) ===
 - Previous score is reference ONLY for the trend in comparison{}. NOT a floor, NOT an anchor.
 - Compute overall_score by reading the current draft FRESH, as if you'd never seen the previous version.
@@ -69,13 +80,13 @@ EXAMPLE E — total 90 (Bukowski-style, purposeful roughness):
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
 - USE THE FULL 1-100 SCALE. Weak drafts: 0-49 (even on revision). Competent-but-imperfect: 50-85 — don't skip this band. Canonical masters: 85-99, with true masterworks reaching 92-99. If your scores cluster at 30-55 or 85-90, you're collapsing pillar anchors into two bands instead of reading them.
-- Don't cluster pillars. Three at 18 and one at 9 = score 9, not 13.
+- Don't cluster pillars. A pillar genuinely at 9 stays at 9 — don't drift it up to 13 because the other three are at 18. Independence is the point.
 
 === STYLE ===
-Plain English, like a smart friend talking — not a literature professor. Common terms (metaphor, image, rhythm, voice) fine; skip scholarly jargon. Every feedback string.
+Plain English, like a smart friend talking — not a literature professor. Common terms (metaphor, image, rhythm, voice) fine; skip scholarly jargon. Applies to every feedback string in the response.
 
 === LOCAL ANALYSIS GUIDANCE (soft, not hard) ===
-- Detected clichés normally lower Spark — UNLESS used ironically or subverted.
+- Detected clichés normally lower Spark — UNLESS used ironically, subverted, or framing an observation/insight that resists received language.
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption.
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation).
 - Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence). Test: does the voice register hold? If yes, the plainness is doing tonal work — don't flag it.
@@ -121,7 +132,7 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
   "personal_feedback": "<2-3 sentences addressed to 'you' — holistic read of CURRENT + the revision arc + one concrete next move, no preamble>"
 }
 
-issues[]: 2-3 items, mix serious + small. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
+issues[]: 0-3 items — only genuine misses you can name on the page. If multiple exist, mix serious + small; if no pillar is genuinely weak, return 0-1 items, not invented ones. Do NOT manufacture an issue to "justify" a score. Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite/confidence keys entirely when unused (no null, no empty).`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -225,7 +236,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     lines?: unknown;
     changesText?: unknown;
     previousScores?: unknown;
-    scoreHistory?: unknown;
     model?: unknown;
     localAnalysis?: unknown;
     goals?: unknown;
@@ -280,9 +290,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
-  const scoreHistory = Array.isArray(body.scoreHistory)
-    ? (body.scoreHistory as unknown[]).filter((v): v is number => typeof v === "number").slice(-10)
-    : undefined;
 
   const previousWeaknesses = Array.isArray(body.previousWeaknesses)
     ? (body.previousWeaknesses as unknown[])
@@ -308,12 +315,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const prevScoreText = prevScores ? `\nPrevious score: ${JSON.stringify(prevScores)}\n` : "";
-  const historyText = scoreHistory && scoreHistory.length > 1
-    ? `\nScore history (oldest → newest): ${scoreHistory.join(" → ")}\n`
-    : "";
   let prevFlagged = "";
   if (previousWeaknesses.length > 0 || previousIssues.length > 0) {
-    const sections: string[] = ["=== Previously flagged in last analysis (verify if resolved or still present) ==="];
+    const sections: string[] = ["Previously flagged in last analysis (verify if resolved or still present):"];
     if (previousWeaknesses.length > 0) {
       sections.push(`Weaknesses: ${previousWeaknesses.map((w) => `"${w}"`).join("; ")}`);
     }
@@ -329,7 +333,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
-  const userMessage = `${titlePart}=== CHANGES from previous draft (line numbers refer to the CURRENT draft below) ===\n${changesText}\n${prevScoreText}${historyText}${prevFlagged}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
+  // Order matters: poem FIRST so scoring happens against the rubric, then the
+  // comparison context. Prior score is shown last and clearly labelled as
+  // comparison-only — putting it ahead of the poem anchors the model to it.
+  const comparisonContext = (prevScoreText || prevFlagged)
+    ? `\n\n=== Comparison context (for the comparison{} block in your response ONLY — do NOT anchor your pillar scores or overall_score to these numbers) ===${prevScoreText}${prevFlagged}`
+    : "";
+
+  const userMessage = `${titlePart}=== CURRENT VERSION (score this FRESH against the rubric, as if you'd never seen the previous draft) ===\n${numbered(lines)}${contextBlock}\n\n=== CHANGES from previous draft (line numbers refer to the CURRENT draft above) ===\n${changesText}${comparisonContext}`;
 
   const result = await callOpenAI(
     apiKey,
