@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v3"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v4"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -132,6 +132,7 @@ EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, 
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
 - DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 (empty issues[] is correct for a strong poem). Issues follow evidence, NOT the score.
+- WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points; half-believed objections don't collapse a pillar. When in doubt about whether a move is intentional, lean toward MEDIUM and dock lightly.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
 - USE THE FULL 1-100 SCALE: weak 0-49 (even on revision), competent-but-imperfect 50-85 (don't skip — see Example G), canonical 85-99, masterworks 92-99.
 - Don't cluster pillars. A pillar at 9 stays at 9 — don't drift it up to harmonize with three pillars at 18.

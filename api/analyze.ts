@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v15"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v16"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -97,6 +97,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 - If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
 - Issues follow evidence on the page, NOT the score. Strong drafts can return 0-1 issues; weak drafts may have 3. Never manufacture issues to justify a number, or skip real ones because the score is high.
+- WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text — the cliché is on the page, the broken syntax is unambiguous) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT the issue entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points; half-believed objections don't collapse a pillar. When in doubt about whether a move is intentional, lean toward MEDIUM confidence and dock lightly — the rubric's purposeful-rule-breaking exception applies before your confidence does.
 
 === CALIBRATION EXAMPLES — match before scoring ===
 Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match the poem to one of the examples below by structural PROFILE (not topic):
