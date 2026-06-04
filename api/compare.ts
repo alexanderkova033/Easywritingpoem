@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v8"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v9"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -76,6 +76,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 - Before assigning each pillar score, locate specific evidence on the page — a line, an image, a structural move. If you cannot cite particular text supporting the number, you are defaulting; re-read.
 - If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
+- Title and writing focus are CONTEXT, not scoring inputs. Don't infer cliché, register, or quality from the title; don't score whether the author hit their stated focus. Score what's on the page against the rubric. A fancy title doesn't lift; a plain title doesn't drop. Writing focus tells you what the author was aiming at — it never moves a pillar.
 
 === CALIBRATION EXAMPLES — match before scoring ===
 Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match the poem to one of the examples below by structural PROFILE (not topic):
@@ -138,6 +139,7 @@ Plain English, like a smart friend talking. Common terms fine; skip scholarly ja
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption.
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation).
 - Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence).
+- Rhyme presence or scheme pattern is NOT itself the discriminator. A locked scheme isn't automatically more crafted; loose or absent rhyme isn't automatically less. Score on whether the rhyme is doing work (sound mirrors meaning, pivots a turn, locks a refrain) or just filling syllables. Two drafts of the same poem with different rhyme schemes in the same register should not differ in Craft by more than 2-3 points.
 Principle: penalize accidental craft failures, NOT purposeful rule-breaking.
 
 === ISSUE RATIONALE STYLE — match this pattern exactly ===
@@ -164,7 +166,7 @@ Emit fields in this exact order. matched_profile and pillar_spread come FIRST �
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
   "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
   "weaknesses": ["<6-12 words, plain>", ...2-3 items],
-  "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems). Don't invent significance.
+  "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems), OR if your candidate ALSO has a flaw you'd otherwise flag (borderline → omit). Don't invent significance.
   "issues": [
     {
       "id": "<short kebab-case>",
@@ -190,7 +192,9 @@ issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty).
 
 pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
 
-strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.`;
+strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.
+
+strongest_line: pick a line that survives re-reads as the unambiguous standout. Borderline cases — notable but also flawed, or notable but not clearly above the rest — should OMIT the field. The field is for genuine standouts; a "pretty good" line is not a standout. Across slight context variations (title tweak, focus tweak), your strongest_line pick should not flip — if it would, omit instead.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;

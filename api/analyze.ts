@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v20"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v21"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -96,6 +96,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
 - Issues follow evidence on the page, NOT the score. Strong drafts can return 0-1 issues; weak drafts may have 3. Never manufacture issues to justify a number, or skip real ones because the score is high.
 - WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text — the cliché is on the page, the broken syntax is unambiguous) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT the issue entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points. When in doubt about intent, lean MEDIUM.
+- Title and writing focus are CONTEXT, not scoring inputs. Don't infer cliché, register, or quality from the title; don't score whether the author hit their stated focus. Score what's on the page against the rubric. A fancy title doesn't lift; a plain title doesn't drop. Writing focus tells you what the author was aiming at — it never moves a pillar.
 
 === CALIBRATION EXAMPLES — match before scoring ===
 Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match the poem to one of the examples below by structural PROFILE (not topic):
@@ -158,6 +159,7 @@ The user message may include detected clichés, syllables, rhyme scheme, repeate
 - Broken syllable targets normally lower Craft — UNLESS the breakage is deliberate rhythmic disruption (a stumble that mirrors content).
 - Heavy repetition normally lowers Craft or Spark — UNLESS doing visible work (refrain, incantation, accumulation).
 - Plain diction, dragging rhythm, and worn metaphor normally lower Craft — UNLESS the voice register stays consistently weary, deadpan, or sardonic across the poem (tone-controlled plainness is craft, not its absence).
+- Rhyme presence or scheme pattern is NOT itself the discriminator. A locked scheme isn't automatically more crafted; loose or absent rhyme isn't automatically less. Score on whether the rhyme is doing work (sound mirrors meaning, pivots a turn, locks a refrain) or just filling syllables. Two drafts of the same poem with different rhyme schemes in the same register should not differ in Craft by more than 2-3 points.
 Principle: penalize accidental craft failures, NOT purposeful rule-breaking. Decide which before docking.
 
 === ISSUE RATIONALE STYLE — match this pattern exactly ===
@@ -184,7 +186,7 @@ Emit fields in this exact order. matched_profile and pillar_spread come FIRST �
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
   "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
   "weaknesses": ["<6-12 words, plain and specific>", ...2-3 items],
-  "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems). Don't invent significance.
+  "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems), OR if your candidate ALSO has a flaw you'd otherwise flag (borderline → omit). Don't invent significance.
   "issues": [
     {
       "id": "<short kebab-case>",
@@ -205,7 +207,9 @@ issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 o
 
 pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
 
-strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.`;
+strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.
+
+strongest_line: pick a line that survives re-reads as the unambiguous standout. Borderline cases — notable but also flawed, or notable but not clearly above the rest — should OMIT the field. The field is for genuine standouts; a "pretty good" line is not a standout. Across slight context variations (title tweak, focus tweak), your strongest_line pick should not flip — if it would, omit instead.`;
 
 function buildSystemPrompt(harshness?: string): string {
   const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";
