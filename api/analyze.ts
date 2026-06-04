@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v19"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v20"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -201,7 +201,7 @@ Emit fields in this exact order. matched_profile and pillar_spread come FIRST �
   "personal_feedback": "<2-3 short sentences addressed to 'you' — holistic read + one concrete next move, no preamble>"
 }
 
-issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence.
+issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence. NO DOUBLE-COUNTING: a line, phrase, or move cited in strengths[] CANNOT appear in issues[]. Before finalizing issues[], scan each candidate against strengths[] — if it's already praised there, OMIT it. If you genuinely see a move as both strong and flawed, the strength wins: drop the issue. You don't get to praise the same turn as witty AND flag it as incongruent.
 
 pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
 
