@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v21"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v22"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -172,9 +172,13 @@ BAD: "This line could be stronger. The image is okay but generic. Consider revis
 GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic. Write GOOD. No moralizing, no pillar lectures — just the concrete miss.
 
 === RESPONSE SHAPE — return ONLY this JSON ===
-Emit fields in this exact order. matched_profile and pillar_spread come FIRST — they constrain pillar_scores, not the other way around. Then compute pillar_scores against the anchors, then derive overall_score arithmetically.
+Emit fields in this EXACT order. PERCEPTION COMES BEFORE SCORING: matched_profile, warm_reaction, strengths, strength_pillars, and weaknesses commit your reading of specific moves BEFORE you write pillar_spread and pillar_scores. The scores are DERIVED from what you already wrote — never the other way around. Only then derive overall_score arithmetically.
 {
   "matched_profile": "<A|B|C|D|E|F|G — single letter from the calibration examples above>",
+  "warm_reaction": "<≤14 words>",
+  "strengths": ["<6-12 words, plain — name the actual line/image>", ...1-3 items],
+  "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
+  "weaknesses": ["<6-12 words, plain and specific>", ...1-3 items],
   "pillar_spread": {
     "highest": "<chord|craft|spark|echo>",
     "lowest": "<chord|craft|spark|echo>",
@@ -182,10 +186,6 @@ Emit fields in this exact order. matched_profile and pillar_spread come FIRST �
   },
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100, MUST equal min(chord+craft+spark+echo, lowest×4+24)>,
-  "warm_reaction": "<≤14 words>",
-  "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
-  "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
-  "weaknesses": ["<6-12 words, plain and specific>", ...2-3 items],
   "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems), OR if your candidate ALSO has a flaw you'd otherwise flag (borderline → omit). Don't invent significance.
   "issues": [
     {
@@ -207,7 +207,9 @@ issues[]: 0-3 items (see PILLAR SCORING DISCIPLINE above on when to return 0-1 o
 
 pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
 
-strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.
+STRENGTH-NAMING DISCIPLINE (read BEFORE writing strengths[]): distinguish DELIVERY from THESIS. A strength is a specific line, image, turn, or voice move that resists received language. A thesis ("we conform," "we erase ourselves to fit," "we crave reflection," "love hurts," "the system is rigged") presented in rhyme is NOT a strength — it is a widely-held diagnosis the reader could derive without the poem. Words like "honest voice," "urgent message," "moral center," "important paradox," "sharp moral point" describe TOPIC, not craft. If the candidate strength is the message rather than the move that delivers it, OMIT it. 1-3 items total; one real strength beats three theses.
+
+strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. FLOOR RULE (load-bearing — this is why strengths are written before pillar_scores): if exactly one strength maps to a pillar, that pillar's score MUST be ≥ 14 (the floor of solid band — naming one strength means the SOLID-BAND TEST is met). If 2+ strengths map to the same pillar, that pillar MUST be ≥ 16. These are floors, not ceilings; specific failures named in weaknesses can override, but the override must be explicit and named on the page — not a vibe.
 
 strongest_line: pick a line that survives re-reads as the unambiguous standout. Borderline cases — notable but also flawed, or notable but not clearly above the rest — should OMIT the field. The field is for genuine standouts; a "pretty good" line is not a standout. Across slight context variations (title tweak, focus tweak), your strongest_line pick should not flip — if it would, omit instead.`;
 
