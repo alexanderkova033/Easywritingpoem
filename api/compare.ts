@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v9"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v10"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -122,11 +122,18 @@ EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, 
   IMPORTANT: most workshop-grade revised drafts sit here. Clear voice, specific observation, one quiet resonance — not canonical. The 70-85 band exists for craft that lands without breaking new ground. Don't skip past this band.
 
 === RE-SCORING RULES (override any instinct to be encouraging) ===
-- Previous score is reference ONLY for comparison{}. NOT a floor, NOT an anchor. The prior reading may have been over- or under-calibrated; don't trend toward it for smoothness. A genuinely improved revision may score lower; a flat revision may score higher. Read CURRENT against the rubric, not against the number.
-- Compute overall_score by reading the current draft FRESH, as if you'd never seen the previous version.
+- Compute overall_score by reading the current draft FRESH against the rubric. You are NOT given the previous overall_score for a reason — don't try to reconstruct it.
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
-- If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
 - DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 (empty issues[] is correct for a strong poem). Issues follow evidence, NOT the score.
+
+=== SCORE CONTINUITY ACROSS REVISIONS ===
+You will receive "Past issues" from the prior reading. These are CONTEXT, not new evidence:
+- A weakness that was present in the prior draft AND is still present in the current draft is a CARRY-OVER. It was already weighted into the previous read. You may surface it in issues[] for the writer's attention, but a carry-over CANNOT push a pillar score below where the rubric would land it on a blind read. Two readings of substantially the same text should not produce divergent pillar scores just because the model is annoyed the writer didn't fix it.
+- Score CHANGES from prior pillar reads should be driven by:
+   • DROPS: new weakness introduced by the revision (a cliché added, syntax broken, image weakened, opening dulled) — evidence that did not exist before.
+   • RISES: prior weakness fixed, or new strength added (sharper image, cleaner line break, sharper turn).
+- Drift discipline: if the revision is small (a few words / one or two lines changed) and the rubric-blind read of the new draft would land in the same pillar band as the old draft, your pillar_scores should also land in that band. Do not re-roll a fresh harsh score because some carry-over issues are still visible.
+- This is NOT "stays the same or drops" — it is "moves with the EVIDENCE of change", which often means stays the same when little changed.
 - WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points. When in doubt about intent, lean MEDIUM.
 - HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing.
 - USE THE FULL 1-100 SCALE: weak 0-49 (even on revision), competent-but-imperfect 50-85 (don't skip — see Example G), canonical 85-99, masterworks 92-99.
@@ -394,12 +401,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
-  const prevScoreText = prevScores ? `\nPrevious score: ${JSON.stringify(prevScores)}\n` : "";
+  // INTENTIONALLY do NOT include the prior overall_score in the prompt — it
+  // acts as an anchor in either direction even when labelled "reference only",
+  // and the comparison{} block describes change qualitatively without it.
+  void prevScores;
   let prevFlagged = "";
   if (previousWeaknesses.length > 0 || previousIssues.length > 0) {
-    const sections: string[] = ["Previously flagged in last analysis (verify if resolved or still present):"];
+    const sections: string[] = ["Context from the prior reading (already priced into past pillar scores — surface in comparison{} but treat as CARRY-OVER per SCORE CONTINUITY rules, not as fresh evidence that drops pillar scores):"];
     if (previousWeaknesses.length > 0) {
-      sections.push(`Weaknesses: ${previousWeaknesses.map((w) => `"${w}"`).join("; ")}`);
+      sections.push(`Past weaknesses: ${previousWeaknesses.map((w) => `"${w}"`).join("; ")}`);
     }
     if (previousIssues.length > 0) {
       sections.push("Past issues:");
@@ -408,16 +418,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sections.push(`  - ${range}: ${iss.headline || "(no headline)"}`);
       }
     }
-    sections.push("If the writer addressed any of these, list them under comparison.improvements (terse). If still present, raise them again in issues[]. Don't re-criticise fixed problems.");
+    sections.push("If addressed → list under comparison.improvements. If still present → optionally raise in issues[] for the writer's attention, but as a carry-over (does NOT lower pillar scores below where a blind rubric read would land them). If a past issue was a borderline taste call, omit it now — don't re-flag low-confidence misses across revisions.");
     prevFlagged = "\n" + sections.join("\n") + "\n";
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);
 
   // Order matters: poem FIRST so scoring happens against the rubric, then the
-  // comparison context. Prior score is shown last and clearly labelled as
-  // comparison-only — putting it ahead of the poem anchors the model to it.
-  const comparisonContext = (prevScoreText || prevFlagged)
-    ? `\n\n=== Comparison context (for the comparison{} block in your response ONLY — do NOT anchor your pillar scores or overall_score to these numbers) ===${prevScoreText}${prevFlagged}`
+  // comparison context.
+  const comparisonContext = prevFlagged
+    ? `\n\n=== Comparison context (for the comparison{} block in your response ONLY — pillar_scores and overall_score MUST come from a blind rubric read of the current draft, not from this context) ===${prevFlagged}`
     : "";
 
   const userMessage = `${titlePart}=== CURRENT VERSION (score this FRESH against the rubric, as if you'd never seen the previous draft) ===\n${numbered(lines)}${contextBlock}\n\n=== CHANGES from previous draft (line numbers refer to the CURRENT draft above) ===\n${changesText}${comparisonContext}`;

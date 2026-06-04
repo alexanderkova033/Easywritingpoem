@@ -17,6 +17,7 @@ import {
   LS_LAST_ANALYZED_LINES_PREFIX,
   LS_RESOLVED_PREFIX,
   LS_IGNORED_PREFIX,
+  LS_DISMISSED_PREFIX,
   loadLastAnalysis,
   saveLastAnalysis,
   loadLastAnalyzedLines,
@@ -201,6 +202,18 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       } else {
         res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, ctrl.signal);
       }
+      // A new analysis replaces the prior one — resolution flags keyed to the
+      // OLD issue IDs no longer apply (and would silently mark re-flagged
+      // issues as "already resolved" if the model returns a colliding id like
+      // "weak-opening"). Clear the per-issue stores, then bump sessionNonce so
+      // AnalysisResults remounts and re-reads the now-empty sets.
+      if (poemId) {
+        try {
+          localStorage.removeItem(LS_RESOLVED_PREFIX + poemId);
+          localStorage.removeItem(LS_IGNORED_PREFIX + poemId);
+          localStorage.removeItem(LS_DISMISSED_PREFIX + poemId);
+        } catch { /* ignore */ }
+      }
       setResult(res);
       setSavedResult(res);
       setSavedLines(lines);
@@ -210,6 +223,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       pushSnapshot(poemId, res);
       onAnalysisDone?.(res.issues, res.overall_score);
       setScoreHistory(appendScoreHistory(poemId, res.overall_score));
+      setSessionNonce((n) => n + 1);
       setStatus("done");
     } catch (err) {
       if ((err as Error).name === "AbortError") return;

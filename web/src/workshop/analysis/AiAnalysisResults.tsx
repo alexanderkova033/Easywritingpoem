@@ -341,13 +341,20 @@ export function AnalysisResults({
   }, [openIssueLineSignal, visibleIssues]);
 
   const totalIssues = visibleIssues.length;
-  const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
+  // Only count resolved IDs that map to issues in the CURRENT analysis. Old IDs
+  // from a previous Refine are still in localStorage but must not skew the bar.
+  const resolvedCount = useMemo(
+    () => visibleIssues.filter((i) => resolvedIds.has(i.id)).length,
+    [visibleIssues, resolvedIds],
+  );
   const allDone = totalIssues > 0 && resolvedCount === totalIssues;
 
-  const sortedIssues = useMemo(() => [
-    ...visibleIssues.filter((i) => !resolvedIds.has(i.id)),
-    ...visibleIssues.filter((i) => resolvedIds.has(i.id)),
-  ], [visibleIssues, resolvedIds]);
+  // Resolved issues drop out of the queue entirely (the count still reflects
+  // them via the progress bar, and Reset brings them back).
+  const sortedIssues = useMemo(
+    () => visibleIssues.filter((i) => !resolvedIds.has(i.id)),
+    [visibleIssues, resolvedIds],
+  );
 
   const toggleAll = () => {
     const next = !allExpanded;
