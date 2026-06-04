@@ -151,7 +151,7 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 
 function PillarBars({ pillars }: { pillars: PillarScores }) {
   const rows: { key: keyof PillarScores; label: string }[] = [
-    { key: "chord", label: "Chord / Breeze" },
+    { key: "chord", label: "Chord / Musicality" },
     { key: "craft", label: "Craft / Technique" },
     { key: "spark", label: "Spark / Edge" },
     { key: "echo",  label: "Echo / Effect" },
@@ -268,7 +268,6 @@ export function AnalysisResults({
   localAnalysis?: LocalAnalysisContext;
 }) {
   const isCompare = "comparison" in result;
-  const isDraft = result.draft === true;
 
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => loadIdSet(LS_RESOLVED_PREFIX, poemId));
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => loadIdSet(LS_IGNORED_PREFIX, poemId));
@@ -301,11 +300,6 @@ export function AnalysisResults({
     setTab(externalTabSignal.tab);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalTabSignal?.nonce]);
-
-  useEffect(() => {
-    if (isDraft && tab === "issues") setTab("overview");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDraft]);
 
   useEffect(() => { saveIdSet(LS_RESOLVED_PREFIX, poemId, resolvedIds); }, [poemId, resolvedIds]);
   useEffect(() => { saveIdSet(LS_IGNORED_PREFIX, poemId, ignoredIds); }, [poemId, ignoredIds]);
@@ -479,16 +473,14 @@ export function AnalysisResults({
           onClick={() => setTab("overview")}>
           Overview
         </button>
-        {!isDraft && (
-          <button type="button" role="tab" aria-selected={tab === "issues"}
-            className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
-            onClick={() => setTab("issues")}>
-            Issues
-            {issuesBadge > 0 && (
-              <span className="ai-tab-badge">{issuesBadge}</span>
-            )}
-          </button>
-        )}
+        <button type="button" role="tab" aria-selected={tab === "issues"}
+          className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
+          onClick={() => setTab("issues")}>
+          Issues
+          {issuesBadge > 0 && (
+            <span className="ai-tab-badge">{issuesBadge}</span>
+          )}
+        </button>
         {poemLines && poemTitle !== undefined && (
           <button type="button" role="tab" aria-selected={tab === "chat"}
             className={`ai-tab${tab === "chat" ? " is-active" : ""}`}
@@ -532,11 +524,6 @@ export function AnalysisResults({
                     <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
                       {scoreLabel(result.overall_score)}
                     </span>
-                    {isDraft && (
-                      <span className="ai-draft-badge" title="Draft read — feedback is forward-looking, not corrective">
-                        ✎ Draft read
-                      </span>
-                    )}
                     {scoreHistory && scoreHistory.length >= 2 && (
                       <ScoreSparkline history={scoreHistory} />
                     )}
@@ -560,14 +547,14 @@ export function AnalysisResults({
             )}
           </div>
 
-          {/* 2. Strengths + weaknesses (draft mode: "Already landing" / "Threads to develop") */}
+          {/* 2. Strengths + weaknesses */}
           {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
             <div className="ai-sw-pair">
               {(result.strengths?.length ?? 0) > 0 && (
                 <div className="ai-card ai-card-strengths">
                   <span className="ai-card-label">
                     <span className="ai-card-icon" aria-hidden>+</span>
-                    {isDraft ? " Already landing" : " Strengths"}
+                    {" Strengths"}
                   </span>
                   <ul className="ai-sw-list">
                     {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
@@ -577,8 +564,8 @@ export function AnalysisResults({
               {(result.weaknesses?.length ?? 0) > 0 && (
                 <div className="ai-card ai-card-weaknesses">
                   <span className="ai-card-label">
-                    <span className="ai-card-icon" aria-hidden>{isDraft ? "→" : "−"}</span>
-                    {isDraft ? " Threads to develop" : " Work on"}
+                    <span className="ai-card-icon" aria-hidden>−</span>
+                    {" Work on"}
                   </span>
                   <ul className="ai-sw-list">
                     {result.weaknesses!.map((s, i) => (
@@ -593,7 +580,7 @@ export function AnalysisResults({
           )}
 
           {/* 3. Strongest line — compact horizontal pill row */}
-          {!isDraft && result.strongest_line && (
+          {result.strongest_line && (
             <div className="ai-strongest-pill">
               <span className="ai-strongest-pill-icon" aria-hidden>★</span>
               <span className="ai-strongest-pill-label">Strongest line</span>
@@ -657,7 +644,7 @@ export function AnalysisResults({
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
           {/* 7. CTA — jump to issues */}
-          {!isDraft && visibleIssues.length > 0 && (
+          {visibleIssues.length > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
               onClick={() => setTab("issues")}>
               See {visibleIssues.length} issue{visibleIssues.length !== 1 ? "s" : ""} →

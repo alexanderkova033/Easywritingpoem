@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v4"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v7"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -41,7 +41,6 @@ function compareCacheKey(inputs: {
   localAnalysis: unknown;
   goals: unknown;
   writingFocus: string | undefined;
-  draftMode: boolean;
 }): string {
   const hash = createHash("sha256")
     .update(stableStringify(inputs))
@@ -55,21 +54,16 @@ interface CachedCompareEntry {
   model: string;
 }
 
-const DRAFT_BLOCK = `\n\nNote: the poem is not fully written yet — treat it as a work-in-progress draft.`;
-
-function buildSystemPrompt(draftMode?: boolean): string {
-  return BASE_SYSTEM_PROMPT + (draftMode ? DRAFT_BLOCK : "");
-}
-
 const BASE_SYSTEM_PROMPT = `You are an objective poetry editor re-scoring a revision. You receive a diff (previous → current), the previous score, and the current draft. Score the CURRENT version against the rubric below — not against the previous score.
 
 === SCORING RUBRIC (4 pillars × 25 points = 100) ===
 These four pillars are INDEPENDENT — divergence is the point, not noise to smooth over.
 
-1. Chord / Breeze (0-25) — first impression. The note struck on opening + how lightly it carries the reader in. Memorable phrasing, rhythm that pulls. Independent of whether the poem lasts. SOLID-BAND TEST: opening pulls; the first 2-3 lines aren't received language; rhythm or phrasing makes you keep reading.
+1. Chord / Musicality (0-25) — first impression — the opening note and how lightly it carries the reader in. Memorable phrasing, rhythm that pulls. Independent of whether the poem lasts. SOLID-BAND TEST: opening pulls; the first 2-3 lines aren't received language; rhythm or phrasing makes you keep reading.
 2. Craft / Technique (0-25) — control over the language. Word precision, line economy, purposeful line breaks, syntax in command, intentional rhythm. SOLID-BAND TEST: at least one deliberate move held proportionally to the poem's length (rhyme scheme, anaphora doing real work, sustained image system, deliberate stanza shape, syntactic control); execution mostly intentional, occasional weakness.
 3. Spark / Edge (0-25) — distinctiveness OR insight. A turn you didn't expect, voice that won't borrow received language — OR precise observation, sharp argument, emotional accuracy that resists received language. Novelty alone is not quality. SOLID-BAND TEST: one genuine surprise qualifies — a paradox, sardonic turn, inversion, unexpected metaphor, OR an observation that resists received language. Does NOT require canonical-level transformation.
-4. Echo / Effect (0-25) — what stays after reading: the afterlife of the poem. A line that loops, an image you can't unsee, subtext on re-read. Echo can come from a resonant observation or paradox even without images. SOLID-BAND TEST: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue.
+   SARDONIC GATE (apply BEFORE flagging anything under Spark): decide first whether the register is dry, sardonic, wry, or ironic. If yes, treat cliché, forced-feeling rhyme, flat diction, deadpan plainness, and sentimental-sounding closings as candidate Spark GAINS — the trite phrase or banged rhyme deployed knowingly IS the joke, credit it. Such moves also never count against Craft. Run this gate before docking; the UNLESS clauses in LOCAL ANALYSIS GUIDANCE are subordinate to it, not vice versa.
+4. Echo / Effect (0-25) — what stays after reading. A line that loops, an image you can't unsee, subtext on re-read. Echo can come from a resonant observation or paradox even without images. SOLID-BAND TEST: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue.
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
 0-6    barely there — clichéd, broken, or absent on this dimension.
@@ -92,7 +86,7 @@ Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match th
   E = purposeful roughness (looseness as craft)
   F = plainspoken insight / paradox without imagery
   G = workshop-competent voice (real observation, sustained metaphor or extended structure, not canonical)
-Anchor your pillar reads against the matched example. Reading the anchor table without matching first defaults borderline poems to mid-band — which is exactly how insight-driven and sustained-metaphor work gets underscored.
+You MUST emit the matched letter as the FIRST field of the JSON response (matched_profile). Committing externally to a profile before scoring is what keeps your pillar reads honest — internal matching evaporates, written matching constrains. Pick ONE letter; if the poem blends two profiles, pick the one whose structural shape matches better. Anchor your pillar reads against the matched example.
 
 EXAMPLE A — total 28 (weak):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
@@ -132,10 +126,9 @@ EXAMPLE G — total 78 (competent revised draft — clear voice, real noticing, 
 - ZERO PITY POINTS. Don't raise the score because the writer revised or engaged with feedback. Only raise it if the rubric mathematically yields more points.
 - If edits didn't fix underlying weaknesses, the score stays the same or drops. Revisions can absolutely score lower.
 - DO NOT manufacture issues to justify a score. If the current draft has no genuine misses, return 0-1 (empty issues[] is correct for a strong poem). Issues follow evidence, NOT the score.
-- WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points; half-believed objections don't collapse a pillar. When in doubt about whether a move is intentional, lean toward MEDIUM and dock lightly.
-- HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing — a weak pillar still pulls hard, but doesn't crush three strong ones.
+- WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points. When in doubt about intent, lean MEDIUM.
+- HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing.
 - USE THE FULL 1-100 SCALE: weak 0-49 (even on revision), competent-but-imperfect 50-85 (don't skip — see Example G), canonical 85-99, masterworks 92-99.
-- Don't cluster pillars. A pillar at 9 stays at 9 — don't drift it up to harmonize with three pillars at 18.
 
 === STYLE ===
 Plain English, like a smart friend talking. Common terms fine; skip scholarly jargon. Applies to every feedback string.
@@ -157,12 +150,19 @@ BAD: "This line could be stronger. The image is okay but generic. Consider revis
 GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic. Write GOOD. No moralizing, no pillar lectures — just the concrete miss.
 
 === RESPONSE SHAPE — return ONLY this JSON ===
-Compute pillar_scores FIRST against the anchors, then derive overall_score arithmetically.
+Emit fields in this exact order. matched_profile and pillar_spread come FIRST — they constrain pillar_scores, not the other way around. Then compute pillar_scores against the anchors, then derive overall_score arithmetically.
 {
+  "matched_profile": "<A|B|C|D|E|F|G — single letter from the calibration examples above>",
+  "pillar_spread": {
+    "highest": "<chord|craft|spark|echo>",
+    "lowest": "<chord|craft|spark|echo>",
+    "divergence_reason": "<≤12 words explaining why these two pillars sit apart on THIS poem>"
+  },
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100 for CURRENT, MUST equal min(chord+craft+spark+echo, lowest×4+24)>,
   "warm_reaction": "<≤14 words, terse>",
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...2-3 items],
+  "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
   "weaknesses": ["<6-12 words, plain>", ...2-3 items],
   "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems). Don't invent significance.
   "issues": [
@@ -186,7 +186,11 @@ Compute pillar_scores FIRST against the anchors, then derive overall_score arith
   "personal_feedback": "<2-3 sentences addressed to 'you' — holistic read of CURRENT + the revision arc + one concrete next move, no preamble>"
 }
 
-issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence.`;
+issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence.
+
+pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
+
+strength_pillars: one entry per strength, same order. Map by what the strength actually proves: a strong opening / memorable phrasing → chord; voice control, line economy, sustained pattern → craft; a turn, sardonic move, inversion, fresh metaphor, sharp observation → spark; a resonant image or paradox that lingers → echo. SANITY CHECK before locking pillar_scores: if you mapped 2+ strengths to the same pillar, that pillar should not be your lowest. If it is, you contradicted yourself — fix the score, not the strength.`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -296,7 +300,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     writingFocus?: unknown;
     previousWeaknesses?: unknown;
     previousIssues?: unknown;
-    draftMode?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -319,7 +322,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const changesText = (body.changesText as string).slice(0, 8_000);
   const model = typeof body.model === "string" ? body.model : "gpt-5-mini";
-  const draftMode = body.draftMode === true;
   const prevScores = body.previousScores ?? null;
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
@@ -352,14 +354,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // inputs return the same answer the model would generate.
   const cacheKey = compareCacheKey({
     title, lines, changesText, previousScores: prevScores, previousWeaknesses,
-    previousIssues, model, localAnalysis: local, goals, writingFocus, draftMode,
+    previousIssues, model, localAnalysis: local, goals, writingFocus,
   });
   const cachedRaw = await kvGetString(cacheKey);
   if (cachedRaw) {
     try {
       const cached = JSON.parse(cachedRaw) as CachedCompareEntry;
       if (cached?.content && cached?.model) {
-        sendParsedResponse(res, cached.content, cached.model, draftMode ? { draft: true } : undefined);
+        sendParsedResponse(res, cached.content, cached.model);
         return;
       }
     } catch {
@@ -421,7 +423,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     {
       model,
       messages: [
-        { role: "system", content: buildSystemPrompt(draftMode) },
+        { role: "system", content: BASE_SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
       max_tokens: 5000,
@@ -442,5 +444,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     JSON.stringify({ content: result.content, model: result.model } satisfies CachedCompareEntry),
     COMPARE_CACHE_MS,
   ).catch(() => {});
-  sendParsedResponse(res, result.content, result.model, draftMode ? { draft: true } : undefined);
+  sendParsedResponse(res, result.content, result.model);
 }

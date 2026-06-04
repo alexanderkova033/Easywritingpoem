@@ -3427,64 +3427,6 @@ button.ai-flagged-cliche:focus-visible {
 }
 
 /* ======================================================
-   Draft / Final toggle (2-state segmented)
-   ====================================================== */
-.ai-draft-toggle {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 2px;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  gap: 1px;
-}
-
-.ai-draft-btn {
-  appearance: none;
-  border: none;
-  background: none;
-  color: var(--muted);
-  padding: 0.28rem 0.65rem;
-  font: inherit;
-  font-size: 0.78rem;
-  border-radius: 999px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.ai-draft-btn:hover { color: var(--text); }
-
-.ai-draft-btn.is-active {
-  color: #fff;
-  font-weight: 600;
-}
-
-.ai-draft-final.is-active {
-  background: var(--accent, #5fba7d);
-}
-
-.ai-draft-draft.is-active {
-  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 75%, #6b4e0e);
-}
-
-/* Draft badge in the hero meta row */
-.ai-draft-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 18%, transparent);
-  color: color-mix(in srgb, var(--ai-score-mid, #e6a817) 90%, var(--text));
-  border: 1px solid color-mix(in srgb, var(--ai-score-mid, #e6a817) 35%, var(--border));
-  white-space: nowrap;
-}
-
-/* ======================================================
    Score toggle: pill switch w/ score-shaped thumb
    ====================================================== */
 .ai-score-toggle {

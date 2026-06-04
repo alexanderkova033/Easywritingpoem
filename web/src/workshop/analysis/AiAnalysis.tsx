@@ -11,7 +11,7 @@ import {
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
-import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import {
   LS_LAST_ANALYSIS_PREFIX,
   LS_LAST_ANALYZED_LINES_PREFIX,
@@ -30,7 +30,6 @@ import {
   LS_SNAPSHOTS_PREFIX,
   appendScoreHistory,
   hashInput,
-  loadDraftMode,
   loadLastHash,
   loadScoreHistory,
   loadScoringEnabled,
@@ -72,11 +71,6 @@ export interface AiAnalysisProps {
 
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
-  const [draftMode, setDraftModeState] = useState<boolean>(loadDraftMode);
-  const setDraftMode = useCallback((next: boolean) => {
-    setDraftModeState(next);
-    tryLocalStorageSetItem(STORAGE_KEY_AI_DRAFT_MODE, next ? "1" : "0");
-  }, []);
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
@@ -177,7 +171,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       title,
       harshness,
       mainIdea ?? "",
-      draftMode ? "draft" : "final",
     ].join("|"));
     if (result && loadLastHash(poemId) === inputHash) {
       setStatus("done");
@@ -202,12 +195,11 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 line_end: i.line_end,
                 headline: i.headline,
               })),
-            draftMode,
           },
           ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, draftMode }, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, ctrl.signal);
       }
       setResult(res);
       setSavedResult(res);
@@ -242,7 +234,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, draftMode, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
 
 
   useEffect(() => {
@@ -354,27 +346,6 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 ))}
               </div>
 
-              <div className="ai-draft-toggle" role="group" aria-label="Poem stage">
-                <button
-                  type="button"
-                  className={`ai-draft-btn${!draftMode ? " is-active" : ""} ai-draft-final`}
-                  onClick={() => setDraftMode(false)}
-                  title="Treat the poem as finished — full critique, line-level issues, strongest line"
-                  aria-pressed={!draftMode}
-                >
-                  <span aria-hidden>✓</span> Final
-                </button>
-                <button
-                  type="button"
-                  className={`ai-draft-btn${draftMode ? " is-active" : ""} ai-draft-draft`}
-                  onClick={() => setDraftMode(true)}
-                  title="Work-in-progress — forward-looking feedback, no line-level issues"
-                  aria-pressed={draftMode}
-                >
-                  <span aria-hidden>✎</span> Draft
-                </button>
-              </div>
-
             </div>
 
             <div className="ai-analyze-actions">
@@ -388,10 +359,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                     : undefined
                 }>
                 {status === "loading"
-                  ? (effectiveMode === "compare" ? (draftMode ? "Re-checking…" : "Refining…") : (draftMode ? "Checking…" : "Reading…"))
+                  ? (effectiveMode === "compare" ? "Refining…" : "Reading…")
                   : effectiveMode === "compare"
-                    ? (draftMode ? "⟳ Re-check draft" : "⟳ Refine")
-                    : draftMode ? "✎ Check draft" : "✦ Read poem"}
+                    ? "⟳ Refine"
+                    : "✦ Read poem"}
               </button>
               {(result || scoreHistory.length > 0) && (
                 <button type="button"

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
-import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 
 export const LS_SCORE_HISTORY_PREFIX = "easy-poems:ai-score-history:";
 export const LS_LAST_HASH_PREFIX = "easy-poems:ai-last-hash:";
@@ -137,13 +137,6 @@ export function loadScoringEnabled(): boolean {
     if (raw === "0" || raw === "false") return false;
   } catch { /* ignore */ }
   return true;
-}
-
-export function loadDraftMode(): boolean {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_AI_DRAFT_MODE);
-    return raw === "1" || raw === "true";
-  } catch { return false; }
 }
 
 /** Smooth red→green color for a score on a 0..scale range (default 0-100).

@@ -50,9 +50,6 @@ export const STORAGE_KEY_LOOKED_UP_WORDS = "easy-poems:looked-up-words:v1";
 
 // AI settings
 export const STORAGE_KEY_AI_SCORING_ENABLED = "easy-poems:ai-scoring-enabled";
-export const STORAGE_KEY_AI_DRAFT_MODE = "easy-poems:ai-draft-mode";
-// FUTURE: if "thinking mode" (deep-read opt-in) is reintroduced, re-add a key
-// like STORAGE_KEY_AI_THINKING_MODE here. See note in api/analyze.ts.
 
 // Landing page
 export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";
