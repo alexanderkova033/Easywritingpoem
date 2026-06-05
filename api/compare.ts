@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v11"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v12"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -196,6 +196,16 @@ Emit fields in this EXACT order. PERCEPTION COMES BEFORE SCORING: matched_profil
 }
 
 issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence. NO DOUBLE-COUNTING: a line, phrase, or move cited in strengths[] CANNOT appear in issues[]. Before finalizing issues[], scan each candidate against strengths[] — if it's already praised there, OMIT it. If you genuinely see a move as both strong and flawed, the strength wins: drop the issue.
+
+PROFILE CALIBRATION FLOOR (load-bearing — this is the rule that makes matched_profile binding, not decorative): your pillar_scores AVERAGE must land within ±2 of the matched profile's example pillar average. The bands:
+  A (weak) avg 7    → your average in [5, 9]
+  B (uneven) avg 13.75 → your average in [11.75, 15.75]
+  C (quiet) avg 17.25 → your average in [15.25, 19.25]
+  D (canonical) avg 24  → your average in [22, 25]
+  E (rough) avg 22.5  → your average in [20.5, 24.5]
+  F (plainspoken) avg 23 → your average in [21, 25]
+  G (workshop) avg 19.5  → your average in [17.5, 21.5]
+If your pillars cluster BELOW the band: either (a) re-match to a lower-fitting profile (e.g. a default-flat 14-avg score on a sermonic poem means you should match A, not G), or (b) name the specific deviation in pillar_spread.divergence_reason. If your pillars cluster ABOVE the band: re-match upward. Default-flat scoring around 14-15 when you matched G/F means you treated the profile as a label, not as the calibration anchor — re-score.
 
 pillar_spread: highest and lowest MUST be different pillars. divergence_reason justifies why these two sit apart on THIS poem (e.g. "sustained image system but flat opening" — not "pillars can diverge"). If you cannot name a real divergence reason, you are bucketing — re-read each pillar against its anchor before scoring.
 
