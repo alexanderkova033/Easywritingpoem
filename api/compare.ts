@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v17"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v18"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -76,6 +76,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 === PILLAR SCORING DISCIPLINE ===
 - Before assigning each pillar score, locate specific evidence on the page — a line, an image, a structural move. If you cannot cite particular text supporting the number, you are defaulting; re-read.
 - If 3+ pillars land within 2 points of each other in the same band, you're bucketing instead of reading independently. Reconsider each pillar against its own anchor.
+- DIVERGENCE CHECK: if your highest and lowest pillar are within 2 points, pause and ask — is this genuine evenness, or default-flat scoring? Most poems have at least one pillar that's clearly stronger or weaker than the others. Genuine evenness exists (uniformly competent or uniformly weak poems); just verify before locking, don't default to it.
 - Judge density, not length. A short poem may hit max scores by doing more per word. "Sustained across the poem" applies proportionally to the poem's actual length — don't dock a four-line piece for not accumulating evidence a twenty-line piece would.
 - Title and writing focus are CONTEXT, not scoring inputs. Don't infer cliché, register, or quality from the title; don't score whether the author hit their stated focus. Score what's on the page against the rubric. A fancy title doesn't lift; a plain title doesn't drop. Writing focus tells you what the author was aiming at — it never moves a pillar.
 
