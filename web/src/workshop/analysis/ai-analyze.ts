@@ -119,17 +119,13 @@ function parsePillarScores(v: unknown): PillarScores | undefined {
   };
 }
 
-/** If the model emitted pillar_scores, enforce overall = min(sum, lowest×4 + 20).
- *  This is the server-side math check the prompt mandates — we apply it client-side
- *  too so a sloppy model can't sneak past with an inflated overall_score. */
+/** If the model emitted pillar_scores, enforce overall = sum. No cap — each pillar
+ *  is judged independently per the rubric. Client-side check so a sloppy model
+ *  can't sneak past with an inflated or deflated overall_score. */
 function reconcileOverallScore(pillars: PillarScores | undefined, modelOverall: number): number {
   if (!pillars) return modelOverall;
-  const values = [pillars.chord, pillars.craft, pillars.spark, pillars.echo];
-  const sum = values.reduce((a, b) => a + b, 0);
-  const lowest = Math.min(...values);
-  const cap = lowest * 4 + 20;
-  const computed = Math.min(sum, cap);
-  return Math.max(1, Math.min(100, computed));
+  const sum = pillars.chord + pillars.craft + pillars.spark + pillars.echo;
+  return Math.max(1, Math.min(100, sum));
 }
 
 function parseSeverity(v: unknown): "high" | "medium" | "low" | undefined {

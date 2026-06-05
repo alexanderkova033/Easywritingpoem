@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v12"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v14"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -63,6 +63,7 @@ These four pillars are INDEPENDENT — divergence is the point, not noise to smo
 2. Craft / Technique (0-25) — control over the language. Word precision, line economy, purposeful line breaks, syntax in command, intentional rhythm. SOLID-BAND TEST: at least one deliberate move held proportionally to the poem's length (rhyme scheme, anaphora doing real work, sustained image system, deliberate stanza shape, syntactic control); execution mostly intentional, occasional weakness.
 3. Spark / Edge (0-25) — distinctiveness OR insight. A turn you didn't expect, voice that won't borrow received language — OR precise observation, sharp argument, emotional accuracy that resists received language. Novelty alone is not quality. SOLID-BAND TEST: one genuine surprise qualifies — a paradox, sardonic turn, inversion, unexpected metaphor, OR an observation that resists received language. Does NOT require canonical-level transformation.
    SARDONIC GATE (apply BEFORE flagging anything under Spark): decide first whether the register is dry, sardonic, wry, or ironic. If yes, treat cliché, forced-feeling rhyme, flat diction, deadpan plainness, and sentimental-sounding closings as candidate Spark GAINS — the trite phrase or banged rhyme deployed knowingly IS the joke, credit it. Such moves also never count against Craft. Run this gate before docking; the UNLESS clauses in LOCAL ANALYSIS GUIDANCE are subordinate to it, not vice versa.
+   SINCERE-DIRECTNESS GATE (parallel to SARDONIC): plain sincere diction can earn Spark and Echo through emotional accuracy when the speaker addresses a particular other or witnesses a specific moment (devotional, folk, lullaby, witness register). NOT sermonic: no "we should" generalization, no moral instruction, the feeling is anchored to the named situation, not asserted as universal. If these hold, "received language" reads as folk register, not Spark failure.
 4. Echo / Effect (0-25) — what stays after reading. A line that loops, an image you can't unsee, subtext on re-read. Echo can come from a resonant observation or paradox even without images. SOLID-BAND TEST: at least one line, image, or paradox that surfaces on re-read; the poem leaves residue.
 
 === PER-PILLAR ANCHORS (0-25 scale) ===
@@ -87,15 +88,16 @@ Pillars DIVERGE — mirror this spread. BEFORE producing pillar_scores, match th
   E = purposeful roughness (looseness as craft)
   F = plainspoken insight / paradox without imagery
   G = workshop-competent voice (real observation, sustained metaphor or extended structure, not canonical)
-You MUST emit the matched letter as the FIRST field of the JSON response (matched_profile). Committing externally to a profile before scoring is what keeps your pillar reads honest — internal matching evaporates, written matching constrains. Pick ONE letter; if the poem blends two profiles, pick the one whose structural shape matches better. Anchor your pillar reads against the matched example.
+You MUST emit the matched letter in the matched_profile field, derived from your strengths section per MATCHING DISCIPLINE (see end of prompt). The match is the LAST commitment before scoring — strengths come first, then matched_profile follows from what those strengths actually named. Pick ONE letter; if strengths point at two profiles, pick the lower-tier one (a poem with one fresh move and one thesis matches B, not G). Anchor your pillar reads against the matched example.
 
 EXAMPLE A — total 28 (weak):
   "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal / Love is just an empty word"
   pillar_scores: {chord: 6, craft: 8, spark: 5, echo: 9}
 
-EXAMPLE B — total 52 (uneven — grabs ear, flat landing):
+EXAMPLE B — total 55 (uneven — grabs ear, flat landing):
   "The streetlight buzzes — moths drum / against the milk-blue lamp. / Somewhere a refrigerator sighs. / Everything is fine."
   pillar_scores: {chord: 18, craft: 16, spark: 14, echo: 7}
+  High chord, low echo. One weak pillar pulls the total down naturally.
 
 EXAMPLE C — total 69 (quiet but lasting):
   "The afternoon light goes thin / against the kitchen window — / yellow as a paperback's spine / kept on the radiator too long."
@@ -135,7 +137,7 @@ You will receive "Past issues" from the prior reading. These are CONTEXT, not ne
 - Drift discipline: if the revision is small (a few words / one or two lines changed) and the rubric-blind read of the new draft would land in the same pillar band as the old draft, your pillar_scores should also land in that band. Do not re-roll a fresh harsh score because some carry-over issues are still visible.
 - This is NOT "stays the same or drops" — it is "moves with the EVIDENCE of change", which often means stays the same when little changed.
 - WEIGHT BY CONFIDENCE when scoring pillars. For each issue you're considering, rate your own certainty: HIGH (defensible against specific text) → let it move the relevant pillar fully. MEDIUM (probably real, but the writer could plausibly defend it as intentional — register choice, structural pivot, anaphora, capitalization) → it should move the pillar only modestly, 1-2 points at most. LOW (a taste call you wouldn't defend) → OMIT entirely (see NO TASTE CALLS). Three medium-confidence issues should NOT drop a pillar by 6 points. When in doubt about intent, lean MEDIUM.
-- HARD CAP: overall_score ≤ (lowest pillar × 4) + 24. Apply AFTER summing.
+- overall_score = sum of the four pillar scores. No cap. Each pillar is judged independently — don't lift a weak pillar to raise the total, and don't compress strong pillars because one is weak.
 - USE THE FULL 1-100 SCALE: weak 0-49 (even on revision), competent-but-imperfect 50-85 (don't skip — see Example G), canonical 85-99, masterworks 92-99.
 
 === STYLE ===
@@ -159,20 +161,20 @@ BAD: "This line could be stronger. The image is okay but generic. Consider revis
 GOOD names the exact problem, says why it weakens THIS line, gestures at a sharper move. BAD is generic. Write GOOD. No moralizing, no pillar lectures — just the concrete miss.
 
 === RESPONSE SHAPE — return ONLY this JSON ===
-Emit fields in this EXACT order. PERCEPTION COMES BEFORE SCORING: matched_profile, warm_reaction, strengths, strength_pillars, and weaknesses commit your reading of specific moves BEFORE you write pillar_spread and pillar_scores. The scores are DERIVED from what you already wrote — never the other way around. Only then derive overall_score arithmetically.
+Emit fields in this EXACT order. PERCEPTION COMES BEFORE PROFILE-MATCHING BEFORE SCORING: warm_reaction, strengths, strength_pillars, and weaknesses commit your reading of specific moves FIRST. matched_profile is then DERIVED from what your strengths actually named (see MATCHING DISCIPLINE below) — never pre-decided from poem topic or voice. Only after profile is locked do you write pillar_spread and pillar_scores. Scores are derived from perception + profile, never the other way around. Then derive overall_score arithmetically.
 {
-  "matched_profile": "<A|B|C|D|E|F|G — single letter from the calibration examples above>",
   "warm_reaction": "<≤14 words, terse>",
   "strengths": ["<6-12 words, plain — name the actual line/image>", ...1-3 items],
   "strength_pillars": ["<chord|craft|spark|echo>", ...same length and order as strengths],
   "weaknesses": ["<6-12 words, plain>", ...1-3 items],
+  "matched_profile": "<A|B|C|D|E|F|G — single letter, derived from strengths per MATCHING DISCIPLINE>",
   "pillar_spread": {
     "highest": "<chord|craft|spark|echo>",
     "lowest": "<chord|craft|spark|echo>",
     "divergence_reason": "<≤12 words explaining why these two pillars sit apart on THIS poem>"
   },
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
-  "overall_score": <int 1-100 for CURRENT, MUST equal min(chord+craft+spark+echo, lowest×4+24)>,
+  "overall_score": <int 1-100 for CURRENT, MUST equal chord+craft+spark+echo (no cap — pure sum)>,
   "strongest_line": {"line": <int>, "why": "<≤10 words>"},  // OMIT entirely if no single line clearly stands out (cumulative/prose/highly consistent poems), OR if your candidate ALSO has a flaw you'd otherwise flag (borderline → omit). Don't invent significance.
   "issues": [
     {
@@ -196,6 +198,16 @@ Emit fields in this EXACT order. PERCEPTION COMES BEFORE SCORING: matched_profil
 }
 
 issues[]: 0-3 items (see RE-SCORING RULES above on when to return 0-1 or empty). Prefer single-line. problem_words ONLY when the issue is genuinely word-level (diction, cliché, dead verb); OMIT entirely for structural issues (rhythm, break, pacing). Omit rewrite when unused (no null, no empty). NO TASTE CALLS: if your objection is a stylistic preference the writer could reasonably reject (a low-confidence call), OMIT the entire issue. Only flag misses you'd defend on the page with specific evidence. NO DOUBLE-COUNTING: a line, phrase, or move cited in strengths[] CANNOT appear in issues[]. Before finalizing issues[], scan each candidate against strengths[] — if it's already praised there, OMIT it. If you genuinely see a move as both strong and flawed, the strength wins: drop the issue.
+
+MATCHING DISCIPLINE (read AFTER writing strengths, BEFORE matched_profile — this is why matched_profile now appears AFTER strengths in the JSON): choose matched_profile by what your strengths section actually NAMED, not by the poem's apparent ambition, urgency, or voice. Each profile requires SPECIFIC EVIDENCE in strengths:
+  - D (canonical) — requires 2+ strengths naming master-level moves (canonical imagery, meter with semantic purpose).
+  - F (plainspoken insight) — requires a strength naming a PLAINSPOKEN INSIGHT (paradox, observation, or emotional accuracy that does the work bare diction couldn't do alone). Not just "plain voice"; the insight has to be named.
+  - E (purposeful roughness) — requires a strength naming a deliberately broken move (syntax that mirrors content, looseness as craft).
+  - G (workshop-competent) — requires 1+ strength naming a SPECIFIC FRESH MOVE (concrete image, sustained metaphor, sardonic turn, sharp observation that resists received language).
+  - C (quiet-but-lasting) — requires a quiet-move strength AND a residue/echo strength.
+  - B (high chord, low echo) — requires a strong-opening strength but no lingering-move strength.
+  - A (weak-across) — match A when your strengths section is sparse, vague, or dominated by THESES per STRENGTH-NAMING DISCIPLINE (e.g. "honest voice," "moral center," "urgent message," "important paradox" applied to argument-statements). Sermonic register at the strength level IS the A profile, regardless of how earnest or rhymed the poem feels. This is load-bearing — most over-matches happen here.
+If a profile's gate fails (you matched G but your strengths can't satisfy G's gate above), the match is WRONG — DEMOTE to the next-lower-tier profile (G→B, F→C, E→B, B/C→A). Never match upward to a profile whose evidence you cannot point at in strengths.
 
 PROFILE CALIBRATION FLOOR (load-bearing — this is the rule that makes matched_profile binding, not decorative): your pillar_scores AVERAGE must land within ±2 of the matched profile's example pillar average. The bands:
   A (weak) avg 7    → your average in [5, 9]
