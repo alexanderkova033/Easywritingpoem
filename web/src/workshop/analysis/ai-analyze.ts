@@ -47,6 +47,10 @@ export interface PoemAnalysis {
   overall_score: number;
   /** 4 × 25 pillar breakdown. Sum (with hard cap) = overall_score. */
   pillar_scores?: PillarScores;
+  /** A-G letter from the rubric's calibration profiles. Sent back to compare
+   *  on the next Refine so the model doesn't snap to a different anchor and
+   *  introduce a 20-point jump just from a profile swap. */
+  matched_profile?: string;
   warm_reaction?: string;
   summary?: string;
   strengths?: string[];
@@ -199,6 +203,8 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     },
     overall_score: reconcileOverallScore(pillars, clampScore(obj.overall_score)),
     pillar_scores: pillars,
+    matched_profile: typeof obj.matched_profile === "string" && /^[A-G]$/.test(obj.matched_profile.trim())
+      ? obj.matched_profile.trim() : undefined,
     warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
       ? obj.warm_reaction.trim() : undefined,
     summary: typeof obj.summary === "string" ? obj.summary : undefined,
@@ -329,6 +335,8 @@ export async function comparePoem(
     scoreHistory,
     previousWeaknesses,
     previousIssues,
+    previousMatchedProfile,
+    previousPillarScores,
   }: {
     title: string;
     lines: string[];
@@ -340,6 +348,11 @@ export async function comparePoem(
     scoreHistory?: number[];
     previousWeaknesses?: string[];
     previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
+    /** A-G letter the prior read landed on. Locked on this refine unless the
+     *  revision changed the structural shape. */
+    previousMatchedProfile?: string;
+    /** Prior pillar breakdown so the model can keep continuity per pillar. */
+    previousPillarScores?: PillarScores;
   },
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
@@ -350,7 +363,7 @@ export async function comparePoem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues,
+      previousWeaknesses, previousIssues, previousMatchedProfile, previousPillarScores,
     }),
   });
 

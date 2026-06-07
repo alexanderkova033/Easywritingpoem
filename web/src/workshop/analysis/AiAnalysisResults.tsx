@@ -90,9 +90,21 @@ function CompareCelebration({
   onDismiss: () => void;
 }) {
   if (dismissed) return null;
-  const isWin = scoreDelta > 0 || cmp.improvements.length > cmp.regressions.length;
-  const isLoss = scoreDelta < 0 && cmp.regressions.length > cmp.improvements.length;
+  // Score is the primary signal — the qualitative improvement/regression counts
+  // can disagree (3 small wins, 1 big regression that nets a score drop), and
+  // when they do, the number is what the user reads as ground truth. Match the
+  // headline to the score direction, fall back to the qual counts only when
+  // the score didn't move.
+  const isWin = scoreDelta > 0 || (scoreDelta === 0 && cmp.improvements.length > cmp.regressions.length);
+  const isLoss = scoreDelta < 0 || (scoreDelta === 0 && cmp.regressions.length > cmp.improvements.length);
   const tone = isWin ? "win" : isLoss ? "loss" : "neutral";
+  const summaryText = isWin
+    ? "Revision lifted the poem."
+    : isLoss
+      ? scoreDelta < 0 && cmp.improvements.length > cmp.regressions.length
+        ? "Mixed — gains here, but other ground lost."
+        : "Some craft moves regressed."
+      : "Mixed revision.";
   return (
     <div className={`ai-cmp-toast ai-cmp-toast-${tone}`} role="status">
       <span className="ai-cmp-toast-icon" aria-hidden>{isWin ? "▲" : isLoss ? "▼" : "·"}</span>
@@ -103,9 +115,7 @@ function CompareCelebration({
               {scoreDelta > 0 ? `+${scoreDelta}` : scoreDelta} score
             </span>
           )}
-          <span className="ai-cmp-toast-summary">
-            {isWin ? "Revision lifted the poem." : isLoss ? "Some craft moves regressed." : "Mixed revision."}
-          </span>
+          <span className="ai-cmp-toast-summary">{summaryText}</span>
         </div>
         {cmp.improvements.length > 0 && (
           <ul className="ai-cmp-toast-list ai-cmp-toast-improvements">
@@ -447,7 +457,9 @@ export function AnalysisResults({
   }, [filteredIssues]);
 
   const progressPct = totalIssues > 0 ? Math.round((resolvedCount / totalIssues) * 100) : 0;
-  const issuesBadge = visibleIssues.length;
+  // Badge tracks issues the user still has to look at — not the historical
+  // total. Recheck → resolved should drop the count immediately.
+  const issuesBadge = totalIssues - resolvedCount;
 
   const renderIssueCard = (iss: AnalysisIssue) => (
     <IssueCard
@@ -650,11 +662,12 @@ export function AnalysisResults({
           {/* 6. Comparison detail (still useful when toast is dismissed) */}
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
-          {/* 7. CTA — jump to issues */}
-          {visibleIssues.length > 0 && (
+          {/* 7. CTA — jump to issues. Reflect unresolved count so the number
+              stays in sync with the tab badge. */}
+          {issuesBadge > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
               onClick={() => setTab("issues")}>
-              See {visibleIssues.length} issue{visibleIssues.length !== 1 ? "s" : ""} →
+              See {issuesBadge} issue{issuesBadge !== 1 ? "s" : ""} →
             </button>
           )}
         </div>

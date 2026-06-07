@@ -196,6 +196,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 line_end: i.line_end,
                 headline: i.headline,
               })),
+            previousMatchedProfile: savedResult!.matched_profile,
+            previousPillarScores: savedResult!.pillar_scores,
           },
           ctrl.signal,
         );
