@@ -168,7 +168,7 @@
  * Word-style page feel. Padding inside .editor-panel acts as page margins. */
 @media (min-width: 900px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: min(860px, 92vw);
+    max-width: min(1080px, 94vw);
     width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -183,7 +183,7 @@
 
 @media (min-width: 1400px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: 920px;
+    max-width: 1160px;
   }
 }
 
