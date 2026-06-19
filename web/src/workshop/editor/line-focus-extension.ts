@@ -65,13 +65,14 @@ const lineFocusPlugin = ViewPlugin.fromClass(
         }
       } else {
         const { from, to } = stanzaRange(view, activeLine);
-        // Fallback: if the doc has no blank-line separators (single stanza),
-        // stanza range == whole doc and nothing would dim. Degrade to per-line
-        // focus so the user still sees a focus effect.
-        const isWholeDoc = from === 1 && to === view.state.doc.lines;
+        // Dim every line outside the active stanza. When the doc is still a
+        // single stanza (e.g. while writing the first paragraph, before any
+        // blank-line separator exists) the range covers the whole doc, so
+        // nothing dims and the entire paragraph stays in focus — which is the
+        // point of stanza focus. (Previously this degraded to per-line focus,
+        // wrongly dimming the rest of the paragraph being written.)
         for (let i = 1; i <= view.state.doc.lines; i++) {
-          const inStanza = isWholeDoc ? i === activeLine : (i >= from && i <= to);
-          if (inStanza) continue;
+          if (i >= from && i <= to) continue;
           const line = view.state.doc.line(i);
           if (!line.text.trim()) continue;
           decos.push(dimmedLine.range(line.from));

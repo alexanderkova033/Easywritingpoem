@@ -814,6 +814,31 @@ export function PoemWorkshop() {
     return () => cancelAnimationFrame(id);
   }, [m.toolTab]);
 
+  // Keep the sticky tools panel sized to the space between its current top and
+  // the bottom of the viewport, so its content scrolls *inside* the panel
+  // instead of forcing a page scroll to reach the bottom. Cheap: one CSS var on
+  // one element, rAF-throttled, only on scroll/resize (never per frame).
+  useEffect(() => {
+    const panel = toolsPanelRef.current;
+    if (!panel) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const top = panel.getBoundingClientRect().top;
+      const avail = window.innerHeight - top - 16;
+      panel.style.setProperty("--tools-maxh", `${Math.round(Math.max(260, avail))}px`);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
   // editor instead of showing labels inside the editor's left gutter.
   // Remember the prior state so we can restore it when leaving the tab if
@@ -1456,14 +1481,12 @@ export function PoemWorkshop() {
                   aria-controls={`tool-panel-${id}`}
                   className="tool-accordion-header"
                   onClick={() => m.setToolTab(id)}
+                  title={meta.desc}
                 >
                   <span className="tool-accordion-icon" aria-hidden>
                     <Icon />
                   </span>
-                  <span className="tool-accordion-text">
-                    <span className="tool-accordion-label">{meta.label}</span>
-                    <span className="tool-accordion-desc">{meta.desc}</span>
-                  </span>
+                  <span className="tool-accordion-label">{meta.label}</span>
                   {toolDot(id)}
                   <span className="tool-accordion-chevron" aria-hidden>
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none">

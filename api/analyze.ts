@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v31"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v34"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -91,6 +91,13 @@ Score honestly and let the pillars DIVERGE — a poem can be musical but forgett
 - Spark — what surprises: a fresh turn, an image or insight that resists received language. Novelty alone isn't quality.
 - Echo — what lingers: a line, image, or paradox that stays after the read.
 Judge density, not length — a short poem can score high by doing more per word. Cite evidence on the page for each pillar; if you can't, re-read rather than default. Use the full range: clichéd/broken poems sit low (5-10/pillar), competent revised drafts mid (14-19), only genuinely distinctive work reaches 20+. Issues follow the text, NOT the score — a strong poem can have zero.
+
+=== CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
+- Weak / clichéd — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Competent — clear voice, one real observation; where most honest revised drafts land — total ~78: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 18, craft 19, spark 19, echo 22}
+- Strong — bare diction, precise insight; the plainness IS the craft — total ~92: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 22, craft 23, spark 22, echo 25}
+- Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 23, echo 24}
+Most honest drafts live 50-85 — don't cluster everything at 70-80, and don't lift a weak poem out of the 20s to be kind.
 
 === LOCAL ANALYSIS (soft signals) ===
 Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
@@ -327,7 +334,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
       ],
-      max_tokens: 2500,
+      max_tokens: 4000,
+      // Medium reasoning kept intentionally — scoring quality depends on it.
+      // Also keep the token ceiling generous: max_completion_tokens caps
+      // reasoning + output combined, so a low ceiling truncates long poems.
       reasoningEffort: "medium",
       timeoutMs: 90_000,
     },

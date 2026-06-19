@@ -545,8 +545,31 @@ export function AnalysisResults({
                     <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
                       {scoreLabel(result.overall_score)}
                     </span>
-                    {scoreHistory && scoreHistory.length >= 2 && (
-                      <ScoreSparkline history={scoreHistory} />
+                    {scoreHistory && scoreHistory.length >= 2 ? (
+                      <>
+                        <ScoreSparkline history={scoreHistory} />
+                        {(() => {
+                          // Progression is the point — show the whole climb from the
+                          // first tracked draft, not just the last hop the sparkline shows.
+                          const first = scoreHistory[0]!;
+                          const climb = result.overall_score - first;
+                          const drafts = scoreHistory.length;
+                          const color = climb > 0 ? scoreColor(88) : climb < 0 ? scoreColor(20) : "var(--muted)";
+                          return (
+                            <span className="ai-score-journey" style={{ color }}>
+                              {climb > 0
+                                ? `↑ +${climb} since draft 1 · ${drafts} reads`
+                                : climb < 0
+                                  ? `↓ ${climb} since draft 1 · ${drafts} reads`
+                                  : `holding steady · ${drafts} reads`}
+                            </span>
+                          );
+                        })()}
+                      </>
+                    ) : (
+                      <span className="ai-score-journey muted">
+                        Your starting point — Refine to watch it climb.
+                      </span>
                     )}
                   </div>
                 </div>

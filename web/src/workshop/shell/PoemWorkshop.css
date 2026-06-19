@@ -523,7 +523,7 @@
   }
 
   /* Default fallback for 1050-1199px range */
-  .tools-resize-gutter { right: calc(var(--tools-col, min(300px, 28vw)) - 8px); }
+  .tools-resize-gutter { right: calc(var(--tools-col, min(280px, 26vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
   /* Rail gutter extends down through the AI Analysis row so it stays
@@ -576,8 +576,8 @@
 }
 
 @media (min-width: 1200px) {
-  /* Update gutter fallback to match the wider default tools width */
-  .tools-resize-gutter { right: calc(var(--tools-col, 380px) - 8px); }
+  /* Update gutter fallback to match the default tools width */
+  .tools-resize-gutter { right: calc(var(--tools-col, 300px) - 8px); }
 }
 
 /* ── Expand pills — appear at viewport edges when a panel is closed ─────── */
@@ -638,6 +638,12 @@
 .tools-panel {
   display: flex;
   flex-direction: column;
+  /* Never grow past the grid column the cell occupies. Without this the sticky
+     panel sizes to its content's min-width and spills to the right, so dragging
+     the resize gutter appears to "move" the panel instead of shrinking it. */
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   background: color-mix(in srgb, var(--surface) 84%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--border) 130%, transparent);
   border-radius: var(--radius-lg);
@@ -697,7 +703,14 @@
   .tools-panel {
     position: sticky;
     top: 1.15rem;
-    align-self: flex-start;
+    /* Stretch across the cell (cross axis) so the panel matches its grid column
+       width; flex-start would size it to content and overflow to the right. */
+    align-self: stretch;
+    /* Fit the visible viewport from the panel's current top, so the whole panel
+       (and its internal scrollbar) stays on screen and you scroll *inside* it
+       rather than scrolling the page. --tools-maxh is kept in sync in JS as the
+       page scrolls / resizes; the calc() is a sane fallback before JS runs. */
+    max-height: var(--tools-maxh, calc(100vh - 2.3rem));
   }
 }
 
@@ -2348,14 +2361,15 @@
 .tool-accordion {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  padding: 0.6rem 0.7rem 0.4rem;
+  gap: 0.2rem;
+  padding: 0.45rem 0.4rem 0.3rem;
+  min-width: 0;
 }
 
 .tool-accordion-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.15rem;
 }
 
 .tool-accordion-group + .tool-accordion-group {
@@ -2363,54 +2377,53 @@
 }
 
 .tool-accordion-group-label {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 0.1rem 0.4rem 0.1rem;
-  opacity: 0.75;
+  padding: 0.2rem 0.45rem 0.1rem;
+  opacity: 0.7;
 }
 
 .tool-accordion-item {
-  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
+  border-radius: 10px;
   overflow: hidden;
   transition:
-    border-color 0.16s ease,
     box-shadow 0.2s ease,
     background 0.16s ease;
 }
 
 .tool-accordion-item.is-open {
-  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
-  box-shadow: 0 2px 16px color-mix(in srgb, var(--accent) 13%, transparent);
+  background: color-mix(in srgb, var(--bg) 50%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 
 .tool-accordion-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.55rem;
   width: 100%;
-  min-height: 3.1rem;
-  padding: 0.55rem 0.65rem;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.32rem 0.5rem;
   border: none;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text);
+  color: var(--muted);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.13s ease;
+  transition: background 0.13s ease, color 0.13s ease;
 }
 
 .tool-accordion-header:hover {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  color: var(--text);
 }
 
 .tool-accordion-item.is-open .tool-accordion-header {
-  background: color-mix(in srgb, var(--accent) 13%, transparent);
+  color: var(--text);
 }
 
 .tool-accordion-header:focus-visible {
@@ -2421,49 +2434,36 @@
 .tool-accordion-icon {
   display: grid;
   place-items: center;
-  width: 2.05rem;
-  height: 2.05rem;
+  width: 1.75rem;
+  height: 1.75rem;
   flex-shrink: 0;
-  border-radius: 9px;
-  color: var(--muted);
-  background: color-mix(in srgb, var(--border) 24%, transparent);
+  border-radius: 8px;
+  color: inherit;
+  background: color-mix(in srgb, var(--border) 22%, transparent);
   transition: color 0.13s ease, background 0.13s ease;
 }
 
 .tool-accordion-item.is-open .tool-accordion-icon {
-  color: color-mix(in srgb, var(--text) 10%, var(--accent));
-  background: color-mix(in srgb, var(--accent) 26%, var(--bg));
+  color: color-mix(in srgb, var(--text) 8%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 24%, var(--bg));
 }
 
 .tool-accordion-icon .tool-tab-svg {
   display: block;
-  width: 21px;
-  height: 21px;
+  width: 18px;
+  height: 18px;
   opacity: 1;
 }
 
-.tool-accordion-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08rem;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
 .tool-accordion-label {
-  font-size: 0.92rem;
-  font-weight: 650;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
   line-height: 1.2;
-  color: var(--text);
-}
-
-.tool-accordion-desc {
-  font-size: 0.74rem;
-  color: var(--muted);
-  line-height: 1.3;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .tool-accordion-dot {

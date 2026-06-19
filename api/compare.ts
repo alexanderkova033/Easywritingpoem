@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v21"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v24"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -74,6 +74,13 @@ Let the pillars DIVERGE — a poem can be musical but forgettable, or plain but 
 - Spark — what surprises: a fresh turn, an image or insight that resists received language. Novelty alone isn't quality.
 - Echo — what lingers: a line, image, or paradox that stays after the read.
 Judge density, not length. Cite evidence on the page for each pillar. Use the full range; issues follow the text, not the score.
+
+=== CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
+- Weak / clichéd — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Competent — clear voice, one real observation; where most honest revised drafts land — total ~78: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 18, craft 19, spark 19, echo 22}
+- Strong — bare diction, precise insight; the plainness IS the craft — total ~92: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 22, craft 23, spark 22, echo 25}
+- Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 23, echo 24}
+Most honest drafts live 50-85 — these anchors set the absolute scale; the RE-SCORING rules below keep continuity from the prior draft.
 
 === RE-SCORING A REVISION (keeps the score honest across drafts) ===
 The prior overall_score is an ANCHOR, not a fresh-read target. The new score moves FROM it, driven by real evidence of change in the diff.
@@ -400,8 +407,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: BASE_SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 3000,
+      max_tokens: 5000,
       temperature: 0,
+      // Medium reasoning kept intentionally — scoring quality depends on it.
+      // Keep the token ceiling generous: max_completion_tokens caps reasoning +
+      // output combined, so a low ceiling truncates long poems mid-JSON.
       reasoningEffort: "medium",
       timeoutMs: 90_000,
       // Medium reasoning is slow; a stuck call rarely turns fast on retry, and

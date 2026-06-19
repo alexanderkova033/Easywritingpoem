@@ -396,10 +396,11 @@
   .cm-line-flash { animation: none; }
 }
 
-/* Line focus mode: very subtle dimming of non-active lines */
+/* Line focus mode: gentle dimming of non-active lines. Kept soft so the
+ * surrounding text stays legible rather than washing out. */
 .cm-line-dimmed {
-  opacity: 0.38;
-  transition: opacity 0.18s ease;
+  opacity: 0.52;
+  transition: opacity 0.22s ease;
 }
 
 /* Reduce motion: instant change, no fade */

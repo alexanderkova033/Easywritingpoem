@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 
-export const DEFAULT_TOOLS_W = 380;
+export const DEFAULT_TOOLS_W = 300;
 export const DEFAULT_RAIL_W = 64;
 export const SNAP_PX = 36;
 export const MIN_EDITOR_W = 240;
