@@ -160,22 +160,24 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 }
 
 function PillarBars({ pillars }: { pillars: PillarScores }) {
-  const rows: { key: keyof PillarScores; label: string }[] = [
-    { key: "chord", label: "Chord / Musicality" },
-    { key: "craft", label: "Craft / Technique" },
-    { key: "spark", label: "Spark / Edge" },
-    { key: "echo",  label: "Echo / Effect" },
+  const rows: { key: keyof PillarScores; label: string; gloss: string }[] = [
+    { key: "chord", label: "Chord", gloss: "the opening pull" },
+    { key: "craft", label: "Craft", gloss: "control of the language" },
+    { key: "spark", label: "Spark", gloss: "what surprises" },
+    { key: "echo",  label: "Echo",  gloss: "what lingers" },
   ];
   const pillarColor = (v: number): string => scoreColor(v, 25);
   return (
     <div className="ai-pillars" aria-label="Pillar score breakdown">
-      {rows.map(({ key, label }) => {
+      {rows.map(({ key, label, gloss }) => {
         const v = pillars[key];
         const pct = Math.max(0, Math.min(100, (v / 25) * 100));
         const color = pillarColor(v);
         return (
           <div key={key} className="ai-pillar-row">
-            <span className="ai-pillar-label">{label}</span>
+            <span className="ai-pillar-label">
+              {label}<span className="ai-pillar-gloss muted"> · {gloss}</span>
+            </span>
             <span className="ai-pillar-track" aria-hidden>
               <span className="ai-pillar-fill" style={{ width: `${pct}%`, background: color }} />
             </span>
@@ -573,7 +575,7 @@ export function AnalysisResults({
                 <div className="ai-card ai-card-strengths">
                   <span className="ai-card-label">
                     <span className="ai-card-icon" aria-hidden>+</span>
-                    {" Strengths"}
+                    {" What lands"}
                   </span>
                   <ul className="ai-sw-list">
                     {result.strengths!.map((s, i) => <li key={i}>{s}</li>)}
@@ -584,7 +586,7 @@ export function AnalysisResults({
                 <div className="ai-card ai-card-weaknesses">
                   <span className="ai-card-label">
                     <span className="ai-card-icon" aria-hidden>−</span>
-                    {" Work on"}
+                    {" What holds it back"}
                   </span>
                   <ul className="ai-sw-list">
                     {result.weaknesses!.map((s, i) => (

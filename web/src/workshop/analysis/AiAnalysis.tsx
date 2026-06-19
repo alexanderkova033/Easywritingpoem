@@ -38,6 +38,7 @@ import {
   saveLastHash,
 } from "./ai-analysis-helpers";
 import { AnalysisResults, type AnalysisTab } from "./AiAnalysisResults";
+import { AiLoadingIndicator } from "./AiLoadingIndicator";
 export { loadLastAnalysis, loadIgnoredIssueIds };
 
 export interface AiAnalysisProps {
@@ -91,6 +92,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
   );
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
+  /** Chars of model output streamed so far this run — drives the loading bar. */
+  const [streamedChars, setStreamedChars] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
   const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory(poemId));
   const abortRef = useRef<AbortController | null>(null);
@@ -156,6 +159,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
     setStatus("loading");
     setErrorMsg("");
     setIsUnconfigured(false);
+    setStreamedChars(0);
 
     const goalsPlain = goals
       ? Object.fromEntries(Object.entries(goals).filter(([, v]) => v != null)) as Record<string, number>
@@ -202,7 +206,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus }, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, onProgress: setStreamedChars }, ctrl.signal);
       }
       // A new analysis replaces the prior one — resolution flags keyed to the
       // OLD issue IDs no longer apply (and would silently mark re-flagged
@@ -422,17 +426,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
 
           {status === "loading" && (
             <>
-              <div className="ai-loading" role="status" aria-live="polite">
-                <span className="ai-loading-pulse" aria-hidden />
-                <span className="ai-loading-dot" aria-hidden />
-                <span className="ai-loading-dot" aria-hidden />
-                <span className="ai-loading-dot" aria-hidden />
-                <span className="ai-loading-label">
-                  {effectiveMode === "compare"
-                    ? "Refining the read…"
-                    : "Reading the poem…"}
-                </span>
-              </div>
+              <AiLoadingIndicator mode={effectiveMode} streamedChars={streamedChars} />
               {result && (
                 <div className="ai-ghost-results" aria-hidden>
                   <AnalysisResults

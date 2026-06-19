@@ -30,7 +30,6 @@ import { RhymeTooltip } from "@/workshop/rhyme/RhymeTooltip";
 import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "@/workshop/editor/PoemBodyEditor";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
-import { useToolTabListKeyboard } from "@/workshop/analysis/useToolTabListKeyboard";
 import { useWorkshopToolHotkeys } from "@/workshop/analysis/useWorkshopToolHotkeys";
 // Lazy-load the full tools panel — it pulls in all tool components (rhyme, syllables,
 // spell, stats, suggest, etc.) which would otherwise inflate the critical-path bundle.
@@ -69,12 +68,10 @@ import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
   TOOL_BUCKET_LABEL,
   TOOL_BUCKET_ORDER,
-  defaultTabForBucket,
   formatRelativeSnapshotWhen,
   tabsForBucket,
-  toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
 import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
@@ -147,12 +144,6 @@ export function PoemWorkshop() {
     manualRhymeLinks.links,
     manualRhymeUnlinks.unlinks,
     manualStress.overrides,
-  );
-  const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
-  const onToolTabKeyDown = useToolTabListKeyboard(
-    m.toolTab,
-    m.setToolTab,
-    bucketTabs,
   );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
@@ -232,13 +223,6 @@ export function PoemWorkshop() {
   };
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
-  const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
-    try { return !!localStorage.getItem(STORAGE_KEY_TABS_EXPANDED); } catch { return false; }
-  });
-  const expandAllTabs = () => {
-    try { localStorage.setItem(STORAGE_KEY_TABS_EXPANDED, "1"); } catch { /* ignore */ }
-    setAllTabsExpanded(true);
-  };
 
   const {
     workshopGridRef,
@@ -615,6 +599,8 @@ export function PoemWorkshop() {
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
+  // Inner scroll container of the tools panel (the accordion list scrolls here on desktop).
+  const toolsScrollBodyRef = useRef<HTMLDivElement | null>(null);
 
   const { handleSheetDragStart, handleSheetDragMove, handleSheetDragEnd } = useSheetDrag({
     toolsPanelRef,
@@ -794,9 +780,38 @@ export function PoemWorkshop() {
   }, [overlayOpenCount]);
 
 
-  // Reset tools panel scroll to top when switching tool sub-tabs.
+  // Bring the newly-opened accordion tool into view, parked just below the
+  // sticky head. Clicking a header is usually a no-op (it's already visible);
+  // this mainly handles tool changes from hotkeys or the command palette,
+  // where the target row may be off-screen. Skip the very first run so the
+  // panel opens at the top of the list (showing every group) rather than
+  // jumping down to whichever tool was last open.
+  const toolScrollDidMount = useRef(false);
   useEffect(() => {
-    toolsPanelRef.current?.scrollTo({ top: 0 });
+    if (!toolScrollDidMount.current) {
+      toolScrollDidMount.current = true;
+      return;
+    }
+    const body = toolsScrollBodyRef.current;
+    if (!body) return;
+    // Wait a frame so the expanded body has laid out before we measure.
+    const id = requestAnimationFrame(() => {
+      const header = body.querySelector<HTMLElement>(
+        '.tool-accordion-header[aria-expanded="true"]',
+      );
+      if (!header) return;
+      const stickyHead = body.querySelector<HTMLElement>(".tools-sticky-head");
+      const offset = (stickyHead?.offsetHeight ?? 0) + 8;
+      const headerRect = header.getBoundingClientRect();
+      const bodyRect = body.getBoundingClientRect();
+      const delta = headerRect.top - bodyRect.top - offset;
+      // Only scroll when the header is clipped by the sticky head or sits below
+      // the fold — keeps clicks on already-visible rows from jumping.
+      if (delta < 0 || headerRect.top > bodyRect.bottom - 48) {
+        body.scrollTo({ top: body.scrollTop + delta, behavior: "smooth" });
+      }
+    });
+    return () => cancelAnimationFrame(id);
   }, [m.toolTab]);
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -1315,6 +1330,164 @@ export function PoemWorkshop() {
       },
     ];
   }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, setHoverHintsEnabled]);
+
+  // The active tool's panel. Rendered once, inside whichever accordion row is
+  // open (m.toolTab is the single source of truth for which row is expanded).
+  const toolPanelsEl = (
+    <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
+      <WorkshopToolPanels
+        toolTab={m.toolTab}
+        docStats={m.docStats}
+        meterHints={m.meterHints}
+        goals={m.goals}
+        goalEvaluation={m.goalEvaluation}
+        publication={m.publication}
+        rhymeClusters={m.rhymeClusters}
+        vowelTailClusters={m.vowelTailClusters}
+        assonanceClusters={m.assonanceClusters}
+        consonanceClusters={m.consonanceClusters}
+        stanzaRhymeGroups={m.stanzaRhymeGroups}
+        repeated={m.repeated}
+        repetition={m.repetition}
+        spellHits={m.spellHits}
+        aiIssues={aiVisibleIssues}
+        aiDismissedIssues={aiDismissedIssues}
+        onAiApply={ribbonApply}
+        onAiIgnore={ribbonIgnore}
+        onAiRestore={ribbonRestore}
+        wordlist={m.wordlist}
+        wordlistErr={m.wordlistErr}
+        goToLine={m.goToLine}
+        goToWord={m.goToWord}
+        goToLineEnd={m.goToLineEnd}
+        goToSpellHitAt={m.goToSpellHitAt}
+        cycleSpellHit={m.cycleSpellHit}
+        spellNavIndex={m.spellNavIndex}
+        applySpellSuggestion={m.applySpellSuggestion}
+        applySpellSuggestionAll={m.applySpellSuggestionAll}
+        spellBump={m.spellBump}
+        refreshSpell={m.refreshSpell}
+        onSpellPersistenceError={m.onSpellPersistenceError}
+        updateGoal={m.updateGoal}
+        setGoalValue={m.setGoalValue}
+        setRhymeSchemeGoal={m.setRhymeSchemeGoal}
+        setRhymeSchemePerStanza={m.setRhymeSchemePerStanza}
+        resetGoals={m.resetGoals}
+        toggleGoalSoft={m.toggleGoalSoft}
+        applyGoalPreset={m.applyGoalPreset}
+        revisions={m.revisions}
+        snapshotLabel={m.snapshotLabel}
+        onSnapshotLabelChange={m.setSnapshotLabel}
+        onSaveSnapshot={m.saveSnapshot}
+        snapshotFlash={m.snapshotFlash}
+        onRestoreRevision={m.restoreRevision}
+        onDeleteRevision={m.deleteRevision}
+        onDeleteDuplicateRevisions={m.deleteDuplicateRevisions}
+        duplicateRevisionCount={m.duplicateRevisionCount}
+        onDiffSnapshot={handleDiffSnapshot}
+        activeDiffSnapshotId={diffSnapshot?.id ?? null}
+        onOpenToolTab={m.setToolTab}
+        focusPoemTitle={focusPoemTitle}
+        stressLexiconReady={m.stressLexiconReady}
+        stressLexiconErr={m.stressLexiconErr}
+        heavyToolsStale={m.heavyToolsStale}
+        poemId={m.activePoemId}
+        repeatSubTab={repeatSubTab}
+        setRepeatSubTab={setRepeatSubTab}
+        clicheHits={m.clicheHits}
+        poemTitle={m.title}
+        poemLines={m.lines}
+        onInsertSuggestion={m.insertTextAtEnd}
+        onInsertSuggestionAtCursor={m.insertTextAtCursor}
+        selectedText={selectionText}
+        onInsertWord={m.replaceEndWordOrInsert}
+        onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
+        cursorLine={cursorLine}
+        rhymeBreadth={rhymeBreadth}
+        onRhymeBreadthChange={setRhymeBreadth}
+        rhymeFinderQuery={rhymeFinderQuery}
+        onRhymeSuggestionHover={setHoveredRhymeWord}
+        manualRhymeLinks={manualRhymeLinks.links}
+        onAddManualRhymeLink={manualRhymeLinks.addLink}
+        onRemoveManualRhymeLink={manualRhymeLinks.removeLink}
+        manualRhymeUnlinks={manualRhymeUnlinks.unlinks}
+        onAddManualRhymeUnlink={manualRhymeUnlinks.addUnlink}
+        onRemoveManualRhymeUnlink={manualRhymeUnlinks.removeUnlink}
+        stressLexicon={m.stressLexicon}
+        manualStressOverrides={manualStress.overrides}
+        onSetStressOverride={manualStress.setOverride}
+        onRemoveStressOverride={manualStress.removeOverride}
+        onEchoHighlightsChange={setEchoHighlights}
+        onLineVowelTintsChange={setLineVowelTints}
+        onFlowMarkersChange={setFlowMarkers}
+      />
+    </Suspense>
+  );
+
+  // Vertical accordion list of tools (right panel), grouped by bucket. One row
+  // is expanded at a time — m.toolTab. Clicking a header opens that tool.
+  const toolDot = (id: string) => {
+    if (id === "issues" && issuesQueueCount > 0)
+      return <span className="tool-accordion-dot" aria-label="items in queue" />;
+    if (id === "spell" && m.wordlist && m.spellHits.length > 0)
+      return <span className="tool-accordion-dot" aria-label={`${m.spellHits.length} spelling flags`} />;
+    if (id === "goals" && m.goalEvaluation.warnings.length > 0)
+      return <span className="tool-accordion-dot" aria-label="goals not met" />;
+    return null;
+  };
+  const toolAccordion = (
+    <div className="tool-accordion" role="tablist" aria-label="Writing tools" aria-orientation="vertical" data-tour-id="tool-buckets">
+      {TOOL_BUCKET_ORDER.map((bucket) => (
+        <div className="tool-accordion-group" key={bucket}>
+          <div className="tool-accordion-group-label">{TOOL_BUCKET_LABEL[bucket]}</div>
+          {tabsForBucket(bucket).map((id) => {
+            const meta = TOOL_TABS.find((t) => t.id === id);
+            if (!meta) return null;
+            const Icon = meta.Icon;
+            const active = m.toolTab === id;
+            return (
+              <div className={`tool-accordion-item ${active ? "is-open" : ""}`} key={id}>
+                <button
+                  type="button"
+                  role="tab"
+                  id={`tool-acc-${id}`}
+                  aria-selected={active}
+                  aria-expanded={active}
+                  aria-controls={`tool-panel-${id}`}
+                  className="tool-accordion-header"
+                  onClick={() => m.setToolTab(id)}
+                >
+                  <span className="tool-accordion-icon" aria-hidden>
+                    <Icon />
+                  </span>
+                  <span className="tool-accordion-text">
+                    <span className="tool-accordion-label">{meta.label}</span>
+                    <span className="tool-accordion-desc">{meta.desc}</span>
+                  </span>
+                  {toolDot(id)}
+                  <span className="tool-accordion-chevron" aria-hidden>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </button>
+                {active && (
+                  <div
+                    className="tool-accordion-body"
+                    id={`tool-panel-${id}`}
+                    role="region"
+                    aria-labelledby={`tool-acc-${id}`}
+                  >
+                    {toolPanelsEl}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div
@@ -2192,7 +2365,7 @@ export function PoemWorkshop() {
           id="writing-tools"
           data-tour-id="tools-panel"
         >
-          <div className="tools-scroll-body">
+          <div className="tools-scroll-body" ref={toolsScrollBodyRef}>
           <div className="tools-sticky-head">
             <div
               className="tools-swipe-handle"
@@ -2245,176 +2418,9 @@ export function PoemWorkshop() {
                 ✦ Analyse
               </button>
             </div>
-            <div
-              className="tool-bucket-row"
-              role="tablist"
-              aria-label="Tool groups"
-              data-tour-id="tool-buckets"
-            >
-              {TOOL_BUCKET_ORDER.map((b) => {
-                const active = toolTabBucket(m.toolTab) === b;
-                return (
-                  <button
-                    key={b}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    tabIndex={active ? 0 : -1}
-                    className={`tool-bucket-tab ${active ? "active" : ""}`}
-                    onClick={() => m.setToolTab(defaultTabForBucket(b))}
-                  >
-                    {TOOL_BUCKET_LABEL[b]}
-                  </button>
-                );
-              })}
-            </div>
-            <nav
-              className="tool-tabs"
-              role="tablist"
-              aria-label="Tools in this group"
-              onKeyDown={onToolTabKeyDown}
-            >
-              {(() => {
-                const CORE_OVERVIEW: string[] = ["issues", "lines"];
-                const visibleTabs = TOOL_TABS.filter((t) => bucketTabs.includes(t.id));
-                const isOverview = toolTabBucket(m.toolTab) === "overview";
-                const collapsed = isOverview && !allTabsExpanded;
-                const shown = collapsed
-                  ? visibleTabs.filter((t) => CORE_OVERVIEW.includes(t.id) || m.toolTab === t.id)
-                  : visibleTabs;
-                return (
-                  <>
-                    {shown.map(({ id, label, desc, Icon }) => (
-                      <button
-                        key={id}
-                        type="button"
-                        role="tab"
-                        id={`tool-tab-${id}`}
-                        aria-selected={m.toolTab === id}
-                        aria-controls={`tool-panel-${id}`}
-                        tabIndex={m.toolTab === id ? 0 : -1}
-                        className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
-                        onClick={() => m.setToolTab(id)}
-                        title={desc}
-                      >
-                        <Icon />
-                        <span className="tool-tab-label">{label}</span>
-                        {id === "issues" && issuesQueueCount > 0 && (
-                          <span className="goal-tab-dot" aria-label="issues in queue" />
-                        )}
-                        {id === "spell" && m.wordlist && m.spellHits.length > 0 && (
-                          <span className="goal-tab-dot" aria-label={`${m.spellHits.length} spelling flags`} />
-                        )}
-                        {id === "goals" && m.goalEvaluation.warnings.length > 0 && (
-                          <span className="goal-tab-dot" aria-label="goals not met" />
-                        )}
-                      </button>
-                    ))}
-                    {collapsed && (
-                      <button
-                        type="button"
-                        className="tool-tab tool-tab-more"
-                        onClick={expandAllTabs}
-                        title="Show all tools"
-                      >
-                        <span className="tool-tab-more-dots">•••</span>
-                        <span className="tool-tab-label">More</span>
-                      </button>
-                    )}
-                  </>
-                );
-              })()}
-            </nav>
           </div>
 
-          <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
-          <WorkshopToolPanels
-            toolTab={m.toolTab}
-            docStats={m.docStats}
-            meterHints={m.meterHints}
-            goals={m.goals}
-            goalEvaluation={m.goalEvaluation}
-            publication={m.publication}
-            rhymeClusters={m.rhymeClusters}
-            vowelTailClusters={m.vowelTailClusters}
-            assonanceClusters={m.assonanceClusters}
-            consonanceClusters={m.consonanceClusters}
-            stanzaRhymeGroups={m.stanzaRhymeGroups}
-            repeated={m.repeated}
-            repetition={m.repetition}
-            spellHits={m.spellHits}
-            aiIssues={aiVisibleIssues}
-            aiDismissedIssues={aiDismissedIssues}
-            onAiApply={ribbonApply}
-            onAiIgnore={ribbonIgnore}
-            onAiRestore={ribbonRestore}
-            wordlist={m.wordlist}
-            wordlistErr={m.wordlistErr}
-            goToLine={m.goToLine}
-            goToWord={m.goToWord}
-            goToLineEnd={m.goToLineEnd}
-            goToSpellHitAt={m.goToSpellHitAt}
-            cycleSpellHit={m.cycleSpellHit}
-            spellNavIndex={m.spellNavIndex}
-            applySpellSuggestion={m.applySpellSuggestion}
-            applySpellSuggestionAll={m.applySpellSuggestionAll}
-            spellBump={m.spellBump}
-            refreshSpell={m.refreshSpell}
-            onSpellPersistenceError={m.onSpellPersistenceError}
-            updateGoal={m.updateGoal}
-            setGoalValue={m.setGoalValue}
-            setRhymeSchemeGoal={m.setRhymeSchemeGoal}
-            setRhymeSchemePerStanza={m.setRhymeSchemePerStanza}
-            resetGoals={m.resetGoals}
-            toggleGoalSoft={m.toggleGoalSoft}
-            applyGoalPreset={m.applyGoalPreset}
-            revisions={m.revisions}
-            snapshotLabel={m.snapshotLabel}
-            onSnapshotLabelChange={m.setSnapshotLabel}
-            onSaveSnapshot={m.saveSnapshot}
-            snapshotFlash={m.snapshotFlash}
-            onRestoreRevision={m.restoreRevision}
-            onDeleteRevision={m.deleteRevision}
-            onDeleteDuplicateRevisions={m.deleteDuplicateRevisions}
-            duplicateRevisionCount={m.duplicateRevisionCount}
-            onDiffSnapshot={handleDiffSnapshot}
-            activeDiffSnapshotId={diffSnapshot?.id ?? null}
-            onOpenToolTab={m.setToolTab}
-            focusPoemTitle={focusPoemTitle}
-            stressLexiconReady={m.stressLexiconReady}
-            stressLexiconErr={m.stressLexiconErr}
-            heavyToolsStale={m.heavyToolsStale}
-            poemId={m.activePoemId}
-            repeatSubTab={repeatSubTab}
-            setRepeatSubTab={setRepeatSubTab}
-            clicheHits={m.clicheHits}
-            poemTitle={m.title}
-            poemLines={m.lines}
-            onInsertSuggestion={m.insertTextAtEnd}
-            onInsertSuggestionAtCursor={m.insertTextAtCursor}
-            selectedText={selectionText}
-            onInsertWord={m.replaceEndWordOrInsert}
-            onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
-            cursorLine={cursorLine}
-            rhymeBreadth={rhymeBreadth}
-            onRhymeBreadthChange={setRhymeBreadth}
-            rhymeFinderQuery={rhymeFinderQuery}
-            onRhymeSuggestionHover={setHoveredRhymeWord}
-            manualRhymeLinks={manualRhymeLinks.links}
-            onAddManualRhymeLink={manualRhymeLinks.addLink}
-            onRemoveManualRhymeLink={manualRhymeLinks.removeLink}
-            manualRhymeUnlinks={manualRhymeUnlinks.unlinks}
-            onAddManualRhymeUnlink={manualRhymeUnlinks.addUnlink}
-            onRemoveManualRhymeUnlink={manualRhymeUnlinks.removeUnlink}
-            stressLexicon={m.stressLexicon}
-            manualStressOverrides={manualStress.overrides}
-            onSetStressOverride={manualStress.setOverride}
-            onRemoveStressOverride={manualStress.removeOverride}
-            onEchoHighlightsChange={setEchoHighlights}
-            onLineVowelTintsChange={setLineVowelTints}
-            onFlowMarkersChange={setFlowMarkers}
-          />
-          </Suspense>
+          {toolAccordion}
 
           {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
           {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (

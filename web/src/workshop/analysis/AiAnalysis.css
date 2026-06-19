@@ -252,6 +252,30 @@
   margin-left: 0.2rem;
 }
 
+.ai-loading-bar {
+  flex: 1 1 auto;
+  min-width: 40px;
+  max-width: 160px;
+  height: 3px;
+  margin-left: 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  overflow: hidden;
+}
+
+.ai-loading-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  /* Smoothly catch up to each new asymptotic width target. */
+  transition: width 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-loading-bar-fill { transition: none; }
+}
+
 /* ---- Not configured notice ---- */
 .ai-unconfigured {
   padding: 0.7rem 0.85rem;
@@ -2694,6 +2718,12 @@ button.ai-flagged-cliche:focus-visible {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ai-pillar-gloss {
+  font-size: 0.85em;
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 .ai-pillar-track {

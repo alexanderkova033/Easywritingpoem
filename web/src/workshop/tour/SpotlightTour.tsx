@@ -58,9 +58,9 @@ const STEPS: TourStep[] = [
   },
   {
     id: "tool-buckets",
-    title: "Two tool buckets",
-    body: "Overview: word counts, goal progress, issues, publication checklist. Sound: rhyme scheme, meter, clichés, repeated words. Both update live.",
-    placement: "top",
+    title: "Your writing tools",
+    body: "Every tool lives in one scrollable list, grouped into Overview, Sound, and Suggest. Tap any tool to expand it — word counts, rhyme, meter, repeats, goals and more all update live.",
+    placement: "left",
     pad: 8,
   },
   {
