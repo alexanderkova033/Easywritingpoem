@@ -35,6 +35,9 @@ function startColumnDrag(
   e.preventDefault();
   const target = e.currentTarget;
   const pointerId = e.pointerId;
+  // Suppress the width transition while dragging so the panel tracks the
+  // pointer 1:1 instead of easing behind it.
+  grid?.classList.add("is-resizing");
   try { target.setPointerCapture(pointerId); } catch { /* ignore */ }
   const startX = e.clientX;
   const startW = parseInt(grid?.style.getPropertyValue(opts.cssVar) || String(opts.defaultW), 10);
@@ -59,6 +62,7 @@ function startColumnDrag(
     target.removeEventListener("pointercancel", onUp);
     try { target.releasePointerCapture(pointerId); } catch { /* ignore */ }
     if (rafId) cancelAnimationFrame(rafId);
+    grid?.classList.remove("is-resizing");
     const finalW = parseInt(grid?.style.getPropertyValue(opts.cssVar) || String(startW), 10);
     opts.commit(finalW);
   };

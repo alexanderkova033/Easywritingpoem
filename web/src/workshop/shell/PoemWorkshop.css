@@ -706,28 +706,55 @@
   }
 
   .tools-panel {
-    position: sticky;
-    top: 1.15rem;
     /* Stretch across the cell (cross axis) so the panel matches its grid column
        width; flex-start would size it to content and overflow to the right. */
-    align-self: stretch;
-    /* Fit the visible viewport from the panel's current top, so the whole panel
-       (and its internal scrollbar) stays on screen and you scroll *inside* it
-       rather than scrolling the page. --tools-maxh is kept in sync in JS as the
-       page scrolls / resizes; the calc() is a sane fallback before JS runs. */
-    max-height: var(--tools-maxh, calc(100vh - 2.3rem));
+    align-self: start;
+    /* Sit at the top of the (two-row-tall) column and grow with its content —
+       no internal scrollbar. When the content is taller than the viewport the
+       page scrolls to reveal it, rather than a nested scroll inside the panel.
+       `clip` keeps content from spilling horizontally while the width animates,
+       without creating a scroll container (height is content-driven, so there's
+       nothing to clip vertically). */
+    position: static;
+    max-height: none;
+    overflow: clip;
+  }
+
+  /* No inner scroll region on desktop — the panel itself is the flow. */
+  .tools-panel .tools-scroll-body {
+    overflow: visible;
+  }
+
+  /* The head no longer needs to stick (nothing scrolls under it here). */
+  .tools-panel .tools-sticky-head {
+    position: static;
+  }
+}
+
+/* Animate the tools column width when expanding/collapsing. --tools-col is a
+   registered custom property (see @property below) so it interpolates; the
+   grid track — and therefore the panel width and the editor beside it — eases
+   between the rail width and the expanded width. Suppressed mid-drag. */
+@property --tools-col {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 300px;
+}
+
+@media (min-width: 1050px) {
+  .workshop-grid.tools-anim {
+    transition: --tools-col 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .workshop-grid.is-resizing {
+    transition: none;
   }
 }
 
 /* ── Collapsed "rail" mode: thin icon column like the left rail ──────────────
-   When no tool is open (grid has .tools-rail) the tools column shrinks to the
-   left-rail width and shows icon-only rows. Opening a tool removes .tools-rail,
-   so the column widens to --tools-col and labels/content appear. */
+   When no tool is open the tools column is set to the rail width (--tools-col,
+   in JS) and shows icon-only rows. Opening a tool widens --tools-col and the
+   labels/content appear. */
 @media (min-width: 1050px) {
-  .workshop-grid.tools-rail {
-    grid-template-columns: var(--rail-col, 64px) minmax(0, 1fr) var(--rail-col, 64px);
-  }
-
   /* Nothing to resize while collapsed. */
   .workshop-grid.tools-rail .tools-resize-gutter { display: none; }
 
@@ -742,8 +769,14 @@
     display: none;
   }
 
+  /* Clip anything mid-transition so labels don't spill while the column is
+     narrow. */
+  .workshop-grid.tools-rail .tools-scroll-body {
+    overflow-x: clip;
+  }
+
   .workshop-grid.tools-rail .tools-sticky-head {
-    padding-inline: 0.4rem;
+    padding-inline: 0.3rem;
   }
 
   .workshop-grid.tools-rail .tools-head-row {
@@ -752,18 +785,19 @@
   }
 
   .workshop-grid.tools-rail .tools-analyse-btn {
-    padding: 0.4rem;
-    width: 2.1rem;
-    height: 2.1rem;
+    padding: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion {
-    padding: 0.4rem 0.3rem;
+    padding: 0.45rem 0.3rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion-group + .tool-accordion-group {
-    margin-top: 0.4rem;
-    padding-top: 0.4rem;
+    margin-top: 0.45rem;
+    padding-top: 0.45rem;
     border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
   }
 
@@ -771,14 +805,27 @@
     position: relative;
     justify-content: center;
     gap: 0;
-    padding: 0.4rem 0;
+    padding: 0.3rem 0;
+  }
+
+  /* Bigger icon chips in rail mode — this is the only affordance, so make it
+     comfortably tappable/scannable. */
+  .workshop-grid.tools-rail .tool-accordion-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 10px;
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-icon .tool-tab-svg {
+    width: 24px;
+    height: 24px;
   }
 
   /* Small unread dot tucked onto the icon's top-right corner. */
   .workshop-grid.tools-rail .tool-accordion-dot {
     position: absolute;
-    top: 0.3rem;
-    right: 0.7rem;
+    top: 0.35rem;
+    right: 0.85rem;
   }
 }
 

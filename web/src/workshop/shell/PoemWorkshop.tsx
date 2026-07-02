@@ -151,6 +151,13 @@ export function PoemWorkshop() {
   // null when collapsed — editor overlays key off it so a collapsed panel shows
   // no rhyme/meter/repeat decorations.
   const [toolsExpanded, setToolsExpanded] = useState(false);
+  // Enable the width transition only after first paint so the initial
+  // collapsed→rail sizing doesn't animate on load.
+  const [toolsAnimReady, setToolsAnimReady] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setToolsAnimReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   const activeTool: ToolTab | null = toolsExpanded ? m.toolTab : null;
   const openToolTab = useCallback(
     (t: ToolTab) => {
@@ -253,6 +260,7 @@ export function PoemWorkshop() {
   const {
     workshopGridRef,
     toolsPanelWidth,
+    setToolsPanelWidth,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -840,30 +848,18 @@ export function PoemWorkshop() {
     return () => cancelAnimationFrame(id);
   }, [activeTool]);
 
-  // Keep the sticky tools panel sized to the space between its current top and
-  // the bottom of the viewport, so its content scrolls *inside* the panel
-  // instead of forcing a page scroll to reach the bottom. Cheap: one CSS var on
-  // one element, rAF-throttled, only on scroll/resize (never per frame).
+  // Drive the tools column width: collapsed → the left-rail width (a thin icon
+  // rail), expanded → the (resizable) tools width. --tools-col is a registered
+  // @property, so changing it here animates the column smoothly. Runs after the
+  // mount clamp effect below so it wins the initial value.
   useEffect(() => {
-    const panel = toolsPanelRef.current;
-    if (!panel) return;
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const top = panel.getBoundingClientRect().top;
-      const avail = window.innerHeight - top - 16;
-      panel.style.setProperty("--tools-maxh", `${Math.round(Math.max(260, avail))}px`);
-    };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+    const grid = workshopGridRef.current;
+    if (!grid) return;
+    grid.style.setProperty(
+      "--tools-col",
+      `${toolsExpanded ? toolsPanelWidth : railWidth}px`,
+    );
+  }, [toolsExpanded, toolsPanelWidth, railWidth, workshopGridRef]);
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
   // editor instead of showing labels inside the editor's left gutter.
@@ -1056,7 +1052,10 @@ export function PoemWorkshop() {
     const safeRail  = Math.max(0, Math.min(railWidth,        vw - MIN_EDITOR_W - DEFAULT_TOOLS_W - gap));
     const safeTools = Math.max(0, Math.min(toolsPanelWidth,  vw - safeRail - MIN_EDITOR_W - gap));
     applyRailW(safeRail);
-    applyToolsW(safeTools);
+    // Store the clamped expanded width, but don't write --tools-col here — the
+    // width effect owns that var (so it can show the collapsed rail width until
+    // a tool is opened, and animate between the two).
+    setToolsPanelWidth(safeTools);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -1817,7 +1816,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"}`}
+        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} ${toolsAnimReady ? "tools-anim" : ""}`}
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
