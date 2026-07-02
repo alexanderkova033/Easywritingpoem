@@ -692,11 +692,16 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    /* Stretch to fill row 1 so the sticky panel inside has scroll room within
-       its containing block. Without this, the cell is content-sized (= panel
-       height) and sticky has nowhere to "stick" against — the panel appears
-       frozen while the page scrolls. The .workshop-rail works because it's a
-       direct grid item, so its containing block is already the full row height. */
+    /* Span BOTH grid rows (editor row + AI-analysis row) as a full-height right
+       column, like the left rail. This keeps the tall/expanded tools panel out
+       of the editor row's height calculation, so the AI-analysis section stays
+       directly under the editor instead of being pushed down by the panel.
+       Spanning also gives the sticky panel plenty of scroll room.
+       Hard-code the end line to 3 (bottom of the 2 implicit rows): `-1`/`auto`
+       resolve to line 1 when there is no explicit grid-template-rows, which
+       would leave the cell stuck in row 1 and re-inflate the editor row. */
+    grid-column: 3;
+    grid-row: 1 / 3;
     align-self: stretch;
   }
 
@@ -711,6 +716,69 @@
        rather than scrolling the page. --tools-maxh is kept in sync in JS as the
        page scrolls / resizes; the calc() is a sane fallback before JS runs. */
     max-height: var(--tools-maxh, calc(100vh - 2.3rem));
+  }
+}
+
+/* ── Collapsed "rail" mode: thin icon column like the left rail ──────────────
+   When no tool is open (grid has .tools-rail) the tools column shrinks to the
+   left-rail width and shows icon-only rows. Opening a tool removes .tools-rail,
+   so the column widens to --tools-col and labels/content appear. */
+@media (min-width: 1050px) {
+  .workshop-grid.tools-rail {
+    grid-template-columns: var(--rail-col, 64px) minmax(0, 1fr) var(--rail-col, 64px);
+  }
+
+  /* Nothing to resize while collapsed. */
+  .workshop-grid.tools-rail .tools-resize-gutter { display: none; }
+
+  /* Icon-only: hide labels, group headings, chevrons, the "Tools" heading,
+     the Analyse button text, and the shortcuts footer. */
+  .workshop-grid.tools-rail .tools-heading,
+  .workshop-grid.tools-rail .tools-analyse-label,
+  .workshop-grid.tools-rail .tool-accordion-label,
+  .workshop-grid.tools-rail .tool-accordion-group-label,
+  .workshop-grid.tools-rail .tool-accordion-chevron,
+  .workshop-grid.tools-rail .tools-shortcuts-hint {
+    display: none;
+  }
+
+  .workshop-grid.tools-rail .tools-sticky-head {
+    padding-inline: 0.4rem;
+  }
+
+  .workshop-grid.tools-rail .tools-head-row {
+    justify-content: center;
+    padding: 0.15rem 0;
+  }
+
+  .workshop-grid.tools-rail .tools-analyse-btn {
+    padding: 0.4rem;
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .workshop-grid.tools-rail .tool-accordion {
+    padding: 0.4rem 0.3rem;
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-group + .tool-accordion-group {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-header {
+    position: relative;
+    justify-content: center;
+    gap: 0;
+    padding: 0.4rem 0;
+  }
+
+  /* Small unread dot tucked onto the icon's top-right corner. */
+  .workshop-grid.tools-rail .tool-accordion-dot {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.7rem;
   }
 }
 

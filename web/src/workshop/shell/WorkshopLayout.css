@@ -1135,6 +1135,10 @@
 /* ── Analyse button in tools panel header ── */
 .tools-analyse-btn {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 8px;
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));

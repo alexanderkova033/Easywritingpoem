@@ -70,6 +70,7 @@ import {
   TOOL_BUCKET_ORDER,
   formatRelativeSnapshotWhen,
   tabsForBucket,
+  type ToolTab,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
 import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
@@ -145,7 +146,32 @@ export function PoemWorkshop() {
     manualRhymeUnlinks.unlinks,
     manualStress.overrides,
   );
-  useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
+  // Whether the tools panel is expanded (a tool's panel is showing) or
+  // collapsed to a thin icon rail. `activeTool` is the currently-open tool, or
+  // null when collapsed — editor overlays key off it so a collapsed panel shows
+  // no rhyme/meter/repeat decorations.
+  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const activeTool: ToolTab | null = toolsExpanded ? m.toolTab : null;
+  const openToolTab = useCallback(
+    (t: ToolTab) => {
+      m.setToolTab(t);
+      setToolsExpanded(true);
+    },
+    [m],
+  );
+  const toggleToolTab = useCallback(
+    (t: ToolTab) => {
+      // Collapse when clicking the already-open tool; otherwise open it.
+      if (toolsExpanded && m.toolTab === t) {
+        setToolsExpanded(false);
+      } else {
+        m.setToolTab(t);
+        setToolsExpanded(true);
+      }
+    },
+    [toolsExpanded, m],
+  );
+  useWorkshopToolHotkeys(m.toolTab, openToolTab);
 
   useWritingStreakOnMount(m.body);
 
@@ -316,7 +342,7 @@ export function PoemWorkshop() {
   // tab is active. Each vowel becomes a Decoration.mark; CSS draws the dot
   // above the character so the text isn't shifted.
   const meterOverlay = useMemo(() => {
-    if (m.toolTab !== "meter") return null;
+    if (activeTool !== "meter") return null;
     const out: Array<{ line: number; marks: Array<{ col: number; stress: boolean }> }> = [];
     for (let i = 0; i < m.lines.length; i++) {
       const lineText = m.lines[i] ?? "";
@@ -326,12 +352,12 @@ export function PoemWorkshop() {
       out.push({ line: i + 1, marks });
     }
     return out.length === 0 ? null : out;
-  }, [m.toolTab, m.lines, m.stressLexicon, manualStress.overrides]);
+  }, [activeTool, m.lines, m.stressLexicon, manualStress.overrides]);
 
   const rhymeBumpRef = useRef(0);
 
   const baseRhymeEndHighlights = useMemo(() => {
-    if (m.toolTab !== "rhyme") return [] as Array<{ line: number; colorKey: string }>;
+    if (activeTool !== "rhyme") return [] as Array<{ line: number; colorKey: string }>;
     // Color key = scheme letter (lowercased). Same rhyme group → same key →
     // same colour across every stanza it appears in.
     const out: Array<{ line: number; colorKey: string }> = [];
@@ -353,20 +379,20 @@ export function PoemWorkshop() {
       }
     }
     return out;
-  }, [m.toolTab, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
+  }, [activeTool, m.stanzaRhymeGroups, m.lines, rhymeIgnored]);
 
   // Auto-fill the Rhyme Finder when the cursor parks on a different line or
   // the user opens the rhyme tab. Avoids refiring on every keystroke.
   const rhymeLinesRef = useRef(m.lines);
   rhymeLinesRef.current = m.lines;
   useEffect(() => {
-    if (m.toolTab !== "rhyme") return;
+    if (activeTool !== "rhyme") return;
     const word = endWordOfLineRaw(rhymeLinesRef.current[(cursorLine ?? 1) - 1]);
     if (!word) return;
     rhymeBumpRef.current += 1;
     // Passive cursor parking — fill query but don't pop a collapsed panel open.
     setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
-  }, [m.toolTab, cursorLine]);
+  }, [activeTool, cursorLine]);
 
   // Click delegation: when in the rhyme tab, clicking any highlighted
   // end-word in the editor refills the Rhyme Finder with that word.
@@ -384,19 +410,19 @@ export function PoemWorkshop() {
       }
       return;
     }
-    if (m.toolTab !== "rhyme") return;
+    if (activeTool !== "rhyme") return;
     const hit = target?.closest(".cm-rhyme-end") as HTMLElement | null;
     if (!hit) return;
     const word = (hit.textContent || "").trim();
     if (!word) return;
     rhymeBumpRef.current += 1;
     setRhymeFinderQuery({ word, bump: rhymeBumpRef.current });
-  }, [m.toolTab]);
+  }, [activeTool]);
 
   // Add transient highlights for end-words that rhyme with the currently
   // hovered Datamuse suggestion. Uses the same breadth as the editor scheme.
   const rhymeEndHighlights = useMemo(() => {
-    if (m.toolTab !== "rhyme" || !hoveredRhymeWord) return baseRhymeEndHighlights;
+    if (activeTool !== "rhyme" || !hoveredRhymeWord) return baseRhymeEndHighlights;
     const norm = hoveredRhymeWord.toLowerCase().replace(/[^a-z']/g, "");
     if (norm.length < 2) return baseRhymeEndHighlights;
     const targetKey = endingForBreadth(norm, rhymeBreadth);
@@ -413,7 +439,7 @@ export function PoemWorkshop() {
       if (k && k === targetKey) extra.push({ line: i + 1, colorKey: "hover" });
     }
     return [...baseRhymeEndHighlights, ...extra];
-  }, [baseRhymeEndHighlights, hoveredRhymeWord, m.toolTab, m.lines, rhymeBreadth]);
+  }, [baseRhymeEndHighlights, hoveredRhymeWord, activeTool, m.lines, rhymeBreadth]);
 
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
@@ -634,7 +660,7 @@ export function PoemWorkshop() {
    * of each occurrence.
    */
   const repeatHighlights = useMemo(() => {
-    if (m.toolTab !== "repeat") return undefined;
+    if (activeTool !== "repeat") return undefined;
     type Entry = {
       line: number;
       start: number;
@@ -697,7 +723,7 @@ export function PoemWorkshop() {
       }
     }
     return out;
-  }, [m.toolTab, repeatSubTab, m.repeated, m.repetition]);
+  }, [activeTool, repeatSubTab, m.repeated, m.repetition]);
 
   /**
    * Smart jump: if the user's cursor is already on that line, do nothing
@@ -812,7 +838,7 @@ export function PoemWorkshop() {
       }
     });
     return () => cancelAnimationFrame(id);
-  }, [m.toolTab]);
+  }, [activeTool]);
 
   // Keep the sticky tools panel sized to the space between its current top and
   // the bottom of the viewport, so its content scrolls *inside* the panel
@@ -845,7 +871,7 @@ export function PoemWorkshop() {
   // the user had the quick-toggle off before we forced it on.
   const rhymeSchemePrevRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (m.toolTab === "rhyme") {
+    if (activeTool === "rhyme") {
       setShowRhymeScheme((prev) => {
         if (rhymeSchemePrevRef.current === null) rhymeSchemePrevRef.current = prev;
         return true;
@@ -855,7 +881,7 @@ export function PoemWorkshop() {
       rhymeSchemePrevRef.current = null;
       if (!wasOnBefore) setShowRhymeScheme(false);
     }
-  }, [m.toolTab]);
+  }, [activeTool]);
 
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
@@ -1018,7 +1044,7 @@ export function PoemWorkshop() {
     setIsExportOpen,
     setIsShortcutsOpen,
     setIsGuideOpen,
-    setToolTab: m.setToolTab,
+    setToolTab: openToolTab,
     saveSnapshot: m.saveSnapshot,
     mobileAnalyzeFnRef,
   });
@@ -1290,7 +1316,7 @@ export function PoemWorkshop() {
         id: "snapshot",
         title: "Save snapshot",
         keywords: "snapshot revision",
-        run: () => { m.setToolTab("snapshots"); m.saveSnapshot(); },
+        run: () => { openToolTab("snapshots"); m.saveSnapshot(); },
       },
       {
         id: "revision-pass",
@@ -1305,7 +1331,7 @@ export function PoemWorkshop() {
         keywords: "shortcuts keys hotkeys keyboard help",
         run: () => setIsShortcutsOpen(true),
       },
-      ...toolTabActions({ openToolTab: m.setToolTab }),
+      ...toolTabActions({ openToolTab }),
       {
         id: "title",
         title: "Focus title",
@@ -1335,7 +1361,7 @@ export function PoemWorkshop() {
         title: "Go to line",
         keywords: "go line jump",
         run: () => {
-          m.setToolTab("lines");
+          openToolTab("lines");
           queueMicrotask(() => {
             document.getElementById("go-line-input")?.focus();
           });
@@ -1354,7 +1380,7 @@ export function PoemWorkshop() {
         run: () => setIsReadingMode(true),
       },
     ];
-  }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, setHoverHintsEnabled]);
+  }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, openToolTab, setHoverHintsEnabled]);
 
   // The active tool's panel. Rendered once, inside whichever accordion row is
   // open (m.toolTab is the single source of truth for which row is expanded).
@@ -1411,7 +1437,7 @@ export function PoemWorkshop() {
         duplicateRevisionCount={m.duplicateRevisionCount}
         onDiffSnapshot={handleDiffSnapshot}
         activeDiffSnapshotId={diffSnapshot?.id ?? null}
-        onOpenToolTab={m.setToolTab}
+        onOpenToolTab={openToolTab}
         focusPoemTitle={focusPoemTitle}
         stressLexiconReady={m.stressLexiconReady}
         stressLexiconErr={m.stressLexiconErr}
@@ -1469,7 +1495,7 @@ export function PoemWorkshop() {
             const meta = TOOL_TABS.find((t) => t.id === id);
             if (!meta) return null;
             const Icon = meta.Icon;
-            const active = m.toolTab === id;
+            const active = activeTool === id;
             return (
               <div className={`tool-accordion-item ${active ? "is-open" : ""}`} key={id}>
                 <button
@@ -1480,7 +1506,7 @@ export function PoemWorkshop() {
                   aria-expanded={active}
                   aria-controls={`tool-panel-${id}`}
                   className="tool-accordion-header"
-                  onClick={() => m.setToolTab(id)}
+                  onClick={() => toggleToolTab(id)}
                   title={meta.desc}
                 >
                   <span className="tool-accordion-icon" aria-hidden>
@@ -1515,7 +1541,7 @@ export function PoemWorkshop() {
   return (
     <div
       className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}
-      data-tool-tab={m.toolTab}
+      data-tool-tab={activeTool ?? undefined}
     >
       {isFocusMode && (
         <button
@@ -1571,7 +1597,7 @@ export function PoemWorkshop() {
 
       <FirstVisitHint
         onOpenGuide={() => setIsGuideOpen(true)}
-        onSuggest={() => m.setToolTab("suggest")}
+        onSuggest={() => openToolTab("suggest")}
       />
 
       {m.samplePoemActive && (
@@ -1618,7 +1644,7 @@ export function PoemWorkshop() {
         onJumpFromChecklist={(item) => {
           setIsExportOpen(false);
           if (item.focusTitleField) focusPoemTitle();
-          else if (item.openToolTab) m.setToolTab(item.openToolTab);
+          else if (item.openToolTab) openToolTab(item.openToolTab);
         }}
       />
       <ShortcutsModal
@@ -1791,7 +1817,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className="workshop-grid"
+        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"}`}
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
@@ -2204,11 +2230,11 @@ export function PoemWorkshop() {
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
-                      internalRhymes={m.toolTab === "rhyme" ? m.internalRhymes : undefined}
+                      internalRhymes={activeTool === "rhyme" ? m.internalRhymes : undefined}
                       repeatHighlights={repeatHighlights}
-                      echoHighlights={m.toolTab === "echoes" ? echoHighlights ?? undefined : undefined}
-                      lineVowelTints={m.toolTab === "echoes" ? lineVowelTints ?? undefined : undefined}
-                      flowMarkers={m.toolTab === "echoes" ? flowMarkers ?? undefined : undefined}
+                      echoHighlights={activeTool === "echoes" ? echoHighlights ?? undefined : undefined}
+                      lineVowelTints={activeTool === "echoes" ? lineVowelTints ?? undefined : undefined}
+                      flowMarkers={activeTool === "echoes" ? flowMarkers ?? undefined : undefined}
                       meterOverlay={meterOverlay}
                       rhymeSchemeLabels={null}
                       cursorLineGetterRef={cursorLineGetterRef}
@@ -2438,7 +2464,8 @@ export function PoemWorkshop() {
                 }}
                 {...hint("Run AI analysis on this poem")}
               >
-                ✦ Analyse
+                <span className="tools-analyse-icon" aria-hidden>✦</span>
+                <span className="tools-analyse-label">Analyse</span>
               </button>
             </div>
           </div>

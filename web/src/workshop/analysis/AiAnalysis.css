@@ -25,17 +25,19 @@
   }
 }
 
-/* Desktop (≥1050px): span the full grid width with symmetric horizontal margins equal
-   to the rail width + 8px breathing room. The section is centered on the page; the
-   rail can slide in on the left and the tools panel (now static, not sticky) sits
-   above in row 1 without sliding down to overlap. */
+/* Desktop (≥1050px): sit in row 2 under the rail + editor columns only (NOT the
+   tools column). The tools panel is a full-height right column spanning both
+   rows, so the AI analysis flows directly beneath the editor and is never
+   pushed down by a tall/expanded tools panel. Offset from the left rail; the
+   grid gap separates it from the tools column on the right. */
 @media (min-width: 1050px) {
   .workshop-grid > .ai-analysis-section {
-    grid-column: 1 / -1;
+    grid-column: 1 / 3;
+    grid-row: 2;
     justify-self: stretch;
     width: auto;
     max-width: none;
-    margin-inline: calc(var(--rail-col, 56px) + 1rem);
+    margin-inline: calc(var(--rail-col, 56px) + 1rem) 0;
   }
 }
 
