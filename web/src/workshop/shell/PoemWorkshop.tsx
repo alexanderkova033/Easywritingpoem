@@ -861,29 +861,6 @@ export function PoemWorkshop() {
     );
   }, [toolsExpanded, toolsPanelWidth, workshopGridRef]);
 
-  // Keep the sticky tools panel fit to the space between its current top and the
-  // viewport bottom. Short tools show no scrollbar; only genuinely long content
-  // scrolls inside — which is far better than letting the panel stretch the grid
-  // and leave the editor + AI analysis floating. rAF-throttled on scroll/resize.
-  useEffect(() => {
-    const panel = toolsPanelRef.current;
-    if (!panel) return;
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const top = panel.getBoundingClientRect().top;
-      panel.style.setProperty("--tools-maxh", `${Math.round(Math.max(260, window.innerHeight - top - 16))}px`);
-    };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule);
-    return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
   // editor instead of showing labels inside the editor's left gutter.
