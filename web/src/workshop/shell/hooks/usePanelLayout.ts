@@ -3,8 +3,10 @@ import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_TOOLS_RAIL_WIDTH, STORAGE_KEY_RAIL
 
 export const DEFAULT_TOOLS_W = 300;
 export const DEFAULT_RAIL_W = 64;
-/** Collapsed (icon-rail) width of the tools panel — resizable like the left rail. */
-export const DEFAULT_TOOLS_RAIL_W = 64;
+/** Collapsed (icon-rail) width of the tools panel — resizable like the left rail.
+ *  Wide enough to show a short label under each icon so new users can read the
+ *  tools instead of decoding icons. */
+export const DEFAULT_TOOLS_RAIL_W = 100;
 export const SNAP_PX = 36;
 export const MIN_EDITOR_W = 240;
 

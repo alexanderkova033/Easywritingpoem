@@ -538,19 +538,20 @@
     grid-row: 1 / 3 !important;
   }
 
-  /* Drag line — faintly visible at rest, bright on hover */
+  /* Drag line — clearly visible at rest so the resize affordance is obvious,
+     brightens to the accent on hover. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
     position: absolute;
-    top: 20%;
-    bottom: 20%;
+    top: 15%;
+    bottom: 15%;
     left: 50%;
-    width: 2px;
+    width: 3px;
     transform: translateX(-50%);
-    background: color-mix(in srgb, var(--border) 18%, transparent);
+    background: color-mix(in srgb, var(--border) 60%, var(--surface));
     transition: background 0.18s ease, top 0.18s ease, bottom 0.18s ease, width 0.18s ease;
-    border-radius: 2px;
+    border-radius: 3px;
     pointer-events: none;
   }
 
@@ -558,8 +559,8 @@
   .rail-resize-gutter:hover::before {
     top: 5%;
     bottom: 5%;
-    width: 3px;
-    background: color-mix(in srgb, var(--accent) 65%, var(--border));
+    width: 4px;
+    background: var(--accent);
   }
 
   /* Collapsed panels: hide gutter, show expand pill instead */
@@ -732,7 +733,7 @@
 
 @media (min-width: 1050px) {
   .workshop-grid.tools-anim {
-    transition: --tools-col 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: --tools-col 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .workshop-grid.is-resizing {
     transition: none;
@@ -771,48 +772,55 @@
   /* Analyse: a matching rail button (icon centered, no text). */
   .workshop-grid.tools-rail .tools-analyse-btn {
     width: 100%;
-    min-height: 3.25rem;
-    padding: 0.5rem 0.35rem;
+    min-height: 2.6rem;
+    padding: 0.4rem 0.35rem;
     border-radius: 12px;
     font-size: 1.05rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion {
-    gap: 0.55rem;
-    padding: 0.55rem 0.5rem;
+    gap: 0.3rem;
+    padding: 0.45rem 0.4rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion-group {
-    gap: 0.55rem;
+    gap: 0.3rem;
   }
 
   /* Subtle divider between groups, like the left rail's .rail-group-divider. */
   .workshop-grid.tools-rail .tool-accordion-group + .tool-accordion-group {
-    margin-top: 0.4rem;
-    padding-top: 0.6rem;
+    margin-top: 0.35rem;
+    padding-top: 0.5rem;
     border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
   }
 
-  /* Header == .rail-btn */
+  /* Let the hover lift show — the base item clips its corners, which would
+     chop the top off the icon as it rises. */
+  .workshop-grid.tools-rail .tool-accordion-item {
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  /* Header: icon on top, label ALWAYS below (a new user can read every tool at
+     a glance instead of guessing the icons). */
   .workshop-grid.tools-rail .tool-accordion-header {
     position: relative;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0;
+    gap: 0.28rem;
     width: 100%;
-    min-height: 3.25rem;
-    padding: 0.5rem 0.35rem;
+    min-height: 3.4rem;
+    padding: 0.5rem 0.15rem;
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--bg);
     color: var(--text);
-    overflow: hidden;
     transition:
-      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
       border-color 0.15s ease,
       background 0.15s ease,
-      box-shadow 0.2s ease,
       color 0.15s ease;
   }
 
@@ -826,18 +834,17 @@
     transform: translateY(0);
   }
 
-  /* Icon == .workshop-rail-icon (1.35rem, lifts on hover), no chip. */
+  /* Icon == .workshop-rail-icon (1.35rem), no chip. */
   .workshop-grid.tools-rail .tool-accordion-icon {
     width: 1.35rem;
     height: 1.35rem;
     border-radius: 0;
     background: transparent;
     color: var(--muted);
-    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), color 0.15s ease;
+    transition: color 0.15s ease;
   }
 
   .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-icon {
-    transform: translateY(-3px);
     color: color-mix(in srgb, var(--text) 20%, var(--accent));
   }
 
@@ -846,38 +853,32 @@
     height: 100%;
   }
 
-  /* Label == .rail-label: hidden, revealed on hover. */
+  /* Label — always visible, small caps, truncated if the rail is very thin. */
   .workshop-grid.tools-rail .tool-accordion-label {
+    display: block;
     flex: 0 0 auto;
-    font-size: 0.68rem;
-    font-weight: 750;
-    letter-spacing: 0.06em;
+    max-width: 100%;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     text-transform: uppercase;
     color: var(--muted);
     line-height: 1.1;
     text-align: center;
-    max-height: 0;
-    opacity: 0;
-    margin-top: 0;
     overflow: hidden;
-    transition:
-      max-height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-      opacity 0.18s ease,
-      margin-top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-label,
-  .workshop-grid.tools-rail .tool-accordion-header:focus-visible .tool-accordion-label {
-    max-height: 1.5rem;
-    opacity: 1;
-    margin-top: 0.32rem;
+  .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-label {
+    color: color-mix(in srgb, var(--text) 30%, var(--accent));
   }
 
   /* Unread dot on the icon's top-right corner. */
   .workshop-grid.tools-rail .tool-accordion-dot {
     position: absolute;
     top: 0.5rem;
-    right: 0.9rem;
+    right: 0.85rem;
   }
 }
 

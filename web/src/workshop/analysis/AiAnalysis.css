@@ -2725,7 +2725,12 @@ button.ai-flagged-cliche:focus-visible {
 .ai-pillar-gloss {
   font-size: 0.85em;
   font-weight: 400;
-  opacity: 0.75;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.ai-pillar-row:hover .ai-pillar-gloss {
+  opacity: 0.7;
 }
 
 .ai-pillar-track {

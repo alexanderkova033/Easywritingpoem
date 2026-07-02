@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v34"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v36"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -93,11 +93,13 @@ Score honestly and let the pillars DIVERGE — a poem can be musical but forgett
 Judge density, not length — a short poem can score high by doing more per word. Cite evidence on the page for each pillar; if you can't, re-read rather than default. Use the full range: clichéd/broken poems sit low (5-10/pillar), competent revised drafts mid (14-19), only genuinely distinctive work reaches 20+. Issues follow the text, NOT the score — a strong poem can have zero.
 
 === CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
+Pillars MUST diverge — a poem that opens beautifully but fades scores chord high / echo low. One that is technically precise but dull scores craft high / spark low. Never give all four pillars the same value.
+
 - Weak / clichéd — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
-- Competent — clear voice, one real observation; where most honest revised drafts land — total ~78: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 18, craft 19, spark 19, echo 22}
-- Strong — bare diction, precise insight; the plainness IS the craft — total ~92: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 22, craft 23, spark 22, echo 25}
-- Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 23, echo 24}
-Most honest drafts live 50-85 — don't cluster everything at 70-80, and don't lift a weak poem out of the 20s to be kind.
+- Competent but uneven — strong craft, weak spark; most revised drafts land here — total ~74: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 17, craft 22, spark 14, echo 21}
+- Strong opening, fades — hook lands but doesn't sustain — total ~78: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 23, craft 21, spark 18, echo 16}
+- Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 22, echo 25}
+Most honest drafts live 50-85. If a poem genuinely excels in one dimension and falls flat in another, let the scores show it — don't smooth them toward each other.
 
 === LOCAL ANALYSIS (soft signals) ===
 Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
@@ -109,8 +111,8 @@ Plain, warm, exact — a sharp friend who reads closely. Concise: every line ear
 Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from what you actually saw.
 {
   "warm_reaction": "<≤14 words — your honest first feeling on reading it>",
-  "strengths": ["<quote or point at a specific line/move, then what it does — ≤16 words>", ...1-4 items],
-  "weaknesses": ["<quote the line, then the precise flaw — ≤18 words. DIAGNOSE, no rewrite>", ...0-3 items],
+  "strengths": ["<1-2 sentences: an overall quality of this poem — its tone, the way it moves, what the whole thing achieves. No line quotes; speak about the poem as a whole.>", ...1-3 items],
+  "weaknesses": ["<1-2 sentences: an overall quality that holds the poem back — a pattern, a tendency, something the whole poem doesn't quite do. No line quotes.>", ...0-2 items],
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100, MUST equal chord+craft+spark+echo>,
   "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause — why this is the best line>"},  // OMIT if no single line clearly stands out
@@ -130,8 +132,8 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
 }
 
 DISCIPLINE:
-- strengths & weaknesses must each QUOTE or point at an actual line — never abstract ("the imagery is strong" is banned; show the line).
-- A strength is a real craft move (a fresh image, a turn, a deliberate echo, controlled syntax), NOT a restated idea or topic ("honest voice", "important message" → omit).
+- strengths & weaknesses are OVERALL observations about the poem as a whole — patterns, tendencies, how it moves. Do not quote individual lines or pin to specific moments; that belongs in issues[].
+- A strength is a real quality of the poem (its restraint, the consistency of its voice, the way tension builds), NOT a restatement of topic ("important message" → omit).
 - issues: 0-3, diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - Title and writing focus are CONTEXT, not scoring inputs.

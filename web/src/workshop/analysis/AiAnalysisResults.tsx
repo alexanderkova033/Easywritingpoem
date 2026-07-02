@@ -591,6 +591,7 @@ export function AnalysisResults({
             )}
           </div>
 
+
           {/* 2. Strengths + weaknesses */}
           {((result.strengths?.length ?? 0) > 0 || (result.weaknesses?.length ?? 0) > 0) && (
             <div className="ai-sw-pair">
