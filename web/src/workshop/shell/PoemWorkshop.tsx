@@ -261,6 +261,7 @@ export function PoemWorkshop() {
     workshopGridRef,
     toolsPanelWidth,
     setToolsPanelWidth,
+    toolsRailWidth,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -269,6 +270,7 @@ export function PoemWorkshop() {
     resetLayout,
     handleResizeStart,
     handleRailResizeStart,
+    handleToolsRailResizeStart,
   } = usePanelLayout();
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
@@ -848,18 +850,18 @@ export function PoemWorkshop() {
     return () => cancelAnimationFrame(id);
   }, [activeTool]);
 
-  // Drive the tools column width: collapsed → a fixed thin icon-rail width,
-  // expanded → the (resizable) tools width. A FIXED collapsed width (not the
-  // live rail width) keeps the tools rail from reshaping when the left rail is
-  // resized. --tools-col is a registered @property, so this animates smoothly.
+  // Drive the tools column width: collapsed → its own resizable icon-rail width,
+  // expanded → the resizable full-panel width. Both are independent of the left
+  // rail, so resizing the left panel never reshapes this one. --tools-col is a
+  // registered @property, so the switch animates smoothly.
   useEffect(() => {
     const grid = workshopGridRef.current;
     if (!grid) return;
     grid.style.setProperty(
       "--tools-col",
-      `${toolsExpanded ? toolsPanelWidth : DEFAULT_RAIL_W}px`,
+      `${toolsExpanded ? toolsPanelWidth : toolsRailWidth}px`,
     );
-  }, [toolsExpanded, toolsPanelWidth, workshopGridRef]);
+  }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -2395,11 +2397,12 @@ export function PoemWorkshop() {
           />
         )}
 
-        {/* Tools resize gutter */}
+        {/* Tools resize gutter — resizes the collapsed icon-rail width or the
+            expanded panel width, whichever is showing (mirrors the left rail). */}
         {!isReadingMode && (
           <div
             className="tools-resize-gutter"
-            onPointerDown={handleResizeStart}
+            onPointerDown={toolsExpanded ? handleResizeStart : handleToolsRailResizeStart}
             onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
             aria-hidden
             title="Drag to resize · double-click to reset"

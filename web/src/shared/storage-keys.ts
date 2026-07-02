@@ -65,4 +65,5 @@ export const STORAGE_KEY_MOBILE_NUDGE_DISMISSED = "easy-poems:mobile-nudge-dismi
 
 // Layout
 export const STORAGE_KEY_TOOLS_WIDTH = "easy-poems:tools-panel-width";
+export const STORAGE_KEY_TOOLS_RAIL_WIDTH = "easy-poems:tools-rail-width";
 export const STORAGE_KEY_RAIL_WIDTH = "easy-poems:rail-width";

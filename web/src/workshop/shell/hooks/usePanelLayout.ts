@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from "react";
-import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_TOOLS_RAIL_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 
 export const DEFAULT_TOOLS_W = 300;
 export const DEFAULT_RAIL_W = 64;
+/** Collapsed (icon-rail) width of the tools panel — resizable like the left rail. */
+export const DEFAULT_TOOLS_RAIL_W = 64;
 export const SNAP_PX = 36;
 export const MIN_EDITOR_W = 240;
 
@@ -80,6 +82,9 @@ export function usePanelLayout() {
   const [railWidth, setRailWidth] = useState(() =>
     readStoredWidth(STORAGE_KEY_RAIL_WIDTH, DEFAULT_RAIL_W, 320),
   );
+  const [toolsRailWidth, setToolsRailWidth] = useState(() =>
+    readStoredWidth(STORAGE_KEY_TOOLS_RAIL_WIDTH, DEFAULT_TOOLS_RAIL_W, 320),
+  );
 
   const applyToolsWLive = useCallback((w: number) => {
     const el = workshopGridRef.current;
@@ -93,6 +98,20 @@ export function usePanelLayout() {
     if (!el) return;
     el.style.setProperty("--rail-col", `${w}px`);
     el.classList.toggle("rail-collapsed", w === 0);
+  }, []);
+
+  // Collapsed icon-rail width of the tools panel. Clamped to a rail-ish range so
+  // it can't be dragged shut or absurdly wide; drives --tools-col while the tool
+  // panel is collapsed (the width effect in PoemWorkshop switches which value
+  // --tools-col holds based on expand state).
+  const clampToolsRail = (w: number) => Math.max(48, Math.min(w, 220));
+  const applyToolsRailWLive = useCallback((w: number) => {
+    const el = workshopGridRef.current;
+    if (!el) return;
+    el.style.setProperty("--tools-col", `${clampToolsRail(w)}px`);
+  }, []);
+  const saveToolsRailW = useCallback((w: number) => {
+    try { localStorage.setItem(STORAGE_KEY_TOOLS_RAIL_WIDTH, String(w)); } catch { /* ignore */ }
   }, []);
 
   const applyToolsW = useCallback((w: number) => {
@@ -159,10 +178,27 @@ export function usePanelLayout() {
     });
   }, [applyRailWLive, saveRailW]);
 
+  // Resize the collapsed icon rail (mirrors the left rail: drag left → wider).
+  const handleToolsRailResizeStart = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    startColumnDrag(e, workshopGridRef.current, {
+      cssVar: "--tools-col",
+      defaultW: DEFAULT_TOOLS_RAIL_W,
+      direction: "left",
+      applyLive: applyToolsRailWLive,
+      computeMaxW: () => 220,
+      commit: (w) => {
+        const cw = Math.max(48, Math.min(w, 220));
+        setToolsRailWidth(cw);
+        saveToolsRailW(cw);
+      },
+    });
+  }, [applyToolsRailWLive, saveToolsRailW]);
+
   return {
     workshopGridRef,
     toolsPanelWidth,
     setToolsPanelWidth,
+    toolsRailWidth,
     railWidth,
     setRailWidth,
     applyToolsW,
@@ -174,5 +210,6 @@ export function usePanelLayout() {
     resetLayout,
     handleResizeStart,
     handleRailResizeStart,
+    handleToolsRailResizeStart,
   };
 }
