@@ -848,18 +848,42 @@ export function PoemWorkshop() {
     return () => cancelAnimationFrame(id);
   }, [activeTool]);
 
-  // Drive the tools column width: collapsed → the left-rail width (a thin icon
-  // rail), expanded → the (resizable) tools width. --tools-col is a registered
-  // @property, so changing it here animates the column smoothly. Runs after the
-  // mount clamp effect below so it wins the initial value.
+  // Drive the tools column width: collapsed → a fixed thin icon-rail width,
+  // expanded → the (resizable) tools width. A FIXED collapsed width (not the
+  // live rail width) keeps the tools rail from reshaping when the left rail is
+  // resized. --tools-col is a registered @property, so this animates smoothly.
   useEffect(() => {
     const grid = workshopGridRef.current;
     if (!grid) return;
     grid.style.setProperty(
       "--tools-col",
-      `${toolsExpanded ? toolsPanelWidth : railWidth}px`,
+      `${toolsExpanded ? toolsPanelWidth : DEFAULT_RAIL_W}px`,
     );
-  }, [toolsExpanded, toolsPanelWidth, railWidth, workshopGridRef]);
+  }, [toolsExpanded, toolsPanelWidth, workshopGridRef]);
+
+  // Keep the sticky tools panel fit to the space between its current top and the
+  // viewport bottom. Short tools show no scrollbar; only genuinely long content
+  // scrolls inside — which is far better than letting the panel stretch the grid
+  // and leave the editor + AI analysis floating. rAF-throttled on scroll/resize.
+  useEffect(() => {
+    const panel = toolsPanelRef.current;
+    if (!panel) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const top = panel.getBoundingClientRect().top;
+      panel.style.setProperty("--tools-maxh", `${Math.round(Math.max(260, window.innerHeight - top - 16))}px`);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
   // editor instead of showing labels inside the editor's left gutter.

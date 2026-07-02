@@ -706,28 +706,19 @@
   }
 
   .tools-panel {
-    /* Stretch across the cell (cross axis) so the panel matches its grid column
-       width; flex-start would size it to content and overflow to the right. */
+    /* Full-height right column, pinned as you scroll. Cross-axis stretch so it
+       matches its grid track width. */
+    position: sticky;
+    top: 1.15rem;
     align-self: start;
-    /* Sit at the top of the (two-row-tall) column and grow with its content —
-       no internal scrollbar. When the content is taller than the viewport the
-       page scrolls to reveal it, rather than a nested scroll inside the panel.
-       `clip` keeps content from spilling horizontally while the width animates,
-       without creating a scroll container (height is content-driven, so there's
-       nothing to clip vertically). */
-    position: static;
-    max-height: none;
+    /* Fit the visible viewport from the panel's current top so the whole panel
+       stays on screen. Short tools show no scrollbar; only a genuinely long
+       tool (e.g. Echoes with dozens of words) scrolls inside — which keeps the
+       page layout intact instead of the panel stretching the grid and leaving
+       the editor + AI analysis floating in a sea of empty space. --tools-maxh
+       is kept in sync in JS on scroll/resize. */
+    max-height: var(--tools-maxh, calc(100vh - 2.3rem));
     overflow: clip;
-  }
-
-  /* No inner scroll region on desktop — the panel itself is the flow. */
-  .tools-panel .tools-scroll-body {
-    overflow: visible;
-  }
-
-  /* The head no longer needs to stick (nothing scrolls under it here). */
-  .tools-panel .tools-sticky-head {
-    position: static;
   }
 }
 
@@ -750,82 +741,148 @@
   }
 }
 
-/* ── Collapsed "rail" mode: thin icon column like the left rail ──────────────
-   When no tool is open the tools column is set to the rail width (--tools-col,
-   in JS) and shows icon-only rows. Opening a tool widens --tools-col and the
-   labels/content appear. */
+/* ── Collapsed "rail" mode: mirror the LEFT rail exactly ─────────────────────
+   Same button shape, icon size, hover lift, and label-reveal-on-hover as
+   .rail-btn, so the two side rails read as a matched pair. Opening a tool
+   widens --tools-col and switches to the full labelled accordion. */
 @media (min-width: 1050px) {
   /* Nothing to resize while collapsed. */
   .workshop-grid.tools-rail .tools-resize-gutter { display: none; }
 
-  /* Icon-only: hide labels, group headings, chevrons, the "Tools" heading,
-     the Analyse button text, and the shortcuts footer. */
+  /* Hide the "Tools" heading, the Analyse button text, group headings,
+     chevrons, and the shortcuts footer — icons carry the rail. */
   .workshop-grid.tools-rail .tools-heading,
   .workshop-grid.tools-rail .tools-analyse-label,
-  .workshop-grid.tools-rail .tool-accordion-label,
   .workshop-grid.tools-rail .tool-accordion-group-label,
   .workshop-grid.tools-rail .tool-accordion-chevron,
   .workshop-grid.tools-rail .tools-shortcuts-hint {
     display: none;
   }
 
-  /* Clip anything mid-transition so labels don't spill while the column is
-     narrow. */
   .workshop-grid.tools-rail .tools-scroll-body {
     overflow-x: clip;
   }
 
   .workshop-grid.tools-rail .tools-sticky-head {
-    padding-inline: 0.3rem;
+    padding-inline: 0.5rem;
+    border-bottom: none;
   }
 
   .workshop-grid.tools-rail .tools-head-row {
     justify-content: center;
-    padding: 0.15rem 0;
+    padding: 0.1rem 0 0.35rem;
   }
 
+  /* Analyse: a matching rail button (icon centered, no text). */
   .workshop-grid.tools-rail .tools-analyse-btn {
-    padding: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    font-size: 1rem;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.35rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion {
-    padding: 0.45rem 0.3rem;
+    gap: 0.55rem;
+    padding: 0.55rem 0.5rem;
   }
 
+  .workshop-grid.tools-rail .tool-accordion-group {
+    gap: 0.55rem;
+  }
+
+  /* Subtle divider between groups, like the left rail's .rail-group-divider. */
   .workshop-grid.tools-rail .tool-accordion-group + .tool-accordion-group {
-    margin-top: 0.45rem;
-    padding-top: 0.45rem;
-    border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+    margin-top: 0.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
   }
 
+  /* Header == .rail-btn */
   .workshop-grid.tools-rail .tool-accordion-header {
     position: relative;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     gap: 0;
-    padding: 0.3rem 0;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.5rem 0.35rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    transition:
+      transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.15s ease,
+      background 0.15s ease,
+      box-shadow 0.2s ease,
+      color 0.15s ease;
   }
 
-  /* Bigger icon chips in rail mode — this is the only affordance, so make it
-     comfortably tappable/scannable. */
+  .workshop-grid.tools-rail .tool-accordion-header:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-header:active {
+    transform: translateY(0);
+  }
+
+  /* Icon == .workshop-rail-icon (1.35rem, lifts on hover), no chip. */
   .workshop-grid.tools-rail .tool-accordion-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 10px;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 0;
+    background: transparent;
+    color: var(--muted);
+    transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), color 0.15s ease;
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-icon {
+    transform: translateY(-3px);
+    color: color-mix(in srgb, var(--text) 20%, var(--accent));
   }
 
   .workshop-grid.tools-rail .tool-accordion-icon .tool-tab-svg {
-    width: 24px;
-    height: 24px;
+    width: 100%;
+    height: 100%;
   }
 
-  /* Small unread dot tucked onto the icon's top-right corner. */
+  /* Label == .rail-label: hidden, revealed on hover. */
+  .workshop-grid.tools-rail .tool-accordion-label {
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    line-height: 1.1;
+    text-align: center;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    overflow: hidden;
+    transition:
+      max-height 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.18s ease,
+      margin-top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-label,
+  .workshop-grid.tools-rail .tool-accordion-header:focus-visible .tool-accordion-label {
+    max-height: 1.5rem;
+    opacity: 1;
+    margin-top: 0.32rem;
+  }
+
+  /* Unread dot on the icon's top-right corner. */
   .workshop-grid.tools-rail .tool-accordion-dot {
     position: absolute;
-    top: 0.35rem;
-    right: 0.85rem;
+    top: 0.5rem;
+    right: 0.9rem;
   }
 }
 
