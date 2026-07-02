@@ -538,29 +538,30 @@
     grid-row: 1 / 3 !important;
   }
 
-  /* Drag line — clearly visible at rest so the resize affordance is obvious,
-     brightens to the accent on hover. */
+  /* Grip dots — a small, recognizable "drag me" affordance centered in the
+     gutter. Subtle at rest, accent on hover. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
     position: absolute;
-    top: 15%;
-    bottom: 15%;
+    top: 50%;
     left: 50%;
-    width: 3px;
-    transform: translateX(-50%);
-    background: color-mix(in srgb, var(--border) 60%, var(--surface));
-    transition: background 0.18s ease, top 0.18s ease, bottom 0.18s ease, width 0.18s ease;
-    border-radius: 3px;
+    width: 3.5px;
+    height: 3.5px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: color-mix(in srgb, var(--muted) 55%, transparent);
+    box-shadow:
+      0 -7px 0 color-mix(in srgb, var(--muted) 55%, transparent),
+      0 7px 0 color-mix(in srgb, var(--muted) 55%, transparent);
+    transition: background 0.16s ease, box-shadow 0.16s ease;
     pointer-events: none;
   }
 
   .tools-resize-gutter:hover::before,
   .rail-resize-gutter:hover::before {
-    top: 5%;
-    bottom: 5%;
-    width: 4px;
     background: var(--accent);
+    box-shadow: 0 -7px 0 var(--accent), 0 7px 0 var(--accent);
   }
 
   /* Collapsed panels: hide gutter, show expand pill instead */
@@ -740,6 +741,18 @@
   }
 }
 
+/* Labels toggle is only meaningful for the collapsed desktop rail — hidden
+   otherwise (expanded panel, tablet drawer, mobile sheet). */
+.tools-rail-labels-toggle {
+  display: none;
+}
+
+.tools-rail-labels-toggle-text {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
 /* ── Collapsed "rail" mode: mirror the LEFT rail exactly ─────────────────────
    Same button shape, icon size, hover lift, and label-reveal-on-hover as
    .rail-btn, so the two side rails read as a matched pair. Opening a tool
@@ -765,8 +778,10 @@
   }
 
   .workshop-grid.tools-rail .tools-head-row {
-    justify-content: center;
-    padding: 0.1rem 0 0.35rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.1rem 0 0.4rem;
   }
 
   /* Analyse: a matching rail button (icon centered, no text). */
@@ -776,6 +791,32 @@
     padding: 0.4rem 0.35rem;
     border-radius: 12px;
     font-size: 1.05rem;
+  }
+
+  /* Labels on/off toggle — sits at the top of the collapsed rail. */
+  .workshop-grid.tools-rail .tools-rail-labels-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 1.9rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  }
+
+  .workshop-grid.tools-rail .tools-rail-labels-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    color: var(--text);
+  }
+
+  .workshop-grid.tools-rail .tools-rail-labels-toggle.is-on {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+    color: var(--accent);
   }
 
   .workshop-grid.tools-rail .tool-accordion {
@@ -802,8 +843,7 @@
     box-shadow: none;
   }
 
-  /* Header: icon on top, label ALWAYS below (a new user can read every tool at
-     a glance instead of guessing the icons). */
+  /* Header: icon centered; label shows below only when labels are toggled on. */
   .workshop-grid.tools-rail .tool-accordion-header {
     position: relative;
     flex-direction: column;
@@ -811,7 +851,7 @@
     justify-content: center;
     gap: 0.28rem;
     width: 100%;
-    min-height: 3.4rem;
+    min-height: 2.9rem;
     padding: 0.5rem 0.15rem;
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -822,6 +862,10 @@
       border-color 0.15s ease,
       background 0.15s ease,
       color 0.15s ease;
+  }
+
+  .workshop-grid.tools-rail.tools-rail-labels .tool-accordion-header {
+    min-height: 3.4rem;
   }
 
   .workshop-grid.tools-rail .tool-accordion-header:hover {
@@ -853,9 +897,10 @@
     height: 100%;
   }
 
-  /* Label — always visible, small caps, truncated if the rail is very thin. */
+  /* Label — hidden by default (thin icon rail); shown when labels are toggled
+     on from the top of the panel. */
   .workshop-grid.tools-rail .tool-accordion-label {
-    display: block;
+    display: none;
     flex: 0 0 auto;
     max-width: 100%;
     font-size: 0.58rem;
@@ -868,6 +913,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .workshop-grid.tools-rail.tools-rail-labels .tool-accordion-label {
+    display: block;
   }
 
   .workshop-grid.tools-rail .tool-accordion-header:hover .tool-accordion-label {

@@ -73,7 +73,7 @@ import {
   type ToolTab,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
-import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
+import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, DEFAULT_TOOLS_RAIL_W, LABELLED_TOOLS_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
@@ -151,6 +151,23 @@ export function PoemWorkshop() {
   // null when collapsed — editor overlays key off it so a collapsed panel shows
   // no rhyme/meter/repeat decorations.
   const [toolsExpanded, setToolsExpanded] = useState(false);
+  // Whether the collapsed icon rail shows a text label under each icon. Toggled
+  // from the top of the panel; persisted. Off by default so the rail stays thin
+  // and clean; new users can flip labels on for clarity.
+  const [railLabels, setRailLabels] = useState(() => {
+    try { return localStorage.getItem("easy-poems:tools-rail-labels") === "1"; } catch { return false; }
+  });
+  const toggleRailLabels = () => {
+    setRailLabels((v) => {
+      const next = !v;
+      try { localStorage.setItem("easy-poems:tools-rail-labels", next ? "1" : "0"); } catch { /* ignore */ }
+      // Resize the collapsed rail to fit the new mode (still user-resizable after).
+      const w = next ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
+      setToolsRailWidth(w);
+      saveToolsRailW(w);
+      return next;
+    });
+  };
   // Enable the width transition only after first paint so the initial
   // collapsed→rail sizing doesn't animate on load.
   const [toolsAnimReady, setToolsAnimReady] = useState(false);
@@ -262,6 +279,8 @@ export function PoemWorkshop() {
     toolsPanelWidth,
     setToolsPanelWidth,
     toolsRailWidth,
+    setToolsRailWidth,
+    saveToolsRailW,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -1819,7 +1838,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} ${toolsAnimReady ? "tools-anim" : ""}`}
+        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} ${railLabels ? "tools-rail-labels" : ""} ${toolsAnimReady ? "tools-anim" : ""}`}
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
@@ -2445,6 +2464,16 @@ export function PoemWorkshop() {
             </button>
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
+              {/* Labels toggle — only meaningful for the collapsed icon rail. */}
+              <button
+                type="button"
+                className={`tools-rail-labels-toggle ${railLabels ? "is-on" : ""}`}
+                onClick={toggleRailLabels}
+                aria-pressed={railLabels}
+                {...hint(railLabels ? "Hide tool labels" : "Show tool labels")}
+              >
+                <span className="tools-rail-labels-toggle-text" aria-hidden>Aa</span>
+              </button>
               <button
                 type="button"
                 className="tools-analyse-btn"

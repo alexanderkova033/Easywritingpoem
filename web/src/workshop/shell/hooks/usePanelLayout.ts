@@ -3,10 +3,10 @@ import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_TOOLS_RAIL_WIDTH, STORAGE_KEY_RAIL
 
 export const DEFAULT_TOOLS_W = 300;
 export const DEFAULT_RAIL_W = 64;
-/** Collapsed (icon-rail) width of the tools panel — resizable like the left rail.
- *  Wide enough to show a short label under each icon so new users can read the
- *  tools instead of decoding icons. */
-export const DEFAULT_TOOLS_RAIL_W = 100;
+/** Collapsed icon-rail width (labels off) — thin, like the left rail. */
+export const DEFAULT_TOOLS_RAIL_W = 64;
+/** Collapsed rail width when labels are toggled on (wide enough to read them). */
+export const LABELLED_TOOLS_RAIL_W = 100;
 export const SNAP_PX = 36;
 export const MIN_EDITOR_W = 240;
 
@@ -201,6 +201,8 @@ export function usePanelLayout() {
     toolsPanelWidth,
     setToolsPanelWidth,
     toolsRailWidth,
+    setToolsRailWidth,
+    saveToolsRailW,
     railWidth,
     setRailWidth,
     applyToolsW,
