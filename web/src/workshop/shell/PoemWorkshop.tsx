@@ -151,20 +151,17 @@ export function PoemWorkshop() {
   // null when collapsed — editor overlays key off it so a collapsed panel shows
   // no rhyme/meter/repeat decorations.
   const [toolsExpanded, setToolsExpanded] = useState(false);
-  // Whether the collapsed icon rail shows a text label under each icon. Toggled
-  // from the top of the panel; persisted. Off by default so the rail stays thin
-  // and clean; new users can flip labels on for clarity.
+  // Whether the collapsed icon rail shows a text label under each icon. On by
+  // default (clear for new users); toggled from the top of the panel and
+  // persisted. When off, the rail matches the left rail exactly — icon-only,
+  // with the label revealed on hover.
   const [railLabels, setRailLabels] = useState(() => {
-    try { return localStorage.getItem("easy-poems:tools-rail-labels") === "1"; } catch { return false; }
+    try { return localStorage.getItem("easy-poems:tools-rail-labels") !== "0"; } catch { return true; }
   });
   const toggleRailLabels = () => {
     setRailLabels((v) => {
       const next = !v;
       try { localStorage.setItem("easy-poems:tools-rail-labels", next ? "1" : "0"); } catch { /* ignore */ }
-      // Resize the collapsed rail to fit the new mode (still user-resizable after).
-      const w = next ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
-      setToolsRailWidth(w);
-      saveToolsRailW(w);
       return next;
     });
   };
@@ -278,9 +275,6 @@ export function PoemWorkshop() {
     workshopGridRef,
     toolsPanelWidth,
     setToolsPanelWidth,
-    toolsRailWidth,
-    setToolsRailWidth,
-    saveToolsRailW,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -289,7 +283,6 @@ export function PoemWorkshop() {
     resetLayout,
     handleResizeStart,
     handleRailResizeStart,
-    handleToolsRailResizeStart,
   } = usePanelLayout();
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
@@ -876,11 +869,12 @@ export function PoemWorkshop() {
   useEffect(() => {
     const grid = workshopGridRef.current;
     if (!grid) return;
+    const railW = railLabels ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
     grid.style.setProperty(
       "--tools-col",
-      `${toolsExpanded ? toolsPanelWidth : toolsRailWidth}px`,
+      `${toolsExpanded ? toolsPanelWidth : railW}px`,
     );
-  }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
+  }, [toolsExpanded, toolsPanelWidth, railLabels, workshopGridRef]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -2416,12 +2410,12 @@ export function PoemWorkshop() {
           />
         )}
 
-        {/* Tools resize gutter — resizes the collapsed icon-rail width or the
-            expanded panel width, whichever is showing (mirrors the left rail). */}
+        {/* Tools resize gutter — resizes the expanded panel (hidden while the
+            panel is collapsed to the rail). */}
         {!isReadingMode && (
           <div
             className="tools-resize-gutter"
-            onPointerDown={toolsExpanded ? handleResizeStart : handleToolsRailResizeStart}
+            onPointerDown={handleResizeStart}
             onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
             aria-hidden
             title="Drag to resize · double-click to reset"
