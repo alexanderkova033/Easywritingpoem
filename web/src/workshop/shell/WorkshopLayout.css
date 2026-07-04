@@ -11,6 +11,10 @@
     /* 3 columns by default; 4 columns when rhyme scheme panel is active */
     grid-template-columns: var(--rail-col, 56px) minmax(240px, 1.35fr) var(--tools-col, clamp(232px, 20vw, 320px));
     gap: 1rem;
+    /* Editor column stretches to match the tallest sibling (usually tools-panel)
+       instead of shrink-wrapping the poem text, so a short draft doesn't leave
+       a half-empty panel. */
+    align-items: stretch;
   }
 
   /* 4-column when the rhyme scheme panel is rendered */

@@ -3809,6 +3809,25 @@
 /* ── Writing prompt overlay ── */
 .poem-editor-body-wrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.poem-cm-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* react-codemirror's own wrapper div (class name derives from theme="none").
+   Needs an explicit flex size so percentage/100% heights on .cm-editor below
+   it can actually resolve instead of falling back to content-based auto. */
+.poem-cm-wrap .cm-theme-none {
+  flex: 1;
+  min-height: 0;
 }
 
 .writing-prompt {
@@ -3963,6 +3982,10 @@
   box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
   padding-top: 0.85rem;
   padding-bottom: 0.9rem;
+  /* Flex column so the writing area (not the title/toolbar/copy button) is the
+     one piece that stretches to absorb any extra height the panel is given. */
+  display: flex;
+  flex-direction: column;
 }
 
 .privacy-top-row {
@@ -4198,6 +4221,12 @@
   margin-bottom: 0.85rem;
 }
 
+.row.body-row {
+  margin-bottom: 0.6rem;
+  flex: 1;
+  min-height: 0;
+}
+
 .editor-meta-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -4207,11 +4236,20 @@
   border-bottom: 1px solid color-mix(in srgb, var(--border) 14%, transparent);
 }
 
+.editor-print-hide {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .editor-stack {
   display: flex;
   flex-direction: column;
   gap: 0;
   min-width: 0;
+  min-height: 0;
+  flex: 1;
   position: relative;
 }
 

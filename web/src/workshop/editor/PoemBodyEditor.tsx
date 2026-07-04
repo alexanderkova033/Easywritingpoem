@@ -1249,7 +1249,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       <CodeMirror
         aria-describedby={props["aria-describedby"]}
         value={localValue}
-        height="auto"
+        height="100%"
         theme="none"
         extensions={extensions}
         onChange={(v) => {
