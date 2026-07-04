@@ -3856,6 +3856,18 @@
   opacity: 0;
 }
 
+/* ── End-of-text divider ──────────────────────────────────────────────────
+ * Soft rule marking where typed lines end and the box's unused (filler)
+ * height begins, now that the editor can be taller than its content. */
+.poem-end-of-text-line {
+  position: absolute;
+  left: 3.4rem;
+  right: 0.7rem;
+  height: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 65%, transparent);
+  pointer-events: none;
+}
+
 .field-hint {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;

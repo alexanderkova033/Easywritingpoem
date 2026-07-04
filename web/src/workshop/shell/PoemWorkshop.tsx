@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RailIcon } from "./components/RailIcon";
 import { WritingPrompt } from "./components/WritingPrompt";
+import { EditorEndOfTextLine } from "./components/EditorEndOfTextLine";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   applyAppearance,
@@ -2289,6 +2290,7 @@ export function PoemWorkshop() {
                       diffSnapshotBody={diffSnapshot?.body ?? null}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
+                    <EditorEndOfTextLine lineCount={m.lines.length} visible={m.body.length > 0} />
                     {aiVisibleIssues.length > 0 && (
                       <AiLineRibbons
                         editorViewRef={m.editorViewRef}
