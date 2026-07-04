@@ -4,7 +4,7 @@ export function EditorEndOfTextLine({ lineCount, visible }: { lineCount: number;
     <div
       className="poem-end-of-text-line"
       style={{
-        top: `calc(0.6rem + ${lineCount} * var(--poem-font-size, 1rem) * var(--poem-line-height, 1.65))`,
+        top: `calc(0.6rem + ${lineCount} * var(--poem-font-size, 1rem) * var(--poem-line-height, 1.65) + 0.6rem)`,
       }}
       aria-hidden
     />
