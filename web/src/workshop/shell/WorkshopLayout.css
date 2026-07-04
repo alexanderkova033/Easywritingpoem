@@ -11,10 +11,6 @@
     /* 3 columns by default; 4 columns when rhyme scheme panel is active */
     grid-template-columns: var(--rail-col, 56px) minmax(240px, 1.35fr) var(--tools-col, clamp(232px, 20vw, 320px));
     gap: 1rem;
-    /* Editor column stretches to match the tallest sibling (usually tools-panel)
-       instead of shrink-wrapping the poem text, so a short draft doesn't leave
-       a half-empty panel. */
-    align-items: stretch;
   }
 
   /* 4-column when the rhyme scheme panel is rendered */
@@ -178,6 +174,10 @@
     margin-right: auto;
     padding: 1.25rem 2.4rem 1.25rem;
     box-shadow: 0 10px 38px color-mix(in srgb, #000 18%, transparent);
+    /* Give the page-like column a real height to fill (focus mode has no
+       sibling panel to size against), so a short draft still reads as a
+       page rather than a shrink-wrapped card. */
+    min-height: 70vh;
     transition:
       max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
       padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
