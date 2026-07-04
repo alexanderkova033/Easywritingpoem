@@ -162,6 +162,10 @@ export function PoemWorkshop() {
     setRailLabels((v) => {
       const next = !v;
       try { localStorage.setItem("easy-poems:tools-rail-labels", next ? "1" : "0"); } catch { /* ignore */ }
+      // Set a sensible rail width for the new mode (still user-resizable after).
+      const w = next ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
+      setToolsRailWidth(w);
+      saveToolsRailW(w);
       return next;
     });
   };
@@ -275,6 +279,9 @@ export function PoemWorkshop() {
     workshopGridRef,
     toolsPanelWidth,
     setToolsPanelWidth,
+    toolsRailWidth,
+    setToolsRailWidth,
+    saveToolsRailW,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -283,6 +290,7 @@ export function PoemWorkshop() {
     resetLayout,
     handleResizeStart,
     handleRailResizeStart,
+    handleToolsRailResizeStart,
   } = usePanelLayout();
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
@@ -869,12 +877,11 @@ export function PoemWorkshop() {
   useEffect(() => {
     const grid = workshopGridRef.current;
     if (!grid) return;
-    const railW = railLabels ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
     grid.style.setProperty(
       "--tools-col",
-      `${toolsExpanded ? toolsPanelWidth : railW}px`,
+      `${toolsExpanded ? toolsPanelWidth : toolsRailWidth}px`,
     );
-  }, [toolsExpanded, toolsPanelWidth, railLabels, workshopGridRef]);
+  }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -2410,12 +2417,12 @@ export function PoemWorkshop() {
           />
         )}
 
-        {/* Tools resize gutter — resizes the expanded panel (hidden while the
-            panel is collapsed to the rail). */}
+        {/* Tools resize gutter — resizes the collapsed icon-rail or the expanded
+            panel, whichever is showing (like the left rail). */}
         {!isReadingMode && (
           <div
             className="tools-resize-gutter"
-            onPointerDown={handleResizeStart}
+            onPointerDown={toolsExpanded ? handleResizeStart : handleToolsRailResizeStart}
             onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
             aria-hidden
             title="Drag to resize · double-click to reset"

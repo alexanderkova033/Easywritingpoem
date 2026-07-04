@@ -85,7 +85,9 @@ export function usePanelLayout() {
     readStoredWidth(STORAGE_KEY_RAIL_WIDTH, DEFAULT_RAIL_W, 320),
   );
   const [toolsRailWidth, setToolsRailWidth] = useState(() =>
-    readStoredWidth(STORAGE_KEY_TOOLS_RAIL_WIDTH, DEFAULT_TOOLS_RAIL_W, 320),
+    // Default matches labels-on (the default), so the fresh rail is wide enough
+    // to read the labels; toggling labels off narrows it.
+    readStoredWidth(STORAGE_KEY_TOOLS_RAIL_WIDTH, LABELLED_TOOLS_RAIL_W, 320),
   );
 
   const applyToolsWLive = useCallback((w: number) => {
