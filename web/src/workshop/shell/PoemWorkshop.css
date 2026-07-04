@@ -654,7 +654,11 @@
   min-width: 0;
   overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  /* Chain leftover scroll to the page: once this inner scroller reaches its top
+     or bottom, the remaining wheel delta scrolls the window instead of being
+     swallowed. `auto` (the browser default) is what enables that chaining;
+     `contain` would trap the gesture inside the panel. */
+  overscroll-behavior: auto;
   scroll-padding-block: 0.75rem;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--surface)) transparent;
@@ -3863,14 +3867,17 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 2.4rem;
+  bottom: 0;
+  /* Fades in quickly, then holds a barely-there tint for the rest of the
+     unused space below, so the whole filler area reads as faintly recessed. */
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--border) 14%, transparent) 0%,
-    transparent 100%
+    color-mix(in srgb, var(--border) 12.5%, transparent) 0%,
+    color-mix(in srgb, var(--border) 3%, transparent) 2.4rem,
+    color-mix(in srgb, var(--border) 3%, transparent) 100%
   );
   pointer-events: none;
-  transition: top 0.12s ease;
+  transition: top 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .field-hint {
