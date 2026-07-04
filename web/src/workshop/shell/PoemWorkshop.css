@@ -522,8 +522,7 @@
     z-index: 50;
   }
 
-  /* Default fallback for 1050-1199px range. Both gutters live in row 1 (the
-     editor row) so their handles sit at the same height — one on each side. */
+  /* Default fallback for 1050-1199px range. */
   .tools-resize-gutter { right: calc(var(--tools-col, min(280px, 26vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
@@ -533,7 +532,10 @@
   .rail-resize-gutter::before {
     content: "";
     position: absolute;
-    top: 50%;
+    /* Centered on the panel. The tools panel is taller than the editor row, so
+       its bar is nudged to the panel's mid-height via --bar-center (set in JS);
+       the rail falls back to the gutter centre. */
+    top: var(--bar-center, 50%);
     left: 50%;
     width: 4px;
     height: 2.4rem;
@@ -757,6 +759,9 @@
 
   .workshop-grid.tools-rail .tools-scroll-body {
     overflow-x: clip;
+    /* No reserved scrollbar gutter while collapsed — nothing scrolls, so the
+       icons stay centered instead of shifted left. */
+    scrollbar-gutter: auto;
   }
 
   .workshop-grid.tools-rail .tools-sticky-head {
@@ -3956,6 +3961,8 @@
 .editor-panel {
   border: 1px solid color-mix(in srgb, var(--border) 130%, transparent);
   box-shadow: 0 4px 22px color-mix(in srgb, #000 14%, transparent);
+  padding-top: 0.85rem;
+  padding-bottom: 0.9rem;
 }
 
 .privacy-top-row {

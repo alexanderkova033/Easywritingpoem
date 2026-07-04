@@ -657,6 +657,7 @@ export function PoemWorkshop() {
   const toolsPanelRef = useRef<HTMLElement | null>(null);
   // Inner scroll container of the tools panel (the accordion list scrolls here on desktop).
   const toolsScrollBodyRef = useRef<HTMLDivElement | null>(null);
+  const toolsGutterRef = useRef<HTMLDivElement | null>(null);
 
   const { handleSheetDragStart, handleSheetDragMove, handleSheetDragEnd } = useSheetDrag({
     toolsPanelRef,
@@ -882,6 +883,24 @@ export function PoemWorkshop() {
       `${toolsExpanded ? toolsPanelWidth : toolsRailWidth}px`,
     );
   }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
+
+  // Center the tools resize bar on the (full-height) tools panel rather than on
+  // the shorter editor row. The panel top aligns with the gutter top, so the
+  // bar sits at half the panel's height.
+  useEffect(() => {
+    const panel = toolsPanelRef.current;
+    const gutter = toolsGutterRef.current;
+    if (!panel || !gutter) return;
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      gutter.style.setProperty("--bar-center", `${Math.round(panel.offsetHeight / 2)}px`);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("resize", schedule);
+    return () => { window.removeEventListener("resize", schedule); if (raf) cancelAnimationFrame(raf); };
+  }, [toolsExpanded, railLabels, m.toolTab, toolsPanelWidth, toolsRailWidth, isReadingMode]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -2421,6 +2440,7 @@ export function PoemWorkshop() {
             panel, whichever is showing (like the left rail). */}
         {!isReadingMode && (
           <div
+            ref={toolsGutterRef}
             className="tools-resize-gutter"
             onPointerDown={toolsExpanded ? handleResizeStart : handleToolsRailResizeStart}
             onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
