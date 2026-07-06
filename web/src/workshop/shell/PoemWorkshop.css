@@ -3953,7 +3953,12 @@
 }
 
 .privacy {
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--surface) 92%, var(--bg)) 0%,
+    color-mix(in srgb, var(--surface) 86%, var(--accent-soft)) 44%,
+    color-mix(in srgb, var(--surface-2) 88%, var(--bg)) 100%
+  );
 }
 
 /* Editor outer frame: strong frame wraps whole panel (title + editor) */
