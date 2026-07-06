@@ -4207,6 +4207,13 @@
   }
 }
 
+/* Keep the footer's border as opaque as the topbar's — the theme rules above
+   fade .editor-panel/.tools-panel borders toward transparent, which read as
+   "more see-through" than the hero once the fill colors matched. */
+.privacy {
+  border-color: color-mix(in srgb, var(--border) 94%, var(--accent-soft));
+}
+
 .row {
   display: flex;
   flex-direction: column;
