@@ -244,7 +244,6 @@ export function BackgroundPicker(props: {
               <span className="bg-picker-glyph" aria-hidden>{o.glyph}</span>
               <span className="bg-picker-text">
                 <span className="bg-picker-label">{o.label}</span>
-                <span className="bg-picker-blurb">{o.blurb}</span>
               </span>
             </button>
           );

@@ -2687,14 +2687,14 @@ export function PoemWorkshop() {
             </summary>
           <div className="privacy-body">
             <p>
-              No analytics, no accounts, no tracking. Drafts, snapshots, and settings
-              are stored only in this browser's <code>localStorage</code> and are never
-              sent to a server during normal editing.
+              This app collects no analytics and requires no account. Drafts, snapshots,
+              and settings are stored solely in this browser's <code>localStorage</code> and
+              are never transmitted to a server during normal editing.
             </p>
             <p>
-              If you use the optional AI analysis feature, the poem text is sent to the
-              configured AI provider for that request only. Exporting or copying sends
-              text wherever you direct it — check that destination's terms.
+              Using the optional AI analysis sends the poem text to the configured AI
+              provider for that request only. Exporting or copying content sends it
+              wherever you direct it, so please review that destination's own privacy terms.
             </p>
             <p>
               New to the layout?{" "}

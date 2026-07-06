@@ -793,13 +793,6 @@
   letter-spacing: 0.02em;
 }
 
-.bg-picker-blurb {
-  font-size: 0.74rem;
-  font-weight: 500;
-  color: var(--muted);
-  line-height: 1.35;
-}
-
 @media (max-width: 520px) {
   .bg-picker-grid {
     grid-template-columns: 1fr;

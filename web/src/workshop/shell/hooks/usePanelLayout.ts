@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_TOOLS_RAIL_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 
-export const DEFAULT_TOOLS_W = 300;
-export const DEFAULT_RAIL_W = 64;
+export const DEFAULT_TOOLS_W = 330;
+export const DEFAULT_RAIL_W = 72;
 /** Collapsed icon-rail width (labels off) — thin, like the left rail. */
 export const DEFAULT_TOOLS_RAIL_W = 64;
 /** Collapsed rail width when labels are toggled on (wide enough to read them). */
