@@ -647,6 +647,8 @@ export function PoemWorkshop() {
   // Inner scroll container of the tools panel (the accordion list scrolls here on desktop).
   const toolsScrollBodyRef = useRef<HTMLDivElement | null>(null);
   const toolsGutterRef = useRef<HTMLDivElement | null>(null);
+  const railPanelRef = useRef<HTMLElement | null>(null);
+  const railGutterRef = useRef<HTMLDivElement | null>(null);
 
   const { handleSheetDragStart, handleSheetDragMove, handleSheetDragEnd } = useSheetDrag({
     toolsPanelRef,
@@ -873,23 +875,32 @@ export function PoemWorkshop() {
     );
   }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
 
-  // Center the tools resize bar on the (full-height) tools panel rather than on
-  // the shorter editor row. The panel top aligns with the gutter top, so the
-  // bar sits at half the panel's height.
+  // Center each resize handle's drag bar on its own sticky panel (rail /
+  // tools), not on the gutter's full scroll-height box. The bar itself is
+  // `position: sticky` (see CSS) so once given a top offset of "half the
+  // panel's height" it rides along with the panel as the page scrolls —
+  // including past the editor row, down into the AI Analysis section —
+  // instead of staying pinned to a fixed point in the document.
   useEffect(() => {
-    const panel = toolsPanelRef.current;
-    const gutter = toolsGutterRef.current;
-    if (!panel || !gutter) return;
     let raf = 0;
     const update = () => {
       raf = 0;
-      gutter.style.setProperty("--bar-center", `${Math.round(panel.offsetHeight / 2)}px`);
+      const toolsPanel = toolsPanelRef.current;
+      const toolsGutter = toolsGutterRef.current;
+      if (toolsPanel && toolsGutter) {
+        toolsGutter.style.setProperty("--bar-center", `${Math.round(toolsPanel.offsetHeight / 2)}px`);
+      }
+      const railPanel = railPanelRef.current;
+      const railGutter = railGutterRef.current;
+      if (railPanel && railGutter) {
+        railGutter.style.setProperty("--bar-center", `${Math.round(railPanel.offsetHeight / 2)}px`);
+      }
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
     update();
     window.addEventListener("resize", schedule);
     return () => { window.removeEventListener("resize", schedule); if (raf) cancelAnimationFrame(raf); };
-  }, [toolsExpanded, m.toolTab, toolsPanelWidth, toolsRailWidth, isReadingMode]);
+  }, [toolsExpanded, m.toolTab, toolsPanelWidth, toolsRailWidth, railWidth, isReadingMode]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -1876,7 +1887,7 @@ export function PoemWorkshop() {
           }
         }}
       >
-        <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
+        <nav ref={railPanelRef} className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           {/* Tablet-only tools drawer toggle */}
           <button
             type="button"
@@ -2422,6 +2433,7 @@ export function PoemWorkshop() {
         {/* Rail resize gutter */}
         {!isReadingMode && (
           <div
+            ref={railGutterRef}
             className="rail-resize-gutter"
             onPointerDown={handleRailResizeStart}
             onDoubleClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}

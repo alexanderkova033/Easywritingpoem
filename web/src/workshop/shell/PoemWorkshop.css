@@ -507,11 +507,13 @@
     align-items: center;
     justify-content: center;
     position: absolute;
-    /* Confine the gutter to row 1 of the grid so it doesn't extend down into
-       the AI Analysis section in row 2. For absolutely-positioned grid items,
-       an `auto` row-end resolves to the grid container's edge — so we must set
-       the end line explicitly to `2`, otherwise the gutter spans both rows. */
-    grid-row: 1 / 2;
+    /* Span BOTH grid rows (editor row + AI-analysis row below it) so the drag
+       strip — and the sticky panel it resizes — stay reachable no matter how
+       far down the page you've scrolled. For absolutely-positioned grid items
+       an `auto` row-end resolves to the grid container's edge, so the end
+       line is hard-coded to `3` (bottom of the 2 implicit rows) rather than
+       relying on `auto`/`-1`, which would resolve to line 1 instead. */
+    grid-row: 1 / 3;
     grid-column: 1 / -1;
     top: 0;
     bottom: 0;
@@ -526,20 +528,25 @@
   .tools-resize-gutter { right: calc(var(--tools-col, min(280px, 26vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
-  /* Handle bar — a rounded vertical bar centered in the gutter. Visible at
-     rest, grows and turns accent on hover. */
+  /* Handle bar — a rounded vertical bar centered on the panel it resizes.
+     The gutter itself spans the full scrollable height (both grid rows) so
+     it's always draggable, but the bar is `position: sticky` with a top
+     offset of half the panel's height (--bar-center, measured in JS from the
+     matching sticky panel) so it rides along with that panel as the page
+     scrolls, instead of staying pinned to one spot in the document. It opts
+     out of the gutter's `align-items: center` via `align-self: flex-start` so
+     its un-stuck flow position starts at the top of the gutter — mirroring
+     how the real panel starts at the top of its grid area before its own
+     `position: sticky` takes over. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
-    position: absolute;
-    /* Centered on the panel. The tools panel is taller than the editor row, so
-       its bar is nudged to the panel's mid-height via --bar-center (set in JS);
-       the rail falls back to the gutter centre. */
-    top: var(--bar-center, 50%);
-    left: 50%;
+    position: sticky;
+    align-self: flex-start;
+    top: var(--bar-center, 50vh);
     width: 4px;
     height: 2.4rem;
-    transform: translate(-50%, -50%);
+    transform: translateY(-50%);
     background: color-mix(in srgb, var(--muted) 50%, transparent);
     border-radius: 999px;
     transition: background 0.16s ease, height 0.18s ease, width 0.18s ease;
@@ -3774,7 +3781,7 @@
   /* First line position: aligns with content padding-top */
   top: 0.6rem;
   /* Left: content padding + gutter estimate so it aligns with poem text */
-  left: 2.85rem;
+  left: 3.6rem;
   right: 0.7rem;
   margin: 0;
   font-family: var(--font-poem), Georgia, serif;

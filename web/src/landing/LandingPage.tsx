@@ -14,10 +14,8 @@ const FLOATER_POOL = [
 
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
-  const previewRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
-  const [previewRevealed, setPreviewRevealed] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
   const [floaters, setFloaters] = useState<string[]>(() => FLOATER_POOL.slice(0, 6));
@@ -73,22 +71,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
     const observer = new IntersectionObserver(
       ([entry]) => setStickyVisible(!entry.isIntersecting),
       { threshold: 0 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const el = previewRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setPreviewRevealed(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -10% 0px" },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -169,7 +151,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             <span className="landing-headline-accent">to write poetry.</span>
           </h1>
           <p className="landing-sub">
-            Live rhyme, syllables, and meter as you type. AI when you're stuck.
+            Live rhyme, syllables, and meter as you type. AI to analyse.
           </p>
 
           {/* Live typing demo — mirrors actual editor layout */}
@@ -223,11 +205,9 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>
-              <span className="landing-cta-full">Try it free — no account needed →</span>
-              <span className="landing-cta-short">Try it free →</span>
+              Try it free →
             </button>
           </div>
-          <p className="landing-hero-reassurance">Free · Private · No sign-up</p>
 
           {/* Subtle daily prompt + streak strip — only shown if user has used the app before */}
           {(streak.count > 0 || dailyPrompt) && (
@@ -248,198 +228,8 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         </div>
       </section>
 
-      {/* Lower zone — visually distinct band: app preview + concepts + footer CTA */}
+      {/* Lower zone — visually distinct band: concepts + footer CTA */}
       <div className="landing-lower">
-      {/* App preview mockup */}
-      <section
-        className="landing-preview"
-        id="how-it-works"
-        aria-label="App preview"
-        ref={previewRef}
-        data-revealed={previewRevealed ? "true" : "false"}
-      >
-        <h2 className="landing-section-title">What it looks like</h2>
-        <div className="lp-shell" aria-hidden>
-          <span className="lp-shell-scanline" />
-          {/* Topbar */}
-          <div className="lp-topbar">
-            <div className="lp-topbar-left">
-              <span className="lp-brand">
-                <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden>
-                  <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="currentColor" />
-                </svg>
-                easywriting<span className="lp-brand-badge">poem</span>
-              </span>
-              <span className="lp-draft-pill">
-                <span className="lp-draft-tag">DRAFT</span>
-                <span className="lp-draft-name">The Candle</span>
-                <span className="lp-draft-caret">▾</span>
-                <span className="lp-draft-plus">+</span>
-              </span>
-            </div>
-            <div className="lp-topbar-right">
-              <span className="lp-stat">42 words · 6 lines</span>
-              <span className="lp-topbar-icons">
-                <span className="lp-tbi">≡</span>
-                <span className="lp-tbi">◐</span>
-                <span className="lp-tbi">⌕</span>
-                <span className="lp-tbi">⋯</span>
-              </span>
-            </div>
-          </div>
-          {/* 3-column grid */}
-          <div className="lp-grid">
-            {/* Rail — icon-only square buttons */}
-            <div className="lp-rail">
-              {[
-                { glyph: "❏", title: "Library" },
-                { glyph: "Aa", title: "Style" },
-                { glyph: "▧", title: "Background" },
-                { glyph: "↑", title: "Export" },
-                { glyph: "⛶", title: "Focus" },
-                { glyph: "?", title: "Guide" },
-              ].map((b) => (
-                <div
-                  key={b.title}
-                  className="lp-rail-btn"
-                  title={b.title}
-                >
-                  <span className="lp-rail-glyph">{b.glyph}</span>
-                </div>
-              ))}
-            </div>
-            {/* Editor */}
-            <div className="lp-editor">
-              {/* Title + Main idea fields side-by-side */}
-              <div className="lp-fields">
-                <div className="lp-field">
-                  <span className="lp-field-label">Title</span>
-                  <div className="lp-field-input">The Candle</div>
-                </div>
-                <div className="lp-field">
-                  <span className="lp-field-label">Main idea <span className="lp-field-opt">(optional)</span></span>
-                  <div className="lp-field-input lp-field-input-placeholder">e.g. the feeling of leaving home for the first time</div>
-                </div>
-              </div>
-              {/* Poem header row with format toolbar */}
-              <div className="lp-poem-header">
-                <span className="lp-poem-label">Poem</span>
-                <span className="lp-format-toolbar">
-                  <span className="lp-fmt-btn lp-fmt-bold">B</span>
-                  <span className="lp-fmt-btn lp-fmt-under">U</span>
-                  <span className="lp-fmt-sep" />
-                  <span className="lp-fmt-text">Size</span>
-                  <span className="lp-fmt-select">Med ▾</span>
-                  <span className="lp-fmt-sep" />
-                  <span className="lp-fmt-btn lp-fmt-mono">'syl</span>
-                  <span className="lp-fmt-btn lp-fmt-mono">AB</span>
-                  <span className="lp-fmt-btn lp-fmt-mono">A·A</span>
-                  <span className="lp-fmt-sep" />
-                  <span className="lp-fmt-btn">¶</span>
-                  <span className="lp-fmt-btn lp-fmt-focus">◉</span>
-                </span>
-              </div>
-              {/* Line-numbered poem body */}
-              <div className="lp-poem-body">
-                {[
-                  { text: "The candle burns in winter's grip,", badge: "A", syl: 8 },
-                  { text: "and shadows stretch across the floor.", badge: "B", syl: 8 },
-                  { text: "A moth has pressed its paper wing", badge: "A", syl: 8 },
-                  { text: "against the cold and frosted door.", badge: "B", syl: 8 },
-                  { text: "", badge: null, syl: null },
-                  { text: "The candle knows it cannot last —", badge: "C", syl: 8 },
-                  { text: "its wax grows thin, its circle bright.", badge: "D", syl: 8 },
-                ].map((row, i) => (
-                  <div key={i} className="lp-poem-row">
-                    <span className="lp-line-num">{i + 1}</span>
-                    <span className="lp-rhyme-gutter">
-                      {row.badge && <span className={`lp-rhyme-badge lp-rhyme-${row.badge.toLowerCase()}`}>{row.badge}</span>}
-                    </span>
-                    <span className="lp-poem-text">{row.text || " "}</span>
-                    {row.syl != null && (
-                      <span className="lp-syl-wrap">
-                        <span className="lp-syl-bar" style={{ width: `${(row.syl / 10) * 28}px` }} />
-                        <span className="lp-syl">{row.syl}</span>
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            {/* Tools panel */}
-            <div className="lp-tools">
-              <div className="lp-tools-header">
-                <span className="lp-tools-title">Tools</span>
-                <span className="lp-analyse-btn">✦ Analyse</span>
-              </div>
-              <div className="lp-tools-tabs">
-                {[
-                  { glyph: "⊙", label: "Queue", active: true },
-                  { glyph: "✓", label: "Spell" },
-                  { glyph: "≡", label: "Lines" },
-                  { glyph: "♩", label: "Meter" },
-                  { glyph: "AB", label: "Rhyme" },
-                  { glyph: "∿", label: "Echoes" },
-                  { glyph: "↺", label: "Repeats" },
-                  { glyph: "◎", label: "Goals" },
-                  { glyph: "◰", label: "Snaps" },
-                  { glyph: "✦", label: "Ideas" },
-                  { glyph: "★", label: "Starred" },
-                ].map((t) => (
-                  <span key={t.label} className={`lp-ttab${t.active ? " lp-ttab-active" : ""}`}>
-                    <span className="lp-ttab-glyph">{t.glyph}</span>
-                    <span className="lp-ttab-label">{t.label}</span>
-                  </span>
-                ))}
-              </div>
-              <div className="lp-tools-inner">
-                <div className="lp-rqueue">
-                  <div className="lp-rqueue-title"><span className="lp-rqueue-dot" />Revision queue</div>
-                  <div className="lp-rqueue-group">
-                    <span className="lp-rqueue-soon">● Soon <span className="lp-rqueue-count">2</span></span>
-                  </div>
-                  {[
-                    { tag: "CHECKLIST", title: "At least one non-empty line", body: "Add your poem before publishing.", action: "Lines" },
-                    { tag: "CHECKLIST", title: "Title set", body: "Optional for some venues; still useful when sharing.", action: "Add title" },
-                  ].map((c, i) => (
-                    <div key={i} className="lp-rcard">
-                      <span className="lp-rcard-tag">{c.tag}</span>
-                      <div className="lp-rcard-body">
-                        <span className="lp-rcard-title">{c.title}</span>
-                        <span className="lp-rcard-desc">{c.body}</span>
-                      </div>
-                      <span className="lp-rcard-action">{c.action}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="lp-tools-footer">
-                <span className="lp-kbd">?</span>shortcuts <span className="lp-kbd lp-kbd-w">⌘K</span>commands
-              </div>
-            </div>
-          </div>
-          {/* Bottom AI Analysis panel */}
-          <div className="lp-ai">
-            <div className="lp-ai-header">
-              <span className="lp-ai-title">✦ AI Analysis</span>
-              <span className="lp-ai-caret">▴</span>
-            </div>
-            <div className="lp-ai-controls">
-              <span className="lp-ai-toggle"><span className="lp-ai-toggle-thumb">100</span>Score</span>
-              <span className="lp-ai-select">Fast ▾</span>
-              <span className="lp-ai-chip">♡ Gentle</span>
-              <span className="lp-ai-chip lp-ai-chip-active">✦ Honest</span>
-              <span className="lp-ai-chip">⚡ Critic</span>
-              <span className="lp-ai-read">✦ Read poem</span>
-            </div>
-            <div className="lp-ai-desc">
-              Reads your poem and returns a warm reaction, strengths, weaknesses, the strongest line, and line-level suggestions.
-            </div>
-          </div>
-        </div>
-        <p className="landing-preview-caption">Your poem · your browser · nothing sent to a server</p>
-      </section>
-
       {/* What we analyze */}
       <section className="landing-concepts">
         <h2 className="landing-section-title">What easywriting-poem analyzes</h2>
