@@ -1215,31 +1215,6 @@
   font-family: var(--font-metric, monospace);
 }
 
-.lp-save {
-  margin-left: auto;
-  color: var(--accent);
-  font-size: 0.7rem;
-  font-weight: 600;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.lp-save-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 80%, transparent);
-  animation: lp-save-blink 2.6s ease-in-out infinite;
-}
-
-@keyframes lp-save-blink {
-  0%, 100% { opacity: 1; }
-  60%      { opacity: 0.35; }
-}
-
 /* 3-column grid — wider rail to fit real labels */
 .lp-grid {
   display: grid;
@@ -2588,33 +2563,10 @@
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
-.lp-tools-sections {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.5rem 0.7rem 0.3rem;
-}
-
-.lp-tsection {
-  font-family: var(--font-metric, ui-monospace, monospace);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  padding: 0.18rem 0.35rem;
-  border-radius: 4px;
-  background: transparent;
-}
-
-.lp-tsection-active {
-  color: var(--text);
-  background: color-mix(in srgb, var(--surface) 60%, var(--bg));
-  box-shadow: inset 0 -2px 0 var(--accent);
-}
-
 /* Sub-tabs — icon + label grid */
 .lp-tools-tabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.25rem;
   padding: 0.25rem 0.5rem 0.6rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);

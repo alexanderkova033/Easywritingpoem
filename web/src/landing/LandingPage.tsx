@@ -279,7 +279,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             </div>
             <div className="lp-topbar-right">
               <span className="lp-stat">42 words · 6 lines</span>
-              <span className="lp-save"><span className="lp-save-dot" />Saved</span>
               <span className="lp-topbar-icons">
                 <span className="lp-tbi">≡</span>
                 <span className="lp-tbi">◐</span>
@@ -293,15 +292,16 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             {/* Rail — icon-only square buttons */}
             <div className="lp-rail">
               {[
-                { glyph: "Aa", title: "Style" },
                 { glyph: "❏", title: "Library" },
+                { glyph: "Aa", title: "Style" },
+                { glyph: "▧", title: "Background" },
                 { glyph: "↑", title: "Export" },
                 { glyph: "⛶", title: "Focus" },
-                { glyph: "?", title: "Guide", active: true },
+                { glyph: "?", title: "Guide" },
               ].map((b) => (
                 <div
                   key={b.title}
-                  className={`lp-rail-btn${b.active ? " lp-rail-btn-active" : ""}`}
+                  className="lp-rail-btn"
                   title={b.title}
                 >
                   <span className="lp-rail-glyph">{b.glyph}</span>
@@ -370,20 +370,21 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             <div className="lp-tools">
               <div className="lp-tools-header">
                 <span className="lp-tools-title">Tools</span>
-                <span className="lp-analyse-btn">+ Analyse</span>
-              </div>
-              <div className="lp-tools-sections">
-                <span className="lp-tsection lp-tsection-active">OVERVIEW</span>
-                <span className="lp-tsection">SOUND</span>
-                <span className="lp-tsection">SUGGEST</span>
+                <span className="lp-analyse-btn">✦ Analyse</span>
               </div>
               <div className="lp-tools-tabs">
                 {[
                   { glyph: "⊙", label: "Queue", active: true },
-                  { glyph: "M", label: "Spell" },
+                  { glyph: "✓", label: "Spell" },
                   { glyph: "≡", label: "Lines" },
+                  { glyph: "♩", label: "Meter" },
+                  { glyph: "AB", label: "Rhyme" },
+                  { glyph: "∿", label: "Echoes" },
+                  { glyph: "↺", label: "Repeats" },
                   { glyph: "◎", label: "Goals" },
                   { glyph: "◰", label: "Snaps" },
+                  { glyph: "✦", label: "Ideas" },
+                  { glyph: "★", label: "Starred" },
                 ].map((t) => (
                   <span key={t.label} className={`lp-ttab${t.active ? " lp-ttab-active" : ""}`}>
                     <span className="lp-ttab-glyph">{t.glyph}</span>
@@ -429,7 +430,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
               <span className="lp-ai-chip">♡ Gentle</span>
               <span className="lp-ai-chip lp-ai-chip-active">✦ Honest</span>
               <span className="lp-ai-chip">⚡ Critic</span>
-              <span className="lp-ai-read">+ Read poem</span>
+              <span className="lp-ai-read">✦ Read poem</span>
             </div>
             <div className="lp-ai-desc">
               Reads your poem and returns a warm reaction, strengths, weaknesses, the strongest line, and line-level suggestions.
