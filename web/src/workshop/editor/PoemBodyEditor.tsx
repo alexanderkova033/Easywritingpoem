@@ -1,4 +1,4 @@
-import { EditorView, ViewPlugin, WidgetType, keymap, placeholder, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewPlugin, WidgetType, keymap, gutter, GutterMarker, type ViewUpdate } from "@codemirror/view";
 import { StateEffect, StateField, EditorState, Transaction, RangeSet, RangeSetBuilder, type Range } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { lineFocusExtension, setLineFocusMode, type LineFocusMode } from "@/workshop/editor/line-focus-extension";
@@ -1228,12 +1228,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       applyRewriteKeymap,
       ...lineFocusExtension,
       ...typewriterExtension,
-      placeholder("Start writing…"),
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,
       formatMarksExtension,
       formatMarksTheme,
-      ...basicSetup(),
+      ...basicSetup({ searchKeymap: false }),
       poemEditorTheme,
     ],
     [props.spellBump, showSyllables],
@@ -1258,6 +1257,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         value={localValue}
         height="100%"
         theme="none"
+        basicSetup={false}
         extensions={extensions}
         onChange={(v) => {
           // Don't setLocalValue here: localValue is only used to feed

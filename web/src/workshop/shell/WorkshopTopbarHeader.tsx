@@ -1,6 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
-import { SavedAgo } from "./components/SavedAgo";
 import { SessionTimer } from "./components/SessionTimer";
 import type { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 
@@ -243,13 +242,6 @@ export function WorkshopTopbarHeader(props: Props) {
         </div>
 
         <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save" data-tour-id="topbar-actions">
-          <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
-            <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
-            <span className="topbar-saved-label">
-              {m.savedFlash ? "Saved" : m.lastSavedAt ? <SavedAgo ts={m.lastSavedAt} /> : null}
-            </span>
-          </span>
-
           {!isFocusMode ? (
             <>
               {/* Stats popover */}

@@ -251,10 +251,6 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
           />
           Regex
         </label>
-        <span className="muted small findbar-hint">
-          Tip: <span className="mono">⌘/Ctrl+F</span> find,{" "}
-          <span className="mono">⌘/Ctrl+H</span> replace.
-        </span>
       </div>
     </div>
   );

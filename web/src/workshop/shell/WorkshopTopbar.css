@@ -333,16 +333,6 @@
   height: 1.1rem;
 }
 
-.topbar-saved-quiet {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-
-.topbar-saved-label {
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 .tools-head-row-simple {
   padding-bottom: 0.15rem;
 }
@@ -756,9 +746,6 @@
   .topbar-mobile-title:active {
     background: color-mix(in srgb, var(--border) 55%, transparent);
   }
-
-  /* Hide save status — screen space is precious; auto-save is silent */
-  .topbar-saved { display: none !important; }
 
   /* Hide draft selector from topbar — accessible via Library tab in bottom bar */
   .topbar-draft-inline { display: none; }
@@ -1219,44 +1206,6 @@
 
 .topbar-word-goal-menu {
   font-size: 0.8rem;
-}
-
-.topbar-saved {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.86rem;
-  color: var(--muted);
-  user-select: none;
-}
-
-@keyframes save-pulse {
-  0%   { transform: scale(1);   opacity: 1; }
-  40%  { transform: scale(1.7); opacity: 1; }
-  100% { transform: scale(1);   opacity: 0.7; }
-}
-
-.save-dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--muted) 40%, transparent);
-  flex-shrink: 0;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.save-dot.is-on {
-  background: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
-  animation: save-pulse 0.55s ease-out forwards;
-}
-
-.topbar-saved-label {
-  transition: color 0.3s ease;
-}
-
-.topbar-saved:has(.save-dot.is-on) .topbar-saved-label {
-  color: var(--accent);
 }
 
 /* ---- Snapshot saved flash ---- */
