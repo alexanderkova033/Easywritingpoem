@@ -261,15 +261,24 @@ export function WorkshopTopbarHeader(props: Props) {
                 </button>
                 {isStatsOpen && (
                   <div className="topbar-stats-popover" role="status" aria-label="Poem statistics">
+                    <div className="tsp-header">
+                      <svg className="tsp-header-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                        <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M18 20V10M12 20V4M6 20v-6" />
+                      </svg>
+                      <span className="tsp-heading">Poem stats</span>
+                    </div>
+                    <div className="tsp-hero">
+                      <div className="tsp-hero-stat">
+                        <span className="tsp-hero-num">{m.docStats.totalWords}</span>
+                        <span className="tsp-hero-label">Words</span>
+                      </div>
+                      <span className="tsp-hero-divider" aria-hidden />
+                      <div className="tsp-hero-stat">
+                        <span className="tsp-hero-num">{m.docStats.nonEmptyLines}</span>
+                        <span className="tsp-hero-label">Lines</span>
+                      </div>
+                    </div>
                     <div className="tsp-grid">
-                      <div className="tsp-row">
-                        <span className="tsp-label">Words</span>
-                        <span className="tsp-val">{m.docStats.totalWords}</span>
-                      </div>
-                      <div className="tsp-row">
-                        <span className="tsp-label">Lines</span>
-                        <span className="tsp-val">{m.docStats.nonEmptyLines}</span>
-                      </div>
                       <div className="tsp-row">
                         <span className="tsp-label">Characters</span>
                         <span className="tsp-val">{m.docStats.totalChars}</span>

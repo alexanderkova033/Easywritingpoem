@@ -1059,18 +1059,79 @@
   top: calc(100% + 7px);
   right: 0;
   z-index: 200;
-  min-width: 180px;
+  min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 8px 28px color-mix(in srgb, #000 20%, transparent);
-  padding: 0.55rem 0.75rem 0.6rem;
+  padding: 0.6rem 0.75rem 0.65rem;
   animation: tsp-appear 0.14s ease both;
 }
 
 @keyframes tsp-appear {
   from { opacity: 0; transform: translateY(-4px) scale(0.97); }
   to   { opacity: 1; transform: none; }
+}
+
+.tsp-header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.tsp-header-icon {
+  width: 13px;
+  height: 13px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.tsp-heading {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tsp-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  padding: 0.15rem 0 0.65rem;
+  margin-bottom: 0.45rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.tsp-hero-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.tsp-hero-num {
+  font-size: 1.5rem;
+  font-weight: 750;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.tsp-hero-label {
+  font-size: 0.66rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tsp-hero-divider {
+  align-self: stretch;
+  width: 1px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
 }
 
 .tsp-grid {
