@@ -531,26 +531,30 @@
   /* Handle bar — a rounded vertical bar centered on the (sticky) panel it
      resizes. The gutter spans the full scrollable height (both grid rows) so
      it's always draggable, but the bar tracks the panel via `position:
-     sticky` with the SAME `top: 1.15rem` offset the real panel uses (see
-     .tools-panel / .workshop-rail) — since both sit in the same grid area
-     with the same flow start, they engage/disengage their sticky "stuck"
-     state at the same scroll position, so the bar rides in lockstep with the
-     panel for free (no scroll listener, no forced layout reads — sticky is
-     compositor-only). `align-self: flex-start` opts out of the gutter's
-     `align-items: center` so the bar's un-stuck flow position is the top of
-     the gutter, matching the panel's own start. --bar-center (half the
-     panel's height, set in JS — only recomputed on layout changes, never on
-     scroll) then shifts the bar down from that shared top-offset to the
-     panel's actual vertical center. */
+     sticky` with the EXACT SAME `top: 1.15rem` offset the real panel uses
+     (see .tools-panel / .workshop-rail) — since both sit in the same grid
+     area with the same flow start, this makes them engage/disengage their
+     sticky "stuck" state at the identical scroll position, so the bar rides
+     in lockstep with the panel for free (no scroll listener, no forced
+     layout reads — sticky is compositor-only). `align-self: flex-start` opts
+     out of the gutter's `align-items: center` so the bar's un-stuck flow
+     position is the top of the gutter, matching the panel's own start.
+     Critically, the half-panel-height shift down to the panel's center
+     (--bar-center, set in JS from layout changes only, never scroll) lives
+     in `transform`, NOT `top` — a transform is a paint-time offset applied
+     after sticky's position is resolved, so it can't change *when* the bar
+     sticks/unsticks. Baking it into `top` instead (an earlier attempt) made
+     the bar's own trigger threshold diverge from the panel's, so the two
+     fell out of sync right at the top of the page. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
     position: sticky;
     align-self: flex-start;
-    top: calc(1.15rem + var(--bar-center, 50vh));
+    top: 1.15rem;
     width: 4px;
     height: 2.4rem;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% + var(--bar-center, 50vh)));
     background: color-mix(in srgb, var(--muted) 50%, transparent);
     border-radius: 999px;
     transition: background 0.16s ease, height 0.18s ease, width 0.18s ease;

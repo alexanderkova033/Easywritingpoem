@@ -15,7 +15,6 @@ const FLOATER_POOL = [
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const cursorGlowRef = useRef<HTMLDivElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
@@ -69,44 +68,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
     };
   }, []);
 
-  // Cursor-follow glow — writes translate3d on the glow element directly
-  // (bypassing React state) so it can update every animation frame without
-  // re-rendering. Eased toward the pointer position for a soft trailing feel.
-  useEffect(() => {
-    const glow = cursorGlowRef.current;
-    if (!glow) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-    const half = 210;
-    let targetX = window.innerWidth / 2;
-    let targetY = window.innerHeight / 2;
-    let curX = targetX;
-    let curY = targetY;
-    let raf = 0;
-    const onMove = (e: PointerEvent) => {
-      targetX = e.clientX;
-      targetY = e.clientY;
-      glow.style.opacity = "1";
-    };
-    const onLeave = () => {
-      glow.style.opacity = "0";
-    };
-    const loop = () => {
-      curX += (targetX - curX) * 0.14;
-      curY += (targetY - curY) * 0.14;
-      glow.style.transform = `translate3d(${curX - half}px, ${curY - half}px, 0)`;
-      raf = requestAnimationFrame(loop);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.addEventListener("pointerleave", onLeave);
-    raf = requestAnimationFrame(loop);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerleave", onLeave);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
@@ -127,10 +88,6 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         <span className="landing-bg-aurora landing-bg-aurora-2" />
         <span className="landing-bg-aurora landing-bg-aurora-3" />
         <span className="landing-bg-floor" />
-      </div>
-      {/* Soft glow that trails the mouse cursor across the whole page */}
-      <div className="landing-cursor-glow" ref={cursorGlowRef} aria-hidden>
-        <div className="landing-cursor-glow-inner" />
       </div>
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
