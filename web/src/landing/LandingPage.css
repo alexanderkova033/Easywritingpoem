@@ -53,6 +53,13 @@
 }
 
 .landing-root {
+  /* #root has top/bottom padding meant for the workshop app; the landing
+     page escapes it here so its background/texture reach the true page
+     edges instead of leaving a flat untextured strip below everything.
+     No compensating padding added back — the hero/footer sections already
+     have their own padding, so content position is unaffected. */
+  margin-top: -1.1rem;
+  margin-bottom: -2.5rem;
   min-height: 100svh;
   display: flex;
   flex-direction: column;

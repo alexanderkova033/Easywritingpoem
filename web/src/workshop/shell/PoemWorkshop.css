@@ -3788,8 +3788,10 @@
   position: absolute;
   /* First line position: aligns with content padding-top */
   top: 0.6rem;
-  /* Left: content padding + gutter estimate so it aligns with poem text */
-  left: 3.6rem;
+  /* Left: content padding + gutter estimate so it aligns with poem text.
+   * Nudged slightly past the caret's x-position so the blinking cursor
+   * doesn't sit directly on top of the first character. */
+  left: 3.85rem;
   right: 0.7rem;
   margin: 0;
   font-family: var(--font-poem), Georgia, serif;
@@ -3828,22 +3830,6 @@
   );
   pointer-events: none;
   transition: top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.poem-end-of-text-line.is-shifting {
-  animation: eotl-fade-through 0.22s ease-in-out;
-}
-
-@keyframes eotl-fade-through {
-  0% {
-    opacity: 1;
-  }
-  45% {
-    opacity: 0.45;
-  }
-  100% {
-    opacity: 1;
-  }
 }
 
 .field-hint {
@@ -3957,7 +3943,7 @@
 .editor-panel,
 .results,
 .privacy {
-  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   border-radius: var(--radius-lg);
   padding: 1.35rem 1.35rem 1.4rem;

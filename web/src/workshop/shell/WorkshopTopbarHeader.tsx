@@ -228,9 +228,6 @@ export function WorkshopTopbarHeader(props: Props) {
             >
               {m.quickDocStats.nonEmptyLines} lines
             </span>
-            {!isFocusMode && m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
-              <span className="topbar-context-hint"> ({m.quickDocStats.totalLines} incl. blanks)</span>
-            ) : null}
             {showRhymeScheme && m.rhymeScheme.some((l) => l) && (
               <span
                 className="topbar-rhyme-dot"
@@ -279,6 +276,10 @@ export function WorkshopTopbarHeader(props: Props) {
                       </div>
                     </div>
                     <div className="tsp-grid">
+                      <div className="tsp-row">
+                        <span className="tsp-label">Total lines (incl. blanks)</span>
+                        <span className="tsp-val">{m.docStats.totalLines}</span>
+                      </div>
                       <div className="tsp-row">
                         <span className="tsp-label">Characters</span>
                         <span className="tsp-val">{m.docStats.totalChars}</span>
