@@ -3839,7 +3839,23 @@
     color-mix(in srgb, var(--border) 3%, transparent) 100%
   );
   pointer-events: none;
-  transition: top 0.08s ease-out;
+  transition: top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.poem-end-of-text-line.is-shifting {
+  animation: eotl-fade-through 0.22s ease-in-out;
+}
+
+@keyframes eotl-fade-through {
+  0% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .field-hint {
