@@ -1,4 +1,4 @@
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import {
   SearchQuery,
   findNext,
@@ -29,28 +29,39 @@ function countMatches(view: EditorView, query: SearchQuery): number {
   }
 }
 
+// Scrolls to the nearest match without moving the actual selection, so live
+// typing doesn't trigger the editor's selection-based popovers.
+function revealNearestMatch(view: EditorView, query: SearchQuery) {
+  try {
+    if (!query.valid) return;
+    const from = view.state.selection.main.to;
+    let cursor = query.getCursor(view.state.doc, from);
+    let next = cursor.next();
+    if (next.done) {
+      cursor = query.getCursor(view.state.doc);
+      next = cursor.next();
+    }
+    if (!next.done) {
+      view.dispatch({ effects: EditorView.scrollIntoView(next.value.from, { y: "center" }) });
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function FindReplaceBar(props: FindReplaceBarProps) {
   const hint = useHoverHintBinder();
   const { editorView, open, mode, onClose } = props;
   const [find, setFind] = useState("");
   const [replace, setReplace] = useState("");
-  const [caseSensitive, setCaseSensitive] = useState(false);
-  const [wholeWord, setWholeWord] = useState(false);
-  const [regexp, setRegexp] = useState(false);
   const [matchCount, setMatchCount] = useState<number | null>(null);
   const [wrapMsg, setWrapMsg] = useState<"start" | "end" | null>(null);
   const wrapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const findRef = useRef<HTMLInputElement | null>(null);
 
   const query = useMemo(() => {
-    return new SearchQuery({
-      search: find,
-      replace,
-      caseSensitive,
-      wholeWord,
-      regexp,
-    });
-  }, [caseSensitive, find, regexp, replace, wholeWord]);
+    return new SearchQuery({ search: find, replace });
+  }, [find, replace]);
 
   useEffect(() => {
     if (!open) return;
@@ -58,10 +69,12 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
     editorView.dispatch({ effects: setSearchQuery.of(query) });
     if (find.trim()) {
       setMatchCount(countMatches(editorView, query));
+      revealNearestMatch(editorView, query);
     } else {
       setMatchCount(null);
     }
-  }, [editorView, open, query, find]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editorView, open, query]);
 
   useEffect(() => {
     if (!open) return;
@@ -121,20 +134,10 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
   useEffect(() => {
     if (open) return;
     if (!editorView) return;
-    editorView.dispatch({
-      effects: setSearchQuery.of(
-        new SearchQuery({
-          search: "",
-          replace: "",
-          caseSensitive,
-          wholeWord,
-          regexp,
-        }),
-      ),
-    });
+    editorView.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: "", replace: "" })) });
     setMatchCount(null);
     setWrapMsg(null);
-  }, [caseSensitive, editorView, open, regexp, wholeWord]);
+  }, [editorView, open]);
 
   useEffect(() => {
     return () => {
@@ -156,6 +159,7 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
             placeholder="Text…"
             autoComplete="off"
             spellCheck={false}
+            {...hint("Enter for next match, Shift+Enter for previous")}
           />
         </label>
         {mode === "replace" ? (
@@ -171,24 +175,6 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
           </label>
         ) : null}
         <div className="findbar-actions">
-          <button
-            type="button"
-            className="small-btn"
-            onClick={handleFindPrev}
-            disabled={!editorView || !find.trim()}
-            {...hint("Previous match (Shift+Enter)")}
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            className="small-btn small-btn-primary"
-            onClick={handleFindNext}
-            disabled={!editorView || !find.trim()}
-            {...hint("Next match (Enter)")}
-          >
-            Next
-          </button>
           {mode === "replace" ? (
             <>
               <button
@@ -225,32 +211,6 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
             {wrapMsg === "start" ? "↩ Wrapped to top" : "↩ Wrapped to bottom"}
           </span>
         ) : null}
-      </div>
-      <div className="findbar-row findbar-toggles" aria-label="Find options">
-        <label className="findbar-toggle">
-          <input
-            type="checkbox"
-            checked={caseSensitive}
-            onChange={(e) => setCaseSensitive(e.target.checked)}
-          />
-          Case
-        </label>
-        <label className="findbar-toggle">
-          <input
-            type="checkbox"
-            checked={wholeWord}
-            onChange={(e) => setWholeWord(e.target.checked)}
-          />
-          Word
-        </label>
-        <label className="findbar-toggle">
-          <input
-            type="checkbox"
-            checked={regexp}
-            onChange={(e) => setRegexp(e.target.checked)}
-          />
-          Regex
-        </label>
       </div>
     </div>
   );

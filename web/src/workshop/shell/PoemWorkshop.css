@@ -1054,6 +1054,13 @@
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--border) 90%, var(--accent));
   background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  animation: findbar-in 0.16s ease;
+  transform-origin: top;
+}
+
+@keyframes findbar-in {
+  from { opacity: 0; transform: translateY(-4px) scaleY(0.96); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
 }
 
 .findbar-row {
@@ -1095,28 +1102,6 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   align-items: center;
-}
-
-.findbar-toggles {
-  margin-top: 0.55rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem 0.65rem;
-}
-
-.findbar-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.86rem;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-
-.findbar-toggle input {
-  accent-color: var(--accent);
 }
 
 .findbar-count {
@@ -3789,7 +3774,7 @@
   /* First line position: aligns with content padding-top */
   top: 0.6rem;
   /* Left: content padding + gutter estimate so it aligns with poem text */
-  left: 3.4rem;
+  left: 2.85rem;
   right: 0.7rem;
   margin: 0;
   font-family: var(--font-poem), Georgia, serif;
@@ -4348,8 +4333,8 @@
 #poem-main-idea {
   font-family: var(--font-poem);
   font-size: 1.02rem;
-  font-weight: 500;
-  color: var(--text);
+  font-weight: 450;
+  color: color-mix(in srgb, var(--text) 90%, transparent);
 }
 
 .body-label-row {
