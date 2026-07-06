@@ -2723,7 +2723,66 @@ export function PoemWorkshop() {
             </p>
           </div>
           </details>
-          <FeedbackWidget />
+          <div className="privacy-actions">
+            <button
+              type="button"
+              className="topbar-ghost-btn"
+              onClick={() => setIsGuideOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isGuideOpen}
+              aria-label="Open guide"
+              {...hint("Guide — how to use easywriting-poem")}
+            >
+              <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.75" />
+                <path d="M12 17v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M12 13.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5v1" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="topbar-ghost-btn"
+              onClick={() => setIsStyleOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isStyleOpen}
+              aria-label="Open style"
+              {...hint("Style — fonts and typography")}
+            >
+              <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M4 19l5-13 5 13M6 14h6" />
+                <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="topbar-ghost-btn"
+              onClick={() => setIsLibraryOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isLibraryOpen}
+              aria-label="Open library"
+              {...hint("Library — manage drafts")}
+            >
+              <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                <path
+                  d="M5 19V6.5A2.5 2.5 0 0 1 7.5 4H20v14.5A1.5 1.5 0 0 1 18.5 20H7.5A2.5 2.5 0 0 1 5 17.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M8 7h9M8 10h9M8 13h6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <FeedbackWidget />
+          </div>
         </div>
       </footer>
     </div>

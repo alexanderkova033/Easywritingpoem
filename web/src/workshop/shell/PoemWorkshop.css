@@ -3943,13 +3943,17 @@
 .editor-panel,
 .results,
 .privacy {
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
   border-radius: var(--radius-lg);
   padding: 1.35rem 1.35rem 1.4rem;
   box-shadow: 0 2px 14px color-mix(in srgb, #000 6%, transparent);
   backdrop-filter: saturate(1.02) blur(8px);
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
+}
+
+.privacy {
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
 }
 
 /* Editor outer frame: strong frame wraps whole panel (title + editor) */
@@ -3966,9 +3970,16 @@
 
 .privacy-top-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.privacy-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
