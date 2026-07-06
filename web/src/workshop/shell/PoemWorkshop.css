@@ -528,25 +528,27 @@
   .tools-resize-gutter { right: calc(var(--tools-col, min(280px, 26vw)) - 8px); }
   .rail-resize-gutter  { left:  calc(var(--rail-col, 64px) - 8px); }
 
-  /* Handle bar — a rounded vertical bar centered on the panel it resizes.
-     The gutter itself spans the full scrollable height (both grid rows) so
-     it's always draggable, but the bar is `position: sticky` with a top
-     offset of half the panel's height (--bar-center, measured in JS from the
-     matching sticky panel) so it rides along with that panel as the page
-     scrolls, instead of staying pinned to one spot in the document. It opts
-     out of the gutter's `align-items: center` via `align-self: flex-start` so
-     its un-stuck flow position starts at the top of the gutter — mirroring
-     how the real panel starts at the top of its grid area before its own
-     `position: sticky` takes over. */
+  /* Handle bar — a rounded vertical bar centered on the (sticky) panel it
+     resizes. The gutter spans the full scrollable height (both grid rows) so
+     it's always draggable, but the bar itself is pinned via --bar-center — a
+     plain document-relative pixel offset recomputed on scroll/resize (see the
+     effect in PoemWorkshop.tsx) so it always lands on the panel's current
+     on-screen center, whether the panel is sitting at its natural position,
+     mid-scroll and stuck, or scrolled away. `position: sticky` was tried here
+     but its "stick once scrolled past the offset" trigger only activates once
+     the natural flow position exceeds the offset — for a short panel (the
+     rail) that's not reliably true at scroll 0, so the bar sat at the top of
+     the gutter instead of centered until you scrolled a bit. Computing the
+     offset directly in JS sidesteps that threshold entirely. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
-    position: sticky;
-    align-self: flex-start;
-    top: var(--bar-center, 50vh);
+    position: absolute;
+    top: var(--bar-center, 50%);
+    left: 50%;
     width: 4px;
     height: 2.4rem;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     background: color-mix(in srgb, var(--muted) 50%, transparent);
     border-radius: 999px;
     transition: background 0.16s ease, height 0.18s ease, width 0.18s ease;

@@ -1282,6 +1282,14 @@
   gap: 0.4rem;
   box-shadow: 0 2px 8px color-mix(in srgb, #000 5%, transparent),
               0 1px 2px color-mix(in srgb, #000 4%, transparent);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.landing-concept:hover {
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  box-shadow: 0 10px 22px color-mix(in srgb, #000 12%, transparent),
+              0 3px 8px color-mix(in srgb, #000 8%, transparent);
 }
 
 .landing-concept-icon {
@@ -1315,6 +1323,29 @@
   padding: 3rem 1.5rem 5rem;
   border-top: 1px solid var(--border);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Small cross marks scattered through the otherwise-empty space below the CTA —
+   fades out toward the edges instead of a hard-edged rectangle of texture. */
+.landing-footer-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 11v14M11 18h14' stroke='white' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-size: 36px 36px;
+  opacity: 0.12;
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 65%, #000 35%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 65% at 50% 65%, #000 35%, transparent 85%);
+  z-index: 0;
+}
+
+.landing-footer-tagline,
+.landing-footer-cta > .landing-btn {
+  position: relative;
+  z-index: 1;
 }
 
 .landing-footer-tagline {
