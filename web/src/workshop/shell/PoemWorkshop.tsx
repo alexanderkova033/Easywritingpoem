@@ -74,7 +74,7 @@ import {
   type ToolTab,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
-import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, DEFAULT_TOOLS_RAIL_W, LABELLED_TOOLS_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
+import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
@@ -152,24 +152,8 @@ export function PoemWorkshop() {
   // null when collapsed — editor overlays key off it so a collapsed panel shows
   // no rhyme/meter/repeat decorations.
   const [toolsExpanded, setToolsExpanded] = useState(false);
-  // Whether the collapsed icon rail shows a text label under each icon. On by
-  // default (clear for new users); toggled from the top of the panel and
-  // persisted. When off, the rail matches the left rail exactly — icon-only,
-  // with the label revealed on hover.
-  const [railLabels, setRailLabels] = useState(() => {
-    try { return localStorage.getItem("easy-poems:tools-rail-labels") !== "0"; } catch { return true; }
-  });
-  const toggleRailLabels = () => {
-    setRailLabels((v) => {
-      const next = !v;
-      try { localStorage.setItem("easy-poems:tools-rail-labels", next ? "1" : "0"); } catch { /* ignore */ }
-      // Set a sensible rail width for the new mode (still user-resizable after).
-      const w = next ? LABELLED_TOOLS_RAIL_W : DEFAULT_TOOLS_RAIL_W;
-      setToolsRailWidth(w);
-      saveToolsRailW(w);
-      return next;
-    });
-  };
+  // The collapsed icon rail always shows a text label under each icon — clear
+  // for new users. (Previously toggleable; now permanently on.)
   // Enable the width transition only after first paint so the initial
   // collapsed→rail sizing doesn't animate on load.
   const [toolsAnimReady, setToolsAnimReady] = useState(false);
@@ -281,8 +265,6 @@ export function PoemWorkshop() {
     toolsPanelWidth,
     setToolsPanelWidth,
     toolsRailWidth,
-    setToolsRailWidth,
-    saveToolsRailW,
     railWidth,
     applyToolsW,
     applyRailW,
@@ -357,6 +339,12 @@ export function PoemWorkshop() {
   const rhymeIgnored = useIgnoredRhymes();
   const [repeatSubTab, setRepeatSubTab] = useState<"words" | "phrases" | "patterns">("words");
   const [cursorLine, setCursorLine] = useState<number>(1);
+  // Separate primitive states (not one object) so React's setState bailout
+  // skips a re-render on keystrokes that don't change the line count or the
+  // empty/non-empty boundary — most keystrokes don't, and this data feeds
+  // the end-of-text divider on every doc change, un-debounced.
+  const [liveLineCount, setLiveLineCount] = useState<number>(() => m.lines.length);
+  const [liveHasText, setLiveHasText] = useState<boolean>(() => m.body.length > 0);
   const [rhymeFinderQuery, setRhymeFinderQuery] = useState<{ word: string; bump: number; expand?: boolean } | undefined>(undefined);
   const [hoveredRhymeWord, setHoveredRhymeWord] = useState<string | null>(null);
   const [echoHighlights, setEchoHighlights] = useState<
@@ -901,7 +889,7 @@ export function PoemWorkshop() {
     update();
     window.addEventListener("resize", schedule);
     return () => { window.removeEventListener("resize", schedule); if (raf) cancelAnimationFrame(raf); };
-  }, [toolsExpanded, railLabels, m.toolTab, toolsPanelWidth, toolsRailWidth, isReadingMode]);
+  }, [toolsExpanded, m.toolTab, toolsPanelWidth, toolsRailWidth, isReadingMode]);
 
 
   // When rhyme tab opens, surface the rhyme scheme column at the top of the
@@ -1859,7 +1847,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} ${railLabels ? "tools-rail-labels" : ""} ${toolsAnimReady ? "tools-anim" : ""}`}
+        className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} tools-rail-labels ${toolsAnimReady ? "tools-anim" : ""}`}
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
@@ -2269,6 +2257,10 @@ export function PoemWorkshop() {
                         setCursorLine(line);
                         openIssueAtLineRef.current?.(line, false);
                       }}
+                      onLiveLineCount={(lineCount, hasText) => {
+                        setLiveLineCount(lineCount);
+                        setLiveHasText(hasText);
+                      }}
                       onApplyRewriteAtCursor={handleApplyRewriteAtCursor}
                       wordHighlights={wordHighlights}
                       rhymeEndHighlights={rhymeEndHighlights}
@@ -2290,7 +2282,7 @@ export function PoemWorkshop() {
                       diffSnapshotBody={diffSnapshot?.body ?? null}
                     />
                     <WritingPrompt visible={m.body.trim() === ""} />
-                    <EditorEndOfTextLine lineCount={m.lines.length} visible={m.body.length > 0} />
+                    <EditorEndOfTextLine lineCount={liveLineCount} visible={liveHasText} />
                     {aiVisibleIssues.length > 0 && (
                       <AiLineRibbons
                         editorViewRef={m.editorViewRef}
@@ -2487,16 +2479,6 @@ export function PoemWorkshop() {
             </button>
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
-              {/* Labels toggle — only meaningful for the collapsed icon rail. */}
-              <button
-                type="button"
-                className={`tools-rail-labels-toggle ${railLabels ? "is-on" : ""}`}
-                onClick={toggleRailLabels}
-                aria-pressed={railLabels}
-                {...hint(railLabels ? "Hide tool labels" : "Show tool labels")}
-              >
-                <span className="tools-rail-labels-toggle-text" aria-hidden>Aa</span>
-              </button>
               <button
                 type="button"
                 className="tools-analyse-btn"

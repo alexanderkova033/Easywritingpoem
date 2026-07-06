@@ -777,6 +777,10 @@ export interface PoemBodyEditorProps {
   onGutterDotClick?: (line: number) => void;
   /** Called when the cursor parks on a different line for ~400ms. */
   onCursorLineChange?: (line: number) => void;
+  /** Fires synchronously on every doc change — un-debounced, so UI that
+   *  tracks line count (e.g. the end-of-text divider) doesn't lag behind
+   *  the ~180ms body-to-React sync delay. */
+  onLiveLineCount?: (lineCount: number, hasText: boolean) => void;
   /** Alt+Enter on a flagged line — apply that issue's rewrite if available. */
   onApplyRewriteAtCursor?: (line: number) => boolean;
   /** Word-level problem highlights from AI issues. */
@@ -1241,6 +1245,9 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const cursorLineCallbackRef = useRef(props.onCursorLineChange);
   cursorLineCallbackRef.current = props.onCursorLineChange;
+
+  const liveLineCountCallbackRef = useRef(props.onLiveLineCount);
+  liveLineCountCallbackRef.current = props.onLiveLineCount;
   const cursorLineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCursorLineRef = useRef<number>(-1);
 
@@ -1263,6 +1270,9 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           props.editorViewRef.current = view;
         }}
         onUpdate={(update) => {
+          if (update.docChanged) {
+            liveLineCountCallbackRef.current?.(update.state.doc.lines, update.state.doc.length > 0);
+          }
           // Debounced cursor-line tracker — fires when the cursor parks on a
           // different line for ~400ms, lets parent open the matching issue.
           if (cursorLineCallbackRef.current && (update.docChanged || update.selectionSet)) {
