@@ -3981,6 +3981,7 @@
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 @media (prefers-color-scheme: light) {
@@ -4360,7 +4361,8 @@
 
 /* Collapsible privacy details */
 .privacy-details {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .privacy-summary {
