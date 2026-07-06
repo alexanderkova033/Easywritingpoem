@@ -876,17 +876,13 @@ export function PoemWorkshop() {
   }, [toolsExpanded, toolsPanelWidth, toolsRailWidth, workshopGridRef]);
 
   // Center each resize handle's drag bar on its own sticky panel (rail /
-  // tools) at its CURRENT on-screen position, not just its height. The panel
-  // is sticky, so its viewport position is constant while "stuck" but equal
-  // to its natural in-flow position before/after that range; the gutter
-  // (the bar's positioned ancestor) is a plain block that scrolls normally
-  // the whole time. So "panel center, in the gutter's local coordinates"
-  // isn't a fixed value — it's `panelRect.top - gutterRect.top +
-  // panelRect.height / 2`, recomputed from both elements' live
-  // getBoundingClientRect() on every scroll (rAF-throttled) as well as on
-  // layout changes, so the bar tracks the panel accurately everywhere,
-  // including at the very top of the page (a plain `position: sticky` bar
-  // can't rely on the natural-flow-vs-offset trigger)
+  // tools), not on the gutter's full scroll-height box. The bar shares the
+  // panel's own `top: 1.15rem` sticky offset (see CSS), so it engages/
+  // disengages "stuck" in lockstep with the panel purely via the compositor
+  // — no scroll listener needed. This effect only supplies --bar-center
+  // (half the panel's height), which shifts the bar down from that shared
+  // offset to the panel's actual center; it's recomputed on layout changes,
+  // not on scroll.
   useEffect(() => {
     let raf = 0;
     const update = () => {
@@ -894,33 +890,18 @@ export function PoemWorkshop() {
       const toolsPanel = toolsPanelRef.current;
       const toolsGutter = toolsGutterRef.current;
       if (toolsPanel && toolsGutter) {
-        const panelRect = toolsPanel.getBoundingClientRect();
-        const gutterRect = toolsGutter.getBoundingClientRect();
-        toolsGutter.style.setProperty(
-          "--bar-center",
-          `${Math.round(panelRect.top - gutterRect.top + panelRect.height / 2)}px`,
-        );
+        toolsGutter.style.setProperty("--bar-center", `${Math.round(toolsPanel.offsetHeight / 2)}px`);
       }
       const railPanel = railPanelRef.current;
       const railGutter = railGutterRef.current;
       if (railPanel && railGutter) {
-        const panelRect = railPanel.getBoundingClientRect();
-        const gutterRect = railGutter.getBoundingClientRect();
-        railGutter.style.setProperty(
-          "--bar-center",
-          `${Math.round(panelRect.top - gutterRect.top + panelRect.height / 2)}px`,
-        );
+        railGutter.style.setProperty("--bar-center", `${Math.round(railPanel.offsetHeight / 2)}px`);
       }
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
     update();
     window.addEventListener("resize", schedule);
-    window.addEventListener("scroll", schedule, { passive: true });
-    return () => {
-      window.removeEventListener("resize", schedule);
-      window.removeEventListener("scroll", schedule);
-      if (raf) cancelAnimationFrame(raf);
-    };
+    return () => { window.removeEventListener("resize", schedule); if (raf) cancelAnimationFrame(raf); };
   }, [toolsExpanded, m.toolTab, toolsPanelWidth, toolsRailWidth, railWidth, isReadingMode]);
 
 

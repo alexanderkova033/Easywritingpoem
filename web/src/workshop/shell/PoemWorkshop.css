@@ -530,25 +530,27 @@
 
   /* Handle bar — a rounded vertical bar centered on the (sticky) panel it
      resizes. The gutter spans the full scrollable height (both grid rows) so
-     it's always draggable, but the bar itself is pinned via --bar-center — a
-     plain document-relative pixel offset recomputed on scroll/resize (see the
-     effect in PoemWorkshop.tsx) so it always lands on the panel's current
-     on-screen center, whether the panel is sitting at its natural position,
-     mid-scroll and stuck, or scrolled away. `position: sticky` was tried here
-     but its "stick once scrolled past the offset" trigger only activates once
-     the natural flow position exceeds the offset — for a short panel (the
-     rail) that's not reliably true at scroll 0, so the bar sat at the top of
-     the gutter instead of centered until you scrolled a bit. Computing the
-     offset directly in JS sidesteps that threshold entirely. */
+     it's always draggable, but the bar tracks the panel via `position:
+     sticky` with the SAME `top: 1.15rem` offset the real panel uses (see
+     .tools-panel / .workshop-rail) — since both sit in the same grid area
+     with the same flow start, they engage/disengage their sticky "stuck"
+     state at the same scroll position, so the bar rides in lockstep with the
+     panel for free (no scroll listener, no forced layout reads — sticky is
+     compositor-only). `align-self: flex-start` opts out of the gutter's
+     `align-items: center` so the bar's un-stuck flow position is the top of
+     the gutter, matching the panel's own start. --bar-center (half the
+     panel's height, set in JS — only recomputed on layout changes, never on
+     scroll) then shifts the bar down from that shared top-offset to the
+     panel's actual vertical center. */
   .tools-resize-gutter::before,
   .rail-resize-gutter::before {
     content: "";
-    position: absolute;
-    top: var(--bar-center, 50%);
-    left: 50%;
+    position: sticky;
+    align-self: flex-start;
+    top: calc(1.15rem + var(--bar-center, 50vh));
     width: 4px;
     height: 2.4rem;
-    transform: translate(-50%, -50%);
+    transform: translateY(-50%);
     background: color-mix(in srgb, var(--muted) 50%, transparent);
     border-radius: 999px;
     transition: background 0.16s ease, height 0.18s ease, width 0.18s ease;

@@ -15,6 +15,7 @@ const FLOATER_POOL = [
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
   const heroRef = useRef<HTMLElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const cursorGlowRef = useRef<HTMLDivElement>(null);
   const [stickyVisible, setStickyVisible] = useState(false);
   const [streak] = useState(() => getCurrentStreak());
   const [dailyPrompt] = useState(() => getDailyPrompt());
@@ -41,26 +42,67 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
   };
 
   // Scroll-driven parallax — writes --landing-scroll-y (in px) to root.
-  // Aurora layers use it via transform for depth.
+  // Aurora/dot layers use it via transform for depth. Eased toward the
+  // target every frame (instead of snapping straight to scrollY) so the
+  // layers glide smoothly behind the scroll instead of stepping/lagging.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let target = window.scrollY;
+    let current = window.scrollY;
     let raf = 0;
-    let ticking = false;
-    const update = () => {
-      ticking = false;
-      root.style.setProperty("--landing-scroll-y", `${window.scrollY}`);
+    const loop = () => {
+      current += (target - current) * 0.16;
+      if (Math.abs(target - current) < 0.05) current = target;
+      root.style.setProperty("--landing-scroll-y", `${current}`);
+      raf = requestAnimationFrame(loop);
     };
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      raf = requestAnimationFrame(update);
+      target = window.scrollY;
     };
-    update();
     window.addEventListener("scroll", onScroll, { passive: true });
+    raf = requestAnimationFrame(loop);
     return () => {
       window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  // Cursor-follow glow — writes translate3d on the glow element directly
+  // (bypassing React state) so it can update every animation frame without
+  // re-rendering. Eased toward the pointer position for a soft trailing feel.
+  useEffect(() => {
+    const glow = cursorGlowRef.current;
+    if (!glow) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    const half = 210;
+    let targetX = window.innerWidth / 2;
+    let targetY = window.innerHeight / 2;
+    let curX = targetX;
+    let curY = targetY;
+    let raf = 0;
+    const onMove = (e: PointerEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      glow.style.opacity = "1";
+    };
+    const onLeave = () => {
+      glow.style.opacity = "0";
+    };
+    const loop = () => {
+      curX += (targetX - curX) * 0.14;
+      curY += (targetY - curY) * 0.14;
+      glow.style.transform = `translate3d(${curX - half}px, ${curY - half}px, 0)`;
+      raf = requestAnimationFrame(loop);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    document.addEventListener("pointerleave", onLeave);
+    raf = requestAnimationFrame(loop);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave);
       cancelAnimationFrame(raf);
     };
   }, []);
@@ -85,6 +127,10 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         <span className="landing-bg-aurora landing-bg-aurora-2" />
         <span className="landing-bg-aurora landing-bg-aurora-3" />
         <span className="landing-bg-floor" />
+      </div>
+      {/* Soft glow that trails the mouse cursor across the whole page */}
+      <div className="landing-cursor-glow" ref={cursorGlowRef} aria-hidden>
+        <div className="landing-cursor-glow-inner" />
       </div>
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
