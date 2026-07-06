@@ -3953,12 +3953,19 @@
 }
 
 .privacy {
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--surface) 92%, var(--bg)) 0%,
-    color-mix(in srgb, var(--surface) 86%, var(--accent-soft)) 44%,
-    color-mix(in srgb, var(--surface-2) 88%, var(--bg)) 100%
-  );
+  /* --accent-soft itself carries real alpha (color-mix(...,transparent)), so the
+     middle gradient stop below is only ~89% opaque. On the topbar that residual
+     sliver blends into the surrounding chrome; at the bottom of the page it can
+     expose a brighter patch of the chosen scene. Backstop with an opaque
+     var(--surface) layer so the leak always reveals the same designed tone. */
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--surface) 92%, var(--bg)) 0%,
+      color-mix(in srgb, var(--surface) 86%, var(--accent-soft)) 44%,
+      color-mix(in srgb, var(--surface-2) 88%, var(--bg)) 100%
+    ),
+    var(--surface);
 }
 
 /* Editor outer frame: strong frame wraps whole panel (title + editor) */
