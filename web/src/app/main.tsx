@@ -118,8 +118,17 @@ function readLandingDismissed(): boolean {
   }
 }
 
+// Set synchronously (before first paint) so mobile CSS knows whether the
+// pinned-viewport workshop layout or the normal scrolling landing page is
+// active from the very first frame — see index.css [data-app-view].
+document.documentElement.dataset.appView = readLandingDismissed() ? "workshop" : "landing";
+
 function App() {
   const [showWorkshop, setShowWorkshop] = useState(readLandingDismissed);
+
+  useEffect(() => {
+    document.documentElement.dataset.appView = showWorkshop ? "workshop" : "landing";
+  }, [showWorkshop]);
 
   useEffect(() => {
     clearChunkReloadFlag();

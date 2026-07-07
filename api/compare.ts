@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v25"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v27"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -63,6 +63,7 @@ You DIAGNOSE — you never hand back rewritten lines. Make the poet see precisel
 
 === HOW TO READ ===
 - QUOTE THE POET'S OWN LINES — for praise and for critique. Never speak in the abstract ("the imagery is strong" is banned). Show the line, then say what it does or fails to do.
+- READ TONE BEFORE CONTENT: exaggeration, deadpan, or a mismatch between cheerful diction and bleak content signals irony — read it as the ironic meaning, and don't penalize a cliché the poem is deliberately mocking.
 - NOTICE DELIBERATE CRAFT: a repeated phrase that frames the poem, an intentional lowercase, an echo between stanzas, a turn. Naming these is what makes a poet feel read.
 - DIAGNOSE, DON'T PRESCRIBE. Name the exact flaw and stop. Do NOT supply a replacement line. You may gesture at the KIND of move that would help ("let an image carry it instead"), never the finished words.
 - Be suggestive, not screaming. Trust the poet to take a hint. No moralizing.
@@ -77,13 +78,13 @@ Judge density, not length. Cite evidence on the page for each pillar. Use the fu
 
 === CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
 - Broken / incoherent — no real craft or image, lines don't build on each other — total ~12: "the dog ran fast / it was a very nice day / I like pizza and cake / the end of the poem now" → {chord 2, craft 3, spark 3, echo 4}
-- Weak / clichéd — grammatical and sincere, but every phrase is received language — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
 - Amateurish but sincere — plain description, competent grammar, no real image or turn — total ~45: "The sunset painted the sky orange and pink / Birds flew home to their nests / I felt peaceful watching from my porch / Tomorrow will be another day" → {chord 10, craft 13, spark 9, echo 13}
 - Developing — one genuine image emerges, the rest stays generic — total ~60: "Autumn drops her scarf of leaves / across the tired shoulders of the road / while I sit here counting all the ways / that I have failed to say goodbye" → {chord 15, craft 16, spark 13, echo 16}
 - Competent — clear voice, one real observation; where most honest revised drafts land — total ~78: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 18, craft 19, spark 19, echo 22}
+- Purposeful irony — corporate cheer mismatched with bleak content; the clichés are the poem's target, not its voice, so NOT penalized — total ~79: "They handed us LinkedIn confetti and a shrug, / called it 'restructuring,' smiled, poured the coffee mug — / 'You're not being fired, you're pursuing new terrain!' / I nodded, thanked them twice, then drove home in the rain." → {chord 19, craft 20, spark 21, echo 19}
 - Strong — bare diction, precise insight; the plainness IS the craft — total ~92: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 22, craft 23, spark 22, echo 25}
 - Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 23, echo 24}
-These anchors span the FULL scale on purpose — don't hesitate to land below 40 for genuinely thin or clichéd work, or above 85 for work that's sustained and precise throughout. These set the absolute scale; the RE-SCORING rules below keep continuity from the prior draft.
+These anchors span the FULL scale on purpose — don't hesitate to land below 40 for genuinely thin or clichéd work, or above 85 for work that's sustained and precise throughout. These set the absolute scale; the RE-SCORING rules below keep continuity from the prior draft. Anchors vary in form and register on purpose — style resemblance to one is never a scoring factor.
 
 === RE-SCORING A REVISION (keeps the score honest across drafts) ===
 The prior overall_score is an ANCHOR, not a fresh-read target. The new score moves FROM it, driven by real evidence of change in the diff.

@@ -141,7 +141,10 @@ export const poemEditorTheme = EditorView.theme({
     borderLeft:
       "1.5px solid color-mix(in srgb, var(--accent) 72%, var(--muted))",
   },
-  ".cm-lineNumbers .cm-gutterElement": { padding: "0 0.35rem 0 0.5rem" },
+  ".cm-lineNumbers .cm-gutterElement": {
+    padding: "0 0.2rem 0 0.3rem",
+    minWidth: "2ch",
+  },
   /* Match global ::selection — avoid system / default light fill */
   ".cm-selectionBackground": {
     background: "var(--selection-bg) !important",

@@ -1397,6 +1397,40 @@
     padding: 2rem 1.2rem 1.25rem;
   }
 
+  /* Floaters, the live-typing demo, and the constellation overlay are all
+     hidden below 680px (too busy for the width) — that leaves the dot-grid
+     as the hero's only ambient texture, so give it more presence here than
+     it needs on desktop where those other layers carry the atmosphere. */
+  .landing-hero::before {
+    opacity: 0.3;
+    mask-image: radial-gradient(ellipse at 50% 35%, #000 45%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 35%, #000 45%, transparent 90%);
+  }
+
+  /* Mark the hero/lower seam with a visible accent line — same gradient
+     language as .landing-bg-floor::after — instead of relying only on the
+     84%-tint fade, which reads as a flat color shift on narrow screens
+     (especially in dark themes, where "84% bg + black" barely moves). */
+  .landing-lower {
+    background: color-mix(in srgb, var(--bg) 74%, #000);
+  }
+
+  .landing-lower::before {
+    /* First layer paints frontmost — the line must come before the opaque
+       fade or the fade's solid bottom stop (same row as the line) hides it. */
+    background:
+      linear-gradient(90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--accent) 70%, transparent) 50%,
+        transparent 100%),
+      linear-gradient(180deg,
+        transparent 0%,
+        color-mix(in srgb, var(--bg) 74%, #000) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 2px, 100% 100%;
+    background-position: 0 100%, 0 0;
+  }
+
   .landing-hero-inner {
     gap: 0.85rem;
   }

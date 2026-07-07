@@ -279,21 +279,17 @@
     gap: 0.35rem 0.5rem;
   }
 
-  /* On mobile the tools-panel switches from flex to block.
-     Chrome has a known bug: flex containers with overflow:auto ignore padding-bottom
-     in scroll-extent calculations, so the tab-bar-clearing padding never creates
-     scrollable space. Block containers don't have this bug.
-     The sticky head still works correctly inside a block scroll container. */
+  /* Mobile tools-panel is a fixed-position bottom sheet (see WorkshopLayout.css)
+     bounded by top/bottom snap offsets, not by document flow — so it can't rely
+     on the page to scroll. .tools-scroll-body stays the flex:1 internal scroll
+     container (base rule above) so long tool content scrolls inside the sheet. */
   .tools-panel {
-    display: block !important;
-    overflow: visible !important;
     max-width: 100vw;
-    max-height: none !important;
-  }
-
-  .tools-scroll-body {
-    overflow-y: visible !important;
-    flex: none;
+    /* The base rule's max-height: min(90vh, 54rem) is for the desktop sticky
+       layout. Here top+bottom (WorkshopLayout.css) already fully determine
+       the sheet's height, so cap it at that exact gap instead of a fixed vh
+       fraction that could clip a few px on short viewports. */
+    max-height: none;
   }
 
   /* Prevent wide tables/cells from stretching the panel */
@@ -3820,14 +3816,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  /* Fades in quickly, then holds a barely-there tint for the rest of the
-     unused space below, so the whole filler area reads as faintly recessed. */
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--border) 7%, transparent) 0%,
-    color-mix(in srgb, var(--border) 1.5%, transparent) 2.4rem,
-    color-mix(in srgb, var(--border) 1.5%, transparent) 100%
-  );
+  /* Flat, uniform tint — no brighter leading edge, so repositioning this as
+     lines are added/removed doesn't read as a highlight travelling down. */
+  background: color-mix(in srgb, var(--border) 1.5%, transparent);
   pointer-events: none;
   transition: top 0.1s ease-out;
 }

@@ -126,9 +126,13 @@ html {
   font-size: 17.5px;
 }
 
-/* On mobile, pin the viewport so panels scroll independently instead of the page */
+/* On mobile, pin the viewport so panels scroll independently instead of the
+   page — but only inside the workshop. The landing page is a normal scrolling
+   document and must keep default overflow, or its content below the first
+   screen becomes unreachable. */
 @media (max-width: 899px) {
-  html, body {
+  html[data-app-view="workshop"],
+  html[data-app-view="workshop"] body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
@@ -490,7 +494,7 @@ html[data-writing-focus-v2] body::after {
 }
 
 @media (max-width: 899px) {
-  #root {
+  html[data-app-view="workshop"] #root {
     height: 100%;
     overflow: hidden;
     padding: 0;

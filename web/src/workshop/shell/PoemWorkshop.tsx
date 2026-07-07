@@ -10,7 +10,7 @@ import {
   type AppearanceSettings,
 } from "@/workshop/appearance/appearance";
 import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields";
-import { BackdropFormFields, BackdropMotionToggle } from "@/workshop/appearance/BackdropFormFields";
+import { BackdropMotionToggle } from "@/workshop/appearance/BackdropFormFields";
 import { lazyWithReload } from "@/app/lazy-with-reload";
 import {
   isPreloadAllChunksEnabled,
@@ -1803,7 +1803,6 @@ export function PoemWorkshop() {
                 onChange={setAppearance}
               />
             </Suspense>
-            <BackdropFormFields appearance={appearance} onChange={setAppearance} />
           </section>
         </div>
       ) : null}
