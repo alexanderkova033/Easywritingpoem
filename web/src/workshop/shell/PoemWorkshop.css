@@ -3791,7 +3791,7 @@
   /* Left: content padding + gutter estimate so it aligns with poem text.
    * Nudged slightly past the caret's x-position so the blinking cursor
    * doesn't sit directly on top of the first character. */
-  left: 3.85rem;
+  left: 4.3rem;
   right: 0.7rem;
   margin: 0;
   font-family: var(--font-poem), Georgia, serif;
@@ -3824,12 +3824,12 @@
      unused space below, so the whole filler area reads as faintly recessed. */
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--border) 12.5%, transparent) 0%,
-    color-mix(in srgb, var(--border) 3%, transparent) 2.4rem,
-    color-mix(in srgb, var(--border) 3%, transparent) 100%
+    color-mix(in srgb, var(--border) 7%, transparent) 0%,
+    color-mix(in srgb, var(--border) 1.5%, transparent) 2.4rem,
+    color-mix(in srgb, var(--border) 1.5%, transparent) 100%
   );
   pointer-events: none;
-  transition: top 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: top 0.1s ease-out;
 }
 
 .field-hint {

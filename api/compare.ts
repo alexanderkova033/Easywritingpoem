@@ -17,7 +17,7 @@ import { gibberishGuard } from "./_gibberish";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v24"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v25"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -76,11 +76,14 @@ Let the pillars DIVERGE — a poem can be musical but forgettable, or plain but 
 Judge density, not length. Cite evidence on the page for each pillar. Use the full range; issues follow the text, not the score.
 
 === CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
-- Weak / clichéd — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Broken / incoherent — no real craft or image, lines don't build on each other — total ~12: "the dog ran fast / it was a very nice day / I like pizza and cake / the end of the poem now" → {chord 2, craft 3, spark 3, echo 4}
+- Weak / clichéd — grammatical and sincere, but every phrase is received language — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Amateurish but sincere — plain description, competent grammar, no real image or turn — total ~45: "The sunset painted the sky orange and pink / Birds flew home to their nests / I felt peaceful watching from my porch / Tomorrow will be another day" → {chord 10, craft 13, spark 9, echo 13}
+- Developing — one genuine image emerges, the rest stays generic — total ~60: "Autumn drops her scarf of leaves / across the tired shoulders of the road / while I sit here counting all the ways / that I have failed to say goodbye" → {chord 15, craft 16, spark 13, echo 16}
 - Competent — clear voice, one real observation; where most honest revised drafts land — total ~78: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 18, craft 19, spark 19, echo 22}
 - Strong — bare diction, precise insight; the plainness IS the craft — total ~92: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 22, craft 23, spark 22, echo 25}
 - Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 23, echo 24}
-Most honest drafts live 50-85 — these anchors set the absolute scale; the RE-SCORING rules below keep continuity from the prior draft.
+These anchors span the FULL scale on purpose — don't hesitate to land below 40 for genuinely thin or clichéd work, or above 85 for work that's sustained and precise throughout. These set the absolute scale; the RE-SCORING rules below keep continuity from the prior draft.
 
 === RE-SCORING A REVISION (keeps the score honest across drafts) ===
 The prior overall_score is an ANCHOR, not a fresh-read target. The new score moves FROM it, driven by real evidence of change in the diff.

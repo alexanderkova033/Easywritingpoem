@@ -19,7 +19,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v36"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v37"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -95,11 +95,16 @@ Judge density, not length — a short poem can score high by doing more per word
 === CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
 Pillars MUST diverge — a poem that opens beautifully but fades scores chord high / echo low. One that is technically precise but dull scores craft high / spark low. Never give all four pillars the same value.
 
-- Weak / clichéd — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Broken / incoherent — no real craft or image, lines don't build on each other — total ~12: "the dog ran fast / it was a very nice day / I like pizza and cake / the end of the poem now" → {chord 2, craft 3, spark 3, echo 4}
+- Weak / clichéd — grammatical and sincere, but every phrase is received language — total ~28: "My heart is broken into pieces / I cry every single night alone / The pain inside me will never heal" → {chord 6, craft 8, spark 5, echo 9}
+- Amateurish but sincere — plain description, competent grammar, no real image or turn — total ~45: "The sunset painted the sky orange and pink / Birds flew home to their nests / I felt peaceful watching from my porch / Tomorrow will be another day" → {chord 10, craft 13, spark 9, echo 13}
+- Developing — one genuine image emerges, the rest stays generic — total ~60: "Autumn drops her scarf of leaves / across the tired shoulders of the road / while I sit here counting all the ways / that I have failed to say goodbye" → {chord 15, craft 16, spark 13, echo 16}
 - Competent but uneven — strong craft, weak spark; most revised drafts land here — total ~74: "At forty I keep finding / my mother's handwriting / in the margins of my own — / the way I cross my sevens" → {chord 17, craft 22, spark 14, echo 21}
 - Strong opening, fades — hook lands but doesn't sustain — total ~78: "I sat beside my mother's bed / and listened to the machines / pretend they knew / what living meant." → {chord 23, craft 21, spark 18, echo 16}
+- Accomplished, nearly there — control sustained end to end, only minor unevenness — total ~88: "The last light empties out of the kitchen / the way water leaves a bath, all at once — / and my mother, still standing at the sink, / becomes a shape I'll spend my life describing." → {chord 21, craft 23, spark 21, echo 23}
 - Canonical — total ~96: "Shall I compare thee to a summer's day? / Thou art more lovely and more temperate: / Rough winds do shake the darling buds of May" → {chord 24, craft 25, spark 22, echo 25}
-Most honest drafts live 50-85. If a poem genuinely excels in one dimension and falls flat in another, let the scores show it — don't smooth them toward each other.
+
+These anchors span the FULL scale on purpose — don't hesitate to land below 40 for genuinely thin or clichéd work, or above 85 for work that's sustained and precise throughout. If a poem genuinely excels in one dimension and falls flat in another, let the scores show it — don't smooth them toward each other or toward the middle anchors.
 
 === LOCAL ANALYSIS (soft signals) ===
 Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
