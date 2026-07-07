@@ -3534,6 +3534,41 @@ button.ai-flagged-cliche:focus-visible {
 
 .ai-score-toggle.is-on .ai-score-toggle-label { color: var(--text); }
 
+.ai-score-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ai-score-toggle:disabled:hover { background: none; }
+
+/* ======================================================
+   Draft mode toggle — hides score + issues for a quieter read
+   ====================================================== */
+.ai-draft-toggle {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--muted);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ai-draft-toggle:hover { color: var(--text); }
+
+.ai-draft-toggle.is-on {
+  color: #fff;
+  font-weight: 600;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent, #5fba7d) 70%, #6b5fba);
+}
+
 /* ======================================================
    Score sparkline
    ====================================================== */

@@ -252,7 +252,7 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 
 export function AnalysisResults({
   result, onJump, onJumpToWord, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle,
-  poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled,
+  poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled, hideIssues,
   activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
 }: {
   result: PoemAnalysis | PoemComparison;
@@ -274,6 +274,8 @@ export function AnalysisResults({
   onVisibleIssuesChange?: (issues: AnalysisIssue[]) => void;
   openIssueLineSignal?: { line: number; nonce: number; scroll?: boolean } | null;
   scoringEnabled?: boolean;
+  /** Draft mode: hides the Issues tab/badge/CTA and stops surfacing issues to the rest of the app (gutter dots, ribbons, etc). */
+  hideIssues?: boolean;
   activeTab?: AnalysisTab;
   onTabChange?: (t: AnalysisTab) => void;
   externalTabSignal?: { tab: AnalysisTab; nonce: number } | null;
@@ -326,8 +328,15 @@ export function AnalysisResults({
   }, [result.issues, result.strongest_line, ignoredIds]);
 
   useEffect(() => {
-    onVisibleIssuesChange?.(visibleIssues);
-  }, [visibleIssues, onVisibleIssuesChange]);
+    onVisibleIssuesChange?.(hideIssues ? [] : visibleIssues);
+  }, [visibleIssues, onVisibleIssuesChange, hideIssues]);
+
+  // If draft mode turns on while the Issues tab is open, fall back to Overview
+  // rather than leaving the user stranded on a tab that's about to disappear.
+  useEffect(() => {
+    if (hideIssues && tab === "issues") setTab("overview");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideIssues]);
 
   useEffect(() => {
     if (!openIssueLineSignal) return;
@@ -494,14 +503,16 @@ export function AnalysisResults({
           onClick={() => setTab("overview")}>
           Overview
         </button>
-        <button type="button" role="tab" aria-selected={tab === "issues"}
-          className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
-          onClick={() => setTab("issues")}>
-          Issues
-          {issuesBadge > 0 && (
-            <span className="ai-tab-badge">{issuesBadge}</span>
-          )}
-        </button>
+        {!hideIssues && (
+          <button type="button" role="tab" aria-selected={tab === "issues"}
+            className={`ai-tab${tab === "issues" ? " is-active" : ""}`}
+            onClick={() => setTab("issues")}>
+            Issues
+            {issuesBadge > 0 && (
+              <span className="ai-tab-badge">{issuesBadge}</span>
+            )}
+          </button>
+        )}
         {poemLines && poemTitle !== undefined && (
           <button type="button" role="tab" aria-selected={tab === "chat"}
             className={`ai-tab${tab === "chat" ? " is-active" : ""}`}
@@ -509,7 +520,7 @@ export function AnalysisResults({
             Chat
           </button>
         )}
-        {totalIssues > 0 && (
+        {!hideIssues && totalIssues > 0 && (
           <div className="ai-tabs-progress" aria-label={`${resolvedCount} of ${totalIssues} issues addressed`}>
             <div className="ai-tabs-progress-bar" style={{ width: `${progressPct}%` }} />
             <span className="ai-tabs-progress-label">{resolvedCount}/{totalIssues}</span>
@@ -690,7 +701,7 @@ export function AnalysisResults({
 
           {/* 7. CTA — jump to issues. Reflect unresolved count so the number
               stays in sync with the tab badge. */}
-          {issuesBadge > 0 && (
+          {!hideIssues && issuesBadge > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
               onClick={() => setTab("issues")}>
               See {issuesBadge} issue{issuesBadge !== 1 ? "s" : ""} →
@@ -700,7 +711,7 @@ export function AnalysisResults({
       )}
 
       {/* Issues tab */}
-      {tab === "issues" && (
+      {!hideIssues && tab === "issues" && (
         <div className="ai-tab-panel ai-tab-issues">
           {result.issues.length === 0 ? (
             <div className="ai-no-issues-wrap">

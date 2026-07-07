@@ -11,7 +11,7 @@ import {
 } from "@/workshop/analysis/ai-analyze";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
-import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import {
   LS_LAST_ANALYSIS_PREFIX,
   LS_LAST_ANALYZED_LINES_PREFIX,
@@ -31,6 +31,7 @@ import {
   LS_SNAPSHOTS_PREFIX,
   appendScoreHistory,
   hashInput,
+  loadDraftMode,
   loadLastHash,
   loadScoreHistory,
   loadScoringEnabled,
@@ -74,6 +75,8 @@ export interface AiAnalysisProps {
 export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
+  const [draftMode, setDraftMode] = useState<boolean>(loadDraftMode);
+  const prevScoringEnabledRef = useRef<boolean>(true);
   const [sessionNonce, setSessionNonce] = useState(0);
   const [openIssueLineSignal, setOpenIssueLineSignal] = useState<{ line: number; nonce: number; scroll?: boolean } | null>(null);
   const [retryAfterSec, setRetryAfterSec] = useState<number>(0);
@@ -131,6 +134,29 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       return next;
     });
   }, []);
+
+  // Draft mode hides the score AND the issues list app-wide (gutter dots, line
+  // ribbons, the title-bar popover, etc. all key off the same scoring flag and
+  // the visible-issues list, so forcing those off here is enough — no need to
+  // reach into the editor shell). Entering draft mode remembers whatever the
+  // Score toggle was set to, and restores it on exit instead of just forcing it
+  // back on, so we don't clobber a preference the user set independently.
+  const toggleDraftMode = useCallback(() => {
+    setDraftMode((prev) => {
+      const next = !prev;
+      tryLocalStorageSetItem(STORAGE_KEY_AI_DRAFT_MODE, next ? "1" : "0");
+      if (next) {
+        prevScoringEnabledRef.current = scoringEnabled;
+        setScoringEnabled(false);
+        tryLocalStorageSetItem(STORAGE_KEY_AI_SCORING_ENABLED, "0");
+      } else {
+        const restored = prevScoringEnabledRef.current;
+        setScoringEnabled(restored);
+        tryLocalStorageSetItem(STORAGE_KEY_AI_SCORING_ENABLED, restored ? "1" : "0");
+      }
+      return next;
+    });
+  }, [scoringEnabled]);
 
   // Retry-after countdown ticker.
   useEffect(() => {
@@ -227,7 +253,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       saveLastAnalyzedLines(poemId, lines);
       saveLastHash(poemId, inputHash);
       pushSnapshot(poemId, res);
-      onAnalysisDone?.(res.issues, res.overall_score);
+      onAnalysisDone?.(draftMode ? [] : res.issues, res.overall_score);
       setScoreHistory(appendScoreHistory(poemId, res.overall_score));
       setSessionNonce((n) => n + 1);
       setStatus("done");
@@ -254,7 +280,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec, draftMode]);
 
 
   useEffect(() => {
@@ -330,9 +356,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                 type="button"
                 className={`ai-score-toggle${scoringEnabled ? " is-on" : " is-off"}`}
                 onClick={toggleScoring}
-                title={scoringEnabled
-                  ? "Hide the numeric score and trend"
-                  : "Show the numeric score and trend"}
+                disabled={draftMode}
+                title={draftMode
+                  ? "Score is hidden by draft mode"
+                  : scoringEnabled
+                    ? "Hide the numeric score and trend"
+                    : "Show the numeric score and trend"}
                 aria-pressed={scoringEnabled}
                 aria-label={scoringEnabled ? "Score visible — click to hide" : "Score hidden — click to show"}
               >
@@ -342,6 +371,19 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
                   </span>
                 </span>
                 <span className="ai-score-toggle-label">Score</span>
+              </button>
+
+              <button
+                type="button"
+                className={`ai-draft-toggle${draftMode ? " is-on" : " is-off"}`}
+                onClick={toggleDraftMode}
+                title={draftMode
+                  ? "Draft mode is on — score and issues are hidden"
+                  : "Hide the score and issues for a quieter, judgment-free read"}
+                aria-pressed={draftMode}
+                aria-label={draftMode ? "Draft mode on — click to turn off" : "Draft mode off — click to turn on"}
+              >
+                <span aria-hidden>✎</span> Draft mode
               </button>
 
               <div className="ai-harshness-toggle" role="group" aria-label="Feedback tone">
@@ -482,6 +524,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               onVisibleIssuesChange={onVisibleIssuesChange}
               openIssueLineSignal={openIssueLineSignal}
               scoringEnabled={scoringEnabled}
+              hideIssues={draftMode}
               externalTabSignal={externalTabSignal}
               localAnalysis={localAnalysis}
             />
