@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  COLOR_INTENSITY_RANGE,
+  COLOR_INTENSITY_PRESETS,
   POEM_FONT_OPTIONS,
   UI_FONT_OPTIONS,
   type AppearanceSettings,
@@ -10,36 +10,42 @@ import {
 } from "./appearance";
 import "./FontSelect.css";
 
-type IntensityKey = "colorSaturation" | "colorBrightness" | "colorContrast";
-
-function IntensitySlider({
-  label,
-  intensityKey,
-  range,
+function ColorIntensityPresets({
   appearance,
   onChange,
 }: {
-  label: string;
-  intensityKey: IntensityKey;
-  range: { min: number; max: number };
   appearance: AppearanceSettings;
   onChange: (next: AppearanceSettings) => void;
 }) {
-  const value = appearance[intensityKey];
+  const activeKey = COLOR_INTENSITY_PRESETS.find(
+    (p) =>
+      p.saturation === appearance.colorSaturation &&
+      p.brightness === appearance.colorBrightness &&
+      p.contrast === appearance.colorContrast,
+  )?.key;
+
   return (
-    <label className="appearance-field appearance-intensity-field">
-      <span className="appearance-field-label">
-        {label} <span className="appearance-intensity-value muted small">{value}%</span>
-      </span>
-      <input
-        type="range"
-        min={range.min}
-        max={range.max}
-        step={1}
-        value={value}
-        onChange={(e) => onChange({ ...appearance, [intensityKey]: Number(e.target.value) })}
-      />
-    </label>
+    <div className="color-intensity-presets" role="group" aria-label="Color intensity">
+      {COLOR_INTENSITY_PRESETS.map((p) => (
+        <button
+          key={p.key}
+          type="button"
+          className={`color-intensity-chip${p.key === activeKey ? " is-active" : ""}`}
+          title={p.desc}
+          aria-pressed={p.key === activeKey}
+          onClick={() =>
+            onChange({
+              ...appearance,
+              colorSaturation: p.saturation,
+              colorBrightness: p.brightness,
+              colorContrast: p.contrast,
+            })
+          }
+        >
+          {p.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -187,34 +193,30 @@ export function AppearanceFormFields(props: {
 
       <div className="appearance-intensity-group">
         <h3 className="style-modal-settings-title">Color intensity</h3>
-        <IntensitySlider
-          label="Saturation"
-          intensityKey="colorSaturation"
-          range={COLOR_INTENSITY_RANGE.saturation}
-          appearance={appearance}
-          onChange={onChange}
-        />
-        <IntensitySlider
-          label="Brightness"
-          intensityKey="colorBrightness"
-          range={COLOR_INTENSITY_RANGE.brightness}
-          appearance={appearance}
-          onChange={onChange}
-        />
-        <IntensitySlider
-          label="Contrast"
-          intensityKey="colorContrast"
-          range={COLOR_INTENSITY_RANGE.contrast}
-          appearance={appearance}
-          onChange={onChange}
-        />
+        <ColorIntensityPresets appearance={appearance} onChange={onChange} />
       </div>
 
       <div className="appearance-actions">
         <button
           type="button"
           className="small-btn appearance-reset-btn"
-          onClick={() => onChange(defaultAppearance())}
+          onClick={() => {
+            const d = defaultAppearance();
+            // Only reset the fields this modal owns (fonts, sizing, color
+            // intensity) — background/backdrop settings live in the separate
+            // Background modal and shouldn't be wiped from here.
+            onChange({
+              ...appearance,
+              poemFont: d.poemFont,
+              uiFont: d.uiFont,
+              poemSize: d.poemSize,
+              poemWeight: d.poemWeight,
+              poemDecoration: d.poemDecoration,
+              colorSaturation: d.colorSaturation,
+              colorBrightness: d.colorBrightness,
+              colorContrast: d.colorContrast,
+            });
+          }}
         >
           Reset to defaults
         </button>

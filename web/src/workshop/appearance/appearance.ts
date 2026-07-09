@@ -58,7 +58,7 @@ export interface AppearanceSettings {
   backdropPower: BackdropPowerSetting;
   /** User-generated custom backdrop (active when background === "custom"). */
   customBackground: CustomBackgroundTheme | null;
-  /** Global color-intensity sliders, as percentages (100 = neutral/unchanged). */
+  /** Global color-intensity preset, applied as percentages (100 = neutral/unchanged). */
   colorSaturation: number;
   colorBrightness: number;
   colorContrast: number;
@@ -69,6 +69,22 @@ export const COLOR_INTENSITY_RANGE = {
   brightness: { min: 85, max: 115 },
   contrast: { min: 85, max: 120 },
 } as const;
+
+export interface ColorIntensityPreset {
+  key: string;
+  label: string;
+  desc: string;
+  saturation: number;
+  brightness: number;
+  contrast: number;
+}
+
+export const COLOR_INTENSITY_PRESETS: ColorIntensityPreset[] = [
+  { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
+  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 80, brightness: 103, contrast: 92 },
+  { key: "vivid", label: "Vivid", desc: "Richer, more saturated colors.", saturation: 130, brightness: 100, contrast: 108 },
+  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 118, brightness: 96, contrast: 118 },
+];
 
 const DEFAULTS: AppearanceSettings = {
   poemFont: "literata",
@@ -308,4 +324,16 @@ export function applyAppearance(s: AppearanceSettings): void {
   el.style.setProperty("--color-saturation", `${s.colorSaturation}%`);
   el.style.setProperty("--color-brightness", `${s.colorBrightness}%`);
   el.style.setProperty("--color-contrast", `${s.colorContrast}%`);
+  // Only gate the body `filter` on when a slider is off neutral: any non-"none"
+  // filter value (even 100/100/100, a visual no-op) makes body a containing
+  // block for its own ::before/::after (position: fixed), truncating the page
+  // backdrop to one viewport-height on pages taller than that. Keeping body
+  // filter-free by default keeps the backdrop viewport-fixed for everyone who
+  // never touches these sliders.
+  const isColorAdjusted =
+    s.colorSaturation !== DEFAULTS.colorSaturation ||
+    s.colorBrightness !== DEFAULTS.colorBrightness ||
+    s.colorContrast !== DEFAULTS.colorContrast;
+  if (isColorAdjusted) el.dataset.colorAdjusted = "";
+  else delete el.dataset.colorAdjusted;
 }

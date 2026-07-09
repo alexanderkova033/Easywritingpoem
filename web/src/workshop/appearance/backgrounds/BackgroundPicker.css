@@ -928,16 +928,36 @@
   gap: 0.65rem;
 }
 
-.appearance-intensity-field .appearance-field-label {
+.color-intensity-presets {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-.appearance-intensity-value {
+.color-intensity-chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
   font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
+  padding: 0.34rem 0.85rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+
+.color-intensity-chip:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.color-intensity-chip.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .line-jump-inline {

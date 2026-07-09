@@ -120,6 +120,7 @@
 html {
   min-height: 100%;
   font-size: 17.5px;
+  overflow-x: hidden;
 }
 
 /* On mobile, pin the viewport so panels scroll independently instead of the
@@ -174,7 +175,24 @@ body {
   font-family: var(--font-ui);
   scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--bg)) var(--bg);
   scrollbar-width: thin;
-  /* Global color-intensity sliders (Style settings) — neutral (100%) by default. */
+  /* A `filter` here (even a 100/100/100 no-op) makes body a fixed-position
+     containing block for its own ::before/::after, so their scaled/oversized
+     boxes can spill past the viewport edge and add to scrollable overflow —
+     clip it. Stays harmless even now that the filter below is conditional,
+     since html[data-color-adjusted] can re-trigger the same containing-block
+     effect for users who've moved a slider off neutral. */
+  overflow-x: hidden;
+}
+
+/* Global color-intensity sliders (Style settings) — neutral (100%) by default.
+   Gated behind this attribute (set only when a slider is off-neutral) rather
+   than applied unconditionally: any non-"none" `filter` on body — even at
+   100/100/100 — makes body a containing block for its own ::before/::after
+   (position: fixed), truncating the page backdrop to one viewport-height on
+   any page taller than that ("blank space" below the fold). Leaving body
+   filter-free by default keeps the backdrop correctly viewport-fixed for
+   everyone who never touches these sliders. */
+html[data-color-adjusted] body {
   filter:
     saturate(var(--color-saturation, 100%))
     brightness(var(--color-brightness, 100%))
