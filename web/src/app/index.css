@@ -175,13 +175,14 @@ body {
   font-family: var(--font-ui);
   scrollbar-color: color-mix(in srgb, var(--border) 28%, var(--bg)) var(--bg);
   scrollbar-width: thin;
-  /* A `filter` here (even a 100/100/100 no-op) makes body a fixed-position
-     containing block for its own ::before/::after, so their scaled/oversized
-     boxes can spill past the viewport edge and add to scrollable overflow —
-     clip it. Stays harmless even now that the filter below is conditional,
-     since html[data-color-adjusted] can re-trigger the same containing-block
-     effect for users who've moved a slider off neutral. */
-  overflow-x: hidden;
+  /* NOTE: don't add `overflow-x: hidden` here. Setting overflow on only one
+     axis forces the browser to coerce the other axis's computed "visible" to
+     "auto" (CSS2.1 overflow-x/-y interaction), turning body into its own
+     scroll container. That breaks `position: sticky` for every descendant
+     (rail, tools panel) since their nearest scrolling ancestor becomes body
+     instead of the real page scroller. `overflow-x: hidden` on `html` (below)
+     already clips the horizontal spill from the color-intensity filter
+     without this side effect, because html IS the page's scrolling element. */
 }
 
 /* Global color-intensity sliders (Style settings) — neutral (100%) by default.

@@ -81,9 +81,9 @@ export interface ColorIntensityPreset {
 
 export const COLOR_INTENSITY_PRESETS: ColorIntensityPreset[] = [
   { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
-  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 80, brightness: 103, contrast: 92 },
-  { key: "vivid", label: "Vivid", desc: "Richer, more saturated colors.", saturation: 130, brightness: 100, contrast: 108 },
-  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 118, brightness: 96, contrast: 118 },
+  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 91, brightness: 101, contrast: 96 },
+  { key: "vivid", label: "Vivid", desc: "A touch richer, more saturated colors.", saturation: 112, brightness: 100, contrast: 103 },
+  { key: "bold", label: "Bold", desc: "A little more punch on top of vivid color.", saturation: 108, brightness: 98, contrast: 108 },
 ];
 
 const DEFAULTS: AppearanceSettings = {

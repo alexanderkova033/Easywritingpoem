@@ -1,24 +1,24 @@
 ﻿html[data-workshop-bg="dawn"] {
   color-scheme: light;
-  --bg: #f7ebf0;
-  --surface: #fbf3f6;
-  --surface-2: #f6ebf0;
-  --surface-elevated: #fff9fb;
-  --border: #e3cdd6;
+  --bg: #eddce4;
+  --surface: #f3e6ec;
+  --surface-2: #ecdce3;
+  --surface-elevated: #f9eef3;
+  --border: #cba9b6;
   --text: #1f1619;
-  --muted: #745a64;
-  --accent: #8a4f6c;
+  --muted: #6b4f59;
+  --accent: #7a3f5c;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 14%, #ebe0e6);
   --selection-fg: var(--text);
   --danger: #a32128;
   --net-line: rgba(90, 50, 70, 0.04);
-  --ambient-a: rgba(200, 120, 155, 0.055);
-  --ambient-b: rgba(150, 110, 140, 0.044);
-  --ambient-c: rgba(220, 170, 185, 0.05);
-  --ambient-d: rgba(170, 120, 145, 0.038);
-  --shine-top: rgba(255, 245, 252, 0.42);
-  --shine-mid: rgba(210, 150, 175, 0.042);
+  --ambient-a: rgba(200, 120, 155, 0.045);
+  --ambient-b: rgba(150, 110, 140, 0.036);
+  --ambient-c: rgba(220, 170, 185, 0.04);
+  --ambient-d: rgba(170, 120, 145, 0.032);
+  --shine-top: rgba(255, 245, 252, 0.28);
+  --shine-mid: rgba(210, 150, 175, 0.034);
   --after-blend: multiply;
   --after-opacity: 0.32;
   --after-animation: studio-light-soft 455.17s ease-in-out infinite alternate;
@@ -56,7 +56,7 @@ html[data-workshop-bg="dawn"] body::before {
     ),
     radial-gradient(
       ellipse 40% 20% at 10% 24%,
-      color-mix(in srgb, #fff 14%, transparent),
+      color-mix(in srgb, #fff 9%, transparent),
       transparent 55%
     ),
     /* Soft sunbloom â€” replaces conic rays */
@@ -67,7 +67,7 @@ html[data-workshop-bg="dawn"] body::before {
     ),
     radial-gradient(
       circle at 18% 12%,
-      color-mix(in srgb, #fff 22%, transparent),
+      color-mix(in srgb, #fff 14%, transparent),
       transparent 42%
     ),
     /* Dawn sky gradient â€” deep lavender zenith fading to warm rose-gold horizon */

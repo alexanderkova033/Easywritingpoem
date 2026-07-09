@@ -1,25 +1,25 @@
 ﻿/* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
 html[data-workshop-bg="winter"] {
   color-scheme: light;
-  --bg: #dfe9f5;
-  --surface: #edf3fa;
-  --surface-2: #e5eef8;
-  --surface-elevated: #f7fbff;
-  --border: #b7c8dd;
-  --text: #101c2c;
-  --muted: #4a6180;
-  --accent: #2f6fae;
+  --bg: #c7dbee;
+  --surface: #d9e7f4;
+  --surface-2: #cee0f0;
+  --surface-elevated: #eaf3fb;
+  --border: #9db6d2;
+  --text: #0b1626;
+  --muted: #3f597a;
+  --accent: #235f9c;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 16%, #d4e4f4);
   --selection-fg: var(--text);
   --danger: #b02020;
   --net-line: rgba(60, 100, 155, 0.04);
-  --ambient-a: rgba(100, 160, 220, 0.075);
-  --ambient-b: rgba(70, 120, 180, 0.06);
-  --ambient-c: rgba(130, 185, 240, 0.07);
-  --ambient-d: rgba(230, 175, 95, 0.05);
-  --shine-top: rgba(255, 255, 255, 0.6);
-  --shine-mid: rgba(235, 190, 115, 0.06);
+  --ambient-a: rgba(100, 160, 220, 0.06);
+  --ambient-b: rgba(70, 120, 180, 0.05);
+  --ambient-c: rgba(130, 185, 240, 0.055);
+  --ambient-d: rgba(230, 175, 95, 0.04);
+  --shine-top: rgba(255, 255, 255, 0.42);
+  --shine-mid: rgba(235, 190, 115, 0.045);
   --after-blend: multiply;
   --after-opacity: 0.22;
   --after-animation: studio-light-soft 377.1s ease-in-out infinite alternate;
@@ -35,14 +35,14 @@ html[data-workshop-bg="winter"] body::before {
     radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
     radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
     /* Pale zenith */
-    radial-gradient(ellipse 100% 65% at 50% 0%, color-mix(in srgb, #fff 12%, transparent), transparent 68%),
+    radial-gradient(ellipse 100% 65% at 50% 0%, color-mix(in srgb, #fff 8%, transparent), transparent 68%),
     /* Warm winter-sun shaft upper-left, for contrast against the cool base */
-    radial-gradient(ellipse 60% 45% at 8% 10%, color-mix(in srgb, #ffdca0 15%, transparent), transparent 62%),
+    radial-gradient(ellipse 60% 45% at 8% 10%, color-mix(in srgb, #ffdca0 10%, transparent), transparent 62%),
     /* Snow-blanket ground */
-    radial-gradient(ellipse 130% 38% at 50% 100%, color-mix(in srgb, #f0f6ff 35%, transparent), transparent 55%),
+    radial-gradient(ellipse 130% 38% at 50% 100%, color-mix(in srgb, #f0f6ff 24%, transparent), transparent 55%),
     /* Frosted upper corners */
-    radial-gradient(ellipse 35% 30% at 0% 0%, color-mix(in srgb, #ffffff 30%, transparent), transparent 60%),
-    radial-gradient(ellipse 35% 30% at 100% 0%, color-mix(in srgb, #ffffff 28%, transparent), transparent 60%),
+    radial-gradient(ellipse 35% 30% at 0% 0%, color-mix(in srgb, #ffffff 20%, transparent), transparent 60%),
+    radial-gradient(ellipse 35% 30% at 100% 0%, color-mix(in srgb, #ffffff 18%, transparent), transparent 60%),
     /* Snowflake / ice crystal lattice */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg stroke='%232f6fae12' stroke-width='0.6' fill='none'%3E%3Cline x1='40' y1='4' x2='40' y2='76'/%3E%3Cline x1='4' y1='40' x2='76' y2='40'/%3E%3Cline x1='12' y1='12' x2='68' y2='68'/%3E%3Cline x1='68' y1='12' x2='12' y2='68'/%3E%3Cline x1='40' y1='4' x2='34' y2='14'/%3E%3Cline x1='40' y1='4' x2='46' y2='14'/%3E%3Cline x1='40' y1='76' x2='34' y2='66'/%3E%3Cline x1='40' y1='76' x2='46' y2='66'/%3E%3Cline x1='4' y1='40' x2='14' y2='34'/%3E%3Cline x1='4' y1='40' x2='14' y2='46'/%3E%3Cline x1='76' y1='40' x2='66' y2='34'/%3E%3Cline x1='76' y1='40' x2='66' y2='46'/%3E%3C/g%3E%3Ccircle cx='40' cy='40' r='2' fill='%232f6fae10'/%3E%3C/svg%3E"),
     /* Hero: large snowflake watermark */
