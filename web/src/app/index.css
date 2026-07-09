@@ -181,19 +181,25 @@ body {
      scroll container. That breaks `position: sticky` for every descendant
      (rail, tools panel) since their nearest scrolling ancestor becomes body
      instead of the real page scroller. `overflow-x: hidden` on `html` (below)
-     already clips the horizontal spill from the color-intensity filter
-     without this side effect, because html IS the page's scrolling element. */
+     is the safe place for this guard, since html IS the page's scrolling
+     element and doesn't have this side effect. */
 }
 
-/* Global color-intensity sliders (Style settings) — neutral (100%) by default.
-   Gated behind this attribute (set only when a slider is off-neutral) rather
-   than applied unconditionally: any non-"none" `filter` on body — even at
-   100/100/100 — makes body a containing block for its own ::before/::after
-   (position: fixed), truncating the page backdrop to one viewport-height on
-   any page taller than that ("blank space" below the fold). Leaving body
-   filter-free by default keeps the backdrop correctly viewport-fixed for
-   everyone who never touches these sliders. */
-html[data-color-adjusted] body {
+/* Global color-intensity presets (Style settings) — neutral (100%) by default.
+   Applied directly to the backdrop pseudo-elements themselves, NOT to `body`
+   (or any other shared ancestor). A `filter` on `body` would make it the
+   containing block for every `position: fixed`/`sticky` descendant that
+   relies on tracking the true viewport — which broke three separate things
+   when tried: the backdrop got clipped to one viewport-height on tall pages
+   ("blank"/black space below the fold), the rail/tools-panel sticky columns
+   stopped tracking scroll, and the fixed-position modal overlay rendered
+   relative to body's box instead of the viewport (appearing to jump on
+   open). Putting the filter on the fixed elements themselves has none of
+   these side effects, since nothing is ever nested inside these
+   pseudo-elements — it just narrows the effect to the backdrop scene rather
+   than the whole app. */
+html[data-color-adjusted] body::before,
+html[data-color-adjusted] body::after {
   filter:
     saturate(var(--color-saturation, 100%))
     brightness(var(--color-brightness, 100%))

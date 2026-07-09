@@ -324,12 +324,10 @@ export function applyAppearance(s: AppearanceSettings): void {
   el.style.setProperty("--color-saturation", `${s.colorSaturation}%`);
   el.style.setProperty("--color-brightness", `${s.colorBrightness}%`);
   el.style.setProperty("--color-contrast", `${s.colorContrast}%`);
-  // Only gate the body `filter` on when a slider is off neutral: any non-"none"
-  // filter value (even 100/100/100, a visual no-op) makes body a containing
-  // block for its own ::before/::after (position: fixed), truncating the page
-  // backdrop to one viewport-height on pages taller than that. Keeping body
-  // filter-free by default keeps the backdrop viewport-fixed for everyone who
-  // never touches these sliders.
+  // Gates the backdrop `filter` in index.css (applied to body::before/::after
+  // directly — see the comment there for why not on body itself). Purely a
+  // perf/no-op guard: only touch the property when a preset is actually
+  // off-neutral.
   const isColorAdjusted =
     s.colorSaturation !== DEFAULTS.colorSaturation ||
     s.colorBrightness !== DEFAULTS.colorBrightness ||
