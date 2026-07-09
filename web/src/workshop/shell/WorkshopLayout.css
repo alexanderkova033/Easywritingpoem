@@ -173,7 +173,7 @@
     margin-left: auto;
     margin-right: auto;
     padding: 1.25rem 2.4rem 1.25rem;
-    box-shadow: 0 10px 38px color-mix(in srgb, #000 18%, transparent);
+    box-shadow: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
     /* Give the page-like column a real height to fill (focus mode has no
        sibling panel to size against), so a short draft still reads as a
        page rather than a shrink-wrapped card. */
@@ -193,7 +193,7 @@
 
 @media (prefers-color-scheme: light) {
   .poem-workshop.is-focus-mode .editor-panel {
-    box-shadow: 0 12px 40px color-mix(in srgb, #000 14%, transparent);
+    box-shadow: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   }
 }
 

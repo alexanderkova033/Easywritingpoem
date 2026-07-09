@@ -2,27 +2,27 @@
 /* ---- Amber dusk: the five minutes after sunset â€” violet zenith, amber horizon, warm silhouettes ---- */
 html[data-workshop-bg="dusk"] {
   color-scheme: dark;
-  /* Warm dark base â€” deep burgundy-brown, not blue-black */
-  --bg: #0d0608;
-  --surface: #160c0e;
-  --surface-2: #1e1012;
+  /* Twilight base — deep violet, not brown-black, so the amber horizon has something to pop against */
+  --bg: #140a18;
+  --surface: #1e1122;
+  --surface-2: #27162c;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
-  --border: #3a1e22;
-  --text: #f6e7d4;
-  --muted: #a88070;
-  --accent: #e07828;
+  --border: #422848;
+  --text: #f8ece2;
+  --muted: #b391a0;
+  --accent: #ea8438;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 28%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9898;
-  --net-line: rgba(220, 130, 60, 0.032);
-  /* Warm amber wash from horizon, cool violet from zenith */
-  --ambient-a: rgba(210, 90, 18, 0.10);
-  --ambient-b: rgba(80, 30, 120, 0.08);
-  --ambient-c: rgba(230, 120, 30, 0.075);
-  --ambient-d: rgba(50, 20, 90, 0.06);
-  --shine-top: rgba(160, 100, 220, 0.06);
-  --shine-mid: rgba(210, 110, 28, 0.045);
+  --net-line: rgba(232, 130, 58, 0.035);
+  /* Warm amber wash from horizon, richer violet from zenith */
+  --ambient-a: rgba(220, 100, 30, 0.12);
+  --ambient-b: rgba(105, 42, 160, 0.11);
+  --ambient-c: rgba(240, 130, 40, 0.09);
+  --ambient-d: rgba(75, 32, 130, 0.08);
+  --shine-top: rgba(190, 125, 245, 0.09);
+  --shine-mid: rgba(225, 125, 38, 0.06);
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 55%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 60%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 68%, transparent);

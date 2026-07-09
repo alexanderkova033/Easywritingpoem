@@ -127,21 +127,6 @@
   mix-blend-mode: overlay;
 }
 
-.bg-picker-swatch--default {
-  background:
-    /* Green mesh glow top-left */
-    radial-gradient(ellipse 110% 90% at 18% 22%, rgba(55, 175, 85, 0.44), transparent 58%),
-    /* Green accent bottom-right */
-    radial-gradient(circle at 76% 80%, rgba(35, 150, 65, 0.32), transparent 50%),
-    /* Green centre shimmer */
-    radial-gradient(ellipse 80% 60% at 55% 50%, rgba(80, 190, 100, 0.20), transparent 55%),
-    /* Grid lines */
-    linear-gradient(rgba(130, 220, 150, 0.075) 1px, transparent 1px),
-    /* Dark green base */
-    linear-gradient(148deg, #0e2010 0%, #091809 50%, #060e06 100%);
-  background-size: auto, auto, auto, 14px 14px, auto;
-}
-
 .bg-picker-swatch--paper {
   background:
     radial-gradient(circle at 85% 12%, rgba(96, 72, 48, 0.12), transparent 55%),
@@ -188,52 +173,6 @@
     radial-gradient(ellipse 140% 55% at 50% 100%, rgba(255, 185, 120, 0.42), transparent 50%),
     /* Soft lavender-peach sky base */
     linear-gradient(190deg, #fdf0f6 0%, #f6e0ec 45%, #ede5f5 100%);
-}
-
-.bg-picker-swatch--slate {
-  background:
-    /* Moon: solid disc + blue halo */
-    radial-gradient(ellipse 36% 36% at 22% 22%, #e1f2ff 0%, #a5d2ff 40%, transparent 62%),
-    /* City-lights glow from bottom */
-    radial-gradient(ellipse 150% 65% at 50% 100%, rgba(100, 170, 255, 0.52), transparent 48%),
-    radial-gradient(ellipse 90% 45% at 50% 95%, rgba(60, 130, 240, 0.36), transparent 55%),
-    /* Cool blue mid-sky wash */
-    radial-gradient(ellipse 100% 70% at 80% 50%, rgba(40, 80, 170, 0.22), transparent 60%),
-    linear-gradient(165deg, #030508 0%, #060c18 55%, #040a14 100%);
-}
-
-.bg-picker-swatch--stone {
-  background:
-    /* Tiny carved triskelion hint, mid-left */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Cg fill='none' stroke='%23080806' stroke-opacity='0.62' stroke-width='1.4' stroke-linecap='round'%3E%3Cpath d='M32 32 Q32 22 26 22 Q20 22 20 28 Q20 32 24 32'/%3E%3Cpath d='M32 32 Q42 32 42 26 Q42 22 38 22 Q32 22 32 28'/%3E%3Cpath d='M32 32 Q32 42 38 42 Q42 42 42 36 Q42 32 38 32'/%3E%3C/g%3E%3Cg fill='none' stroke='%23e8dcb8' stroke-opacity='0.22' stroke-width='0.5'%3E%3Cpath d='M32 32 Q32 22 26 22 Q20 22 20 28 Q20 32 24 32'/%3E%3Cpath d='M32 32 Q42 32 42 26 Q42 22 38 22 Q32 22 32 28'/%3E%3Cpath d='M32 32 Q32 42 38 42 Q42 42 42 36 Q42 32 38 32'/%3E%3C/g%3E%3C/svg%3E"),
-    /* Diamond lattice chisel hatch */
-    repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(195, 180, 150, 0.14) 4px, rgba(195, 180, 150, 0.14) 4.5px),
-    repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(195, 180, 150, 0.10) 4px, rgba(195, 180, 150, 0.10) 4.5px),
-    /* Warm candle pool lower-left */
-    radial-gradient(ellipse 80% 60% at 14% 88%, rgba(255, 192, 96, 0.42), transparent 58%),
-    radial-gradient(ellipse 36% 28% at 14% 88%, rgba(255, 224, 144, 0.48), transparent 60%),
-    /* Cool moonlight upper-right */
-    radial-gradient(ellipse 50% 38% at 86% 12%, rgba(170, 188, 208, 0.22), transparent 60%),
-    /* Stone slab base */
-    linear-gradient(158deg, #2c2b27 0%, #1f1e1b 55%, #161513 100%);
-  background-size: 64px 64px, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
-}
-
-.bg-picker-swatch--crimson {
-  background:
-    /* Ember particles */
-    radial-gradient(circle 2px at 34% 64%, rgba(255, 130, 60, 0.95), transparent),
-    radial-gradient(circle 1.5px at 62% 52%, rgba(255, 190, 110, 0.9), transparent),
-    radial-gradient(circle 2.5px at 22% 80%, rgba(255, 90, 40, 0.9), transparent),
-    radial-gradient(circle 1.5px at 75% 72%, rgba(255, 160, 80, 0.85), transparent),
-    radial-gradient(circle 2px at 50% 90%, rgba(255, 110, 50, 0.9), transparent),
-    radial-gradient(circle 1px at 88% 58%, rgba(255, 200, 120, 0.75), transparent),
-    radial-gradient(circle 1px at 40% 40%, rgba(255, 120, 70, 0.65), transparent),
-    /* Horizon glow */
-    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(160, 30, 45, 0.55), transparent 50%),
-    radial-gradient(circle at 28% 26%, rgba(255, 110, 95, 0.26), transparent 56%),
-    radial-gradient(circle at 72% 72%, rgba(180, 55, 70, 0.2), transparent 54%),
-    linear-gradient(156deg, #190b0d 40%, #0d0507 100%);
 }
 
 .bg-picker-swatch--ocean {
@@ -978,6 +917,27 @@
   display: flex;
   justify-content: flex-end;
   padding-top: 0.25rem;
+}
+
+.appearance-intensity-group {
+  margin-top: 1.1rem;
+  padding-top: 0.95rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.appearance-intensity-field .appearance-field-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.appearance-intensity-value {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .line-jump-inline {

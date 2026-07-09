@@ -166,12 +166,6 @@
   color: var(--text);
 }
 
-.appearance-hints-desc {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
 .overlay {
   position: fixed;
   inset: 0;

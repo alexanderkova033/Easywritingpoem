@@ -8,7 +8,7 @@ import {
 import type { AppearanceSettings } from "../appearance";
 import { generateBackground } from "./generate-background";
 
-const PRESET_OPTIONS = BACKGROUND_OPTIONS.filter((o) => o.id !== "custom");
+const PRESET_OPTIONS = BACKGROUND_OPTIONS.filter((o) => o.id !== "custom" && o.id !== "default");
 
 const RECENTS_KEY = "easy-poems:recent-backgrounds";
 const MAX_RECENTS = 3;

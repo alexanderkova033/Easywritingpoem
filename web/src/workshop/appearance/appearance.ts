@@ -58,7 +58,17 @@ export interface AppearanceSettings {
   backdropPower: BackdropPowerSetting;
   /** User-generated custom backdrop (active when background === "custom"). */
   customBackground: CustomBackgroundTheme | null;
+  /** Global color-intensity sliders, as percentages (100 = neutral/unchanged). */
+  colorSaturation: number;
+  colorBrightness: number;
+  colorContrast: number;
 }
+
+export const COLOR_INTENSITY_RANGE = {
+  saturation: { min: 50, max: 160 },
+  brightness: { min: 85, max: 115 },
+  contrast: { min: 85, max: 120 },
+} as const;
 
 const DEFAULTS: AppearanceSettings = {
   poemFont: "literata",
@@ -70,6 +80,9 @@ const DEFAULTS: AppearanceSettings = {
   backdropMotion: "system",
   backdropPower: "low",
   customBackground: null,
+  colorSaturation: 100,
+  colorBrightness: 100,
+  colorContrast: 100,
 };
 
 export function defaultAppearance(): AppearanceSettings {
@@ -106,6 +119,15 @@ function isBackdropMotionSetting(x: string): x is BackdropMotionSetting {
 
 function isBackdropPowerSetting(x: string): x is BackdropPowerSetting {
   return x === "off" || x === "low" || x === "very-low";
+}
+
+function loadColorIntensity(
+  v: unknown,
+  range: { min: number; max: number },
+  fallback: number,
+): number {
+  if (typeof v !== "number" || Number.isNaN(v)) return fallback;
+  return Math.min(range.max, Math.max(range.min, v));
 }
 
 function loadCustomBackground(v: unknown): CustomBackgroundTheme | null {
@@ -166,6 +188,15 @@ export function loadAppearance(): AppearanceSettings {
             ? (o.lowPowerBackdrops ? "low" : "off")
             : DEFAULTS.backdropPower,
       customBackground: loadCustomBackground(o.customBackground),
+      colorSaturation: loadColorIntensity(
+        o.colorSaturation, COLOR_INTENSITY_RANGE.saturation, DEFAULTS.colorSaturation,
+      ),
+      colorBrightness: loadColorIntensity(
+        o.colorBrightness, COLOR_INTENSITY_RANGE.brightness, DEFAULTS.colorBrightness,
+      ),
+      colorContrast: loadColorIntensity(
+        o.colorContrast, COLOR_INTENSITY_RANGE.contrast, DEFAULTS.colorContrast,
+      ),
     };
   } catch {
     return { ...DEFAULTS };
@@ -274,4 +305,7 @@ export function applyAppearance(s: AppearanceSettings): void {
     "--poem-text-decoration",
     s.poemDecoration === "underline" ? "underline" : "none",
   );
+  el.style.setProperty("--color-saturation", `${s.colorSaturation}%`);
+  el.style.setProperty("--color-brightness", `${s.colorBrightness}%`);
+  el.style.setProperty("--color-contrast", `${s.colorContrast}%`);
 }

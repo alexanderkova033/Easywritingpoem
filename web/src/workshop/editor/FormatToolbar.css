@@ -399,7 +399,7 @@
 /* Line focus mode: gentle dimming of non-active lines. Kept soft so the
  * surrounding text stays legible rather than washing out. */
 .cm-line-dimmed {
-  opacity: 0.52;
+  opacity: 0.7;
   transition: opacity 0.22s ease;
 }
 

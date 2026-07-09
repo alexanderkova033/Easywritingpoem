@@ -1,13 +1,13 @@
 ﻿html[data-workshop-bg="paper"] {
   color-scheme: light;
-  --bg: #f9f6f1;
+  --bg: #f8f1e6;
   --surface: #ffffff;
-  --surface-2: #f5f2ed;
+  --surface-2: #f4ede0;
   --surface-elevated: #ffffff;
-  --border: #e0d8ce;
+  --border: #ddceb8;
   --text: #202721;
-  --muted: #5f6a62;
-  --accent: #3c6245;
+  --muted: #5c6a5d;
+  --accent: #35603f;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 18%, #d8e0d7);
   --selection-fg: var(--text);

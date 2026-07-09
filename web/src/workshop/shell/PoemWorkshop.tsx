@@ -1156,6 +1156,15 @@ export function PoemWorkshop() {
     aiVisibleIssues.length,
   ]);
 
+  // "Strong fit" mirrors MeterPanel's own meter-fit-high threshold (>=70%) — a
+  // couple of incidental iambic feet in free verse shouldn't light this up.
+  const meterHasStrongFit = useMemo(() => {
+    const scored = m.meterHints.filter((r) => r.iambicFitPercent != null);
+    if (scored.length === 0) return false;
+    const strong = scored.filter((r) => (r.iambicFitPercent ?? 0) >= 70).length;
+    return strong >= 3 && strong / scored.length >= 0.5;
+  }, [m.meterHints]);
+
   const libraryListRows = useMemo(() => {
     const q = libraryQuery.trim().toLowerCase();
     const labelFor = (p: PoemRecord) =>
@@ -1321,7 +1330,7 @@ export function PoemWorkshop() {
       {
         id: "backdrop",
         title: "Page background",
-        keywords: "background scene theme paper night forest dawn slate wallpaper",
+        keywords: "background scene theme paper night forest dawn wallpaper",
         run: () => setIsBackgroundOpen(true),
       },
 
@@ -1527,6 +1536,10 @@ export function PoemWorkshop() {
       return <span className="tool-accordion-dot" aria-label={`${m.spellHits.length} spelling flags`} />;
     if (id === "goals" && m.goalEvaluation.warnings.length > 0)
       return <span className="tool-accordion-dot" aria-label="goals not met" />;
+    if (id === "rhyme" && m.stanzaRhymeGroups.some((g) => g.clusters.length > 0))
+      return <span className="tool-accordion-dot" aria-label="rhymes found in your poem" />;
+    if (id === "meter" && meterHasStrongFit)
+      return <span className="tool-accordion-dot" aria-label="a strong metrical pattern detected" />;
     return null;
   };
   const toolAccordion = (
@@ -1725,7 +1738,10 @@ export function PoemWorkshop() {
             <AppearanceFormFields appearance={appearance} onChange={setAppearance} />
             <div className="style-modal-settings">
               <h3 className="style-modal-settings-title">Editor settings</h3>
-              <label className="appearance-hints-toggle">
+              <label
+                className="appearance-hints-toggle"
+                {...hint('Show a "Define" button when you select a word.')}
+              >
                 <input
                   type="checkbox"
                   checked={wordLookupEnabled}
@@ -1737,10 +1753,12 @@ export function PoemWorkshop() {
                 />
                 <span className="appearance-hints-text">
                   <span className="appearance-hints-title">Define on selection</span>
-                  <span className="appearance-hints-desc">Show a "Define" button when you select a word.</span>
                 </span>
               </label>
-              <label className="appearance-hints-toggle">
+              <label
+                className="appearance-hints-toggle"
+                {...hint("Show button tooltips on hover (hover devices only).")}
+              >
                 <input
                   type="checkbox"
                   checked={hoverHintsEnabled}
@@ -1748,10 +1766,15 @@ export function PoemWorkshop() {
                 />
                 <span className="appearance-hints-text">
                   <span className="appearance-hints-title">Hover hints</span>
-                  <span className="appearance-hints-desc">Show button tooltips on hover (hover devices only).</span>
                 </span>
               </label>
-              <label className="appearance-hints-toggle">
+              <label
+                className="appearance-hints-toggle"
+                {...hint(
+                  "Fetch all panels (backgrounds, AI, reading mode, share, export) right after startup " +
+                  "so they keep working if you lose internet. Uses a bit more data on first load.",
+                )}
+              >
                 <input
                   type="checkbox"
                   checked={preloadAllChunks}
@@ -1764,10 +1787,6 @@ export function PoemWorkshop() {
                 />
                 <span className="appearance-hints-text">
                   <span className="appearance-hints-title">Load everything up front</span>
-                  <span className="appearance-hints-desc">
-                    Fetch all panels (backgrounds, AI, reading mode, share, export) right after startup
-                    so they keep working if you lose internet. Uses a bit more data on first load.
-                  </span>
                 </span>
               </label>
             </div>

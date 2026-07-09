@@ -39,7 +39,7 @@ Tools panel is grouped into three buckets: **Overview**, **Sound**, **Suggest**.
 | Feature | What it does |
 |---|---|
 | **AI Theme** | Generate a custom background theme from a text prompt |
-| **Theme picker** | 22+ built-in themes (light, dusk, ember, ocean, aurora, snow, candle, ripple, firefly, studio, zenith…) |
+| **Theme picker** | Built-in themes (light, dusk, ember, ocean, aurora, snow, candle, ripple, firefly, zenith…) |
 | **Reading mode** | Distraction-free reader for finished drafts |
 | **Sharing** | Export to DOCX, PDF, image, or generate a shareable link |
 | **Selection popover** | Define (single word) + AI rewrite (with syllable input) on highlighted text |

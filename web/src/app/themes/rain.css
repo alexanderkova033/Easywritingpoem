@@ -5,10 +5,10 @@ html[data-workshop-bg="rain"] {
   --surface: #101620;
   --surface-2: #151d28;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
-  --border: #243040;
-  --text: #d2e1ef;
-  --muted: #6e8498;
-  --accent: #8ea8c0;
+  --border: #2c3c50;
+  --text: #d8e6f3;
+  --muted: #7c96ac;
+  --accent: #6fa8d4;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);

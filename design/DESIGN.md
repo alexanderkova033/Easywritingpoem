@@ -66,7 +66,7 @@ Defined in `web/src/app/index.css` as CSS custom properties:
 - **Ambient layers:** `--ambient-a/b/c`, `--after-zenith-*`
 - **Font:** `--font-ui` (system sans), `--font-poem` (serif), `--font-mono`
 - **Radius:** `--radius-sm`, `--radius-md`, `--radius-lg`, `--radius-xl`
-- **Themes:** 22+ named themes (light, dusk, ember, ocean, aurora, snow, candle, ripple, firefly, studio, zenith…)
+- **Themes:** named themes (light, dusk, ember, ocean, aurora, snow, candle, ripple, firefly, zenith…)
 
 Any new theme must define every `--ambient-*` and `--after-*` variable plus an `animation:` for the backdrop layer.
 

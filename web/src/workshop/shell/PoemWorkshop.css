@@ -2638,12 +2638,11 @@
 }
 
 .tool-accordion-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.375rem;
+  height: 0.375rem;
   border-radius: 50%;
-  background: var(--accent);
+  background: color-mix(in srgb, var(--accent) 70%, var(--muted));
   flex-shrink: 0;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .tool-accordion-chevron {
@@ -4098,88 +4097,64 @@
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .editor-panel,
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .results,
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .privacy,
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .tools-panel,
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .rhyme-panel {
   border-color: color-mix(in srgb, var(--border) 55%, transparent);
 }
 :where(
   html[data-workshop-bg="aurora"],
   html[data-workshop-bg="autumn"],
-  html[data-workshop-bg="crimson"],
   html[data-workshop-bg="dark"],
   html[data-workshop-bg="dusk"],
   html[data-workshop-bg="forest"],
   html[data-workshop-bg="night"],
   html[data-workshop-bg="ocean"],
-  html[data-workshop-bg="rain"],
-  html[data-workshop-bg="slate"],
-  html[data-workshop-bg="stone"],
-  html[data-workshop-bg="studio"]
+  html[data-workshop-bg="rain"]
 ) .editor-meta-grid {
   border-bottom-color: color-mix(in srgb, var(--border) 10%, transparent);
 }

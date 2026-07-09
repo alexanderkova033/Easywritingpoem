@@ -1,14 +1,14 @@
 ﻿/* ---- Summer: bright sky over sunflower field ---- */
 html[data-workshop-bg="summer"] {
   color-scheme: light;
-  --bg: #d9eefb;
+  --bg: #cde7fa;
   --surface: #f0faff;
-  --surface-2: #e6f3fc;
+  --surface-2: #e2f0fb;
   --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
-  --border: #a8d0ea;
+  --border: #90c2e6;
   --text: #0a1424;
-  --muted: #406480;
-  --accent: #1a82c8;
+  --muted: #3a5f7c;
+  --accent: #147ac2;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 18%, #c0dcf4);
   --selection-fg: var(--text);

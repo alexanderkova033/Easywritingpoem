@@ -1,13 +1,13 @@
 ﻿html[data-workshop-bg="dawn"] {
   color-scheme: light;
-  --bg: #f4ecef;
-  --surface: #f9f5f7;
-  --surface-2: #f5edf1;
+  --bg: #f7ebf0;
+  --surface: #fbf3f6;
+  --surface-2: #f6ebf0;
   --surface-elevated: #fff9fb;
-  --border: #dfd2d8;
+  --border: #e3cdd6;
   --text: #1f1619;
-  --muted: #665a61;
-  --accent: #7d4a63;
+  --muted: #745a64;
+  --accent: #8a4f6c;
   --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 14%, #ebe0e6);
   --selection-fg: var(--text);
