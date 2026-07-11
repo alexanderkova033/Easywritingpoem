@@ -36,8 +36,8 @@
   --btn-height-md: 2.55rem;
   --btn-height-lg: 2.8rem;
   --bg: #090f08;
-  --surface: #111a11;
-  --surface-2: #152016;
+  --surface: #182619;
+  --surface-2: #213021;
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
   --border: #283a28;
   /* Visible hairline for panel frames — blends border with muted so it stands out. */
@@ -76,8 +76,8 @@
   :root {
     /* Slightly warmer, less harsh than pure white — like quality writing paper */
     --bg: #f2f4f0;
-    --surface: #fafcf9;
-    --surface-2: #edf0eb;
+    --surface: #ffffff;
+    --surface-2: #e3e7de;
     --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
     --border: #d8ddd9;
     --hairline: color-mix(in srgb, var(--muted) 30%, var(--border));
@@ -217,10 +217,17 @@ html[data-backdrop-adjusted] body::after {
      sticky header's scrolling ancestor as the same element — the one
      combination that doesn't break sticky. Filtering the outer .tools-panel
      (which is itself page-level sticky, an ancestor of that scroll body)
-     would reintroduce the same bug from a different angle. */
+     would reintroduce the same bug from a different angle.
+   - .mob-tabbar: the mobile bottom nav. It's `position: fixed` itself, but
+     has no fixed-positioned descendants (only an absolute-positioned badge,
+     which tracks its own nearest positioned ancestor regardless of filter),
+     so filtering it directly is safe. Without this, the panel preset
+     visibly didn't apply to the one surface mobile users interact with
+     most. */
 html[data-panel-adjusted] .editor-panel,
 html[data-panel-adjusted] .workshop-rail,
-html[data-panel-adjusted] .tools-scroll-body {
+html[data-panel-adjusted] .tools-scroll-body,
+html[data-panel-adjusted] .mob-tabbar {
   filter:
     saturate(var(--panel-saturation, 100%))
     brightness(var(--panel-brightness, 100%))

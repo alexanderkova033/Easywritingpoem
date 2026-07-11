@@ -11,7 +11,7 @@
  * starts and shared across all concurrent warm containers.
  */
 
-import { kvGetNumber, kvIncrBy, kvSetPxIfAbsent } from "./_kv";
+import { kvGetNumber, kvIncrBy, kvIsRemote, kvSetPxIfAbsent } from "./_kv";
 
 const PER_IP_MONTHLY_CAP_CENTS = 500;
 const GLOBAL_DAILY_CAP_CENTS = 500;
@@ -124,51 +124,67 @@ export async function precheckSpend(
     return block(503, "kill-switch", "AI features are temporarily disabled.", 0);
   }
 
-  const ip = normalizeIp(opts.rawIp);
+  try {
+    // Global daily kill switch runs unconditionally, before the per-IP checks
+    // below — it's the last line of defense against a runaway bill from any
+    // source, so it must never be skippable by an absent/unparseable IP.
+    const day = dayKey();
+    const globalCents = await kvGetNumber(globalDayKvKey(day));
+    if (globalCents >= GLOBAL_DAILY_CAP_CENTS) {
+      return block(
+        503,
+        "global-daily-cap",
+        "Daily AI budget reached for this service. Try again tomorrow.",
+        secondsUntilNextUtcMidnight(),
+      );
+    }
 
-  if (!ip) return { ok: true, ip: "", status: 200, retryAfterSec: 0, body: null };
+    const ip = normalizeIp(opts.rawIp);
+    if (!ip) {
+      // Can't apply per-IP caps/cooldown without an identifiable caller. In
+      // local dev (no KV configured) x-forwarded-for is often absent — allow
+      // through. In production this should never happen; if it ever does,
+      // fail closed rather than grant an anonymous caller unlimited spend.
+      return kvIsRemote()
+        ? block(403, "no-ip", "Unable to identify request origin.", 0)
+        : { ok: true, ip: "", status: 200, retryAfterSec: 0, body: null };
+    }
 
-  const day = dayKey();
-  const globalCents = await kvGetNumber(globalDayKvKey(day));
-  if (globalCents >= GLOBAL_DAILY_CAP_CENTS) {
-    return block(
-      503,
-      "global-daily-cap",
-      "Daily AI budget reached for this service. Try again tomorrow.",
-      secondsUntilNextUtcMidnight(),
+    const month = monthKey();
+    const ipCents = await kvGetNumber(ipMonthKvKey(ip, month));
+    if (ipCents >= PER_IP_MONTHLY_CAP_CENTS) {
+      return block(
+        402,
+        "user-monthly-cap",
+        "Monthly AI usage limit reached. Resets next month.",
+        secondsUntilNextUtcMonth(),
+      );
+    }
+
+    const cooldownMs = opts.cooldownMs ?? DEFAULT_COOLDOWN_MS;
+    const cooldownEndpoint = opts.cooldownScope
+      ? `${opts.endpoint}:${opts.cooldownScope}`
+      : opts.endpoint;
+    const installed = await kvSetPxIfAbsent(
+      cooldownKvKey(ip, cooldownEndpoint),
+      Date.now() + cooldownMs,
+      cooldownMs,
     );
-  }
+    if (!installed) {
+      return block(
+        429,
+        "cooldown",
+        `Please wait a moment before retrying this action.`,
+        Math.ceil(cooldownMs / 1000),
+      );
+    }
 
-  const month = monthKey();
-  const ipCents = await kvGetNumber(ipMonthKvKey(ip, month));
-  if (ipCents >= PER_IP_MONTHLY_CAP_CENTS) {
-    return block(
-      402,
-      "user-monthly-cap",
-      "Monthly AI usage limit reached. Resets next month.",
-      secondsUntilNextUtcMonth(),
-    );
+    return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
+  } catch {
+    // KV outage: fail closed. A blip in the spend-cap store is not a reason
+    // to let cost-incurring requests through unmetered.
+    return block(503, "kv-error", "Temporarily unavailable. Please try again shortly.", 0);
   }
-
-  const cooldownMs = opts.cooldownMs ?? DEFAULT_COOLDOWN_MS;
-  const cooldownEndpoint = opts.cooldownScope
-    ? `${opts.endpoint}:${opts.cooldownScope}`
-    : opts.endpoint;
-  const installed = await kvSetPxIfAbsent(
-    cooldownKvKey(ip, cooldownEndpoint),
-    Date.now() + cooldownMs,
-    cooldownMs,
-  );
-  if (!installed) {
-    return block(
-      429,
-      "cooldown",
-      `Please wait a moment before retrying this action.`,
-      Math.ceil(cooldownMs / 1000),
-    );
-  }
-
-  return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
 }
 
 export function cooldownFor(endpoint: string, model?: string): number {
@@ -185,6 +201,13 @@ export function cooldownFor(endpoint: string, model?: string): number {
   return DEFAULT_COOLDOWN_MS;
 }
 
+/**
+ * Records spend against the global/per-IP counters. By the time this runs the
+ * OpenAI call has already succeeded and been paid for, so a bookkeeping
+ * failure here (e.g. a KV blip) must never take down the response — every
+ * call site awaits this without using the return value, so we swallow errors
+ * internally rather than let them propagate and crash an already-earned reply.
+ */
 export async function recordSpend(
   ip: string,
   model: string,
@@ -194,23 +217,27 @@ export async function recordSpend(
   const cost = estimateCostCents(model, promptTokens, completionTokens);
   const costWhole = Math.max(1, Math.ceil(cost));
 
-  const day = dayKey();
-  const newGlobal = await kvIncrBy(
-    globalDayKvKey(day),
-    costWhole,
-    secondsUntilNextUtcMidnight() * 1000,
-  );
-
-  let newIp = 0;
-  if (ip) {
-    const month = monthKey();
-    newIp = await kvIncrBy(
-      ipMonthKvKey(ip, month),
+  try {
+    const day = dayKey();
+    const newGlobal = await kvIncrBy(
+      globalDayKvKey(day),
       costWhole,
-      secondsUntilNextUtcMonth() * 1000,
+      secondsUntilNextUtcMidnight() * 1000,
     );
+
+    let newIp = 0;
+    if (ip) {
+      const month = monthKey();
+      newIp = await kvIncrBy(
+        ipMonthKvKey(ip, month),
+        costWhole,
+        secondsUntilNextUtcMonth() * 1000,
+      );
+    }
+    return { ipCents: newIp, globalCents: newGlobal, cost };
+  } catch {
+    return { ipCents: 0, globalCents: 0, cost };
   }
-  return { ipCents: newIp, globalCents: newGlobal, cost };
 }
 
 export function getCaps() {

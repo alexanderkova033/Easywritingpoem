@@ -5,7 +5,7 @@
  * lambda containers; falls back to a process-local Map in dev.
  */
 
-import { kvIncrBy, kvPttl } from "./_kv";
+import { kvIncrBy, kvIsRemote, kvPttl } from "./_kv";
 
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 8;
@@ -23,11 +23,22 @@ function bucketKey(ip: string): string {
 export async function checkRateLimit(
   rawIp: string | string[] | undefined,
 ): Promise<boolean> {
-  if (!rawIp) return true;
   const ip = normalizeIp(rawIp);
-  if (!ip) return true;
-  const count = await kvIncrBy(bucketKey(ip), 1, WINDOW_MS);
-  return count <= MAX_PER_WINDOW;
+  if (!ip) {
+    // Can't identify the caller, so a per-IP limit can't apply. In local dev
+    // (no KV configured) x-forwarded-for is often absent — allow through.
+    // In production this should never happen (Vercel's edge always sets it);
+    // if it ever does, fail closed rather than grant unlimited requests.
+    return !kvIsRemote();
+  }
+  try {
+    const count = await kvIncrBy(bucketKey(ip), 1, WINDOW_MS);
+    return count <= MAX_PER_WINDOW;
+  } catch {
+    // KV outage: fail closed. A blip in the limiter store is not a reason to
+    // let cost-incurring requests through unmetered.
+    return false;
+  }
 }
 
 /** Seconds until the IP's window resets. 0 if no active bucket. */
@@ -36,6 +47,10 @@ export async function getRateLimitRetrySec(
 ): Promise<number> {
   const ip = normalizeIp(rawIp);
   if (!ip) return 0;
-  const ms = await kvPttl(bucketKey(ip));
-  return Math.max(0, Math.ceil(ms / 1000));
+  try {
+    const ms = await kvPttl(bucketKey(ip));
+    return Math.max(0, Math.ceil(ms / 1000));
+  } catch {
+    return 0;
+  }
 }

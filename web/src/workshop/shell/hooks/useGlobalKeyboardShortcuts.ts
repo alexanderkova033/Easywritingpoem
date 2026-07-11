@@ -16,6 +16,9 @@ export interface GlobalKeyboardShortcutsInput {
   setIsExportOpen: Dispatch<SetStateAction<boolean>>;
   setIsShortcutsOpen: Dispatch<SetStateAction<boolean>>;
   setIsGuideOpen: Dispatch<SetStateAction<boolean>>;
+  setIsShareOpen: Dispatch<SetStateAction<boolean>>;
+  setIsStatsOpen: Dispatch<SetStateAction<boolean>>;
+  setIsTemplatesOpen: Dispatch<SetStateAction<boolean>>;
   setToolTab: (tab: ToolTab) => void;
   saveSnapshot: () => void;
   mobileAnalyzeFnRef: MutableRefObject<(() => void) | null>;
@@ -51,6 +54,9 @@ export function useGlobalKeyboardShortcuts(input: GlobalKeyboardShortcutsInput):
     setIsExportOpen,
     setIsShortcutsOpen,
     setIsGuideOpen,
+    setIsShareOpen,
+    setIsStatsOpen,
+    setIsTemplatesOpen,
     setToolTab,
     saveSnapshot,
     mobileAnalyzeFnRef,
@@ -116,6 +122,9 @@ export function useGlobalKeyboardShortcuts(input: GlobalKeyboardShortcutsInput):
         setIsFindOpen(false);
         setIsShortcutsOpen(false);
         setIsGuideOpen(false);
+        setIsShareOpen(false);
+        setIsStatsOpen(false);
+        setIsTemplatesOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -133,6 +142,9 @@ export function useGlobalKeyboardShortcuts(input: GlobalKeyboardShortcutsInput):
     setIsExportOpen,
     setIsShortcutsOpen,
     setIsGuideOpen,
+    setIsShareOpen,
+    setIsStatsOpen,
+    setIsTemplatesOpen,
     setToolTab,
     saveSnapshot,
     mobileAnalyzeFnRef,

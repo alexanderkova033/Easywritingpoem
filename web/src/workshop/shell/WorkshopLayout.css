@@ -821,12 +821,15 @@
   .tools-swipe-handle.is-dragging { cursor: grabbing; }
   .tools-swipe-handle.is-dragging::before { background: var(--accent); }
 
-  /* Mobile bottom-sheet scrim — only fades in at full snap. */
+  /* Mobile bottom-sheet scrim. A light dim at "half" snap (visual only — the
+     sheet is a peek/split state, so pointer-events stay off it lets taps
+     still reach the editor behind); a stronger, click-to-dismiss dim once
+     dragged to "full", matching the AI Analysis sheet's own backdrop. */
   .mobile-sheet-scrim {
     position: fixed;
     inset: 0;
     z-index: 61;
-    background: color-mix(in srgb, #000 0%, transparent);
+    background: color-mix(in srgb, #000 14%, transparent);
     pointer-events: none;
     transition: background 0.28s ease;
   }

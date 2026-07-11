@@ -2565,6 +2565,12 @@
     background 0.16s ease;
 }
 
+/* A hairline between rows within a group — otherwise adjacent tools (Queue,
+   Spell, Lines, Goals, Snapshots…) are told apart only by whitespace. */
+.tool-accordion-item + .tool-accordion-item {
+  border-top: 1px solid var(--hairline);
+}
+
 .tool-accordion-item.is-open {
   background: color-mix(in srgb, var(--bg) 50%, var(--surface));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, var(--border));
@@ -2610,7 +2616,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   color: inherit;
-  background: color-mix(in srgb, var(--border) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
   transition: color 0.13s ease, background 0.13s ease;
 }
 

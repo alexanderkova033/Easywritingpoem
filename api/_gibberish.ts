@@ -263,11 +263,24 @@ export async function gibberishGuard(opts: {
   text: string;
   apiKey: string;
 }): Promise<GibberishGuardResult> {
+  // NOTE: unlike checkRateLimit/precheckSpend, a missing IP does NOT skip
+  // this guard — classification below is pure/local and doesn't need one.
+  // IP is only used to persist a repeat-offender cooldown; without it we
+  // simply can't remember this caller across requests, so KV reads/writes
+  // keyed on it are best-effort (`.catch(() => {})`) rather than a reason to
+  // wave the request through unclassified.
   const ip = normalizeIp(opts.rawIp);
-  if (!ip) return { ok: true, ip: "", status: 200, retryAfterSec: 0, body: null };
 
-  const remaining = await getGibberishCooldownSec(ip);
-  if (remaining > 0) return block("gibberish-cooldown", remaining);
+  if (ip) {
+    let remaining = 0;
+    try {
+      remaining = await getGibberishCooldownSec(ip);
+    } catch {
+      // KV outage reading the cooldown bucket — treat as no active cooldown;
+      // the heuristic/LLM classification below still runs regardless.
+    }
+    if (remaining > 0) return block("gibberish-cooldown", remaining);
+  }
 
   const signals = computeGibberishSignals(opts.text);
   const verdict = classifyGibberish(signals);
@@ -275,14 +288,19 @@ export async function gibberishGuard(opts: {
     return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
   }
   if (verdict.kind === "block") {
-    await tripGibberishCooldown(ip);
+    if (ip) await tripGibberishCooldown(ip).catch(() => {});
     return block("gibberish", GIBBERISH_COOLDOWN_SEC);
   }
   // ask-llm — but first check whether we've already classified this exact
   // text in the recent past. Same poem re-submitted (analyze → refine →
   // chat, etc.) should not pay for another gpt-5-nano call.
   const cacheKey = verdictKey(hashText(opts.text));
-  const cached = await kvGetString(cacheKey);
+  let cached: string | null = null;
+  try {
+    cached = await kvGetString(cacheKey);
+  } catch {
+    // Cache read failed — fall through and classify fresh.
+  }
   let isGib: boolean;
   if (cached === "1") {
     isGib = true;
@@ -290,10 +308,10 @@ export async function gibberishGuard(opts: {
     isGib = false;
   } else {
     isGib = await llmIsGibberish(opts.apiKey, opts.text);
-    await kvSetStringPx(cacheKey, isGib ? "1" : "0", VERDICT_CACHE_MS);
+    await kvSetStringPx(cacheKey, isGib ? "1" : "0", VERDICT_CACHE_MS).catch(() => {});
   }
   if (isGib) {
-    await tripGibberishCooldown(ip);
+    if (ip) await tripGibberishCooldown(ip).catch(() => {});
     return block("gibberish", GIBBERISH_COOLDOWN_SEC);
   }
   return { ok: true, ip, status: 200, retryAfterSec: 0, body: null };
