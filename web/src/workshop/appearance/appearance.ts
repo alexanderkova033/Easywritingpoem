@@ -58,10 +58,14 @@ export interface AppearanceSettings {
   backdropPower: BackdropPowerSetting;
   /** User-generated custom backdrop (active when background === "custom"). */
   customBackground: CustomBackgroundTheme | null;
-  /** Global color-intensity preset, applied as percentages (100 = neutral/unchanged). */
-  colorSaturation: number;
-  colorBrightness: number;
-  colorContrast: number;
+  /** Color-intensity preset for the ambient scene, as percentages (100 = neutral). */
+  backdropSaturation: number;
+  backdropBrightness: number;
+  backdropContrast: number;
+  /** Color-intensity preset for the foreground UI (editor, rail, tools panel). */
+  panelSaturation: number;
+  panelBrightness: number;
+  panelContrast: number;
 }
 
 export const COLOR_INTENSITY_RANGE = {
@@ -79,11 +83,21 @@ export interface ColorIntensityPreset {
   contrast: number;
 }
 
-export const COLOR_INTENSITY_PRESETS: ColorIntensityPreset[] = [
+export const BACKDROP_INTENSITY_PRESETS: ColorIntensityPreset[] = [
   { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
-  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 91, brightness: 101, contrast: 96 },
-  { key: "vivid", label: "Vivid", desc: "A touch richer, more saturated colors.", saturation: 112, brightness: 100, contrast: 103 },
-  { key: "bold", label: "Bold", desc: "A little more punch on top of vivid color.", saturation: 108, brightness: 98, contrast: 108 },
+  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 72, brightness: 105, contrast: 88 },
+  { key: "vivid", label: "Vivid", desc: "Richer, more saturated colors.", saturation: 145, brightness: 102, contrast: 113 },
+  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 130, brightness: 94, contrast: 118 },
+];
+
+// Gentler than the backdrop presets at the same names — panels carry actual
+// text (poem lines, tool labels), so intensity is capped well short of
+// anything that could hurt legibility.
+export const PANEL_INTENSITY_PRESETS: ColorIntensityPreset[] = [
+  { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
+  { key: "muted", label: "Muted", desc: "Softer, quieter panel colors.", saturation: 85, brightness: 102, contrast: 95 },
+  { key: "vivid", label: "Vivid", desc: "Richer panel colors.", saturation: 122, brightness: 100, contrast: 106 },
+  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 112, brightness: 97, contrast: 112 },
 ];
 
 const DEFAULTS: AppearanceSettings = {
@@ -96,9 +110,12 @@ const DEFAULTS: AppearanceSettings = {
   backdropMotion: "system",
   backdropPower: "low",
   customBackground: null,
-  colorSaturation: 100,
-  colorBrightness: 100,
-  colorContrast: 100,
+  backdropSaturation: 100,
+  backdropBrightness: 100,
+  backdropContrast: 100,
+  panelSaturation: 100,
+  panelBrightness: 100,
+  panelContrast: 100,
 };
 
 export function defaultAppearance(): AppearanceSettings {
@@ -204,14 +221,26 @@ export function loadAppearance(): AppearanceSettings {
             ? (o.lowPowerBackdrops ? "low" : "off")
             : DEFAULTS.backdropPower,
       customBackground: loadCustomBackground(o.customBackground),
-      colorSaturation: loadColorIntensity(
-        o.colorSaturation, COLOR_INTENSITY_RANGE.saturation, DEFAULTS.colorSaturation,
+      // `colorSaturation`/etc. is the pre-split key name (single "whole app"
+      // slider set) — fall back to it so anyone who set it before this split
+      // keeps their choice as their backdrop preset.
+      backdropSaturation: loadColorIntensity(
+        o.backdropSaturation ?? o.colorSaturation, COLOR_INTENSITY_RANGE.saturation, DEFAULTS.backdropSaturation,
       ),
-      colorBrightness: loadColorIntensity(
-        o.colorBrightness, COLOR_INTENSITY_RANGE.brightness, DEFAULTS.colorBrightness,
+      backdropBrightness: loadColorIntensity(
+        o.backdropBrightness ?? o.colorBrightness, COLOR_INTENSITY_RANGE.brightness, DEFAULTS.backdropBrightness,
       ),
-      colorContrast: loadColorIntensity(
-        o.colorContrast, COLOR_INTENSITY_RANGE.contrast, DEFAULTS.colorContrast,
+      backdropContrast: loadColorIntensity(
+        o.backdropContrast ?? o.colorContrast, COLOR_INTENSITY_RANGE.contrast, DEFAULTS.backdropContrast,
+      ),
+      panelSaturation: loadColorIntensity(
+        o.panelSaturation, COLOR_INTENSITY_RANGE.saturation, DEFAULTS.panelSaturation,
+      ),
+      panelBrightness: loadColorIntensity(
+        o.panelBrightness, COLOR_INTENSITY_RANGE.brightness, DEFAULTS.panelBrightness,
+      ),
+      panelContrast: loadColorIntensity(
+        o.panelContrast, COLOR_INTENSITY_RANGE.contrast, DEFAULTS.panelContrast,
       ),
     };
   } catch {
@@ -321,17 +350,27 @@ export function applyAppearance(s: AppearanceSettings): void {
     "--poem-text-decoration",
     s.poemDecoration === "underline" ? "underline" : "none",
   );
-  el.style.setProperty("--color-saturation", `${s.colorSaturation}%`);
-  el.style.setProperty("--color-brightness", `${s.colorBrightness}%`);
-  el.style.setProperty("--color-contrast", `${s.colorContrast}%`);
-  // Gates the backdrop `filter` in index.css (applied to body::before/::after
-  // directly — see the comment there for why not on body itself). Purely a
-  // perf/no-op guard: only touch the property when a preset is actually
-  // off-neutral.
-  const isColorAdjusted =
-    s.colorSaturation !== DEFAULTS.colorSaturation ||
-    s.colorBrightness !== DEFAULTS.colorBrightness ||
-    s.colorContrast !== DEFAULTS.colorContrast;
-  if (isColorAdjusted) el.dataset.colorAdjusted = "";
-  else delete el.dataset.colorAdjusted;
+  el.style.setProperty("--backdrop-saturation", `${s.backdropSaturation}%`);
+  el.style.setProperty("--backdrop-brightness", `${s.backdropBrightness}%`);
+  el.style.setProperty("--backdrop-contrast", `${s.backdropContrast}%`);
+  el.style.setProperty("--panel-saturation", `${s.panelSaturation}%`);
+  el.style.setProperty("--panel-brightness", `${s.panelBrightness}%`);
+  el.style.setProperty("--panel-contrast", `${s.panelContrast}%`);
+  // Gates each filter in index.css (applied to body::before/::after for the
+  // backdrop, and to specific safe panel elements for panels — see the
+  // comments there for why not on body/a shared ancestor). Purely a
+  // perf/no-op guard: only touch the property when a preset is off-neutral.
+  const isBackdropAdjusted =
+    s.backdropSaturation !== DEFAULTS.backdropSaturation ||
+    s.backdropBrightness !== DEFAULTS.backdropBrightness ||
+    s.backdropContrast !== DEFAULTS.backdropContrast;
+  if (isBackdropAdjusted) el.dataset.backdropAdjusted = "";
+  else delete el.dataset.backdropAdjusted;
+
+  const isPanelAdjusted =
+    s.panelSaturation !== DEFAULTS.panelSaturation ||
+    s.panelBrightness !== DEFAULTS.panelBrightness ||
+    s.panelContrast !== DEFAULTS.panelContrast;
+  if (isPanelAdjusted) el.dataset.panelAdjusted = "";
+  else delete el.dataset.panelAdjusted;
 }

@@ -1,50 +1,67 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  COLOR_INTENSITY_PRESETS,
+  BACKDROP_INTENSITY_PRESETS,
+  PANEL_INTENSITY_PRESETS,
   POEM_FONT_OPTIONS,
   UI_FONT_OPTIONS,
   type AppearanceSettings,
+  type ColorIntensityPreset,
   defaultAppearance,
   type PoemFontId,
   type UiFontId,
 } from "./appearance";
 import "./FontSelect.css";
 
-function ColorIntensityPresets({
+type IntensityFieldKeys = {
+  saturation: "backdropSaturation" | "panelSaturation";
+  brightness: "backdropBrightness" | "panelBrightness";
+  contrast: "backdropContrast" | "panelContrast";
+};
+
+function ColorIntensityPresetRow({
+  label,
+  presets,
+  fields,
   appearance,
   onChange,
 }: {
+  label: string;
+  presets: ColorIntensityPreset[];
+  fields: IntensityFieldKeys;
   appearance: AppearanceSettings;
   onChange: (next: AppearanceSettings) => void;
 }) {
-  const activeKey = COLOR_INTENSITY_PRESETS.find(
+  const activeKey = presets.find(
     (p) =>
-      p.saturation === appearance.colorSaturation &&
-      p.brightness === appearance.colorBrightness &&
-      p.contrast === appearance.colorContrast,
+      p.saturation === appearance[fields.saturation] &&
+      p.brightness === appearance[fields.brightness] &&
+      p.contrast === appearance[fields.contrast],
   )?.key;
 
   return (
-    <div className="color-intensity-presets" role="group" aria-label="Color intensity">
-      {COLOR_INTENSITY_PRESETS.map((p) => (
-        <button
-          key={p.key}
-          type="button"
-          className={`color-intensity-chip${p.key === activeKey ? " is-active" : ""}`}
-          title={p.desc}
-          aria-pressed={p.key === activeKey}
-          onClick={() =>
-            onChange({
-              ...appearance,
-              colorSaturation: p.saturation,
-              colorBrightness: p.brightness,
-              colorContrast: p.contrast,
-            })
-          }
-        >
-          {p.label}
-        </button>
-      ))}
+    <div className="color-intensity-row">
+      <span className="color-intensity-row-label">{label}</span>
+      <div className="color-intensity-presets" role="group" aria-label={`${label} color intensity`}>
+        {presets.map((p) => (
+          <button
+            key={p.key}
+            type="button"
+            className={`color-intensity-chip${p.key === activeKey ? " is-active" : ""}`}
+            title={p.desc}
+            aria-pressed={p.key === activeKey}
+            onClick={() =>
+              onChange({
+                ...appearance,
+                [fields.saturation]: p.saturation,
+                [fields.brightness]: p.brightness,
+                [fields.contrast]: p.contrast,
+              })
+            }
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -193,7 +210,20 @@ export function AppearanceFormFields(props: {
 
       <div className="appearance-intensity-group">
         <h3 className="style-modal-settings-title">Color intensity</h3>
-        <ColorIntensityPresets appearance={appearance} onChange={onChange} />
+        <ColorIntensityPresetRow
+          label="Backdrop"
+          presets={BACKDROP_INTENSITY_PRESETS}
+          fields={{ saturation: "backdropSaturation", brightness: "backdropBrightness", contrast: "backdropContrast" }}
+          appearance={appearance}
+          onChange={onChange}
+        />
+        <ColorIntensityPresetRow
+          label="Panels"
+          presets={PANEL_INTENSITY_PRESETS}
+          fields={{ saturation: "panelSaturation", brightness: "panelBrightness", contrast: "panelContrast" }}
+          appearance={appearance}
+          onChange={onChange}
+        />
       </div>
 
       <div className="appearance-actions">
@@ -202,9 +232,10 @@ export function AppearanceFormFields(props: {
           className="small-btn appearance-reset-btn"
           onClick={() => {
             const d = defaultAppearance();
-            // Only reset the fields this modal owns (fonts, sizing, color
-            // intensity) — background/backdrop settings live in the separate
-            // Background modal and shouldn't be wiped from here.
+            // Only reset the fields this modal owns (fonts, sizing, both
+            // color-intensity preset rows) — the *animation/performance*
+            // backdrop settings (backdropMotion/backdropPower) live in the
+            // separate Background modal and shouldn't be wiped from here.
             onChange({
               ...appearance,
               poemFont: d.poemFont,
@@ -212,9 +243,12 @@ export function AppearanceFormFields(props: {
               poemSize: d.poemSize,
               poemWeight: d.poemWeight,
               poemDecoration: d.poemDecoration,
-              colorSaturation: d.colorSaturation,
-              colorBrightness: d.colorBrightness,
-              colorContrast: d.colorContrast,
+              backdropSaturation: d.backdropSaturation,
+              backdropBrightness: d.backdropBrightness,
+              backdropContrast: d.backdropContrast,
+              panelSaturation: d.panelSaturation,
+              panelBrightness: d.panelBrightness,
+              panelContrast: d.panelContrast,
             });
           }}
         >

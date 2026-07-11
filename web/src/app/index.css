@@ -185,25 +185,46 @@ body {
      element and doesn't have this side effect. */
 }
 
-/* Global color-intensity presets (Style settings) — neutral (100%) by default.
-   Applied directly to the backdrop pseudo-elements themselves, NOT to `body`
-   (or any other shared ancestor). A `filter` on `body` would make it the
-   containing block for every `position: fixed`/`sticky` descendant that
-   relies on tracking the true viewport — which broke three separate things
-   when tried: the backdrop got clipped to one viewport-height on tall pages
-   ("blank"/black space below the fold), the rail/tools-panel sticky columns
-   stopped tracking scroll, and the fixed-position modal overlay rendered
-   relative to body's box instead of the viewport (appearing to jump on
-   open). Putting the filter on the fixed elements themselves has none of
+/* Backdrop color-intensity preset (Style settings) — neutral (100%) by
+   default. Applied directly to the backdrop pseudo-elements themselves, NOT
+   to `body` (or any other shared ancestor). A `filter` on `body` would make
+   it the containing block for every `position: fixed`/`sticky` descendant
+   that relies on tracking the true viewport — which broke three separate
+   things when tried: the backdrop got clipped to one viewport-height on tall
+   pages ("blank"/black space below the fold), the rail/tools-panel sticky
+   columns stopped tracking scroll, and the fixed-position modal overlay
+   rendered relative to body's box instead of the viewport (appearing to jump
+   on open). Putting the filter on the fixed elements themselves has none of
    these side effects, since nothing is ever nested inside these
-   pseudo-elements — it just narrows the effect to the backdrop scene rather
-   than the whole app. */
-html[data-color-adjusted] body::before,
-html[data-color-adjusted] body::after {
+   pseudo-elements. See the panels rule below for the other half of this
+   split (foreground UI, same hazard, different workaround). */
+html[data-backdrop-adjusted] body::before,
+html[data-backdrop-adjusted] body::after {
   filter:
-    saturate(var(--color-saturation, 100%))
-    brightness(var(--color-brightness, 100%))
-    contrast(var(--color-contrast, 100%));
+    saturate(var(--backdrop-saturation, 100%))
+    brightness(var(--backdrop-brightness, 100%))
+    contrast(var(--backdrop-contrast, 100%));
+}
+
+/* Panel color-intensity preset — the foreground UI counterpart to the
+   backdrop rule above. Targets specific elements rather than a shared
+   ancestor, for the same containing-block reason:
+   - .editor-panel and .workshop-rail: plain boxes, no sticky/fixed
+     descendants, safe to filter directly.
+   - .tools-scroll-body (not .tools-panel itself): the tools panel has a
+     nested `position: sticky` header that tracks THIS element's scrolling,
+     so filtering it directly keeps the filter's containing block and the
+     sticky header's scrolling ancestor as the same element — the one
+     combination that doesn't break sticky. Filtering the outer .tools-panel
+     (which is itself page-level sticky, an ancestor of that scroll body)
+     would reintroduce the same bug from a different angle. */
+html[data-panel-adjusted] .editor-panel,
+html[data-panel-adjusted] .workshop-rail,
+html[data-panel-adjusted] .tools-scroll-body {
+  filter:
+    saturate(var(--panel-saturation, 100%))
+    brightness(var(--panel-brightness, 100%))
+    contrast(var(--panel-contrast, 100%));
 }
 
 body::-webkit-scrollbar { width: 6px; }
