@@ -74,30 +74,45 @@ export const COLOR_INTENSITY_RANGE = {
   contrast: { min: 85, max: 120 },
 } as const;
 
-export interface ColorIntensityPreset {
-  key: string;
-  label: string;
-  desc: string;
+interface ColorIntensityValues {
   saturation: number;
   brightness: number;
   contrast: number;
 }
 
-export const BACKDROP_INTENSITY_PRESETS: ColorIntensityPreset[] = [
-  { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
-  { key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.", saturation: 72, brightness: 105, contrast: 88 },
-  { key: "vivid", label: "Vivid", desc: "Richer, more saturated colors.", saturation: 145, brightness: 102, contrast: 113 },
-  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 130, brightness: 94, contrast: 118 },
-];
+export interface ColorIntensityPreset {
+  key: string;
+  label: string;
+  desc: string;
+  // One click drives both targets at once, at a balanced ratio: backdrop
+  // (decorative, nothing needs to stay legible) gets the fuller swing; panels
+  // (editor surface, rail, tools — actual text) get a capped-down version of
+  // the same preset so text never fights the effect.
+  backdrop: ColorIntensityValues;
+  panel: ColorIntensityValues;
+}
 
-// Gentler than the backdrop presets at the same names — panels carry actual
-// text (poem lines, tool labels), so intensity is capped well short of
-// anything that could hurt legibility.
-export const PANEL_INTENSITY_PRESETS: ColorIntensityPreset[] = [
-  { key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.", saturation: 100, brightness: 100, contrast: 100 },
-  { key: "muted", label: "Muted", desc: "Softer, quieter panel colors.", saturation: 85, brightness: 102, contrast: 95 },
-  { key: "vivid", label: "Vivid", desc: "Richer panel colors.", saturation: 122, brightness: 100, contrast: 106 },
-  { key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.", saturation: 112, brightness: 97, contrast: 112 },
+export const COLOR_INTENSITY_PRESETS: ColorIntensityPreset[] = [
+  {
+    key: "neutral", label: "Neutral", desc: "Unchanged — exactly as each theme was designed.",
+    backdrop: { saturation: 100, brightness: 100, contrast: 100 },
+    panel: { saturation: 100, brightness: 100, contrast: 100 },
+  },
+  {
+    key: "muted", label: "Muted", desc: "Softer, quieter colors — easier on the eyes for long sessions.",
+    backdrop: { saturation: 72, brightness: 105, contrast: 88 },
+    panel: { saturation: 85, brightness: 102, contrast: 95 },
+  },
+  {
+    key: "vivid", label: "Vivid", desc: "Richer, more saturated colors.",
+    backdrop: { saturation: 145, brightness: 102, contrast: 113 },
+    panel: { saturation: 122, brightness: 100, contrast: 106 },
+  },
+  {
+    key: "bold", label: "Bold", desc: "Punchier contrast on top of vivid color.",
+    backdrop: { saturation: 130, brightness: 94, contrast: 118 },
+    panel: { saturation: 112, brightness: 97, contrast: 112 },
+  },
 ];
 
 const DEFAULTS: AppearanceSettings = {

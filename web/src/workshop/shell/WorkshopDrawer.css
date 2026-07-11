@@ -187,21 +187,7 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.color-intensity-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.color-intensity-row-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
+  gap: 0.65rem;
 }
 
 .color-intensity-presets {
