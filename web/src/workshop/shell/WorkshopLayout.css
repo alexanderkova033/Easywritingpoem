@@ -168,16 +168,18 @@
  * Word-style page feel. Padding inside .editor-panel acts as page margins. */
 @media (min-width: 900px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: min(1080px, 94vw);
+    max-width: min(1180px, 95vw);
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding: 1.25rem 2.4rem 1.25rem;
+    /* Side padding matches normal mode; top/bottom stay as thin frames since
+       the panel is pure writing surface in focus mode. */
+    padding: 0.85rem 1.35rem 0.9rem;
     box-shadow: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
     /* Give the page-like column a real height to fill (focus mode has no
        sibling panel to size against), so a short draft still reads as a
        page rather than a shrink-wrapped card. */
-    min-height: 70vh;
+    min-height: 85vh;
     transition:
       max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
       padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
@@ -187,7 +189,7 @@
 
 @media (min-width: 1400px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: 1160px;
+    max-width: 1260px;
   }
 }
 
@@ -220,6 +222,20 @@
   display: none !important;
 }
 
+/* ── Focus mode: writing space only ─────────────────────────────────────────
+ * Everything above the poem body (title/meta, "Poem" label + format toolbar)
+ * and below it (copy button) is removed, as is AI analysis — the panel's own
+ * padding is the only frame left around the words. */
+.poem-workshop.is-focus-mode .editor-meta-grid,
+.poem-workshop.is-focus-mode .editor-meta-bar,
+.poem-workshop.is-focus-mode .editor-meta-peek-btn,
+.poem-workshop.is-focus-mode .body-label-row,
+.poem-workshop.is-focus-mode .poem-editor-copy-box,
+.poem-workshop.is-focus-mode .ai-analysis-section,
+.poem-workshop.is-focus-mode .ai-summary-titlebar {
+  display: none !important;
+}
+
 /* Soft bg simplification: drop heavy chrome on the page itself, but keep
  * the panel readable. No color swap — just less competing surface. */
 .poem-workshop.is-focus-mode .editor-panel {
@@ -233,36 +249,29 @@
 }
 
 /* ── Focus mode: reference panels stay present but dimmed.
- * Rhyme scheme + AI analysis: 50% bright while user is active, drop to 25%
+ * Rhyme scheme: 50% bright while user is active, drop to 25%
  * when idle, brighten to ~85% on hover for quick glances. */
 .poem-workshop.is-focus-mode .rhyme-panel,
-.poem-workshop.is-focus-mode .editor-rhyme-scheme,
-.poem-workshop.is-focus-mode .ai-analysis-section {
+.poem-workshop.is-focus-mode .editor-rhyme-scheme {
   opacity: 0.5;
   transition: opacity 0.5s ease;
 }
 .poem-workshop.is-focus-mode .rhyme-panel:hover,
-.poem-workshop.is-focus-mode .editor-rhyme-scheme:hover,
-.poem-workshop.is-focus-mode .ai-analysis-section:hover {
+.poem-workshop.is-focus-mode .editor-rhyme-scheme:hover {
   opacity: 0.85;
 }
 :root[data-focus-idle] .poem-workshop.is-focus-mode .rhyme-panel,
-:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-rhyme-scheme,
-:root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section {
+:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-rhyme-scheme {
   opacity: 0.25;
   transition: opacity 1.1s ease;
 }
 
-/* ── Fade-on-idle: drift chrome, AI analysis, and the mouse cursor away
- * after stillness. Driven by data-focus-idle on <html>, set by PoemWorkshop.
+/* ── Fade-on-idle: drift chrome and the mouse cursor away after stillness.
+ * Driven by data-focus-idle on <html>, set by PoemWorkshop.
  * Mouse activity reveals; idle reapplies. */
 .poem-workshop.is-focus-mode .topbar,
 .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
-.poem-workshop.is-focus-mode .toolbar,
-.poem-workshop.is-focus-mode .ai-analysis-section,
-.poem-workshop.is-focus-mode .editor-meta-grid,
-.poem-workshop.is-focus-mode .editor-title-collapsed-line,
-.poem-workshop.is-focus-mode .ai-summary-titlebar {
+.poem-workshop.is-focus-mode .toolbar {
   transition: opacity 0.5s ease;
 }
 
@@ -297,9 +306,6 @@
   opacity: 0.18;
   transition: opacity 1.1s ease;
 }
-.poem-workshop.is-focus-mode .ai-summary-titlebar:hover {
-  opacity: 1;
-}
 
 :root[data-focus-idle] .poem-workshop.is-focus-mode {
   cursor: none;
@@ -311,15 +317,6 @@
 :root[data-focus-idle] .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
 :root[data-focus-idle] .poem-workshop.is-focus-mode .toolbar {
   opacity: 0.06;
-  transition: opacity 1.1s ease;
-}
-:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-meta-grid,
-:root[data-focus-idle] .poem-workshop.is-focus-mode .editor-title-collapsed-line {
-  opacity: 0.18;
-  transition: opacity 1.1s ease;
-}
-:root[data-focus-idle] .poem-workshop.is-focus-mode .ai-summary-titlebar {
-  opacity: 0.18;
   transition: opacity 1.1s ease;
 }
 
@@ -698,21 +695,13 @@
   .poem-workshop.is-focus-mode .topbar,
   .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
   .poem-workshop.is-focus-mode .toolbar,
-  .poem-workshop.is-focus-mode .ai-analysis-section,
-  .poem-workshop.is-focus-mode .editor-meta-grid,
-  .poem-workshop.is-focus-mode .editor-title-collapsed-line,
   .poem-workshop.is-focus-mode .rhyme-panel,
   .poem-workshop.is-focus-mode .editor-rhyme-scheme,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .topbar,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .mobile-toolbar-wrap,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .toolbar,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .ai-analysis-section,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-meta-grid,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-title-collapsed-line,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .rhyme-panel,
   :root[data-focus-idle] .poem-workshop.is-focus-mode .editor-rhyme-scheme,
-  .poem-workshop.is-focus-mode .ai-summary-titlebar,
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .ai-summary-titlebar,
   .focus-back-btn,
   :root[data-focus-idle] .focus-back-btn,
   .focus-notes-panel,
