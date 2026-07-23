@@ -39,7 +39,7 @@ Landing
                         ├─ Editor (CodeMirror, format toolbar, selection popover)
                         ├─ Rhyme ribbons (right gutter, end-rhyme labels)
                         ├─ Tools panel (3 buckets):
-                        │     Overview  → Issues, Spell, Lines, Goals, Snapshots
+                        │     Overview  → Issues, Spell, Lines, Plans, Snapshots
                         │     Sound     → Meter, Rhyme, Repeats
                         │     Suggest   → Ideas / line rewrites
                         ├─ Mobile tab bar (collapsed tools, bottom)

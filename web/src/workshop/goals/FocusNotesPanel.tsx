@@ -47,7 +47,7 @@ function clampToViewport(pos: PanelPos, width: number): PanelPos {
 
 /**
  * Side panel that appears in focus mode showing pinned + active ideas from the
- * goals notebook. Subtle/dimmed by default, fades with chrome on idle, and
+ * plans notebook. Subtle/dimmed by default, fades with chrome on idle, and
  * expands into a small floating sheet for adding/toggling notes without
  * leaving focus mode.
  */

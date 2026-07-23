@@ -41,10 +41,10 @@ export function SoftPill({
       onClick={onToggle}
       title={
         soft
-          ? "Stretch goal — won't trigger issues. Click to make required."
-          : "Required — counts as an issue when unmet. Click to make a stretch goal."
+          ? "Stretch plan — won't trigger issues. Click to make required."
+          : "Required — counts as an issue when unmet. Click to make a stretch plan."
       }
-      aria-label={`${label}: ${soft ? "stretch goal" : "required"}`}
+      aria-label={`${label}: ${soft ? "stretch plan" : "required"}`}
     >
       {soft ? "Stretch" : "Required"}
     </button>

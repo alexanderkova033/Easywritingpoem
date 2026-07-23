@@ -44,7 +44,7 @@ html[data-workshop-bg="paper"] body::before {
     /* Left margin red rule */
     repeating-linear-gradient(90deg, transparent, transparent 3.75rem, color-mix(in srgb, #b03020 7%, transparent) 3.75rem, color-mix(in srgb, #b03020 7%, transparent) 3.78rem),
     /* Hero: ink-bottle + quill silhouette upper-left */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='280' viewBox='0 0 260 280'%3E%3Cellipse cx='62' cy='208' rx='32' ry='8' fill='%231a0e06' fill-opacity='0.05'/%3E%3Cpath fill='%231f1208' fill-opacity='0.14' d='M40 162 Q40 154 48 152 L78 152 Q86 154 86 162 L86 200 Q86 210 78 212 L48 212 Q40 210 40 200 Z'/%3E%3Crect x='48' y='148' width='30' height='8' rx='2' fill='%231f1208' fill-opacity='0.18'/%3E%3Cpath fill='%2330200a' fill-opacity='0.14' d='M58 156 Q57 145 63 132'/%3E%3Cpath fill='none' stroke='%23241408' stroke-opacity='0.18' stroke-width='1.5' stroke-linecap='round' d='M70 152 Q92 96 156 38 Q176 22 192 12'/%3E%3Cpath fill='%23241408' fill-opacity='0.16' d='M186 14 Q198 10 206 6 Q204 18 200 26 Q190 26 184 22 Z'/%3E%3Cpath fill='none' stroke='%23241408' stroke-opacity='0.08' stroke-width='0.5' d='M86 130 Q90 122 96 116M104 110 Q108 102 114 96M124 86 Q128 78 134 72M144 60 Q148 52 154 46'/%3E%3Cellipse cx='70' cy='240' rx='14' ry='6' fill='%23241408' fill-opacity='0.07'/%3E%3Ccircle cx='70' cy='240' r='3' fill='%23120804' fill-opacity='0.18'/%3E%3C/svg%3E");
+    var(--hero-img, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='280' viewBox='0 0 260 280'%3E%3Cellipse cx='62' cy='208' rx='32' ry='8' fill='%231a0e06' fill-opacity='0.05'/%3E%3Cpath fill='%231f1208' fill-opacity='0.14' d='M40 162 Q40 154 48 152 L78 152 Q86 154 86 162 L86 200 Q86 210 78 212 L48 212 Q40 210 40 200 Z'/%3E%3Crect x='48' y='148' width='30' height='8' rx='2' fill='%231f1208' fill-opacity='0.18'/%3E%3Cpath fill='%2330200a' fill-opacity='0.14' d='M58 156 Q57 145 63 132'/%3E%3Cpath fill='none' stroke='%23241408' stroke-opacity='0.18' stroke-width='1.5' stroke-linecap='round' d='M70 152 Q92 96 156 38 Q176 22 192 12'/%3E%3Cpath fill='%23241408' fill-opacity='0.16' d='M186 14 Q198 10 206 6 Q204 18 200 26 Q190 26 184 22 Z'/%3E%3Cpath fill='none' stroke='%23241408' stroke-opacity='0.08' stroke-width='0.5' d='M86 130 Q90 122 96 116M104 110 Q108 102 114 96M124 86 Q128 78 134 72M144 60 Q148 52 154 46'/%3E%3Cellipse cx='70' cy='240' rx='14' ry='6' fill='%23241408' fill-opacity='0.07'/%3E%3Ccircle cx='70' cy='240' r='3' fill='%23120804' fill-opacity='0.18'/%3E%3C/svg%3E"));
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     100% 100%, 100% 100%, 100% 100%,
@@ -71,4 +71,9 @@ html[data-workshop-bg="paper"]::after {
   mix-blend-mode: multiply;
   opacity: 1;
   animation: candle-breathe 22.95s ease-in-out infinite;
+}
+
+/* Focus mode: drop the placed ink-bottle + quill hero */
+html[data-writing-focus-v2][data-workshop-bg="paper"] {
+  --hero-img: none;
 }

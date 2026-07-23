@@ -11,7 +11,7 @@ Tools panel is grouped into three buckets: **Overview**, **Sound**, **Suggest**.
 | **Issues** | AI analysis — overall scores, line-level issues with severity dots, harshness selector (4 personas), post-analysis chat |
 | **Spell** | Poetry-aware spelling. Strict / permissive modes. Personal dictionary and per-session ignore list. |
 | **Lines** | Per-line syllable counts, meter pattern preview, iambic-fit percentage |
-| **Goals** | Word, syllable, rhyme-scheme, form-preset (sonnet, haiku, villanelle, etc.), and custom targets |
+| **Plans** | Word, syllable, rhyme-scheme, form-preset (sonnet, haiku, villanelle, etc.), and custom targets |
 | **Snapshots** | Manual + automatic revisions (up to 50 per poem). Named labels. Side-by-side diff. |
 
 ---
@@ -54,7 +54,7 @@ Tools panel is grouped into three buckets: **Overview**, **Sound**, **Suggest**.
 
 ## Local-first behaviour
 
-- All poems, snapshots, goals, settings, personal dictionary, and ignore lists live in `localStorage`.
+- All poems, snapshots, plans, settings, personal dictionary, and ignore lists live in `localStorage`.
 - After first load, the editor and all local tools work without a network connection.
 - The library list is virtualized (TanStack Virtual) so even hundreds of poems scroll smoothly.
 

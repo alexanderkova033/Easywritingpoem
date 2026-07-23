@@ -98,7 +98,7 @@ export function MetricGoalCard({
             type="button"
             className="goal-card-clear"
             onClick={clearGoal}
-            aria-label={`Clear ${label} goal`}
+            aria-label={`Clear ${label} plan`}
             title="Clear"
           >
             ×
@@ -119,7 +119,7 @@ export function MetricGoalCard({
             in {rangeMin ?? "·"}–{rangeMax ?? "·"}
           </span>
         ) : (
-          <span className="goal-card-of goal-card-of--unset">no goal</span>
+          <span className="goal-card-of goal-card-of--unset">no plan</span>
         )}
       </div>
 
@@ -151,7 +151,7 @@ export function MetricGoalCard({
       )}
 
       <div className="goal-card-footer">
-        <div className="goal-card-mode" role="group" aria-label="Goal mode">
+        <div className="goal-card-mode" role="group" aria-label="Plan mode">
           <button
             type="button"
             className={`goal-card-mode-btn${mode === "exact" ? " is-active" : ""}`}
@@ -225,7 +225,7 @@ export function SyllableCapCard({
             type="button"
             className="goal-card-clear"
             onClick={() => onSet(undefined)}
-            aria-label="Clear syllable cap goal"
+            aria-label="Clear syllable cap plan"
             title="Clear"
           >
             ×
@@ -280,7 +280,7 @@ const RHYME_SCHEME_PRESETS: RhymeSchemePreset[] = [
   {
     label: "None",
     value: "",
-    hint: "No rhyme-scheme goal",
+    hint: "No rhyme-scheme plan",
     example: [],
   },
   {
@@ -503,7 +503,7 @@ export function RhymeSchemeCard({
             type="button"
             className="goal-card-clear"
             onClick={() => onSet(undefined)}
-            aria-label="Clear rhyme scheme goal"
+            aria-label="Clear rhyme scheme plan"
             title="Clear"
           >
             ×

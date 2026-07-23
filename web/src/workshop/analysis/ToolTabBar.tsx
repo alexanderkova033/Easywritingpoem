@@ -169,14 +169,14 @@ export const TOOL_TABS: {
   desc: string;
   Icon: () => JSX.Element;
 }[] = [
-  { id: "issues",    label: "Queue",     desc: "Spelling flags, checklist gaps & goal warnings in one list",   Icon: IconTabIssues },
+  { id: "issues",    label: "Queue",     desc: "Spelling flags, checklist gaps & plan warnings in one list",   Icon: IconTabIssues },
   { id: "spell",     label: "Spell",     desc: "Find and fix misspelled words",                                Icon: IconTabSpell },
   { id: "lines",     label: "Lines",     desc: "Per-line syllable, word & character counts",                   Icon: IconTabLines },
   { id: "meter",     label: "Meter",     desc: "Stress patterns and iambic-fit per line",                      Icon: IconTabMeter },
   { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
   { id: "echoes",    label: "Echoes",    desc: "Alliteration, assonance, rhyme echoes, caesura & vowel arc",   Icon: IconTabSoundMap },
   { id: "repeat",    label: "Repeats",   desc: "Words that appear more than once",                             Icon: IconTabRepeat },
-  { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
+  { id: "goals",     label: "Plans",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
   { id: "snapshots", label: "Snapshots", desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
   { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
   { id: "starred",   label: "Starred",   desc: "Words you\u2019ve starred or looked up",                       Icon: IconTabStarred },

@@ -6,7 +6,7 @@ This document records the key design decisions in Easy-poems and the reasoning b
 
 ## 1. Offline-first with localStorage
 
-**Decision:** All poem data (drafts, snapshots, goals, settings) is stored in the browser's `localStorage`. No automatic sync to any server.
+**Decision:** All poem data (drafts, snapshots, plans, settings) is stored in the browser's `localStorage`. No automatic sync to any server.
 
 **Why:**
 - Privacy-preserving: poems never leave the user's browser unless they explicitly export or use AI analysis.

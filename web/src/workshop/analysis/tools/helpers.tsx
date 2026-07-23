@@ -27,7 +27,7 @@ export function checklistJumpLabel(item: ChecklistItem): string {
     case "spell":
       return "Spelling";
     case "goals":
-      return "Goals";
+      return "Plans";
     default:
       return "Open";
   }

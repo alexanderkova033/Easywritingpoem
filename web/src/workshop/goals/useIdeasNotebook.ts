@@ -8,7 +8,7 @@ import {
 
 /**
  * Subscribes to the ideas-notebook localStorage entry and keeps the returned
- * list in sync across all consumers (e.g. the goals panel notebook and the
+ * list in sync across all consumers (e.g. the plans panel notebook and the
  * focus-mode side panel). All writers should call `persist` instead of saving
  * directly so the change event fires.
  */

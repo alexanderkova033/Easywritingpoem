@@ -64,7 +64,7 @@ export function buildPublicationChecklist(args: {
 
   items.push({
     done: goalEvaluation.warnings.length === 0,
-    text: "Draft meets your line / word / syllable goals",
+    text: "Draft meets your line / word / syllable plans",
     icon: "goals",
     detail:
       goalEvaluation.warnings.length > 0

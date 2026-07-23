@@ -1538,7 +1538,7 @@ export function PoemWorkshop() {
     if (id === "spell" && m.wordlist && m.spellHits.length > 0)
       return <span className="tool-accordion-dot" aria-label={`${m.spellHits.length} spelling flags`} />;
     if (id === "goals" && m.goalEvaluation.warnings.length > 0)
-      return <span className="tool-accordion-dot" aria-label="goals not met" />;
+      return <span className="tool-accordion-dot" aria-label="plans not met" />;
     if (id === "rhyme" && m.stanzaRhymeGroups.some((g) => g.clusters.length > 0))
       return <span className="tool-accordion-dot" aria-label="rhymes found in your poem" />;
     if (id === "meter" && meterHasStrongFit)
@@ -2403,7 +2403,7 @@ export function PoemWorkshop() {
                 </div>
               </div>
               {(m.goals.targetLines != null || m.goals.targetStanzas != null || m.goals.targetLinesPerStanza != null) && (
-                <div className="editor-goal-strip" aria-label="Goal progress">
+                <div className="editor-goal-strip" aria-label="Plan progress">
                   {m.goals.preset && (
                     <span className="editor-goal-strip-form">{FORM_PRESETS.find(p => p.key === m.goals.preset)?.label}</span>
                   )}

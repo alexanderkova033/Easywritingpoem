@@ -168,7 +168,7 @@
  * Word-style page feel. Padding inside .editor-panel acts as page margins. */
 @media (min-width: 900px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: min(1180px, 95vw);
+    max-width: min(1280px, 96vw);
     width: 100%;
     margin-left: auto;
     margin-right: auto;
@@ -176,10 +176,10 @@
        the panel is pure writing surface in focus mode. */
     padding: 0.85rem 1.35rem 0.9rem;
     box-shadow: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
-    /* Give the page-like column a real height to fill (focus mode has no
-       sibling panel to size against), so a short draft still reads as a
-       page rather than a shrink-wrapped card. */
-    min-height: 85vh;
+    /* Fill (and exceed) the viewport from the start — not just once content
+       is typed — so the page is fully centered and typewriter-scroll
+       centering has room to work even on an empty draft. */
+    min-height: 100vh;
     transition:
       max-width 0.32s cubic-bezier(0.22, 1, 0.36, 1),
       padding 0.32s cubic-bezier(0.22, 1, 0.36, 1),
@@ -189,7 +189,7 @@
 
 @media (min-width: 1400px) {
   .poem-workshop.is-focus-mode .editor-panel {
-    max-width: 1260px;
+    max-width: 1360px;
   }
 }
 

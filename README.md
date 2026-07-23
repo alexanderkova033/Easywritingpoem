@@ -10,7 +10,7 @@ Browser-based poetry workshop. Draft on the left; syllables, meter, rhyme, repea
 
 ## Highlights
 
-- **Local-first** — drafts, snapshots, goals, and personal dictionary live in `localStorage`. Works offline after first load.
+- **Local-first** — drafts, snapshots, plans, and personal dictionary live in `localStorage`. Works offline after first load.
 - **Poetry-specific tools** — syllables, meter (CMU dictionary + heuristics), rhyme (strict/near/broad), repetition, poetry-aware spelling.
 - **Optional AI** — critique with selectable harshness, line rewrites, idea sparks, theme generation. Project-owned key, no user signup.
 - **Calm UI** — no popups, no nags. Tools speak when asked.

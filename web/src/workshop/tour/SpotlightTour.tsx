@@ -59,7 +59,7 @@ const STEPS: TourStep[] = [
   {
     id: "tool-buckets",
     title: "Your writing tools",
-    body: "Every tool lives in one scrollable list, grouped into Overview, Sound, and Suggest. Tap any tool to expand it — word counts, rhyme, meter, repeats, goals and more all update live.",
+    body: "Every tool lives in one scrollable list, grouped into Overview, Sound, and Suggest. Tap any tool to expand it — word counts, rhyme, meter, repeats, plans and more all update live.",
     placement: "left",
     pad: 8,
   },

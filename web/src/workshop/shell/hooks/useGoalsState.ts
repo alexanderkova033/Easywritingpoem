@@ -4,7 +4,7 @@ import { FORM_PRESETS, type WorkshopGoals } from "@/workshop/goals/types";
 import { parseGoalInput } from "@/workshop/shell/workshop-helpers";
 
 const GOALS_STORAGE_MSG =
-  "Could not save your writing goals to browser storage.";
+  "Could not save your writing plans to browser storage.";
 
 export interface GoalsState {
   goals: WorkshopGoals;

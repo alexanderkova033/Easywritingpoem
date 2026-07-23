@@ -204,7 +204,7 @@ function QueueAiCard({ item: it }: { item: QueueIssue }) {
   );
 }
 
-/** Non-AI queue items: spell, cliché, goal warnings, checklist. Simpler layout
+/** Non-AI queue items: spell, cliché, plan warnings, checklist. Simpler layout
  *  since they don't have a rewrite preview or rationale to show. */
 function QueueGenericRow({ item: it }: { item: QueueIssue }) {
   return (
@@ -331,10 +331,10 @@ export function IssuesPanel({
         id: `goal:${w}`,
         severity: "now",
         category: "goal",
-        categoryLabel: "Goal",
+        categoryLabel: "Plan",
         title: w,
         primary: {
-          label: "Open Goals",
+          label: "Open Plans",
           onClick: () => onOpenToolTab("goals"),
         },
       });
@@ -454,7 +454,7 @@ export function IssuesPanel({
       {queueIssues.length === 0 ? (
         <EmptyState title="All clear — keep writing.">
           <p className="muted small">
-            Checklist, goals, spelling, and clichés all satisfied. Issues
+            Checklist, plans, spelling, and clichés all satisfied. Issues
             appear here as you draft.
           </p>
         </EmptyState>

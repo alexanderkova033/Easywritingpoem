@@ -43,7 +43,7 @@ export function GoalsPanel({
     >
       <h3 className="tool-heading-you">
         <span className="you-marker" aria-hidden />
-        <span className="tool-heading-you-text">Goals</span>
+        <span className="tool-heading-you-text">Plans</span>
       </h3>
 
       <IdeasNotebook />
@@ -93,7 +93,7 @@ export function GoalsPanel({
             type="button"
             className="goal-reset-btn linkish"
             onClick={resetGoals}
-            title="Clear every goal target"
+            title="Clear every plan target"
           >
             Reset all
           </button>
@@ -181,7 +181,7 @@ export function GoalsPanel({
       {goalEvaluation.warnings.length === 0 &&
       goalEvaluation.softHints.length === 0 &&
       hasAnyGoalSet(goals) ? (
-        <p className="goal-on-target">✓ All goals met</p>
+        <p className="goal-on-target">✓ All plans met</p>
       ) : null}
     </div>
   );

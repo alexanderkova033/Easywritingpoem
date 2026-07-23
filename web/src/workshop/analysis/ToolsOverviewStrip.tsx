@@ -61,7 +61,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
   const issuesIssue = issuesQueueCount > 0;
 
   const issuesPillHint = issuesIssue
-    ? `${issuesQueueCount} item(s) in revision queue (checklist, goals, spelling)`
+    ? `${issuesQueueCount} item(s) in revision queue (checklist, plans, spelling)`
     : "Revision queue clear — open Issues tab";
 
   return (
@@ -170,14 +170,14 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         onClick={() => onOpenTab("goals")}
         {...hint(
           goalIssue
-            ? `${goalEvaluation.warnings.length} goal warning(s) — open Goals tab`
-            : "Goals on target — open Goals tab",
+            ? `${goalEvaluation.warnings.length} plan warning(s) — open Plans tab`
+            : "Plans on target — open Plans tab",
         )}
       >
         <span className="tools-overview-pill-k">
           {goalIssue ? goalEvaluation.warnings.length : "OK"}
         </span>
-        <span className="tools-overview-pill-l">goals</span>
+        <span className="tools-overview-pill-l">plans</span>
       </button>
       <button
         type="button"
