@@ -397,15 +397,10 @@
   pointer-events: none;
 }
 
-/* ---- Shelf row (single draft as a book on a shelf) ---- */
+/* ---- One shelf: a plank with a couple of books standing on it ---- */
 .shelf-item {
   position: relative;
   padding: 0.35rem 0.4rem calc(var(--shelf-plank-height, 14px) + 0.55rem);
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
 }
 
 .shelf-item::after {
@@ -441,29 +436,38 @@
   pointer-events: none;
 }
 
-.shelf-item.is-active::before,
-.shelf-item.is-keyboard-active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: auto;
-  bottom: var(--shelf-plank-height, 14px);
-  width: auto;
-  height: 6px;
-  border-radius: 0;
-  opacity: 1;
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--accent) 32%, transparent),
-    transparent);
+/* The books on one plank. --shelf-cols is set per shelf from JS, which is also
+   what decides how the drafts were chunked into shelves in the first place. */
+.shelf-books {
+  display: grid;
+  grid-template-columns: repeat(var(--shelf-cols, 2), minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+  align-items: end;
 }
 
-.shelf-row {
+/* One book and the card of detail standing beside it. */
+.shelf-cell {
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  min-width: 0;
   min-height: 9.5rem;
+}
+
+/* Pool of light on the plank under the open draft. */
+.shelf-cell.is-active::after,
+.shelf-cell.is-keyboard-active::after {
+  content: "";
+  position: absolute;
+  left: -0.25rem;
+  right: -0.25rem;
+  bottom: -0.45rem;
+  height: 6px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 32%, transparent),
+    transparent);
+  pointer-events: none;
 }
 
 /* ---- A single book ----
@@ -576,18 +580,18 @@
   transform: translateY(-2px);
 }
 
-.shelf-item.is-active .book,
-.shelf-item.is-keyboard-active .book {
+.shelf-cell.is-active .book,
+.shelf-cell.is-keyboard-active .book {
   transform: translateY(-5px) rotate(-3deg);
   filter: drop-shadow(0 6px 8px color-mix(in srgb, var(--accent) 35%, transparent));
 }
-.shelf-item.is-active .book-spine,
-.shelf-item.is-keyboard-active .book-spine {
+.shelf-cell.is-active .book-spine,
+.shelf-cell.is-keyboard-active .book-spine {
   outline: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
   outline-offset: 1px;
 }
 
-.shelf-item.is-archived .book {
+.shelf-cell.is-archived .book {
   filter: grayscale(0.55) brightness(0.85);
   opacity: 0.8;
 }
@@ -650,7 +654,7 @@
   margin-top: 0.05rem;
 }
 
-/* Action row: edit toggle + dup + archive */
+/* Action row: pin + edit toggle + dup + archive */
 .shelf-row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -659,12 +663,26 @@
   margin-top: 0.2rem;
 }
 
+/* Everything packs left. Dup and Archive used to be pushed to the far edge,
+   which was fine across a full-width row but costs a wrapped second line now
+   that two books share a shelf and the card is half as wide. */
 .shelf-row-actions .draft-row-dup,
 .shelf-row-actions .small-btn {
-  margin-left: auto;
-}
-.shelf-row-actions .small-btn + .small-btn {
   margin-left: 0;
+}
+
+/* The pin sits in the action row rather than beside the title: with two books
+   to a shelf the title needs the card's full width. */
+.shelf-row-actions .pin-btn {
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: 0.88rem;
+  border-radius: 8px;
+}
+
+/* Short label ("Edit") only replaces the full one on phone-width shelves. */
+.shelf-btn-label-short {
+  display: none;
 }
 
 .shelf-row-edit-toggle {
@@ -1123,6 +1141,9 @@
 .draft-edit-field {
   display: flex;
   flex-direction: column;
+  /* Grid items default to min-width:auto, which lets the input's intrinsic
+     width push the field out past the card it sits in. */
+  min-width: 0;
   gap: 0.22rem;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1132,6 +1153,9 @@
 }
 
 .draft-edit-field input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   border-radius: 8px;
   padding: 0.38rem 0.5rem;
@@ -1491,6 +1515,35 @@
     font-size: 1rem;
   }
 
+  /* …but not inside a book's card, where it is the only way to rename a draft
+     and the shelf gives it room (see the phone block below). */
+  .shelf-cell .draft-item-edit {
+    display: grid;
+  }
+
+  /* A card sharing a shelf is roughly 16rem here — enough for the whole action
+     row on one line, but only at a size down. */
+  .shelf-row-edit-toggle {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.5rem;
+  }
+
+  .shelf-row-actions .small-btn {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.5rem;
+    min-height: 2.1rem;
+  }
+
+  /* Renaming needs more width than half a shelf, so the book being edited
+     takes the whole plank for as long as its fields are open. */
+  .shelf-books:has(.shelf-cell.is-editing) .shelf-cell:not(.is-editing) {
+    display: none;
+  }
+
+  .shelf-cell.is-editing {
+    grid-column: 1 / -1;
+  }
+
   /* Filters: stack vertically so they don't crowd the screen */
   .library-filters {
     grid-template-columns: 1fr;
@@ -1517,6 +1570,114 @@
     display: grid;
     place-items: center;
     font-size: 0.8rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Bookshelf on a phone
+
+   Two books share every plank here too, which leaves each card about 7rem
+   wide. Everything below is what has to give for that to stay readable: the
+   side padding the shelf was spending, the book a size down (still ~46x118px,
+   so the spine title survives), and a leaner card. A tablet at 700-900px has
+   the width for the full-size shelf, so this stops short of the drawer's own
+   899px mobile breakpoint.
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 620px) {
+  .library-drafts-section {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .library-bookshelf {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .shelf-item {
+    padding-left: 0.15rem;
+    padding-right: 0.15rem;
+  }
+
+  .shelf-books {
+    gap: 0.45rem 0.5rem;
+  }
+
+  .shelf-cell {
+    gap: 0.35rem;
+    min-height: 8rem;
+  }
+
+  .book {
+    --book-w: 2.9rem;
+    --book-h: 7.4rem;
+  }
+
+  .book-spine-title {
+    font-size: 0.7rem;
+  }
+
+  .shelf-row-meta {
+    padding: 0.3rem 0.35rem 0.35rem;
+    gap: 0.2rem;
+    border-radius: 8px;
+  }
+
+  .shelf-row-head {
+    flex-wrap: wrap;
+  }
+
+  /* Two lines of a wrapped title beat one line of a clipped one at this width. */
+  .shelf-row-title {
+    font-size: 0.8rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .shelf-row-head .draft-first-line {
+    font-size: 0.66rem;
+  }
+
+  .shelf-btn-label {
+    display: none;
+  }
+  .shelf-btn-label-short {
+    display: inline;
+  }
+
+  .shelf-row-edit-toggle {
+    font-size: 0.68rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .shelf-row-actions .small-btn {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.45rem;
+    min-height: 1.9rem;
+  }
+
+  .shelf-row-actions .pin-btn {
+    width: 2.05rem;
+    height: 2.05rem;
+    font-size: 0.95rem;
+  }
+
+  /* Pin and Edit fit one line of a 7rem card; Archive would wrap to a second
+     and push the card taller than the book beside it. It waits in the panel
+     that Edit opens, where there is width for it. */
+  .shelf-row-actions .shelf-archive-btn {
+    display: none;
+  }
+  .shelf-cell.is-editing .shelf-row-actions .shelf-archive-btn {
+    display: inline-flex;
+  }
+
+  .shelf-cell .draft-item-edit {
+    grid-template-columns: 1fr;
   }
 }
 

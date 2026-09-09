@@ -1295,7 +1295,13 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       EditorView.contentAttributes.of({ spellcheck: "false" }),
       spellSyncFacet.of(props.spellBump),
       search({ top: true }),
-      highlightSelectionMatches(),
+      // Desktop only. It rewrites mark decorations across the whole document on
+      // every selection change, and on touch every one of those lands mid-drag
+      // while a selection handle is being moved — DOM churn inside the
+      // contenteditable is exactly what makes the handle jump or the selection
+      // collapse. Highlighting the other copies of a word is not worth that
+      // here; the Repeats tool shows them without touching the selection.
+      ...(IS_TOUCH_DEVICE ? [] : [highlightSelectionMatches()]),
       lineFlashField,
       strongestLineField,
       issueHighlightField,
@@ -1329,6 +1335,26 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   selectionCallbackRef.current = props.onSelectionText;
   const selectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Is a finger down right now? Dragging a selection handle fires selectionSet
+  // the whole way, and each pause of ~200ms was enough to open the suggestion
+  // popover — under the very handle being dragged, which is what made
+  // selecting more than one word on a phone so hard. The popover waits for the
+  // finger to come up (see the settle loop in onUpdate).
+  const touchActiveRef = useRef(false);
+  useEffect(() => {
+    if (!IS_TOUCH_DEVICE) return;
+    const down = () => { touchActiveRef.current = true; };
+    const up = () => { touchActiveRef.current = false; };
+    document.addEventListener("touchstart", down, { passive: true });
+    document.addEventListener("touchend", up, { passive: true });
+    document.addEventListener("touchcancel", up, { passive: true });
+    return () => {
+      document.removeEventListener("touchstart", down);
+      document.removeEventListener("touchend", up);
+      document.removeEventListener("touchcancel", up);
+    };
+  }, []);
+
   const cursorLineCallbackRef = useRef(props.onCursorLineChange);
   cursorLineCallbackRef.current = props.onCursorLineChange;
 
@@ -1336,6 +1362,15 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   liveLineCountCallbackRef.current = props.onLiveLineCount;
   const cursorLineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCursorLineRef = useRef<number>(-1);
+
+  // The touch settle loop below can keep re-arming, so make sure nothing is
+  // still pending against a torn-down view.
+  useEffect(() => {
+    return () => {
+      if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
+      if (cursorLineTimerRef.current) clearTimeout(cursorLineTimerRef.current);
+    };
+  }, []);
 
   return (
     <div className={`poem-cm-wrap${props.diffSnapshotBody ? " is-diff-mode" : ""}`} id={props.id}>
@@ -1382,14 +1417,28 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
             if (text.length >= 1 && update.selectionSet) {
               if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);
               const view = update.view;
-              const to = sel.to;
-              selectionTimerRef.current = setTimeout(() => {
-                const coords = view.coordsAtPos(to);
+              // Read the selection again when the timer fires rather than
+              // closing over this one: on touch the fire can be held back past
+              // several more handle moves, and the popover should describe
+              // where the selection ended up.
+              let held = 0;
+              const fire = () => {
+                if (touchActiveRef.current && held < 12) {
+                  held++;
+                  selectionTimerRef.current = setTimeout(fire, 120);
+                  return;
+                }
+                const now = view.state.selection.main;
+                if (now.empty) return;
+                const nowText = view.state.sliceDoc(now.from, now.to).trim();
+                if (!nowText) return;
+                const coords = view.coordsAtPos(now.to);
                 if (coords) {
                   const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                  selectionCallbackRef.current?.(text, rect);
+                  selectionCallbackRef.current?.(nowText, rect);
                 }
-              }, 200);
+              };
+              selectionTimerRef.current = setTimeout(fire, IS_TOUCH_DEVICE ? 400 : 200);
             }
           } else if (update.selectionSet) {
             if (selectionTimerRef.current) clearTimeout(selectionTimerRef.current);

@@ -70,6 +70,9 @@ export type LibraryRow = {
   meta: DraftMeta;
 };
 
+/** One plank's worth of drafts — see `libraryShelves` in PoemWorkshop. */
+export type LibraryShelf = LibraryRow[];
+
 type LibrarySort = "recent" | "title" | "updated";
 
 type Props = {
@@ -85,6 +88,9 @@ type Props = {
   libraryShowArchived: boolean;
   setLibraryShowArchived: (v: boolean) => void;
   libraryListRows: LibraryRow[];
+  /** `libraryListRows` cut into shelves of `libraryCols` books. Virtualized per shelf. */
+  libraryShelves: LibraryShelf[];
+  libraryCols: number;
   libraryListParentRef: MutableRefObject<HTMLDivElement | null>;
   libraryVirtualizer: Virtualizer<HTMLDivElement, Element>;
   libraryActiveIdx: number;
@@ -109,6 +115,8 @@ export function WorkshopLibraryModal(props: Props) {
     libraryShowArchived,
     setLibraryShowArchived,
     libraryListRows,
+    libraryShelves,
+    libraryCols,
     libraryListParentRef,
     libraryVirtualizer,
     libraryActiveIdx,
@@ -316,19 +324,11 @@ export function WorkshopLibraryModal(props: Props) {
                 }}
               >
                 {libraryVirtualizer.getVirtualItems().map((vItem) => {
-                  const row = libraryListRows[vItem.index]!;
-                  const { id, label, poem, meta } = row;
-                  const tagsList = (meta.tags ?? []).filter((t) => t.trim().length > 0);
-                  const firstLine = poem.body.split("\n").find((l) => l.trim().length > 0)?.trim() ?? "";
-                  const isActive = id === m.activePoemId;
-                  const isArchived = Boolean(meta.archived);
-                  const isEditingThis = editingId === id;
-                  const spineTitle = (label && label.trim()) || "Untitled";
+                  const shelf = libraryShelves[vItem.index]!;
                   return (
                     <div
-                      key={id}
-                      role="listitem"
-                      aria-selected={vItem.index === libraryActiveIdx}
+                      key={shelf[0]?.id ?? vItem.index}
+                      role="none"
                       data-index={vItem.index}
                       ref={libraryVirtualizer.measureElement}
                       style={{
@@ -341,171 +341,28 @@ export function WorkshopLibraryModal(props: Props) {
                         boxSizing: "border-box",
                       }}
                     >
-                      <div
-                        className={`draft-item shelf-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${vItem.index === libraryActiveIdx ? "is-keyboard-active" : ""}`}
-                        style={bookStyleVars(id, tagsList)}
-                      >
-                        <div className="shelf-row">
-                          <button
-                            type="button"
-                            className={`book ${meta.pinned ? "is-pinned" : ""}`}
-                            onClick={() => {
-                              m.selectPoem(id);
-                              setIsLibraryOpen(false);
-                            }}
-                            aria-current={isActive ? "true" : undefined}
-                            aria-label={`Open draft "${spineTitle}"`}
-                            {...hint("Open this draft in the editor")}
-                          >
-                            <span className="book-spine">
-                              <span className="book-spine-title">{spineTitle}</span>
-                              {meta.pinned && <span className="book-spine-pin" aria-hidden>★</span>}
-                            </span>
-                          </button>
-                          <div className="shelf-row-meta">
-                            <div className="shelf-row-head">
-                              <button
-                                type="button"
-                                className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                                onClick={() => m.togglePinned(id)}
-                                aria-pressed={Boolean(meta.pinned)}
-                                {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
-                              >
-                                {meta.pinned ? "★" : "☆"}
-                              </button>
-                              <div className="shelf-row-titlewrap">
-                                <span className="shelf-row-title" title={spineTitle}>
-                                  {spineTitle}
-                                </span>
-                                {firstLine ? (
-                                  <span className="draft-first-line" aria-hidden>
-                                    {firstLine}
-                                  </span>
-                                ) : (
-                                  <span className="draft-first-line is-blank" aria-hidden>
-                                    Blank page
-                                  </span>
-                                )}
-                              </div>
-                              {isArchived && (
-                                <span className="shelf-archived-badge" aria-hidden>archived</span>
-                              )}
-                            </div>
-                            {tagsList.length > 0 && (
-                              <div className="shelf-row-tags">
-                                {tagsList.map((tag) => {
-                                  const filterActive =
-                                    libraryQuery.trim().toLowerCase() === tag.toLowerCase();
-                                  return (
-                                    <button
-                                      key={tag}
-                                      type="button"
-                                      className={`draft-tag-chip ${filterActive ? "is-active" : ""}`}
-                                      style={bookStyleVars(tag, [tag])}
-                                      onClick={() =>
-                                        setLibraryQuery(filterActive ? "" : tag)
-                                      }
-                                      title={
-                                        filterActive
-                                          ? "Clear tag filter"
-                                          : `Filter by tag: ${tag}`
-                                      }
-                                    >
-                                      <span className="draft-tag-chip-dot" aria-hidden />
-                                      {tag}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                            <div className="shelf-row-actions">
-                              <button
-                                type="button"
-                                className={`shelf-row-edit-toggle ${isEditingThis ? "is-on" : ""}`}
-                                onClick={() =>
-                                  setEditingId(isEditingThis ? null : id)
-                                }
-                                aria-expanded={isEditingThis}
-                                {...hint("Rename or change tags")}
-                              >
-                                {isEditingThis ? "Done" : "Rename / tags"}
-                              </button>
-                              <button
-                                type="button"
-                                className="small-btn draft-row-dup"
-                                onClick={() => {
-                                  m.duplicatePoemById(id);
-                                  setIsLibraryOpen(false);
-                                }}
-                                {...hint("Duplicate this draft")}
-                              >
-                                Dup
-                              </button>
-                              {isArchived ? (
-                                <button
-                                  type="button"
-                                  className="small-btn"
-                                  onClick={() => m.setDraftArchived(id, false)}
-                                  {...hint("Return draft to main list")}
-                                >
-                                  Unarchive
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="small-btn"
-                                  disabled={isActive}
-                                  {...hint(
-                                    isActive
-                                      ? "Switch to another draft before archiving this one"
-                                      : "Archive — hide from list (data kept)",
-                                  )}
-                                  onClick={() => m.setDraftArchived(id, true)}
-                                >
-                                  Archive
-                                </button>
-                              )}
-                            </div>
-                            {isEditingThis && (
-                              <div className="draft-item-edit">
-                                <label className="draft-edit-field">
-                                  Label
-                                  <input
-                                    type="text"
-                                    value={meta.label ?? ""}
-                                    onChange={(e) =>
-                                      m.setDraftLabel(id, e.target.value)
-                                    }
-                                    placeholder="Display name (overrides title)"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                  />
-                                </label>
-                                <label className="draft-edit-field">
-                                  Tags
-                                  <input
-                                    type="text"
-                                    value={tagsList.join(", ")}
-                                    onChange={(e) =>
-                                      m.setDraftTags(
-                                        id,
-                                        e.target.value
-                                          .split(",")
-                                          .map((t) => t.trim())
-                                          .filter(Boolean),
-                                      )
-                                    }
-                                    placeholder="comma, separated (colors the book)"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                  />
-                                </label>
-                                <p className="draft-edit-hint">
-                                  Tags color the book spine and group drafts in the filter row above.
-                                </p>
-                              </div>
-                            )}
-                          </div>
+                      <div className="shelf-item">
+                        <div
+                          className="shelf-books"
+                          role="none"
+                          style={{ ["--shelf-cols" as never]: libraryCols } as CSSProperties}
+                        >
+                          {shelf.map((row, colIdx) => (
+                            <ShelfBook
+                              key={row.id}
+                              row={row}
+                              m={m}
+                              hint={hint}
+                              isKeyboardActive={
+                                vItem.index * libraryCols + colIdx === libraryActiveIdx
+                              }
+                              isEditing={editingId === row.id}
+                              setEditingId={setEditingId}
+                              libraryQuery={libraryQuery}
+                              setLibraryQuery={setLibraryQuery}
+                              setIsLibraryOpen={setIsLibraryOpen}
+                            />
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -548,6 +405,214 @@ export function WorkshopLibraryModal(props: Props) {
 
         </div>
       </section>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* One book on a shelf: the spine, plus the card of detail beside it.  */
+/* Several of these stand side by side on each plank (see .shelf-books)*/
+/* ------------------------------------------------------------------ */
+
+type ShelfBookProps = {
+  row: LibraryRow;
+  m: Model;
+  hint: ReturnType<typeof useHoverHintBinder>;
+  isKeyboardActive: boolean;
+  isEditing: boolean;
+  setEditingId: (v: string | null) => void;
+  libraryQuery: string;
+  setLibraryQuery: (v: string) => void;
+  setIsLibraryOpen: (v: boolean) => void;
+};
+
+function ShelfBook({
+  row,
+  m,
+  hint,
+  isKeyboardActive,
+  isEditing,
+  setEditingId,
+  libraryQuery,
+  setLibraryQuery,
+  setIsLibraryOpen,
+}: ShelfBookProps) {
+  const { id, label, poem, meta } = row;
+  const tagsList = (meta.tags ?? []).filter((t) => t.trim().length > 0);
+  const firstLine =
+    poem.body.split("\n").find((l) => l.trim().length > 0)?.trim() ?? "";
+  const isActive = id === m.activePoemId;
+  const isArchived = Boolean(meta.archived);
+  const spineTitle = (label && label.trim()) || "Untitled";
+
+  return (
+    <div
+      role="listitem"
+      aria-selected={isKeyboardActive}
+      className={`shelf-cell ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${isEditing ? "is-editing" : ""} ${isKeyboardActive ? "is-keyboard-active" : ""}`}
+      style={bookStyleVars(id, tagsList)}
+    >
+      <button
+        type="button"
+        className={`book ${meta.pinned ? "is-pinned" : ""}`}
+        onClick={() => {
+          m.selectPoem(id);
+          setIsLibraryOpen(false);
+        }}
+        aria-current={isActive ? "true" : undefined}
+        aria-label={`Open draft "${spineTitle}"`}
+        {...hint("Open this draft in the editor")}
+      >
+        <span className="book-spine">
+          <span className="book-spine-title">{spineTitle}</span>
+          {meta.pinned && <span className="book-spine-pin" aria-hidden>★</span>}
+        </span>
+      </button>
+      <div className="shelf-row-meta">
+        <div className="shelf-row-head">
+          <div className="shelf-row-titlewrap">
+            <span className="shelf-row-title" title={spineTitle}>
+              {spineTitle}
+            </span>
+            {firstLine ? (
+              <span className="draft-first-line" aria-hidden>
+                {firstLine}
+              </span>
+            ) : (
+              <span className="draft-first-line is-blank" aria-hidden>
+                Blank page
+              </span>
+            )}
+          </div>
+          {isArchived && (
+            <span className="shelf-archived-badge" aria-hidden>archived</span>
+          )}
+        </div>
+        {tagsList.length > 0 && (
+          <div className="shelf-row-tags">
+            {tagsList.map((tag) => {
+              const filterActive =
+                libraryQuery.trim().toLowerCase() === tag.toLowerCase();
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`draft-tag-chip ${filterActive ? "is-active" : ""}`}
+                  style={bookStyleVars(tag, [tag])}
+                  onClick={() => setLibraryQuery(filterActive ? "" : tag)}
+                  title={
+                    filterActive ? "Clear tag filter" : `Filter by tag: ${tag}`
+                  }
+                >
+                  <span className="draft-tag-chip-dot" aria-hidden />
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        <div className="shelf-row-actions">
+          <button
+            type="button"
+            className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
+            onClick={() => m.togglePinned(id)}
+            aria-pressed={Boolean(meta.pinned)}
+            aria-label={meta.pinned ? "Unpin draft" : "Pin draft"}
+            {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
+          >
+            {meta.pinned ? "★" : "☆"}
+          </button>
+          <button
+            type="button"
+            className={`shelf-row-edit-toggle ${isEditing ? "is-on" : ""}`}
+            onClick={() => setEditingId(isEditing ? null : id)}
+            aria-expanded={isEditing}
+            aria-label={isEditing ? "Finish renaming" : "Rename or change tags"}
+            {...hint("Rename or change tags")}
+          >
+            {/* Two labels, one per width — the card beside a book is only
+                about 7rem wide once two books share a phone-width shelf. */}
+            <span className="shelf-btn-label">
+              {isEditing ? "Done" : "Rename / tags"}
+            </span>
+            <span className="shelf-btn-label-short" aria-hidden>
+              {isEditing ? "Done" : "Edit"}
+            </span>
+          </button>
+          <button
+            type="button"
+            className="small-btn draft-row-dup"
+            onClick={() => {
+              m.duplicatePoemById(id);
+              setIsLibraryOpen(false);
+            }}
+            {...hint("Duplicate this draft")}
+          >
+            Dup
+          </button>
+          {isArchived ? (
+            <button
+              type="button"
+              className="small-btn shelf-archive-btn"
+              onClick={() => m.setDraftArchived(id, false)}
+              {...hint("Return draft to main list")}
+            >
+              Unarchive
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="small-btn shelf-archive-btn"
+              disabled={isActive}
+              {...hint(
+                isActive
+                  ? "Switch to another draft before archiving this one"
+                  : "Archive — hide from list (data kept)",
+              )}
+              onClick={() => m.setDraftArchived(id, true)}
+            >
+              Archive
+            </button>
+          )}
+        </div>
+        {isEditing && (
+          <div className="draft-item-edit">
+            <label className="draft-edit-field">
+              Label
+              <input
+                type="text"
+                value={meta.label ?? ""}
+                onChange={(e) => m.setDraftLabel(id, e.target.value)}
+                placeholder="Display name (overrides title)"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <label className="draft-edit-field">
+              Tags
+              <input
+                type="text"
+                value={tagsList.join(", ")}
+                onChange={(e) =>
+                  m.setDraftTags(
+                    id,
+                    e.target.value
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean),
+                  )
+                }
+                placeholder="comma, separated (colors the book)"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+            <p className="draft-edit-hint">
+              Tags color the book spine and group drafts in the filter row above.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

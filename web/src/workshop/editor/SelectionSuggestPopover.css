@@ -16,6 +16,47 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* ── Docked (phones) ──────────────────────────────────────────────────────
+   Sits at the bottom of the screen instead of under the selection, so the
+   browser's selection handles stay reachable while this is open. The JS half
+   of the switch is in SelectionSuggestPopover.tsx, on the same breakpoint. */
+.ssp-wrap.is-docked {
+  position: fixed;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  top: auto;
+  width: auto;
+  max-height: min(52vh, 26rem);
+  border-radius: 14px;
+  box-shadow: 0 -6px 32px color-mix(in srgb, #000 32%, transparent);
+  animation: ssp-dock-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ssp-dock-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Bigger targets, now that there is a full screen-width of room for them. */
+.ssp-wrap.is-docked .ssp-menu-btn {
+  min-height: 2.75rem;
+}
+
+.ssp-wrap.is-docked .ssp-back,
+.ssp-wrap.is-docked .ssp-close {
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  font-size: 1rem;
+  display: inline-grid;
+  place-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ssp-wrap,
+  .ssp-wrap.is-docked { animation: none; }
+}
+
 .ssp-header {
   display: flex;
   align-items: center;

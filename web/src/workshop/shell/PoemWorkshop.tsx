@@ -84,6 +84,7 @@ import { hasBlockingBanner } from "./workshop-banner-state";
 import { useIsNarrowViewport } from "./hooks/useIsNarrowViewport";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
+import type { LibraryRow } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
 import { useIgnoredRhymes, useManualRhymeLinks, useManualRhymeUnlinks } from "@/workshop/rhyme/rhyme-storage";
 import { useManualStressOverrides } from "@/workshop/meter/stress-storage";
@@ -1219,11 +1220,43 @@ export function PoemWorkshop() {
   ]);
 
   const libraryListParentRef = useRef<HTMLDivElement | null>(null);
+
+  // How many books stand on one plank. Measured from the scroller rather than
+  // the viewport, because the library is a centered modal on desktop and a
+  // full-width sheet on phones — the same viewport gives two different shelves.
+  const [libraryCols, setLibraryCols] = useState(2);
+  const libraryHasRows = libraryListRows.length > 0;
+  useEffect(() => {
+    if (!isLibraryOpen || !libraryHasRows) return;
+    const el = libraryListParentRef.current;
+    if (!el) return;
+    const apply = (w: number) => {
+      // Below ~300px a second book would leave its card too narrow to read.
+      const next = w >= 300 ? 2 : 1;
+      setLibraryCols((prev) => (prev === next ? prev : next));
+    };
+    apply(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) apply(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isLibraryOpen, libraryHasRows]);
+
+  const libraryShelves = useMemo(() => {
+    const shelves: LibraryRow[][] = [];
+    for (let i = 0; i < libraryListRows.length; i += libraryCols) {
+      shelves.push(libraryListRows.slice(i, i + libraryCols));
+    }
+    return shelves;
+  }, [libraryListRows, libraryCols]);
+
   const libraryVirtualizer = useVirtualizer({
-    count: libraryListRows.length,
+    count: libraryShelves.length,
     getScrollElement: () => libraryListParentRef.current,
-    estimateSize: () => 150,
-    overscan: 3,
+    estimateSize: () => 168,
+    overscan: 2,
   });
 
   useEffect(() => {
@@ -1241,14 +1274,26 @@ export function PoemWorkshop() {
         return;
       }
       if (libraryListRows.length === 0) return;
+      const last = libraryListRows.length - 1;
+      // Left/right walk along a shelf; up/down step a whole shelf at a time.
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setLibraryActiveIdx((i) => Math.min(i + 1, last));
+        return;
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setLibraryActiveIdx((i) => Math.max(i - 1, 0));
+        return;
+      }
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setLibraryActiveIdx((i) => Math.min(i + 1, libraryListRows.length - 1));
+        setLibraryActiveIdx((i) => Math.min(i + libraryCols, last));
         return;
       }
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setLibraryActiveIdx((i) => Math.max(i - 1, 0));
+        setLibraryActiveIdx((i) => Math.max(i - libraryCols, 0));
         return;
       }
       if (e.key === "Enter") {
@@ -1261,16 +1306,19 @@ export function PoemWorkshop() {
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
-  }, [isLibraryOpen, libraryActiveIdx, libraryListRows, m]);
+  }, [isLibraryOpen, libraryActiveIdx, libraryListRows, libraryCols, m]);
 
   useEffect(() => {
     if (!isLibraryOpen) return;
     try {
-      libraryVirtualizer.scrollToIndex(libraryActiveIdx, { align: "auto" });
+      // The virtualizer indexes shelves, the selection indexes books.
+      libraryVirtualizer.scrollToIndex(Math.floor(libraryActiveIdx / libraryCols), {
+        align: "auto",
+      });
     } catch {
       /* ignore */
     }
-  }, [isLibraryOpen, libraryActiveIdx, libraryVirtualizer]);
+  }, [isLibraryOpen, libraryActiveIdx, libraryCols, libraryVirtualizer]);
 
   const cmdkActions = useMemo<CommandPaletteAction[]>(() => {
     return [
@@ -1683,6 +1731,8 @@ export function PoemWorkshop() {
         libraryShowArchived={libraryShowArchived}
         setLibraryShowArchived={setLibraryShowArchived}
         libraryListRows={libraryListRows}
+        libraryShelves={libraryShelves}
+        libraryCols={libraryCols}
         libraryListParentRef={libraryListParentRef}
         libraryVirtualizer={libraryVirtualizer}
         libraryActiveIdx={libraryActiveIdx}

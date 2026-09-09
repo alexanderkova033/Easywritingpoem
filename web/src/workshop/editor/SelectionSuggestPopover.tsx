@@ -248,7 +248,27 @@ export function SelectionSuggestPopover({
     flipped: boolean;
   } | null>(null);
 
+  // On a phone, anchoring to the selection puts this panel exactly where the
+  // browser's own selection handles and paste bar are, so extending a
+  // selection meant grabbing the popover instead of the handle. Below that
+  // width it docks to the bottom of the screen and leaves the text alone —
+  // the CSS half of this lives under the same breakpoint.
+  const [docked, setDocked] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 899px)").matches,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(max-width: 899px)");
+    const onChange = () => setDocked(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   useLayoutEffect(() => {
+    if (docked) return;
     const el = popoverRef.current;
     if (!el) return;
     const measure = () => {
@@ -298,24 +318,33 @@ export function SelectionSuggestPopover({
       ro?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [anchorRect, mode, rewritePhase, definePhase, suggestions.length, definition]);
+  }, [anchorRect, docked, mode, rewritePhase, definePhase, suggestions.length, definition]);
 
-  const style: React.CSSProperties = {
-    position: "fixed",
-    top: placement?.top ?? Math.max(8, anchorRect.top - 8),
-    left:
-      placement?.left ??
-      Math.min(
-        window.innerWidth - 300,
-        Math.max(8, anchorRect.left + anchorRect.width / 2 - 150),
-      ),
-    visibility: placement ? "visible" : "hidden",
-    maxHeight: `calc(100vh - 16px)`,
-    overflowY: "auto",
-  };
+  // Docked: position, size and max-height all come from CSS.
+  const style: React.CSSProperties = docked
+    ? { overflowY: "auto" }
+    : {
+        position: "fixed",
+        top: placement?.top ?? Math.max(8, anchorRect.top - 8),
+        left:
+          placement?.left ??
+          Math.min(
+            window.innerWidth - 300,
+            Math.max(8, anchorRect.left + anchorRect.width / 2 - 150),
+          ),
+        visibility: placement ? "visible" : "hidden",
+        maxHeight: `calc(100vh - 16px)`,
+        overflowY: "auto",
+      };
 
   return createPortal(
-    <div className="ssp-wrap" style={style} ref={popoverRef} role="dialog" aria-label="Word actions">
+    <div
+      className={`ssp-wrap${docked ? " is-docked" : ""}`}
+      style={style}
+      ref={popoverRef}
+      role="dialog"
+      aria-label="Word actions"
+    >
       <div className="ssp-header">
         <span className="ssp-title">
           {mode === "define" ? "Define" : mode === "rewrite" ? "✦ Rewrite" : "✦ Selection"}
